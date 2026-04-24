@@ -69,13 +69,14 @@ class PersonalisationAnalysis:
 _SFMC_PATTERN: Final = re.compile(r"%%\[|%%=")
 _MAILCHIMP_PATTERN: Final = re.compile(r"\*\|[A-Z_]+\|\*")
 _ADOBE_PATTERN: Final = re.compile(r"<%[= ]")
-_ITERABLE_CATALOG: Final = re.compile(r"\[\[[^\]]+\]\]")
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
+_ITERABLE_CATALOG: Final = re.compile(r"\[\[[^\]]{1,500}\]\]")
 _ITERABLE_HELPERS: Final = re.compile(r"\{\{#(?:if|each|unless)\b|\{\{defaultIfEmpty\b")
-_BRAZE_DOLLAR: Final = re.compile(r"\{\{\s*\$\{")
-_BRAZE_CONNECTED: Final = re.compile(r"\{%\s*(?:connected_content|content_blocks)\b")
-_KLAVIYO_LOOKUP: Final = re.compile(r"\|\s*lookup\s*:|person\.")
-_HUBSPOT_CONTACT: Final = re.compile(r"contact\.[a-z_]+\s*\|\s*default\s*\(")
-_GENERIC_TEMPLATE: Final = re.compile(r"\{\{[^}]+\}\}|\{%[^%]+%\}")
+_BRAZE_DOLLAR: Final = re.compile(r"\{\{\s{0,10}\$\{")
+_BRAZE_CONNECTED: Final = re.compile(r"\{%\s{0,10}(?:connected_content|content_blocks)\b")
+_KLAVIYO_LOOKUP: Final = re.compile(r"\|\s{0,10}lookup\s{0,10}:|person\.")
+_HUBSPOT_CONTACT: Final = re.compile(r"contact\.[a-z_]{1,100}\s{0,10}\|\s{0,10}default\s{0,10}\(")
+_GENERIC_TEMPLATE: Final = re.compile(r"\{\{[^}]{1,2000}\}\}|\{%[^%]{1,2000}%\}")
 
 
 def detect_platform(raw_html: str) -> tuple[ESPPlatform, float]:

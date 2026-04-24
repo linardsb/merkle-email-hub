@@ -6,8 +6,14 @@ import re
 
 from bs4 import BeautifulSoup
 
-_STYLE_BLOCK_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
-_MSO_COMMENT_RE = re.compile(r"<!--\[if\s+mso.*?\]>.*?<!\[endif\]-->", re.DOTALL | re.IGNORECASE)
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
+_STYLE_BLOCK_RE = re.compile(
+    r"<style[^>]{0,2000}>(.{0,200000}?)</style>", re.DOTALL | re.IGNORECASE
+)
+_MSO_COMMENT_RE = re.compile(
+    r"<!--\[if\s{1,20}mso.{0,500}?\]>.{0,100000}?<!\[endif\]-->",
+    re.DOTALL | re.IGNORECASE,
+)
 
 
 def extract_styles(html: str) -> tuple[str, list[str]]:
@@ -44,11 +50,11 @@ def parse_css_rules(css_text: str) -> list[tuple[str, list[tuple[str, str]]]]:
     Those should be preserved in a <style> block.
     """
     rules: list[tuple[str, list[tuple[str, str]]]] = []
-    # Remove comments
-    css_text = re.sub(r"/\*.*?\*/", "", css_text, flags=re.DOTALL)
+    # Remove comments (bounded body prevents polynomial backtracking)
+    css_text = re.sub(r"/\*.{0,100000}?\*/", "", css_text, flags=re.DOTALL)
 
-    # Split into rule blocks (simple brace matching)
-    parts = re.split(r"\{([^}]*)\}", css_text)
+    # Split into rule blocks (simple brace matching, bounded body)
+    parts = re.split(r"\{([^}]{0,10000})\}", css_text)
 
     for i in range(0, len(parts) - 1, 2):
         selector = parts[i].strip()

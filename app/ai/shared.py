@@ -315,8 +315,9 @@ def extract_html(content: str) -> str:
 
 # ── VML extraction helpers for Outlook Fixer ──
 
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
 _VML_BLOCK_RE = re.compile(
-    r"(<!--\[if\s+(?:gte\s+)?mso.*?\]>.*?<!\[endif\]-->)",
+    r"(<!--\[if\s{1,20}(?:gte\s{1,20})?mso.{0,500}?\]>.{0,100000}?<!\[endif\]-->)",
     re.DOTALL | re.IGNORECASE,
 )
 _VML_PLACEHOLDER = "<!--VML_BLOCK_{idx}-->"

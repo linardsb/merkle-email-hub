@@ -14,7 +14,7 @@ from app.knowledge.ontology.registry import load_ontology
 logger = get_logger(__name__)
 
 # Pre-compiled pattern for CSS property:value mentions (e.g. "display: flex")
-_CSS_VALUE_PATTERN = re.compile(r"([\w-]+)\s*:\s*([\w-]+)")
+_CSS_VALUE_PATTERN = re.compile(r"([\w-]{1,100})\s{0,20}:\s{0,20}([\w-]{1,200})")
 
 
 class QueryIntent(Enum):

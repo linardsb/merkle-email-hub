@@ -104,11 +104,11 @@ def _expand_background(val: str) -> list[tuple[str, str]] | None:
     """Expand background shorthand."""
     result: list[tuple[str, str]] = []
 
-    url_match = re.search(r"url\([^)]*\)", val, re.IGNORECASE)
+    url_match = re.search(r"url\([^)]{0,2000}\)", val, re.IGNORECASE)
     if url_match:
         result.append(("background-image", url_match.group()))
 
-    color_match = re.search(r"#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)", val, re.IGNORECASE)
+    color_match = re.search(r"#[0-9a-fA-F]{3,8}|rgba?\([^)]{0,200}\)", val, re.IGNORECASE)
     if color_match:
         result.append(("background-color", color_match.group()))
 
@@ -123,13 +123,14 @@ def _expand_background(val: str) -> list[tuple[str, str]] | None:
     return result or None
 
 
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
 _FONT_RE = re.compile(
-    r"^(italic|oblique)?\s*"
-    r"(small-caps)?\s*"
-    r"(bold|bolder|lighter|normal|\d{3})?\s*"
-    r"(\d+[\w%]+)\s*"
-    r"(?:/\s*([\d.]+[\w%]*))?"
-    r"[\s,]+(.+)$",
+    r"^(italic|oblique)?\s{0,10}"
+    r"(small-caps)?\s{0,10}"
+    r"(bold|bolder|lighter|normal|\d{3})?\s{0,10}"
+    r"(\d{1,6}[\w%]{1,20})\s{0,10}"
+    r"(?:/\s{0,10}([\d.]{1,10}[\w%]{0,20}))?"
+    r"[\s,]{1,10}(.{1,500})$",
     re.IGNORECASE,
 )
 

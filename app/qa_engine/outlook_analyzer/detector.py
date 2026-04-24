@@ -26,12 +26,13 @@ _VML_TAG_RE = re.compile(
 )
 
 # MSO conditional blocks
-_MSO_OPENER_RE = re.compile(r"<!--\[if\s+([^\]]*mso[^\]]*)\]>", re.IGNORECASE)
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
+_MSO_OPENER_RE = re.compile(r"<!--\[if\s{1,20}([^\]]{0,200}mso[^\]]{0,200})\]>", re.IGNORECASE)
 _MSO_CLOSER_RE = re.compile(r"<!\[endif\]-->")
 _NON_MSO_OPENER_RE = re.compile(r"<!--\[if\s+!mso\]>", re.IGNORECASE)
 
 # MSO CSS properties
-_MSO_CSS_RE = re.compile(r"(mso-[\w-]+)\s*:", re.IGNORECASE)
+_MSO_CSS_RE = re.compile(r"(mso-[\w-]{1,100})\s{0,20}:", re.IGNORECASE)
 _MSO_CSS_PROPERTIES = frozenset(
     {
         "mso-line-height-rule",

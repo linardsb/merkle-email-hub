@@ -87,7 +87,8 @@ def get_conversions_for_property(
 # These handle structural HTML changes that ontology fallbacks can't express  #
 # --------------------------------------------------------------------------- #
 
-_VAR_RE = re.compile(r"var\(\s*--([a-zA-Z0-9_-]+)\s*(?:,\s*([^)]+))?\s*\)")
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
+_VAR_RE = re.compile(r"var\(\s{0,10}--([a-zA-Z0-9_-]{1,200})\s{0,10}(?:,\s{0,10}([^)]{0,1000}))?\s{0,10}\)")
 
 
 def resolve_css_variables(css_text: str, variables: dict[str, str]) -> str:

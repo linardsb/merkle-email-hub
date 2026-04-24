@@ -10,8 +10,11 @@ from app.knowledge.ontology.types import (
     SupportLevel,
 )
 
-_STYLE_BLOCK_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
-_INLINE_STYLE_RE = re.compile(r'style\s*=\s*"([^"]*)"', re.IGNORECASE)
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
+_STYLE_BLOCK_RE = re.compile(
+    r"<style[^>]{0,2000}>(.{0,200000}?)</style>", re.DOTALL | re.IGNORECASE
+)
+_INLINE_STYLE_RE = re.compile(r'style\s{0,20}=\s{0,20}"([^"]{0,5000})"', re.IGNORECASE)
 
 
 def lookup_support(property_name: str, value: str | None, client_id: str) -> SupportLevel:

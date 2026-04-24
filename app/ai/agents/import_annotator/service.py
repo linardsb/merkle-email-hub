@@ -258,7 +258,7 @@ class ImportAnnotatorService(BaseAgentService):
         result_html = lxml.html.tostring(doc, encoding="unicode")
 
         # Re-prepend DOCTYPE if original had one and lxml stripped it
-        doctype_match = re.match(r"(<!DOCTYPE[^>]*>)", html, re.IGNORECASE)
+        doctype_match = re.match(r"(<!DOCTYPE[^>]{0,2000}>)", html, re.IGNORECASE)
         if doctype_match and not result_html.strip().startswith("<!DOCTYPE"):
             result_html = doctype_match.group(1) + "\n" + result_html
 

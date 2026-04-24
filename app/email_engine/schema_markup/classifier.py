@@ -42,8 +42,9 @@ class EmailIntent:
 # ── Pre-compiled regex patterns ──
 
 # Price patterns: $50, €29.99, £100, 50% off, etc.
+# Bounded \s prevents polynomial backtracking (py/polynomial-redos).
 _PRICE_PATTERN = re.compile(
-    r"(?:[$€£¥]\s?\d+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?\s?(?:[$€£¥])|(\d+)\s?%\s*(?:off|discount|savings?))",
+    r"(?:[$€£¥]\s?\d{1,12}(?:[.,]\d{1,2})?|\d{1,12}(?:[.,]\d{1,2})?\s?(?:[$€£¥])|(\d{1,6})\s?%\s{0,5}(?:off|discount|savings?))",
     re.IGNORECASE,
 )
 
@@ -66,14 +67,15 @@ _PROMO_KEYWORD_PATTERN = re.compile(
 )
 
 # Expiry date patterns: "expires March 30", "valid until 2026-04-01", "ends tomorrow"
+# Bounded \s quantifiers prevent polynomial backtracking (py/polynomial-redos).
 _EXPIRY_PATTERN = re.compile(
-    r"\b(?:expires?|valid\s+(?:until|through|till)|ends?|deadline|last\s+(?:day|chance))\s*:?\s*(.{5,30})",
+    r"\b(?:expires?|valid\s{1,5}(?:until|through|till)|ends?|deadline|last\s{1,5}(?:day|chance))\s{0,10}:?\s{0,10}(.{5,30})",
     re.IGNORECASE,
 )
 
 # Order number patterns: Order #12345, Order: ABC-123
 _ORDER_PATTERN = re.compile(
-    r"\b(?:order|confirmation|invoice|receipt)\s*(?:#|number|no\.?|:)\s*([A-Z0-9][\w-]{3,20})",
+    r"\b(?:order|confirmation|invoice|receipt)\s{0,10}(?:#|number|no\.?|:)\s{0,10}([A-Z0-9][\w-]{3,20})",
     re.IGNORECASE,
 )
 
@@ -83,9 +85,9 @@ _SHIPPING_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# Tracking number pattern
+# Tracking number pattern (bounded \s prevents polynomial backtracking).
 _TRACKING_PATTERN = re.compile(
-    r"\b(?:tracking\s*(?:#|number|no\.?|:)\s*:?\s*([A-Z0-9]{8,30}))\b",
+    r"\b(?:tracking\s{0,10}(?:#|number|no\.?|:)\s{0,10}:?\s{0,10}([A-Z0-9]{8,30}))\b",
     re.IGNORECASE,
 )
 
@@ -142,7 +144,8 @@ _PRODUCT_PATTERN = re.compile(
 
 def _strip_html_tags(html: str) -> str:
     """Strip HTML tags for text analysis."""
-    return re.sub(r"<[^>]+>", " ", html)
+    # Bounded inner class prevents polynomial backtracking on malformed input.
+    return re.sub(r"<[^>]{1,10000}>", " ", html)
 
 
 class EmailIntentClassifier:

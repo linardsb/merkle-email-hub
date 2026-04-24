@@ -90,12 +90,13 @@ _ADDRESS_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"suite\s+\d+", re.IGNORECASE),
 )
 
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
 _PREVIEW_TEXT_RE = re.compile(
-    r'class\s*=\s*["\'][^"\']*preview[^"\']*["\']',
+    r'class\s{0,10}=\s{0,10}["\'][^"\']{0,1000}preview[^"\']{0,1000}["\']',
     re.IGNORECASE,
 )
 _PERSONALIZATION_RE = re.compile(
-    r"\{\{[^}]+\}\}|<%[^%]+%>|\$\{[^}]+\}|\*\|[^|]+\|\*|%%[^%]+%%",
+    r"\{\{[^}]{1,2000}\}\}|<%[^%]{1,2000}%>|\$\{[^}]{1,2000}\}|\*\|[^|]{1,2000}\|\*|%%[^%]{1,2000}%%",
 )
 _CTA_RE = re.compile(
     r"(shop\s+now|buy\s+now|learn\s+more|get\s+started|sign\s+up|register|download"
@@ -239,8 +240,8 @@ def _score_html_hygiene(doc: HtmlElement, html: str) -> _DimensionResult:
         )
 
     # Character encoding declared
-    has_charset_meta = bool(re.search(r"<meta[^>]+charset\s*=", html_lower))
-    has_content_type = bool(re.search(r"<meta[^>]+content-type[^>]+charset", html_lower))
+    has_charset_meta = bool(re.search(r"<meta[^>]{1,2000}charset\s{0,20}=", html_lower))
+    has_content_type = bool(re.search(r"<meta[^>]{1,2000}content-type[^>]{1,2000}charset", html_lower))
     if not has_charset_meta and not has_content_type:
         result.issues.append(
             _Issue(

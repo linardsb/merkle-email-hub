@@ -312,7 +312,7 @@ class SchemaMarkupInjector:
             return html[:pos] + script_tag + html[pos:]
 
         # Fallback: after <head>
-        head_open = re.search(r"<head[^>]*>", html, re.IGNORECASE)
+        head_open = re.search(r"<head[^>]{0,2000}>", html, re.IGNORECASE)
         if head_open:
             pos = head_open.end()
             return html[:pos] + script_tag + html[pos:]

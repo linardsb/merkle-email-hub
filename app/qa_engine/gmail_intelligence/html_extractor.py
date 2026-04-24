@@ -14,7 +14,8 @@ _PRICE_RE = re.compile(r"(?:\$[\d,.]+|[\d,.]+\s*%\s*off|\d+%\s*discount)", re.IG
 _UNSUBSCRIBE_RE = re.compile(r"unsubscribe|opt[\s-]?out|manage\s+preferences", re.IGNORECASE)
 _SCHEMA_ORG_RE = re.compile(r'(?:itemtype|typeof)\s*=\s*["\']https?://schema\.org', re.IGNORECASE)
 _PREVIEW_RE = re.compile(
-    r'class\s*=\s*["\'][^"\']*preview[^"\']*["\']',
+    # Bounded char classes prevent polynomial backtracking (py/polynomial-redos).
+    r'class\s{0,10}=\s{0,10}["\'][^"\']{0,1000}preview[^"\']{0,1000}["\']',
     re.IGNORECASE,
 )
 
@@ -71,7 +72,7 @@ def extract_signals(html: str) -> EmailSignals:
         start = preview_match.end()
         end_tag = html.find("</", start)
         if end_tag > start:
-            preview_text = re.sub(r"<[^>]+>", "", html[start:end_tag]).strip()
+            preview_text = re.sub(r"<[^>]{1,10000}>", "", html[start:end_tag]).strip()
 
     return EmailSignals(
         has_unsubscribe=bool(_UNSUBSCRIBE_RE.search(html)),

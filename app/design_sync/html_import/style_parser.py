@@ -34,7 +34,10 @@ _RGB_RE = re.compile(
     r"rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)",
     re.IGNORECASE,
 )
-_STYLE_BLOCK_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
+_STYLE_BLOCK_RE = re.compile(
+    r"<style[^>]{0,2000}>(.{0,200000}?)</style>", re.DOTALL | re.IGNORECASE
+)
 _FONT_SIZE_RE = re.compile(r"^([\d.]+)\s*(px|pt|em|rem)$", re.IGNORECASE)
 
 

@@ -16,20 +16,21 @@ logger = get_logger(__name__)
 VALID_TARGETS = frozenset({"new_outlook", "dual_support", "audit_only"})
 
 # MSO conditional patterns
+# Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
 _MSO_BLOCK_RE = re.compile(
-    r"<!--\[if\s+[^\]]*mso[^\]]*\]>.*?<!\[endif\]-->",
+    r"<!--\[if\s{1,20}[^\]]{0,200}mso[^\]]{0,200}\]>.{0,100000}?<!\[endif\]-->",
     re.IGNORECASE | re.DOTALL,
 )
 _NON_MSO_BLOCK_RE = re.compile(
-    r"<!--\[if\s+!mso\]><!-->(.*?)<!--<!\[endif\]-->",
+    r"<!--\[if\s{1,20}!mso\]><!-->(.{0,100000}?)<!--<!\[endif\]-->",
     re.IGNORECASE | re.DOTALL,
 )
 _MSO_CSS_PROP_RE = re.compile(
-    r"\s*mso-[\w-]+\s*:[^;]*;?",
+    r"\s{0,20}mso-[\w-]{1,100}\s{0,20}:[^;]{0,1000};?",
     re.IGNORECASE,
 )
 _EXTERNAL_CLASS_RULE_RE = re.compile(
-    r"\.ExternalClass[^{]*\{[^}]*\}\s*",
+    r"\.ExternalClass[^{]{0,1000}\{[^}]{0,5000}\}\s{0,20}",
     re.IGNORECASE,
 )
 _WORD_WRAP_RE = re.compile(
