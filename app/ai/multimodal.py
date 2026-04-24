@@ -87,7 +87,7 @@ class TextBlock:
     text: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.text, str):
+        if not isinstance(self.text, str):  # pyright: ignore[reportUnnecessaryIsInstance]
             msg = f"TextBlock.text must be str, got {type(self.text).__name__}"
             raise TypeError(msg)
 
@@ -283,7 +283,7 @@ def validate_content_block(block: ContentBlock) -> ContentBlock:
             raise ContentBlockValidationError(msg)
         return block
 
-    if isinstance(block, ToolResultBlock):
+    if isinstance(block, ToolResultBlock):  # pyright: ignore[reportUnnecessaryIsInstance]
         for nested in block.content:
             validate_content_block(nested)
         return block
@@ -338,7 +338,7 @@ def estimate_block_tokens(block: ContentBlock) -> int:
     if isinstance(block, StructuredOutputBlock):
         return max(1, int(len(_json_dumps(block.schema)) / 4.0))
 
-    if isinstance(block, ToolResultBlock):
+    if isinstance(block, ToolResultBlock):  # pyright: ignore[reportUnnecessaryIsInstance]
         return sum(estimate_block_tokens(b) for b in block.content) or 1
 
     return 1

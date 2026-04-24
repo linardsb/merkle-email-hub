@@ -500,7 +500,7 @@ class OpenAICompatProvider:
                     else " ".join(p.get("text", "") for p in nested if p.get("type") == "text")
                 )
                 result.append({"type": "text", "text": text})
-            elif isinstance(b, StructuredOutputBlock):
+            elif isinstance(b, StructuredOutputBlock):  # pyright: ignore[reportUnnecessaryIsInstance]
                 pass  # Handled via response_format, not content blocks
         return result
 

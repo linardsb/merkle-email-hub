@@ -27,7 +27,9 @@ from app.core.logging import get_logger
 from app.design_sync.crypto import encrypt_token
 from app.design_sync.models import DesignConnection, DesignTokenSnapshot
 from app.projects.models import ClientOrg, Project, ProjectMember
-from app.qa_engine.models import QAResult  # noqa: F401 — ensures metadata for FK resolution
+from app.qa_engine.models import (
+    QAResult,  # noqa: F401  # pyright: ignore[reportUnusedImport] — ensures metadata for FK resolution
+)
 
 logger = get_logger(__name__)
 

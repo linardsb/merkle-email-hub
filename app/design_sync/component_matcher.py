@@ -1327,7 +1327,7 @@ def _build_column_fills(
 
     # Fallback: distribute content round-robin across columns
     fills: list[SlotFill] = []
-    col_count = section.column_count if section.column_count is not None else 2
+    col_count = section.column_count or 2
 
     for col_idx in range(1, col_count + 1):
         col_texts: list[str] = []

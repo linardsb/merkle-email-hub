@@ -736,7 +736,7 @@ def validate_and_transform(
 
         # Client-aware color warnings
         for c in colors:
-            if c.opacity is not None and c.opacity < 1.0:
+            if c.opacity < 1.0:
                 level = compat.check_property("opacity")
                 if level != SupportLevel.FULL:
                     unsupported = compat.unsupported_clients("opacity")

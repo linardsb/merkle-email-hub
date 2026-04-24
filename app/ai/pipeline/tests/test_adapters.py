@@ -6,16 +6,16 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 
 # Force adapter registration by importing all adapter modules
-import app.ai.pipeline.adapters.accessibility
-import app.ai.pipeline.adapters.code_reviewer
-import app.ai.pipeline.adapters.content
-import app.ai.pipeline.adapters.dark_mode
-import app.ai.pipeline.adapters.innovation
-import app.ai.pipeline.adapters.knowledge
-import app.ai.pipeline.adapters.outlook_fixer
-import app.ai.pipeline.adapters.personalisation
-import app.ai.pipeline.adapters.scaffolder
-import app.ai.pipeline.adapters.visual_qa  # noqa: F401
+import app.ai.pipeline.adapters.accessibility  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.code_reviewer  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.content  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.dark_mode  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.innovation  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.knowledge  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.outlook_fixer  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.personalisation  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.scaffolder  # pyright: ignore[reportUnusedImport]
+import app.ai.pipeline.adapters.visual_qa  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from app.ai.pipeline.adapters import ADAPTER_REGISTRY, ArtifactAdapter
 from app.ai.pipeline.artifacts import ArtifactStore, HtmlArtifact
 

@@ -31,7 +31,7 @@ def detect_centering(html: str) -> bool:
     root = body if body is not None else tree
 
     for child in root:
-        if not isinstance(child, HtmlElement):
+        if not isinstance(child, HtmlElement):  # pyright: ignore[reportUnnecessaryIsInstance]
             continue
         if child.tag == "table":
             align = (child.get("align") or "").lower()

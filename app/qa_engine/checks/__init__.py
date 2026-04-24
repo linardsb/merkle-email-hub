@@ -3,7 +3,7 @@
 from typing import Protocol
 
 # Import custom checks module to trigger registration of all custom check functions
-import app.qa_engine.custom_checks as _custom_checks
+import app.qa_engine.custom_checks as _custom_checks  # pyright: ignore[reportUnusedImport]
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.checks.accessibility import AccessibilityCheck
 from app.qa_engine.checks.brand_compliance import BrandComplianceCheck

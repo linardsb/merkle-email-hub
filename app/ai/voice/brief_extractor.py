@@ -79,7 +79,7 @@ class VoiceBriefExtractor:
             raise BriefExtractionError(f"Brief extraction LLM call failed: {exc}") from exc
 
         # Validate response is a string
-        if not isinstance(result.content, str):
+        if not isinstance(result.content, str):  # pyright: ignore[reportUnnecessaryIsInstance]
             raise BriefExtractionError("LLM returned non-text response")
 
         # Parse JSON response

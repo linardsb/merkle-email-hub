@@ -198,7 +198,7 @@ def _record_to_schema(record: SkillAmendmentRecord) -> SkillAmendment:
         confidence=float(record.confidence),  # pyright: ignore[reportArgumentType]
         source_pattern_id=str(record.source_pattern_id),
         source_template_id=str(record.source_template_id)
-        if record.source_template_id is not None
+        if record.source_template_id is not None  # pyright: ignore[reportUnnecessaryComparison]
         else None,
         status=AmendmentStatus(str(record.status)),
     )

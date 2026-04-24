@@ -511,7 +511,7 @@ class AnthropicProvider:
                         "content": content,
                     }
                 )
-            elif isinstance(b, StructuredOutputBlock):
+            elif isinstance(b, StructuredOutputBlock):  # pyright: ignore[reportUnnecessaryIsInstance]
                 pass  # Handled via tool_use, not content blocks
         return result
 

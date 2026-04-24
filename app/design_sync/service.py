@@ -1009,7 +1009,7 @@ class DesignSyncService:
                     walk(child, depth + 1)
 
         for page in pages:
-            if isinstance(page, dict):
+            if isinstance(page, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
                 for child in page.get("children", []):
                     if isinstance(child, dict):
                         walk(child, 0)

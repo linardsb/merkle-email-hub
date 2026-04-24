@@ -71,8 +71,7 @@ class VisualPrecheckNode:
             )
 
         # Store screenshots for downstream multimodal injection
-        if context.metadata is not None:
-            context.metadata["precheck_screenshots"] = screenshots
+        context.metadata["precheck_screenshots"] = screenshots
 
         # Run lightweight VLM defect detection
         try:
@@ -108,18 +107,17 @@ class VisualPrecheckNode:
                 )
 
         # Also store failures in metadata for QA gate merge
-        if context.metadata is not None:
-            context.metadata["visual_precheck_failures"] = [
-                {
-                    "check_name": f.check_name,
-                    "score": f.score,
-                    "details": f.details,
-                    "suggested_agent": f.suggested_agent,
-                    "priority": f.priority,
-                    "severity": f.severity,
-                }
-                for f in structured_failures
-            ]
+        context.metadata["visual_precheck_failures"] = [
+            {
+                "check_name": f.check_name,
+                "score": f.score,
+                "details": f.details,
+                "suggested_agent": f.suggested_agent,
+                "priority": f.priority,
+                "severity": f.severity,
+            }
+            for f in structured_failures
+        ]
 
         if structured_failures:
             summary = "; ".join(f"{f.check_name}: {f.details}" for f in structured_failures)

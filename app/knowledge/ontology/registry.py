@@ -182,7 +182,7 @@ class OntologyRegistry:
                 if level == SupportLevel.NONE:
                     worst = SupportLevel.NONE
                     break
-                if level == SupportLevel.PARTIAL and worst != SupportLevel.NONE:
+                if level == SupportLevel.PARTIAL:
                     worst = SupportLevel.PARTIAL
             result[engine] = worst
         return result

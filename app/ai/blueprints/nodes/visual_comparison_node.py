@@ -117,10 +117,9 @@ class VisualComparisonNode:
                     )
 
         # Store result in metadata for BuildResponse
-        if context.metadata is not None:
-            context.metadata["visual_comparison"] = result.model_dump()
-            # Save current screenshots as prev for next iteration
-            context.metadata["prev_screenshots"] = current_screenshots
+        context.metadata["visual_comparison"] = result.model_dump()
+        # Save current screenshots as prev for next iteration
+        context.metadata["prev_screenshots"] = current_screenshots
 
         drift_detail = f"drift_score={result.drift_score:.1f}%"
         if result.regressed:

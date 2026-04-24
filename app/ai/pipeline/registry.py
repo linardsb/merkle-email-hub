@@ -85,7 +85,7 @@ class PipelineRegistry:
 def _parse_yaml(path: Path) -> PipelineDag:
     """Parse a YAML pipeline definition into a PipelineDag."""
     raw: dict[str, object] = yaml.safe_load(path.read_text())
-    if not isinstance(raw, dict):
+    if not isinstance(raw, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
         msg = f"Pipeline YAML must be a mapping, got {type(raw).__name__}"
         raise DomainValidationError(msg)
 

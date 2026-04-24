@@ -143,7 +143,7 @@ def schema_to_block(schema: ContentBlockSchema) -> ContentBlock:
             name=schema.name,
             strict=schema.strict,
         )
-    if isinstance(schema, ToolResultBlockSchema):
+    if isinstance(schema, ToolResultBlockSchema):  # pyright: ignore[reportUnnecessaryIsInstance]
         return ToolResultBlock(
             tool_use_id=schema.tool_use_id,
             content=[schema_to_block(c) for c in schema.content],
@@ -179,7 +179,7 @@ def block_to_schema(block: ContentBlock) -> ContentBlockSchema:
             name=block.name,
             strict=block.strict,
         )
-    if isinstance(block, ToolResultBlock):
+    if isinstance(block, ToolResultBlock):  # pyright: ignore[reportUnnecessaryIsInstance]
         return ToolResultBlockSchema(
             tool_use_id=block.tool_use_id,
             content=[block_to_schema(b) for b in block.content],

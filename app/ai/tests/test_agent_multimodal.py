@@ -405,11 +405,11 @@ class TestEngineLayer14:
             "design_import_assets", []
         )
         for asset in design_import_assets:
-            image_data: bytes | None = asset.get("image_bytes")  # type: ignore[assignment]
-            if image_data and isinstance(image_data, bytes):
+            raw_image = asset.get("image_bytes")
+            if isinstance(raw_image, bytes):
                 multimodal_blocks.append(
                     ImageBlock(
-                        data=image_data,
+                        data=raw_image,
                         media_type=str(asset.get("media_type", "image/png")),
                         source="base64",
                     )

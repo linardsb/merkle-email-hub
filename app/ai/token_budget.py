@@ -162,7 +162,7 @@ class TokenBudgetManager:
         """
         if isinstance(msg.content, str):
             content_tokens = self._count_text_tokens(msg.content)
-        elif isinstance(msg.content, list):
+        elif isinstance(msg.content, list):  # pyright: ignore[reportUnnecessaryIsInstance]
             from app.ai.multimodal import estimate_blocks_tokens
 
             content_tokens = estimate_blocks_tokens(msg.content)
