@@ -220,8 +220,42 @@ jobs:
       - name: Run database migrations
         run: uv run alembic upgrade head
 
-      - name: Seed demo admin user
-        run: uv run python -m app.seed_demo
+      - name: Seed E2E admin user
+        run: |
+          uv run python - <<'PY'
+          import asyncio
+          from sqlalchemy import select
+          from app.auth.models import User
+          from app.auth.service import AuthService
+          from app.core.config import get_settings
+          from app.core.database import AsyncSessionLocal, engine
+
+          async def main() -> None:
+              password = get_settings().auth.demo_user_password
+              hashed = AuthService.hash_password(password)
+              async with AsyncSessionLocal() as db:
+                  existing = (
+                      await db.execute(select(User).where(User.email == "admin@email-hub.dev"))
+                  ).scalar_one_or_none()
+                  if existing is None:
+                      db.add(
+                          User(
+                              email="admin@email-hub.dev",
+                              hashed_password=hashed,
+                              name="Admin",
+                              role="admin",
+                          )
+                      )
+                      await db.commit()
+                      print("E2E admin created")
+                  else:
+                      existing.hashed_password = hashed
+                      await db.commit()
+                      print("E2E admin password refreshed")
+              await engine.dispose()
+
+          asyncio.run(main())
+          PY
 
       - name: Start backend
         run: |
