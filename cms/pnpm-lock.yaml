@@ -157,8 +157,8 @@ importers:
   packages/sdk:
     dependencies:
       '@hey-api/client-fetch':
-        specifier: ^0.8.0
-        version: 0.8.4
+        specifier: ^0.13.1
+        version: 0.13.1(@hey-api/openapi-ts@0.66.7(typescript@5.9.3))
     devDependencies:
       '@email-hub/typescript-config':
         specifier: workspace:*
@@ -645,9 +645,11 @@ packages:
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
-  '@hey-api/client-fetch@0.8.4':
-    resolution: {integrity: sha512-SWtUjVEFIUdiJGR2NiuF0njsSrSdTe7WHWkp3BLH3DEl2bRhiflOnBo29NSDdrY90hjtTQiTQkBxUgGOF29Xzg==}
+  '@hey-api/client-fetch@0.13.1':
+    resolution: {integrity: sha512-29jBRYNdxVGlx5oewFgOrkulZckpIpBIRHth3uHFn1PrL2ucMy52FvWOY3U3dVx2go1Z3kUmMi6lr07iOpUqqA==}
     deprecated: Starting with v0.73.0, this package is bundled directly inside @hey-api/openapi-ts.
+    peerDependencies:
+      '@hey-api/openapi-ts': < 2
 
   '@hey-api/json-schema-ref-parser@1.0.5':
     resolution: {integrity: sha512-bWUV9ICwvU5I3YKVZqWIUXFC2SIXznUi/u+LqurJx6ILiyImfZD5+g/lj3w4EiyXxmjqyaxptzUz/1IgK3vVtw==}
@@ -3205,7 +3207,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
-  '@hey-api/client-fetch@0.8.4': {}
+  '@hey-api/client-fetch@0.13.1(@hey-api/openapi-ts@0.66.7(typescript@5.9.3))':
+    dependencies:
+      '@hey-api/openapi-ts': 0.66.7(typescript@5.9.3)
 
   '@hey-api/json-schema-ref-parser@1.0.5':
     dependencies:
