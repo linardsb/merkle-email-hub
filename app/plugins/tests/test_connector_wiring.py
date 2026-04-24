@@ -9,6 +9,7 @@ Skipping so CI can go green without silently rewriting the intended behaviour.
 """
 
 # mypy: ignore-errors
+# pyright: strict=false
 from __future__ import annotations
 
 from collections.abc import Generator

@@ -327,16 +327,21 @@ class DesignSyncService:
                 from app.design_sync.email_design_document import EmailDesignDocument
                 from app.design_sync.token_transforms import TokenWarning
 
-                _raw = await provider.build_document(
+                _raw: tuple[
+                    EmailDesignDocument,
+                    ExtractedTokens,
+                    list[TokenWarning],
+                    DesignFileStructure,
+                ] = await cast(Any, provider).build_document(
                     conn.file_ref,
                     access_token,
                     connection_config=conn.config_json,
                     target_clients=target_clients,
                 )
-                document = cast(EmailDesignDocument, _raw[0])
-                tokens = cast(ExtractedTokens, _raw[1])
-                token_warnings = cast(list[TokenWarning], _raw[2])
-                structure = cast(DesignFileStructure, _raw[3])
+                document = _raw[0]
+                tokens = _raw[1]
+                token_warnings = _raw[2]
+                structure = _raw[3]
                 doc_json: dict[str, object] | None = document.to_json()
             else:
                 # Legacy path for stub providers (Sketch, Canva)
@@ -406,7 +411,7 @@ class DesignSyncService:
                 ]
                 # Store client-aware warnings as compatibility hints
                 if target_clients:
-                    client_hints = [
+                    client_hints: list[dict[str, Any]] = [
                         {
                             "level": w.level,
                             "css_property": w.field,
@@ -524,10 +529,11 @@ class DesignSyncService:
             raise ConflictError("No sync snapshot available — sync the connection first")
 
         tokens_json = snapshot.tokens_json
-        cached_structure = tokens_json.get("_file_structure")
-        if isinstance(cached_structure, dict):
+        cached_structure: dict[str, Any] | None = tokens_json.get("_file_structure")
+        if cached_structure is not None:
+            raw_pages: list[Any] = cached_structure.get("pages", [])
             pages = [
-                _node_from_dict(p) for p in cached_structure.get("pages", []) if isinstance(p, dict)
+                _node_from_dict(cast(dict[str, Any], p)) for p in raw_pages if isinstance(p, dict)
             ]
             structure = DesignFileStructure(
                 file_name=str(cached_structure.get("file_name", "")),
@@ -558,21 +564,36 @@ class DesignSyncService:
             )
 
         tj: dict[str, Any] = snapshot.tokens_json
-        colors_list: list[dict[str, Any]] = [c for c in tj.get("colors", []) if isinstance(c, dict)]
-        typography_list: list[dict[str, Any]] = [
-            t for t in tj.get("typography", []) if isinstance(t, dict)
-        ]
-        spacing_list: list[dict[str, Any]] = [
-            s for s in tj.get("spacing", []) if isinstance(s, dict)
-        ]
+        colors_list = cast(
+            list[dict[str, Any]],
+            [c for c in tj.get("colors", []) if isinstance(c, dict)],
+        )
+        typography_list = cast(
+            list[dict[str, Any]],
+            [t for t in tj.get("typography", []) if isinstance(t, dict)],
+        )
+        spacing_list = cast(
+            list[dict[str, Any]],
+            [s for s in tj.get("spacing", []) if isinstance(s, dict)],
+        )
+        dark_colors_list = cast(
+            list[dict[str, Any]],
+            [c for c in tj.get("dark_colors", []) if isinstance(c, dict)],
+        )
+        gradients_list = cast(
+            list[dict[str, Any]],
+            [g for g in tj.get("gradients", []) if isinstance(g, dict)],
+        )
         # Extract token warnings from snapshot (stored by sync_connection)
-        raw_warnings = tj.get("_token_warnings", [])
+        raw_warnings_list = cast(
+            list[dict[str, Any]],
+            [w for w in tj.get("_token_warnings", []) if isinstance(w, dict)],
+        )
         warning_strings: list[str] | None = None
-        if raw_warnings:
+        if raw_warnings_list:
             warning_strings = [
                 f"[{w.get('level', 'info')}] {w.get('field', '?')}: {w.get('message', '')}"
-                for w in raw_warnings
-                if isinstance(w, dict)
+                for w in raw_warnings_list
             ]
 
         return DesignTokensResponse(
@@ -608,8 +629,7 @@ class DesignSyncService:
                     hex=str(c["hex"]),
                     opacity=float(c.get("opacity", 1.0)),
                 )
-                for c in tj.get("dark_colors", [])
-                if isinstance(c, dict)
+                for c in dark_colors_list
             ],
             gradients=[
                 DesignGradientResponse(
@@ -621,13 +641,14 @@ class DesignSyncService:
                             hex=str(s.get("hex", "")),
                             position=float(s.get("position", 0)),
                         )
-                        for s in g.get("stops", [])
-                        if isinstance(s, dict)
+                        for s in cast(
+                            list[dict[str, Any]],
+                            [s for s in g.get("stops", []) if isinstance(s, dict)],
+                        )
                     ],
                     fallback_hex=str(g.get("fallback_hex", "#808080")),
                 )
-                for g in tj.get("gradients", [])
-                if isinstance(g, dict)
+                for g in gradients_list
             ],
             extracted_at=snapshot.extracted_at,
             warnings=warning_strings or None,
@@ -639,9 +660,13 @@ class DesignSyncService:
         tj: dict[str, Any],
     ) -> list[CompatibilityHintResponse] | None:
         """Read stored compatibility hints from snapshot JSON."""
-        raw = tj.get("_compatibility_hints", [])
+        raw: list[Any] = tj.get("_compatibility_hints", [])
         if not raw:
             return None
+        hints = cast(
+            list[dict[str, Any]],
+            [h for h in raw if isinstance(h, dict)],
+        )
         return [
             CompatibilityHintResponse(
                 level=str(h.get("level", "info")),
@@ -649,8 +674,7 @@ class DesignSyncService:
                 message=str(h.get("message", "")),
                 affected_clients=list(h.get("affected_clients", [])),
             )
-            for h in raw
-            if isinstance(h, dict)
+            for h in hints
         ]
 
     # ── Token Diff ──
@@ -706,8 +730,14 @@ class DesignSyncService:
         ]
 
         for category, json_key, key_fn in diff_specs:
-            cur_items = [i for i in current.get(json_key, []) if isinstance(i, dict)]
-            prev_items = [i for i in previous.get(json_key, []) if isinstance(i, dict)]
+            cur_items = cast(
+                list[dict[str, Any]],
+                [i for i in current.get(json_key, []) if isinstance(i, dict)],
+            )
+            prev_items = cast(
+                list[dict[str, Any]],
+                [i for i in previous.get(json_key, []) if isinstance(i, dict)],
+            )
 
             cur_keys = {key_fn(i): i for i in cur_items}
             prev_keys = {key_fn(i): i for i in prev_items}
@@ -890,21 +920,21 @@ class DesignSyncService:
         # Try cached structure from last sync
         snapshot = await self._repo.get_latest_snapshot(connection_id)
         if snapshot is not None:
-            cached = snapshot.tokens_json.get("_file_structure")
-            if isinstance(cached, dict):
+            cached: dict[str, Any] | None = snapshot.tokens_json.get("_file_structure")
+            if cached is not None:
                 # Include cached thumbnails if available
                 raw_thumbs = snapshot.tokens_json.get("_thumbnails")
                 thumbs: dict[str, str] = (
                     cast(dict[str, str], raw_thumbs) if isinstance(raw_thumbs, dict) else {}
                 )
+                cached_pages = cast(
+                    list[dict[str, Any]],
+                    [p for p in cached.get("pages", []) if isinstance(p, dict)],
+                )
                 return FileStructureResponse(
                     connection_id=connection_id,
                     file_name=str(cached.get("file_name", "")),
-                    pages=[
-                        self._deserialize_node(p)
-                        for p in cached.get("pages", [])
-                        if isinstance(p, dict)
-                    ],
+                    pages=[self._deserialize_node(p) for p in cached_pages],
                     thumbnails=thumbs,
                 )
 
@@ -1006,26 +1036,28 @@ class DesignSyncService:
                 scored.append((score, str(node.get("id", ""))))
             for child in node.get("children", []):
                 if isinstance(child, dict):
-                    walk(child, depth + 1)
+                    walk(cast(dict[str, Any], child), depth + 1)
 
         for page in pages:
             if isinstance(page, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
                 for child in page.get("children", []):
                     if isinstance(child, dict):
-                        walk(child, 0)
+                        walk(cast(dict[str, Any], child), 0)
 
         scored.sort(key=lambda x: x[0], reverse=True)
         return [sid for _, sid in scored[: self._MAX_THUMBNAIL_CACHE]]
 
     def _deserialize_node(self, data: dict[str, Any]) -> DesignNodeResponse:
         """Deserialize a cached node dict to DesignNodeResponse."""
+        children_data = cast(
+            list[dict[str, Any]],
+            [c for c in data.get("children", []) if isinstance(c, dict)],
+        )
         return DesignNodeResponse(
             id=str(data.get("id", "")),
             name=str(data.get("name", "")),
             type=str(data.get("type", "OTHER")),
-            children=[
-                self._deserialize_node(c) for c in data.get("children", []) if isinstance(c, dict)
-            ],
+            children=[self._deserialize_node(c) for c in children_data],
             width=data.get("width"),
             height=data.get("height"),
             x=data.get("x"),
@@ -1533,15 +1565,15 @@ class DesignSyncService:
         """Get file structure from cache if available, otherwise fetch live."""
         snapshot = await self._repo.get_latest_snapshot(conn_id)
         if snapshot is not None:
-            cached = snapshot.tokens_json.get("_file_structure")
-            if isinstance(cached, dict):
+            cached: dict[str, Any] | None = snapshot.tokens_json.get("_file_structure")
+            if cached is not None:
+                pages_cached = cast(
+                    list[dict[str, Any]],
+                    [p for p in cached.get("pages", []) if isinstance(p, dict)],
+                )
                 return DesignFileStructure(
                     file_name=str(cached.get("file_name", "")),
-                    pages=[
-                        self._cached_dict_to_node(p)
-                        for p in cached.get("pages", [])
-                        if isinstance(p, dict)
-                    ],
+                    pages=[self._cached_dict_to_node(p) for p in pages_cached],
                 )
         return await provider.get_file_structure(file_ref, access_token, depth=depth)
 
@@ -1554,15 +1586,15 @@ class DesignSyncService:
             node_type = DesignNodeType.OTHER
 
         raw_fw = data.get("font_weight")
+        children_data = cast(
+            list[dict[str, Any]],
+            [c for c in data.get("children", []) if isinstance(c, dict)],
+        )
         return DesignNode(
             id=str(data.get("id", "")),
             name=str(data.get("name", "")),
             type=node_type,
-            children=[
-                self._cached_dict_to_node(c)
-                for c in data.get("children", [])
-                if isinstance(c, dict)
-            ],
+            children=[self._cached_dict_to_node(c) for c in children_data],
             width=data.get("width"),
             height=data.get("height"),
             x=data.get("x"),
