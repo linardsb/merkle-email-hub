@@ -76,3 +76,31 @@ Add `AUTH_SECRET: test-secret-for-ci` to the `e2e-smoke` job env block in `.gith
 
 - CI re-run reaches per-test results (pass or fail) instead of the `MissingSecret` flood.
 - No `MissingSecret` in the `[WebServer]` lines.
+
+---
+
+## Phase 3 — Visibility for hanging tests
+
+### Symptom (CI run `24884087946`)
+
+With `AUTH_SECRET` in place, no more `MissingSecret`. Playwright printed `Running 8 tests using 1 worker` at `10:14:12`, then produced **zero output** for 9 minutes until the job hit `timeout-minutes: 10` and was cancelled. `if: failure()` artifact step did not fire on cancellation, so no traces.
+
+### Root cause
+
+Only reporter configured was `html`, which writes nothing to stdout during the run. A hang is indistinguishable from slow progress. Workflow timeout of 10 min is tighter than the worst-case budget (setup + 8 tests × 3 retries × 30s).
+
+### Fix
+
+1. `playwright.config.ts`: in CI use both `list` (stdout progress) and `html` (trace/report) reporters.
+2. `.github/workflows/ci.yml`: bump e2e-smoke `timeout-minutes` 10 → 20; change artifact upload condition to `if: ${{ failure() || cancelled() }}` so we always get traces.
+
+### Verification
+
+- Next CI run prints per-test `[n/8] ✓ ...` or `✘ ...` lines.
+- If it hangs again, artifacts download and the trace viewer shows the hang location.
+
+---
+
+## Phase 4+ (deferred until Phase 3 gives visibility)
+
+Do not preemptively switch to `next build && next start`, bump per-test timeout, or tune retries. One change at a time; let the `list` reporter tell us what's actually wrong.

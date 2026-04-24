@@ -169,7 +169,7 @@ jobs:
   e2e-smoke:
     name: E2E Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     needs: [backend, frontend]
     services:
       postgres:
@@ -281,7 +281,7 @@ jobs:
         run: cd cms && pnpm --filter web e2e:smoke
 
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         with:
           name: playwright-traces
           path: |
