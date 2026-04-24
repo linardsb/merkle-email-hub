@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+from typing import Any
 from unittest.mock import AsyncMock
 
 from app.qa_engine.schemas import QACheckResult, QAResultResponse
@@ -10,9 +11,9 @@ from app.reporting.report_builder import ReportBuilder, _date_slug
 from app.reporting.schemas import ApprovalPackageRequest, QAReportRequest
 
 
-def _make_qa_result(**overrides: object) -> QAResultResponse:
+def _make_qa_result(**overrides: Any) -> QAResultResponse:
     """Factory for QAResultResponse test data."""
-    defaults: dict[str, object] = {
+    defaults: dict[str, Any] = {
         "id": 42,
         "build_id": 100,
         "template_version_id": None,

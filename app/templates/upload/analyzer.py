@@ -42,16 +42,16 @@ class SlotInfo:
 class TokenInfo:
     """Raw extracted token data from inline styles."""
 
-    colors: dict[str, list[str]] = field(default_factory=dict)
-    fonts: dict[str, list[str]] = field(default_factory=dict)
-    font_sizes: dict[str, list[str]] = field(default_factory=dict)
-    spacing: dict[str, list[str]] = field(default_factory=dict)
-    font_weights: dict[str, list[str]] = field(default_factory=dict)
-    line_heights: dict[str, list[str]] = field(default_factory=dict)
-    letter_spacings: dict[str, list[str]] = field(default_factory=dict)
-    color_roles: dict[str, list[str]] = field(default_factory=dict)
-    responsive: dict[str, dict[str, list[str]]] = field(default_factory=dict)
-    responsive_breakpoints: list[str] = field(default_factory=list)
+    colors: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    fonts: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    font_sizes: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    spacing: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    font_weights: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    line_heights: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    letter_spacings: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    color_roles: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    responsive: dict[str, dict[str, list[str]]] = field(default_factory=dict[str, dict[str, list[str]]])
+    responsive_breakpoints: list[str] = field(default_factory=list[str])
 
 
 @dataclass

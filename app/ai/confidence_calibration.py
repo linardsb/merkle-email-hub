@@ -10,6 +10,7 @@ Enabled via BLUEPRINT__CONFIDENCE_CALIBRATION_ENABLED=true (default: false).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -74,7 +75,7 @@ async def compute_calibration(
     # Build run_id → outcome map
     outcome_map: dict[str, bool] = {}
     for entry, _ in outcome_memories:
-        meta = entry.metadata_json or {}
+        meta: dict[str, Any] = entry.metadata_json or {}
         if meta.get("source") != "blueprint_outcome":
             continue
         run_id = meta.get("run_id", "")

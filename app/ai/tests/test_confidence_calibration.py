@@ -32,7 +32,7 @@ def test_apply_calibration_discounted() -> None:
         sample_count=20,
         effective_threshold=1.0,
     )
-    assert apply_calibration(0.8, cal) == pytest.approx(0.4)
+    assert apply_calibration(0.8, cal) == pytest.approx(0.4)  # pyright: ignore[reportUnknownMemberType]
 
 
 @pytest.mark.asyncio
@@ -57,7 +57,7 @@ async def test_compute_calibration_no_data() -> None:
 async def test_compute_calibration_overconfident_agent() -> None:
     """Agent reports 0.9 confidence but only 50% pass → discount < 1.0."""
     # Build handoff memories: 12 entries, all with confidence 0.9
-    handoff_entries = []
+    handoff_entries: list[tuple[MagicMock, float]] = []
     for i in range(12):
         entry = MagicMock()
         entry.metadata_json = {
@@ -69,7 +69,7 @@ async def test_compute_calibration_overconfident_agent() -> None:
         handoff_entries.append((entry, 0.8))
 
     # Build outcome memories: 6 passed, 6 failed
-    outcome_entries = []
+    outcome_entries: list[tuple[MagicMock, float]] = []
     for i in range(12):
         entry = MagicMock()
         entry.metadata_json = {
@@ -112,7 +112,7 @@ async def test_compute_calibration_overconfident_agent() -> None:
     assert result.sample_count == 12
     # discount = actual_pass_rate / avg_confidence = 0.5 / 0.9 ≈ 0.556
     assert result.discount < 1.0
-    assert result.discount == pytest.approx(0.5 / 0.9, abs=0.01)
+    assert result.discount == pytest.approx(0.5 / 0.9, abs=0.01)  # pyright: ignore[reportUnknownMemberType]
     # effective_threshold should be higher than base 0.5
     assert result.effective_threshold > 0.5
 
@@ -120,7 +120,7 @@ async def test_compute_calibration_overconfident_agent() -> None:
 @pytest.mark.asyncio
 async def test_compute_calibration_well_calibrated() -> None:
     """Agent with matching confidence and pass rate → discount ~1.0."""
-    handoff_entries = []
+    handoff_entries: list[tuple[MagicMock, float]] = []
     for i in range(12):
         entry = MagicMock()
         entry.metadata_json = {
@@ -131,7 +131,7 @@ async def test_compute_calibration_well_calibrated() -> None:
         entry.content = f"handoff {i}"
         handoff_entries.append((entry, 0.8))
 
-    outcome_entries = []
+    outcome_entries: list[tuple[MagicMock, float]] = []
     for i in range(12):
         entry = MagicMock()
         entry.metadata_json = {

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -83,9 +84,10 @@ async def test_slack_payload_format() -> None:
     with patch.object(httpx.AsyncClient, "post", side_effect=_capture_post):
         await channel.send(notification)
 
-    payload = captured_kwargs["json"]
-    assert isinstance(payload, dict)
-    blocks = payload["blocks"]
+    payload_raw = captured_kwargs["json"]
+    assert isinstance(payload_raw, dict)
+    payload = cast(dict[str, Any], payload_raw)
+    blocks = cast(list[dict[str, Any]], payload["blocks"])
     assert len(blocks) == 3
     assert blocks[0]["type"] == "header"
     assert "Build Failed" in blocks[0]["text"]["text"]
@@ -126,17 +128,18 @@ async def test_teams_adaptive_card_format() -> None:
     with patch.object(httpx.AsyncClient, "post", side_effect=_capture_post):
         await channel.send(notification)
 
-    payload = captured_kwargs["json"]
-    assert isinstance(payload, dict)
+    payload_raw = captured_kwargs["json"]
+    assert isinstance(payload_raw, dict)
+    payload = cast(dict[str, Any], payload_raw)
     assert payload["type"] == "message"
-    attachments = payload["attachments"]
+    attachments = cast(list[dict[str, Any]], payload["attachments"])
     assert len(attachments) == 1
-    card = attachments[0]["content"]
+    card = cast(dict[str, Any], attachments[0]["content"])
     assert card["type"] == "AdaptiveCard"
-    body = card["body"]
+    body = cast(list[dict[str, Any]], card["body"])
     assert body[0]["text"] == "QA Regression"
     # Should include project_id in facts
-    facts = body[2]["facts"]
+    facts = cast(list[dict[str, Any]], body[2]["facts"])
     fact_titles = [f["title"] for f in facts]
     assert "Project" in fact_titles
 

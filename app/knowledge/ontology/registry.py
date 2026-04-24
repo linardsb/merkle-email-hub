@@ -337,17 +337,19 @@ def load_ontology() -> OntologyRegistry:
 
     # Load manual overrides (take priority over sync data)
     overrides_path = _DATA_DIR / "overrides.yaml"
-    overrides: list[dict[str, str]] = []
+    overrides: list[dict[str, Any]] = []
     if overrides_path.exists():
         with overrides_path.open(encoding="utf-8") as f:
-            overrides_data = yaml.safe_load(f)
-        overrides = (overrides_data or {}).get("overrides", [])
+            overrides_data: dict[str, Any] = yaml.safe_load(f) or {}
+        overrides = cast(list[dict[str, Any]], overrides_data.get("overrides", []) or [])
 
     if overrides:
         property_ids = {p.id for p in properties}
         client_ids = {c.id for c in clients}
         support_list = list(support_entries)
-        override_keys = {(o["property_id"], o["client_id"]) for o in overrides}
+        override_keys = {
+            (str(o["property_id"]), str(o["client_id"])) for o in overrides
+        }
         # Remove entries that have overrides
         support_list = [
             e for e in support_list if (e.property_id, e.client_id) not in override_keys
