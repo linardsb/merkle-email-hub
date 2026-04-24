@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   BACKEND_URL,
   TEST_USER_EMAIL,
   TEST_USER_PASSWORD,
 } from "./fixtures/constants";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_STATE_PATH = path.join(__dirname, ".e2e-auth-state");
 
 async function waitForHealth(url: string, retries = 10, intervalMs = 2000) {

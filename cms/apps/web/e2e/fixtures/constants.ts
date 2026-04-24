@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const BACKEND_URL =
   process.env.BACKEND_URL || "http://localhost:8891";
 export const TEST_USER_EMAIL = "admin@email-hub.dev";
 export const TEST_USER_PASSWORD = "admin";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_STATE_PATH = path.join(__dirname, "..", ".e2e-auth-state");
 
 interface AuthState {

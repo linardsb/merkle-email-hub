@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { BACKEND_URL } from "./fixtures/constants";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_STATE_PATH = path.join(__dirname, ".e2e-auth-state");
 
 async function globalTeardown() {
