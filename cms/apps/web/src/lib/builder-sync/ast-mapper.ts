@@ -138,6 +138,9 @@ export function internalizeStructuralEsp(html: string, tokenMap: EspTokenMap): s
     // Parse the match to extract branches
     // Simpler approach: find all <tr>...</tr> blocks and their preceding tokens
     const branches: Array<{ token: string | null; trHtml: string }> = [];
+    // phAll is a |-joined list of escapeRegex'd internal placeholders ("__ESP_N__",
+    // see line 37). trPattern is a fixed string literal. No user input reaches this regex.
+    // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
     const branchPattern = new RegExp(`(?:(${phAll})\\s*)?(${trPattern})`, "gi");
     // Skip the open token — it's captured as group 1 of fullPattern
     let branchMatch;
