@@ -57,6 +57,11 @@ dependencies = [
 # Transitives pulled via the `graph` optional-extra (cognee). Pinned to
 # patched versions matching open Dependabot security advisories.
 constraint-dependencies = [
+    # litellm is held at 1.83.0 deliberately. Bumping to 1.83.7+ (which patches
+    # GHSA-r75f-5x8p-qvmc + GHSA-xqmj-j6mv-4862) forces python-dotenv==1.0.1,
+    # re-introducing GHSA-xx5x-9xc9-rrqr (symlink follow). Both litellm CVEs
+    # are LiteLLM Proxy-only endpoints; we use litellm as an SDK via cognee
+    # only. See docs/dependabot-status.md.
     "litellm>=1.83.0",
     "onnx>=1.21.0",
     "pypdf>=6.10.2",
