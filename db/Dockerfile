@@ -1,4 +1,4 @@
-FROM pgvector/pgvector:pg16
+FROM pgvector/pgvector:pg16@sha256:7d400e340efb42f4d8c9c12c6427adb253f726881a9985d2a471bf0eed824dff
 
 # pgvector is pre-installed in this image
 # PostGIS can be added if spatial queries are needed:

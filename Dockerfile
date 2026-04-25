@@ -3,7 +3,7 @@
 # Multi-stage build for optimized production image
 
 # Stage 1: Builder - Install dependencies
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58 AS builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ RUN uv sync --locked --no-editable --no-dev
 RUN find /app/.venv/bin -type f -exec sed -i '1s|^#!.*python.*$|#!/app/.venv/bin/python|' {} + 2>/dev/null || true
 
 # Stage 2: Runtime - Minimal production image
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-bookworm@sha256:58525e1a8dada8e72d6f8a11a0ddff8d981fd888549108db52455d577f927f77
 
 # SECURITY: Create non-root user
 RUN groupadd --gid 1001 appuser && \

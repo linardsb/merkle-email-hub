@@ -1,0 +1,8 @@
+# Trivy CVE suppression list
+#
+# Format: one CVE per line. Add `# expires:YYYY-MM-DD` and a justification.
+# Mirror entries into docs/dependency-debt.md (Trivy table) so the
+# rationale survives lint of this file.
+#
+# Populated as Phase 2 §2.1 first scan triages base-image findings.
+# Empty until first scan run.

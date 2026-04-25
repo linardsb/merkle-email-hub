@@ -86,6 +86,7 @@ dev = [
     "types-lxml>=2026.2",
     "hypothesis>=6.100",
     "playwright>=1.40",
+    "mutmut>=3.0",
 ]
 
 [tool.ruff]
@@ -293,6 +294,22 @@ markers = [
     "collab: CRDT collaboration tests (run with: make test-collab)",
     "snapshot: Snapshot regression tests — runs in make test/check CI gate (standalone: make snapshot-test)",
 ]
+
+# Mutation testing — Phase 2 §2.3 (option B: qa_engine + connectors).
+# Tight seed (2 files) per advisor: full-dir mutation against ~600 tests
+# exceeds the 6h GitHub Actions job limit. Expand `paths_to_mutate` to add
+# more files once each new entry's first run completes within budget.
+# Invoked via `make mutate` and the monthly .github/workflows/mutmut.yml job.
+# Schema reference: mutmut 3.x reads tool.mutmut from pyproject.toml; keys
+# follow load_config() in mutmut/__main__.py. paths_to_mutate / tests_dir are
+# lists; pytest flags pass through pytest_add_cli_args (not a `runner` key).
+[tool.mutmut]
+paths_to_mutate = [
+    "app/qa_engine/checks/html_validation.py",
+    "app/connectors/sync_protocol.py",
+]
+tests_dir = ["app/qa_engine/tests/", "app/connectors/tests/"]
+pytest_add_cli_args = ["-x", "-q", "-m", "not integration"]
 
 [tool.pyright]
 include = ["app"]

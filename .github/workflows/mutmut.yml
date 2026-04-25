@@ -1,0 +1,47 @@
+name: Mutation testing (monthly)
+
+on:
+  schedule:
+    # First of each month at 06:00 UTC.
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutmut:
+    name: mutmut run (qa_engine + connectors seed)
+    runs-on: ubuntu-latest
+    # GitHub Actions free-tier hard cap is 6h. The seed of 2 files (configured
+    # in pyproject.toml [tool.mutmut]) was chosen to fit comfortably under
+    # this. Expansion to more files goes through `paths_to_mutate` in
+    # pyproject.toml; if a future config exceeds budget, escalate to a
+    # self-hosted runner before raising this.
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run mutmut
+        run: uv run mutmut run
+
+      - name: Mutmut results
+        if: always()
+        run: uv run mutmut results
+
+      - name: Upload mutation cache
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutmut-cache
+          path: .mutmut-cache
+          if-no-files-found: ignore
