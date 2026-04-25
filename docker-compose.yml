@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (run 'make bootstrap' to generate .env)}
       POSTGRES_DB: ${POSTGRES_DB:-email_hub}
     ports:
       - "5434:5432"
@@ -35,13 +35,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-devpassword}", "--appendonly", "yes", "--save", "60", "1"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required (run 'make bootstrap' to generate .env)}", "--appendonly", "yes", "--save", "60", "1"]
     ports:
       - "6380:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD:-devpassword}\" ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD:?REDIS_PASSWORD is required}\" ping"]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -70,7 +70,7 @@ services:
       - path: .env
         required: false
     environment:
-      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-email_hub}
+      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:-email_hub}
     depends_on:
       db:
         condition: service_healthy
@@ -100,11 +100,11 @@ services:
       - PYTHONUNBUFFERED=1
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-email_hub}
-      - REDIS__URL=redis://:${REDIS_PASSWORD:-devpassword}@redis:6379/0
+      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:-email_hub}
+      - REDIS__URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
       - MAIZZLE_BUILDER_URL=http://maizzle-builder:3001
       - AUTH__JWT_SECRET_KEY=${AUTH__JWT_SECRET_KEY}
-      - AUTH__DEMO_USER_PASSWORD=${AUTH__DEMO_USER_PASSWORD:-admin}
+      - AUTH__DEMO_USER_PASSWORD=${AUTH__DEMO_USER_PASSWORD:?AUTH__DEMO_USER_PASSWORD is required (run 'make bootstrap' to generate .env)}
       - AI__PROVIDER=${AI__PROVIDER:-anthropic}
       - AI__API_KEY=${AI__API_KEY}
       - AI__MODEL=${AI__MODEL:-claude-sonnet-4-20250514}

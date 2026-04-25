@@ -1,11 +1,29 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana lint-polling help
+.PHONY: bootstrap check-env dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana lint-polling help
 
 # === Local Development ===
+
+bootstrap: ## Create .env with random dev secrets if missing (idempotent)
+	@if [ ! -f .env ]; then \
+		echo "Generating .env from .env.example with random dev secrets..."; \
+		cp .env.example .env; \
+		sed -i.bak "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$$(openssl rand -base64 24 | tr -d '/+=')|" .env; \
+		sed -i.bak "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=$$(openssl rand -base64 24 | tr -d '/+=')|" .env; \
+		sed -i.bak "s|^AUTH__JWT_SECRET_KEY=.*|AUTH__JWT_SECRET_KEY=$$(openssl rand -base64 48 | tr -d '/+=')|" .env; \
+		sed -i.bak "s|^AUTH__DEMO_USER_PASSWORD=.*|AUTH__DEMO_USER_PASSWORD=dev-$$(openssl rand -hex 8)|" .env; \
+		sed -i.bak "s|^AUTH_SECRET=.*|AUTH_SECRET=$$(openssl rand -base64 32 | tr -d '/+=')|" .env; \
+		rm -f .env.bak; \
+		echo ".env created. Confirm it is gitignored before committing."; \
+	else \
+		echo ".env already exists, skipping bootstrap."; \
+	fi
+
+check-env: ## Verify .env.example documents every required docker-compose var
+	@bash scripts/check-env-example.sh
 
 up: ## Bootstrap dev env after restart (Docker + DB + migrations + seed)
 	@./scripts/startup.sh
 
-dev: ## Start backend + frontend in parallel
+dev: bootstrap ## Start backend + frontend in parallel
 	@echo "Syncing ontology to sidecar..."
 	@cd services/maizzle-builder && npm run sync-ontology 2>/dev/null || echo "Ontology sync skipped (run npm install in services/maizzle-builder first)"
 	@echo "Starting backend on :8891 and frontend on :3100..."
