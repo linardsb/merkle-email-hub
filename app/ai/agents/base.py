@@ -13,6 +13,7 @@ Pydantic schema.  Concrete subclasses narrow the types in their overrides.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 import uuid
@@ -22,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
 
+from app.ai.agents.audit import hash_input, log_agent_decision
 from app.ai.blueprints.protocols import AgentHandoff, HandoffStatus
 from app.ai.exceptions import AIExecutionError
 from app.ai.fallback import call_with_fallback
@@ -29,8 +31,11 @@ from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import TaskTier, get_fallback_chain, resolve_model
 from app.ai.sanitize import sanitize_prompt, validate_output
+from app.ai.security.prompt_guard import scan_for_injection
 from app.ai.shared import extract_confidence, extract_html, sanitize_html_xss
+from app.ai.token_budget import TokenBudgetManager
 from app.core.config import get_settings
+from app.core.exceptions import ServiceUnavailableError
 from app.core.logging import get_logger
 from app.qa_engine.checks import ALL_CHECKS
 from app.qa_engine.schemas import QACheckResult
@@ -215,6 +220,52 @@ class BaseAgentService:
         """
         raise NotImplementedError(f"{self.agent_name} does not support structured output mode")
 
+    def _secure_user_message(self, raw: str) -> str:
+        """Pre-LLM defense: scan for prompt injection then wrap in delimiter.
+
+        - Mode "block" raises ``PromptInjectionError`` (422) before the LLM call.
+        - Mode "strip" returns sanitized text with flagged spans removed.
+        - Mode "warn" logs but passes the original text through.
+
+        The wrapper tag ``<USER_INPUT>`` is the structural boundary that
+        agent system prompts reference: LLMs are told to treat anything
+        inside as untrusted data, never instructions.
+        """
+        settings = get_settings()
+        text = raw
+        if settings.security.prompt_guard_enabled:
+            scan = scan_for_injection(text, mode=settings.security.prompt_guard_mode)
+            if scan.sanitized is not None:
+                text = scan.sanitized
+        return f"<USER_INPUT agent={self.agent_name!r}>\n{text}\n</USER_INPUT>"
+
+    def _enforce_token_cap(self, messages: list[Message], model: str) -> int:
+        """Return estimated input tokens; raise if input + response exceeds cap.
+
+        ``settings.security.agent_max_total_tokens`` is the per-run hard
+        ceiling. ``self.max_tokens`` is the LLM response cap. Sum must not
+        exceed the configured ceiling — otherwise the call is short-circuited
+        with 503 (defense-in-depth on top of provider context limits).
+        """
+        cap = get_settings().security.agent_max_total_tokens
+        budget = TokenBudgetManager(model=model)
+        estimate = budget.estimate_tokens(messages)
+        projected = estimate.total_tokens + self.max_tokens
+        if projected > cap:
+            logger.warning(
+                "ai.agent_token_cap_exceeded",
+                agent=self.agent_name,
+                model=model,
+                input_tokens=estimate.total_tokens,
+                response_cap=self.max_tokens,
+                projected=projected,
+                limit=cap,
+            )
+            raise ServiceUnavailableError(
+                f"Agent '{self.agent_name}' exceeds token cap ({projected} > {cap})"
+            )
+        return estimate.total_tokens
+
     async def process(
         self,
         request: Any,
@@ -222,22 +273,80 @@ class BaseAgentService:
     ) -> Any:
         """Execute the full agent pipeline (non-streaming).
 
-        Routes to structured pipeline when output_mode="structured" and supported.
+        Wraps ``_process_impl`` with the per-run security envelope:
+          1. Kill switch (``SECURITY__DISABLED_AGENTS``) → 503
+          2. Wall-clock timeout (``SECURITY__AGENT_MAX_RUN_SECONDS``) → 503
+          3. Audit log (``ai.agent_decision``) on every exit path
+        """
+        settings = get_settings()
+        started_at = time.monotonic()
 
-        Args:
-            request: Agent-specific request object.
-            context_blocks: Optional multimodal content blocks (images, audio)
-                to include alongside the text user message.
+        telemetry: dict[str, Any] = {
+            "agent": self.agent_name,
+            "user_id": getattr(request, "user_id", None),
+            "blueprint_run_id": getattr(request, "blueprint_run_id", None),
+            "model": "",
+            "prompt_version": getattr(request, "prompt_version", None),
+            "input_hash": "",
+            "output_summary": "",
+            "tokens_in": 0,
+            "tokens_out": 0,
+        }
+
+        # G3 — Kill switch: short-circuit before any work.
+        if self.agent_name in settings.security.disabled_agents:
+            logger.warning("ai.agent_disabled", agent=self.agent_name)
+            log_agent_decision(**telemetry, duration_ms=0, decision="disabled")
+            raise ServiceUnavailableError(f"Agent '{self.agent_name}' is disabled")
+
+        decision = "ok"
+        try:
+            return await asyncio.wait_for(
+                self._process_impl(request, context_blocks, telemetry),
+                timeout=settings.security.agent_max_run_seconds,
+            )
+        except TimeoutError as exc:
+            decision = "timeout"
+            logger.warning(
+                "ai.agent_timeout",
+                agent=self.agent_name,
+                limit_s=settings.security.agent_max_run_seconds,
+            )
+            raise ServiceUnavailableError(
+                f"Agent '{self.agent_name}' timed out after "
+                f"{settings.security.agent_max_run_seconds}s"
+            ) from exc
+        except Exception:
+            if decision == "ok":
+                decision = "error"
+            raise
+        finally:
+            duration_ms = int((time.monotonic() - started_at) * 1000)
+            log_agent_decision(**telemetry, duration_ms=duration_ms, decision=decision)
+
+    async def _process_impl(
+        self,
+        request: Any,
+        context_blocks: list[ContentBlock] | None,
+        telemetry: dict[str, Any],
+    ) -> Any:
+        """Inner pipeline (no security envelope).
+
+        Routes to structured pipeline when output_mode="structured" and supported.
 
         Steps:
         1. Resolve model from tier
         2. Detect skills + build system prompt
-        3. Build user message + sanitize
-        4. Call LLM
-        5. Post-process output
-        6. Extract confidence
-        7. Run QA checks (if enabled)
-        8. Build and return response
+        3. Build user message → injection scan + delimiter wrap
+        4. Token cap check
+        5. Call LLM
+        6. Post-process output
+        7. Extract confidence
+        8. Run QA checks (if enabled)
+        9. Build and return response
+
+        ``telemetry`` is mutated in-place so the outer ``process`` wrapper can
+        emit a single ``ai.agent_decision`` audit line in its finally block.
         """
         output_mode = self._get_output_mode(request)
         if output_mode == "structured" and self._output_mode_supported:
@@ -249,6 +358,7 @@ class BaseAgentService:
         effective_tier = getattr(request, "effective_tier", None) or base_tier
         model = resolve_model(effective_tier)
         model_id = f"{provider_name}:{model}"
+        telemetry["model"] = model_id
 
         # Progressive disclosure — load only relevant skill files
         relevant_skills = self._detect_skills_from_request(request)
@@ -258,13 +368,20 @@ class BaseAgentService:
         )
         system_prompt += CONFIDENCE_INSTRUCTION
 
+        # G1 + G2 — scan for injection, then wrap in <USER_INPUT> delimiter.
+        raw_user_message = self._build_user_message(request)
+        telemetry["input_hash"] = hash_input(raw_user_message)
+        user_message = self._secure_user_message(raw_user_message)
+
         # Build messages (multimodal-aware)
-        user_message = self._build_user_message(request)
         messages = self._build_multimodal_messages(
             system_prompt=system_prompt,
             user_text=user_message,
             context_blocks=context_blocks,
         )
+
+        # G4 — token cap (defense-in-depth on top of provider context).
+        telemetry["tokens_in"] = self._enforce_token_cap(messages, model)
 
         logger.info(
             f"agents.{self.agent_name}.process_started",
@@ -302,6 +419,12 @@ class BaseAgentService:
         raw_content = validate_output(result.content)
         confidence = extract_confidence(raw_content)
         html = self._post_process(raw_content)
+
+        usage = result.usage or {}
+        telemetry["tokens_out"] = int(
+            usage.get("output_tokens") or usage.get("completion_tokens") or 0
+        )
+        telemetry["output_summary"] = raw_content[:200]
 
         logger.info(
             f"agents.{self.agent_name}.process_completed",
@@ -359,8 +482,16 @@ class BaseAgentService:
         """Stream agent output as SSE-formatted chunks.
 
         QA is skipped in streaming mode (requires complete output).
+        Streaming honours the kill switch + injection scan + delimiter wrap;
+        wall-clock timeout is delegated to ``ai.stream_timeout_seconds``.
         """
         settings = get_settings()
+
+        # G3 — Kill switch
+        if self.agent_name in settings.security.disabled_agents:
+            logger.warning("ai.agent_disabled", agent=self.agent_name, mode="stream")
+            raise ServiceUnavailableError(f"Agent '{self.agent_name}' is disabled")
+
         provider_name = settings.ai.provider
         model = resolve_model(self._get_model_tier(request))
         model_id = f"{provider_name}:{model}"
@@ -374,12 +505,16 @@ class BaseAgentService:
         )
         system_prompt += CONFIDENCE_INSTRUCTION
 
-        user_message = self._build_user_message(request)
+        # G1 + G2 — scan + wrap user message before LLM
+        user_message = self._secure_user_message(self._build_user_message(request))
         messages = self._build_multimodal_messages(
             system_prompt=system_prompt,
             user_text=user_message,
             context_blocks=context_blocks,
         )
+
+        # G4 — token cap (input pre-check; streaming has no per-call response cap)
+        self._enforce_token_cap(messages, model)
 
         logger.info(
             f"agents.{self.agent_name}.stream_started",

@@ -12,6 +12,7 @@ from app.ai.agents.content.service import (
     extract_content,
 )
 from app.ai.agents.skill_loader import parse_skill_meta
+from app.ai.agents.tests.conftest import configure_mock_security
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import CompletionResponse
 
@@ -149,6 +150,7 @@ class TestContentService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             response = await service.generate(request)
@@ -178,6 +180,7 @@ class TestContentService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             response = await service.generate(request)
@@ -202,6 +205,7 @@ class TestContentService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             await service.generate(request)
@@ -227,6 +231,7 @@ class TestContentService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             await service.generate(request)
@@ -255,6 +260,7 @@ class TestContentService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = spam_provider
 
             response = await service.generate(request)
@@ -279,6 +285,7 @@ class TestContentService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = failing_provider
 
             with pytest.raises(AIExecutionError, match="content processing failed"):
@@ -301,6 +308,7 @@ class TestContentService:
             ) as mock_resolve,
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             await service.generate(request)
@@ -328,6 +336,7 @@ class TestContentService:
             patch("app.ai.agents.base.resolve_model", return_value="light-model") as mock_resolve,
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             await service.generate(request)
@@ -575,6 +584,7 @@ class TestContentServiceLengthGuardrails:
             patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = provider
             mock_retry_settings.return_value.ai.provider = "test"
             mock_retry_registry.return_value.get_llm.return_value = provider
@@ -620,6 +630,7 @@ class TestContentServiceLengthGuardrails:
             patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = provider
             mock_retry_settings.return_value.ai.provider = "test"
             mock_retry_registry.return_value.get_llm.return_value = provider
@@ -651,6 +662,7 @@ class TestContentServiceLengthGuardrails:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = provider
 
             response = await service.generate(request)
@@ -680,6 +692,7 @@ class TestContentServiceLengthGuardrails:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = provider
 
             response = await service.generate(request)
@@ -716,6 +729,7 @@ class TestContentServiceLengthGuardrails:
             patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = initial_provider
             mock_retry_settings.return_value.ai.provider = "test"
             mock_retry_registry.return_value.get_llm.return_value = retry_provider

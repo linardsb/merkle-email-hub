@@ -13,6 +13,7 @@ from app.ai.agents.outlook_fixer.schemas import (
     OutlookFixerResponse,
 )
 from app.ai.agents.outlook_fixer.service import OutlookFixerService
+from app.ai.agents.tests.conftest import configure_mock_security
 from app.ai.protocols import CompletionResponse
 from app.qa_engine.mso_parser import validate_mso_conditionals
 
@@ -141,6 +142,7 @@ class TestOutlookFixerServiceMsoValidation:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
             response = await service.process(request)
 
@@ -171,6 +173,7 @@ class TestOutlookFixerServiceMsoValidation:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
             response = await service.process(request)
 

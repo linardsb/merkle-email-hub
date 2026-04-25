@@ -7,6 +7,7 @@ import pytest
 from app.ai.agents.scaffolder.prompt import SKILL_FILES, detect_relevant_skills
 from app.ai.agents.scaffolder.schemas import ScaffolderRequest
 from app.ai.agents.scaffolder.service import ScaffolderService
+from app.ai.agents.tests.conftest import configure_mock_security
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import CompletionResponse
 from app.ai.shared import extract_html, sanitize_html_xss
@@ -159,6 +160,7 @@ class TestScaffolderService:
             patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             response = await service.generate(request)
@@ -183,6 +185,7 @@ class TestScaffolderService:
             patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             response = await service.generate(request)
@@ -213,6 +216,7 @@ class TestScaffolderService:
             patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = xss_provider
 
             response = await service.generate(request)
@@ -233,6 +237,7 @@ class TestScaffolderService:
             patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = failing_provider
 
             with pytest.raises(AIExecutionError, match="scaffolder processing failed"):
@@ -286,6 +291,7 @@ class TestMSOFirstGeneration:
             patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             response = await service.generate(request)
@@ -318,6 +324,7 @@ class TestMSOFirstGeneration:
             patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = bad_mso_provider
 
             response = await service.generate(request)

@@ -23,6 +23,7 @@ from app.ai.agents.code_reviewer.service import (
     _extract_issues,
     _extract_json_from_fence,
 )
+from app.ai.agents.tests.conftest import configure_mock_security
 
 # ── Fixtures ──
 
@@ -583,6 +584,7 @@ class TestServiceIntegration:
             ),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_settings.return_value.ai.model = "test-model"
 
             service = CodeReviewService()
@@ -603,6 +605,7 @@ class TestServiceIntegration:
             patch("app.ai.agents.code_reviewer.service.get_registry") as mock_registry,
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.side_effect = Exception("LLM failed")
 
             result = await service._retry_non_actionable("retry prompt")

@@ -7,6 +7,7 @@ import pytest
 from app.ai.agents.dark_mode.meta_injector import inject_missing_meta_tags
 from app.ai.agents.dark_mode.schemas import DarkModeRequest
 from app.ai.agents.dark_mode.service import DarkModeService
+from app.ai.agents.tests.conftest import configure_mock_security
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import CompletionResponse
 from app.ai.shared import extract_html, sanitize_html_xss
@@ -200,6 +201,7 @@ class TestDarkModeService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             response = await service.process(request)
@@ -227,6 +229,7 @@ class TestDarkModeService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             response = await service.process(request)
@@ -253,6 +256,7 @@ class TestDarkModeService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             await service.process(request)
@@ -278,6 +282,7 @@ class TestDarkModeService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             await service.process(request)
@@ -312,6 +317,7 @@ class TestDarkModeService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = xss_provider
 
             response = await service.process(request)
@@ -334,6 +340,7 @@ class TestDarkModeService:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = failing_provider
 
             with pytest.raises(AIExecutionError, match="dark_mode processing failed"):
@@ -355,6 +362,7 @@ class TestDarkModeService:
             ) as mock_resolve,
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = mock_provider
 
             await service.process(request)
@@ -479,6 +487,7 @@ class TestMetaTagInjection:
             patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
+            configure_mock_security(mock_settings)
             mock_registry.return_value.get_llm.return_value = provider
             response = await service.process(request)
 
