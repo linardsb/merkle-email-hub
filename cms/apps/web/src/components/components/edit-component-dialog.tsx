@@ -29,11 +29,7 @@ interface EditComponentDialogProps {
   component: ComponentResponse;
 }
 
-export function EditComponentDialog({
-  open,
-  onOpenChange,
-  component,
-}: EditComponentDialogProps) {
+export function EditComponentDialog({ open, onOpenChange, component }: EditComponentDialogProps) {
   const { trigger, isMutating } = useUpdateComponent(component.id);
   const { mutate } = useSWRConfig();
 
@@ -63,10 +59,9 @@ export function EditComponentDialog({
         category,
       });
       await mutate(
-        (key: unknown) =>
-          typeof key === "string" && key.startsWith("/api/v1/components"),
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/components"),
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       );
       toast.success("Component updated");
       onOpenChange(false);
@@ -86,16 +81,14 @@ export function EditComponentDialog({
       <DialogContent className="max-w-[28rem]">
         <DialogHeader>
           <DialogTitle>{"Edit Component"}</DialogTitle>
-          <DialogDescription>
-            {"Update component metadata."}
-          </DialogDescription>
+          <DialogDescription>{"Update component metadata."}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <label
               htmlFor="edit-comp-name"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Name"}
             </label>
@@ -113,7 +106,7 @@ export function EditComponentDialog({
           <div>
             <label
               htmlFor="edit-comp-desc"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Description"}
             </label>
@@ -130,7 +123,7 @@ export function EditComponentDialog({
           <div>
             <label
               htmlFor="edit-comp-cat"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Category"}
             </label>
@@ -154,7 +147,7 @@ export function EditComponentDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -162,7 +155,7 @@ export function EditComponentDialog({
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

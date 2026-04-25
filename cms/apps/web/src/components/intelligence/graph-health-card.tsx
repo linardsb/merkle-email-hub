@@ -8,24 +8,20 @@ export function GraphHealthCard() {
   const { data, isLoading } = useGraphHealth();
 
   if (isLoading) {
-    return <Skeleton className="h-24 rounded-lg border border-card-border" />;
+    return <Skeleton className="border-card-border h-24 rounded-lg border" />;
   }
 
   const healthy = data?.healthy ?? false;
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-6">
+    <div className="border-card-border bg-card-bg rounded-lg border p-6">
       <div className="flex items-center gap-2">
-        <Network className="h-4 w-4 text-foreground-muted" />
-        <p className="text-sm font-medium text-foreground-muted">
-          {"Knowledge Graph"}
-        </p>
+        <Network className="text-foreground-muted h-4 w-4" />
+        <p className="text-foreground-muted text-sm font-medium">{"Knowledge Graph"}</p>
       </div>
       <div className="mt-2 flex items-center gap-2">
         <div
-          className={`h-3 w-3 rounded-full ${
-            healthy ? "bg-status-success" : "bg-status-danger"
-          }`}
+          className={`h-3 w-3 rounded-full ${healthy ? "bg-status-success" : "bg-status-danger"}`}
         />
         <p
           className={`text-lg font-semibold ${
@@ -35,7 +31,7 @@ export function GraphHealthCard() {
           {healthy ? "Online" : "Offline"}
         </p>
       </div>
-      <p className="mt-1 text-xs text-foreground-muted">
+      <p className="text-foreground-muted mt-1 text-xs">
         {"Cognee knowledge graph connectivity status"}
       </p>
     </div>

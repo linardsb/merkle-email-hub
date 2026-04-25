@@ -41,24 +41,24 @@ export function BrandForbiddenPatterns({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{"Forbidden Patterns"}</h3>
+      <h3 className="text-foreground text-sm font-medium">{"Forbidden Patterns"}</h3>
 
       {/* Existing patterns */}
       <div className="space-y-2">
         {patterns.map((p) => (
           <div
             key={p.id}
-            className="flex items-start gap-2 rounded-md border border-card-border bg-card-bg px-3 py-2"
+            className="border-card-border bg-card-bg flex items-start gap-2 rounded-md border px-3 py-2"
           >
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-mono text-foreground">{p.pattern}</p>
-              <p className="mt-0.5 text-xs text-foreground-muted">{p.description}</p>
+              <p className="text-foreground font-mono text-xs">{p.pattern}</p>
+              <p className="text-foreground-muted mt-0.5 text-xs">{p.description}</p>
             </div>
             {!disabled && (
               <button
                 type="button"
                 onClick={() => handleRemove(p.id)}
-                className="mt-0.5 text-foreground-muted transition-colors hover:text-status-danger"
+                className="text-foreground-muted hover:text-status-danger mt-0.5 transition-colors"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -91,7 +91,7 @@ export function BrandForbiddenPatterns({
               type="button"
               onClick={handleAdd}
               disabled={!newPattern.trim() || !newDesc.trim()}
-              className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+              className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
             >
               <Plus className="h-3 w-3" />
               {"Add"}

@@ -23,10 +23,7 @@ function pushHistory(state: BuilderState): HistoryEntry[] {
   return newHistory;
 }
 
-function builderReducer(
-  state: BuilderState,
-  action: BuilderAction
-): BuilderState {
+function builderReducer(state: BuilderState, action: BuilderAction): BuilderState {
   switch (action.type) {
     case "ADD_SECTION": {
       const history = pushHistory(state);
@@ -42,13 +39,9 @@ function builderReducer(
     }
     case "REMOVE_SECTION": {
       const history = pushHistory(state);
-      const sections = state.sections.filter(
-        (s) => s.id !== action.sectionId
-      );
+      const sections = state.sections.filter((s) => s.id !== action.sectionId);
       const selectedSectionId =
-        state.selectedSectionId === action.sectionId
-          ? null
-          : state.selectedSectionId;
+        state.selectedSectionId === action.sectionId ? null : state.selectedSectionId;
       return {
         ...state,
         sections,
@@ -59,9 +52,7 @@ function builderReducer(
     }
     case "DUPLICATE_SECTION": {
       const history = pushHistory(state);
-      const idx = state.sections.findIndex(
-        (s) => s.id === action.sectionId
-      );
+      const idx = state.sections.findIndex((s) => s.id === action.sectionId);
       if (idx === -1) return state;
       const original = state.sections[idx]!;
       const cloned = structuredClone(original);
@@ -94,7 +85,7 @@ function builderReducer(
     case "UPDATE_SECTION": {
       const history = pushHistory(state);
       const sections = state.sections.map((s) =>
-        s.id === action.sectionId ? { ...s, ...action.updates } : s
+        s.id === action.sectionId ? { ...s, ...action.updates } : s,
       );
       return {
         ...state,
@@ -150,37 +141,32 @@ export function useBuilderState() {
   const addSection = useCallback(
     (section: BuilderSection, atIndex?: number) =>
       dispatch({ type: "ADD_SECTION", section, atIndex }),
-    []
+    [],
   );
   const removeSection = useCallback(
-    (sectionId: string) =>
-      dispatch({ type: "REMOVE_SECTION", sectionId }),
-    []
+    (sectionId: string) => dispatch({ type: "REMOVE_SECTION", sectionId }),
+    [],
   );
   const duplicateSection = useCallback(
-    (sectionId: string) =>
-      dispatch({ type: "DUPLICATE_SECTION", sectionId }),
-    []
+    (sectionId: string) => dispatch({ type: "DUPLICATE_SECTION", sectionId }),
+    [],
   );
   const moveSection = useCallback(
-    (fromIndex: number, toIndex: number) =>
-      dispatch({ type: "MOVE_SECTION", fromIndex, toIndex }),
-    []
+    (fromIndex: number, toIndex: number) => dispatch({ type: "MOVE_SECTION", fromIndex, toIndex }),
+    [],
   );
   const updateSection = useCallback(
     (sectionId: string, updates: Partial<BuilderSection>) =>
       dispatch({ type: "UPDATE_SECTION", sectionId, updates }),
-    []
+    [],
   );
   const selectSection = useCallback(
-    (sectionId: string | null) =>
-      dispatch({ type: "SELECT_SECTION", sectionId }),
-    []
+    (sectionId: string | null) => dispatch({ type: "SELECT_SECTION", sectionId }),
+    [],
   );
   const setSections = useCallback(
-    (sections: BuilderSection[]) =>
-      dispatch({ type: "SET_SECTIONS", sections }),
-    []
+    (sections: BuilderSection[]) => dispatch({ type: "SET_SECTIONS", sections }),
+    [],
   );
   const undo = useCallback(() => dispatch({ type: "UNDO" }), []);
   const redo = useCallback(() => dispatch({ type: "REDO" }), []);
@@ -316,7 +302,9 @@ function processSection(section: BuilderSection): string {
             const { src, alt } = JSON.parse(fill) as { src: string; alt: string };
             if (isSafeUri(src)) slotEl.setAttribute("src", src);
             slotEl.setAttribute("alt", alt ?? "");
-          } catch { /* leave as-is */ }
+          } catch {
+            /* leave as-is */
+          }
         } else {
           slotEl.innerHTML = DOMPurify.sanitize(fill);
         }
@@ -328,10 +316,7 @@ function processSection(section: BuilderSection): string {
   const tokenStyles = buildTokenStyles(section.tokenOverrides);
   if (tokenStyles) {
     const existing = root.getAttribute("style") ?? "";
-    root.setAttribute(
-      "style",
-      existing ? `${existing};${tokenStyles}` : tokenStyles
-    );
+    root.setAttribute("style", existing ? `${existing};${tokenStyles}` : tokenStyles);
   }
 
   // 4. Apply HTML attributes from AdvancedConfig (with security validation)
@@ -345,14 +330,9 @@ function processSection(section: BuilderSection): string {
 
   // 5. Apply custom CSS class (add to existing classes, don't replace)
   if (section.advanced.customCssClass) {
-    const safeClass = section.advanced.customCssClass.replace(
-      /[^a-zA-Z0-9_\-\s]/g,
-      ""
-    );
+    const safeClass = section.advanced.customCssClass.replace(/[^a-zA-Z0-9_\-\s]/g, "");
     if (safeClass) {
-      root.classList.add(
-        ...safeClass.split(/\s+/).filter(Boolean)
-      );
+      root.classList.add(...safeClass.split(/\s+/).filter(Boolean));
     }
   }
 
@@ -372,11 +352,15 @@ function buildResponsiveCss(sections: BuilderSection[]): string {
     const sel = `[data-section-id="${safeId}"]`;
 
     if (r.stackOnMobile) {
-      rules.push(`@media (max-width:480px) { ${sel} td { display:block !important; width:100% !important; } }`);
+      rules.push(
+        `@media (max-width:480px) { ${sel} td { display:block !important; width:100% !important; } }`,
+      );
       rules.push(`@media (max-width:480px) { ${sel} table { width:100% !important; } }`);
     }
     if (r.fullWidthImageOnMobile) {
-      rules.push(`@media (max-width:480px) { ${sel} img { width:100% !important; height:auto !important; } }`);
+      rules.push(
+        `@media (max-width:480px) { ${sel} img { width:100% !important; height:auto !important; } }`,
+      );
     }
     if (r.mobileFontSize) {
       const safeFontSize = sanitizeCssValue(r.mobileFontSize);
@@ -413,13 +397,9 @@ function buildDarkModeCss(sections: BuilderSection[]): string {
     const decls = entries
       .map(([prop, val]) => `${sanitizeCssProperty(prop)}:${sanitizeCssValue(val)}`)
       .join(";");
-    rules.push(
-      `@media (prefers-color-scheme:dark) { [data-section-id="${safeId}"] { ${decls} } }`
-    );
+    rules.push(`@media (prefers-color-scheme:dark) { [data-section-id="${safeId}"] { ${decls} } }`);
     // Outlook app targeting
-    rules.push(
-      `[data-ogsc] [data-section-id="${safeId}"] { ${decls} }`
-    );
+    rules.push(`[data-ogsc] [data-section-id="${safeId}"] { ${decls} }`);
   }
   return rules.length > 0 ? `<style>${rules.join("\n")}</style>` : "";
 }
@@ -450,7 +430,7 @@ function assembleDocument(
   processedSections: string[],
   sectionNames: string[],
   headStyles: string,
-  templateShell?: string
+  templateShell?: string,
 ): string {
   if (templateShell) {
     const parser = new DOMParser();
@@ -459,7 +439,7 @@ function assembleDocument(
     if (contentRoot) {
       // Remove existing content children
       const existingContent = Array.from(contentRoot.children).filter(
-        (el) => !["STYLE", "SCRIPT", "META", "LINK"].includes(el.tagName)
+        (el) => !["STYLE", "SCRIPT", "META", "LINK"].includes(el.tagName),
       );
       for (const child of existingContent) child.remove();
 
@@ -516,9 +496,7 @@ function assembleDocument(
       if (!/background(-color)?\s*:/i.test(bodyStyle)) {
         doc.body.setAttribute(
           "style",
-          bodyStyle
-            ? `${bodyStyle}; background-color:#ffffff;`
-            : "background-color:#ffffff;"
+          bodyStyle ? `${bodyStyle}; background-color:#ffffff;` : "background-color:#ffffff;",
         );
       }
 
@@ -572,7 +550,7 @@ ${sectionHtml}
  */
 export function useBuilderPreview(
   sections: BuilderSection[],
-  templateShell?: string
+  templateShell?: string,
 ): string | null {
   const assembled = useMemo(() => {
     if (sections.length === 0) return null;
@@ -589,9 +567,7 @@ export function useBuilderPreview(
       return html;
     });
 
-    const sectionNames = sections.map((s) =>
-      DOMPurify.sanitize(s.componentName)
-    );
+    const sectionNames = sections.map((s) => DOMPurify.sanitize(s.componentName));
 
     // Collect section-scoped CSS in <head> (not between <tr> elements)
     const scopedCssRules: string[] = [];
@@ -601,7 +577,10 @@ export function useBuilderPreview(
         // Strip dangerous at-rules before scoping
         const safeCss = s.css
           .replace(/@import\b[^;]*;/gi, "/* @import stripped */")
-          .replace(/@font-face\s*\{[^}]*src\s*:[^}]*url\s*\([^}]*\}[^}]*\}/gi, "/* @font-face with url stripped */");
+          .replace(
+            /@font-face\s*\{[^}]*src\s*:[^}]*url\s*\([^}]*\}[^}]*\}/gi,
+            "/* @font-face with url stripped */",
+          );
         // Scope section CSS with data-section-id selector
         scopedCssRules.push(
           safeCss
@@ -615,38 +594,33 @@ export function useBuilderPreview(
               if (trimmed.includes("{")) {
                 return line.replace(
                   /(?:^|(?<=\}))\s*([^{}]+)\{/g,
-                  ` [data-section-id="${safeId}"] $1{`
+                  ` [data-section-id="${safeId}"] $1{`,
                 );
               }
               return line;
             })
-            .join("\n")
+            .join("\n"),
         );
       }
     }
 
-    const sectionCss = scopedCssRules.length > 0
-      ? `<style>${scopedCssRules.join("\n")}</style>`
-      : "";
+    const sectionCss =
+      scopedCssRules.length > 0 ? `<style>${scopedCssRules.join("\n")}</style>` : "";
     const responsiveCss = buildResponsiveCss(sections);
     const darkModeCss = buildDarkModeCss(sections);
-    const headStyles = [sectionCss, responsiveCss, darkModeCss]
-      .filter(Boolean)
-      .join("\n");
+    const headStyles = [sectionCss, responsiveCss, darkModeCss].filter(Boolean).join("\n");
 
-    return assembleDocument(
-      processedSections,
-      sectionNames,
-      headStyles,
-      templateShell
-    );
+    return assembleDocument(processedSections, sectionNames, headStyles, templateShell);
   }, [sections, templateShell]);
 
   return assembled;
 }
 
 /** Creates default values for new BuilderSection fields */
-export function createSectionDefaults(): Pick<BuilderSection, "slotDefinitions" | "defaultTokens" | "responsive" | "advanced"> {
+export function createSectionDefaults(): Pick<
+  BuilderSection,
+  "slotDefinitions" | "defaultTokens" | "responsive" | "advanced"
+> {
   return {
     slotDefinitions: [],
     defaultTokens: null,

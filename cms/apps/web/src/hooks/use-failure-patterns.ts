@@ -2,10 +2,7 @@
 
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr-fetcher";
-import type {
-  FailurePatternListResponse,
-  FailurePatternStats,
-} from "@/types/failure-patterns";
+import type { FailurePatternListResponse, FailurePatternStats } from "@/types/failure-patterns";
 
 export function useFailurePatterns(options: {
   page?: number;

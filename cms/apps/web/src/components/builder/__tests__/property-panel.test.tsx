@@ -109,21 +109,13 @@ describe("PropertyPanel", () => {
 
   it("renders with custom component name", () => {
     render(
-      <PropertyPanel
-        {...defaultProps}
-        section={makeSection({ componentName: "Footer Links" })}
-      />,
+      <PropertyPanel {...defaultProps} section={makeSection({ componentName: "Footer Links" })} />,
     );
     expect(screen.getByText("Footer Links")).toBeInTheDocument();
   });
 
   it("renders with custom category", () => {
-    render(
-      <PropertyPanel
-        {...defaultProps}
-        section={makeSection({ category: "cta" })}
-      />,
-    );
+    render(<PropertyPanel {...defaultProps} section={makeSection({ category: "cta" })} />);
     expect(screen.getByText("cta")).toBeInTheDocument();
   });
 

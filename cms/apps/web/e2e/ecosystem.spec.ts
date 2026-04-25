@@ -1,14 +1,9 @@
 import { test, expect } from "./fixtures";
 
 test.describe("Ecosystem Dashboard", () => {
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "API-heavy flow — Chromium only"
-  );
+  test.skip(({ browserName }) => browserName !== "chromium", "API-heavy flow — Chromium only");
 
-  test("ecosystem page loads with stat cards", async ({
-    authenticatedPage: page,
-  }) => {
+  test("ecosystem page loads with stat cards", async ({ authenticatedPage: page }) => {
     await page.goto("/ecosystem");
     await expect(page.locator("main")).toBeVisible();
 
@@ -21,9 +16,7 @@ test.describe("Ecosystem Dashboard", () => {
     await expect(page.getByText(/penpot/i).first()).toBeVisible();
   });
 
-  test("quadrant cards with view-all links", async ({
-    authenticatedPage: page,
-  }) => {
+  test("quadrant cards with view-all links", async ({ authenticatedPage: page }) => {
     await page.goto("/ecosystem");
     await expect(page.locator("main")).toBeVisible();
 

@@ -15,25 +15,23 @@ export function SaveIndicator({ status }: SaveIndicatorProps) {
     <span className="flex items-center gap-1.5 text-xs">
       {status === "unsaved" && (
         <>
-          <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+          <span className="bg-destructive h-1.5 w-1.5 rounded-full" />
           <span className="text-muted-foreground">{"Unsaved changes"}</span>
         </>
       )}
       {status === "saving" && (
         <>
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
           <span className="text-muted-foreground">{"Saving..."}</span>
         </>
       )}
       {status === "saved" && (
         <>
-          <Check className="h-3 w-3 text-primary" />
+          <Check className="text-primary h-3 w-3" />
           <span className="text-muted-foreground">{"Saved"}</span>
         </>
       )}
-      {status === "error" && (
-        <span className="text-destructive">{"Failed to save"}</span>
-      )}
+      {status === "error" && <span className="text-destructive">{"Failed to save"}</span>}
     </span>
   );
 }

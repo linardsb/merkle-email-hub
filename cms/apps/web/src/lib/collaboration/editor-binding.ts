@@ -51,11 +51,7 @@ export function getDocumentContent(doc: Y.Doc, fieldName = "content"): string {
  * Initialize a Y.Doc with content (for first-time setup).
  * Only call this once when creating a new collaborative document.
  */
-export function initDocumentContent(
-  doc: Y.Doc,
-  content: string,
-  fieldName = "content",
-): void {
+export function initDocumentContent(doc: Y.Doc, content: string, fieldName = "content"): void {
   const ytext = doc.getText(fieldName);
   if (ytext.length === 0) {
     ytext.insert(0, content);

@@ -17,9 +17,7 @@ base.describe("Authentication", () => {
     await page.locator("#username").fill(TEST_USER_EMAIL);
     await page.locator("#password").fill("wrongpassword");
     await page.getByRole("button", { name: /sign in/i }).click();
-    await expect(
-      page.getByText(/invalid email or password/i)
-    ).toBeVisible();
+    await expect(page.getByText(/invalid email or password/i)).toBeVisible();
   });
 
   test("logout redirects to login", async ({ authenticatedPage: page }) => {

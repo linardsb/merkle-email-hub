@@ -8,10 +8,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BlockTree, LiquidBlock } from "@/types/liquid-builder";
 import { BlockNode } from "./block-node";
 
@@ -23,9 +20,7 @@ interface BlockCanvasProps {
 }
 
 export function BlockCanvas({ blocks, onMove, onUpdate, onRemove }: BlockCanvasProps) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -37,30 +32,20 @@ export function BlockCanvas({ blocks, onMove, onUpdate, onRemove }: BlockCanvasP
   if (blocks.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
-        <p className="text-sm text-muted-foreground">{"Add blocks from the palette to start building your Liquid template."}</p>
+        <p className="text-muted-foreground text-sm">
+          {"Add blocks from the palette to start building your Liquid template."}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="flex-1 overflow-y-auto p-3">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={blocks.map((b) => b.id)}
-          strategy={verticalListSortingStrategy}
-        >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
             {blocks.map((block) => (
-              <BlockNode
-                key={block.id}
-                block={block}
-                onUpdate={onUpdate}
-                onRemove={onRemove}
-              />
+              <BlockNode key={block.id} block={block} onUpdate={onUpdate} onRemove={onRemove} />
             ))}
           </div>
         </SortableContext>

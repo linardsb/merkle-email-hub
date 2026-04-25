@@ -41,7 +41,8 @@ export function EcosystemDashboard({ onNavigate }: Props) {
       label: "Plugins",
       value: health ? `${health.healthy}/${health.total} healthy` : "—",
       icon: Puzzle,
-      colorClass: health?.degraded || health?.unhealthy ? "text-status-warning" : "text-status-success",
+      colorClass:
+        health?.degraded || health?.unhealthy ? "text-status-warning" : "text-status-success",
     },
     {
       label: "Workflows",
@@ -59,7 +60,8 @@ export function EcosystemDashboard({ onNavigate }: Props) {
       label: "Penpot",
       value: penpotConns ? `${penpotConns.length} connections` : "—",
       icon: Paintbrush,
-      colorClass: penpotConns && penpotConns.length > 0 ? "text-status-success" : "text-foreground-muted",
+      colorClass:
+        penpotConns && penpotConns.length > 0 ? "text-status-success" : "text-foreground-muted",
     },
   ];
 
@@ -70,24 +72,19 @@ export function EcosystemDashboard({ onNavigate }: Props) {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-lg border border-card-border bg-card-bg p-4"
-          >
+          <div key={card.label} className="border-card-border bg-card-bg rounded-lg border p-4">
             {isAnyLoading ? (
               <div className="space-y-2">
-                <div className="h-4 w-20 animate-pulse rounded bg-surface-hover" />
-                <div className="h-6 w-24 animate-pulse rounded bg-surface-hover" />
+                <div className="bg-surface-hover h-4 w-20 animate-pulse rounded" />
+                <div className="bg-surface-hover h-6 w-24 animate-pulse rounded" />
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2 text-sm text-foreground-muted">
+                <div className="text-foreground-muted flex items-center gap-2 text-sm">
                   <card.icon className="h-4 w-4" />
                   {card.label}
                 </div>
-                <p className={`mt-1 text-lg font-semibold ${card.colorClass}`}>
-                  {card.value}
-                </p>
+                <p className={`mt-1 text-lg font-semibold ${card.colorClass}`}>{card.value}</p>
               </>
             )}
           </div>
@@ -107,15 +104,15 @@ export function EcosystemDashboard({ onNavigate }: Props) {
             <div className="space-y-3">
               <div className="flex gap-3 text-sm">
                 <span className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-status-success" />
+                  <span className="bg-status-success inline-block h-2 w-2 rounded-full" />
                   {health.healthy} healthy
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-status-warning" />
+                  <span className="bg-status-warning inline-block h-2 w-2 rounded-full" />
                   {health.degraded} degraded
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-status-error" />
+                  <span className="bg-status-error inline-block h-2 w-2 rounded-full" />
                   {health.unhealthy} unhealthy
                 </span>
               </div>
@@ -123,7 +120,9 @@ export function EcosystemDashboard({ onNavigate }: Props) {
                 {health.plugins.slice(0, 3).map((p) => (
                   <li key={p.name} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
-                      <span className={`inline-block h-2 w-2 rounded-full ${STATUS_DOT[p.status] ?? "bg-foreground-muted"}`} />
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full ${STATUS_DOT[p.status] ?? "bg-foreground-muted"}`}
+                      />
                       {p.name}
                     </span>
                     <span className="text-foreground-muted">{p.latency_ms}ms</span>
@@ -143,7 +142,7 @@ export function EcosystemDashboard({ onNavigate }: Props) {
         >
           {workflows && (
             <div className="space-y-3">
-              <p className="text-sm text-foreground-muted">
+              <p className="text-foreground-muted text-sm">
                 {workflows.flows.length} available flows
                 {workflows.flows.filter((f) => f.has_schedule).length > 0 &&
                   ` · ${workflows.flows.filter((f) => f.has_schedule).length} scheduled`}
@@ -153,7 +152,7 @@ export function EcosystemDashboard({ onNavigate }: Props) {
                   <li key={f.id} className="text-sm">
                     <span className="font-medium">{f.id}</span>
                     {f.description && (
-                      <span className="ml-2 text-foreground-muted">{f.description}</span>
+                      <span className="text-foreground-muted ml-2">{f.description}</span>
                     )}
                   </li>
                 ))}
@@ -177,7 +176,9 @@ export function EcosystemDashboard({ onNavigate }: Props) {
               {penpotConns.slice(0, 3).map((c) => (
                 <li key={c.id} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
-                    <span className={`inline-block h-2 w-2 rounded-full ${STATUS_DOT[c.status] ?? "bg-foreground-muted"}`} />
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full ${STATUS_DOT[c.status] ?? "bg-foreground-muted"}`}
+                    />
                     {c.name}
                   </span>
                   {c.project_name && (
@@ -187,7 +188,7 @@ export function EcosystemDashboard({ onNavigate }: Props) {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-foreground-muted">
+            <p className="text-foreground-muted text-sm">
               No Penpot connections yet. Connect your first project from Design Sync.
             </p>
           )}
@@ -211,24 +212,21 @@ function QuadrantCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-6">
+    <div className="border-card-border bg-card-bg rounded-lg border p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2 font-semibold">
           {icon}
           {title}
         </div>
-        <button
-          onClick={onViewAll}
-          className="text-sm text-interactive hover:underline"
-        >
+        <button onClick={onViewAll} className="text-interactive text-sm hover:underline">
           View All &rarr;
         </button>
       </div>
       {isLoading ? (
         <div className="space-y-2">
-          <div className="h-4 w-full animate-pulse rounded bg-surface-hover" />
-          <div className="h-4 w-3/4 animate-pulse rounded bg-surface-hover" />
-          <div className="h-4 w-1/2 animate-pulse rounded bg-surface-hover" />
+          <div className="bg-surface-hover h-4 w-full animate-pulse rounded" />
+          <div className="bg-surface-hover h-4 w-3/4 animate-pulse rounded" />
+          <div className="bg-surface-hover h-4 w-1/2 animate-pulse rounded" />
         </div>
       ) : (
         children

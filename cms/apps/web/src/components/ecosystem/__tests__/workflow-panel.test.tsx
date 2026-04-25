@@ -20,7 +20,12 @@ vi.mock("@email-hub/ui/components/ui/dialog", () => ({
 }));
 
 import { WorkflowPanel } from "../WorkflowPanel";
-import { useWorkflows, useWorkflowStatus, useWorkflowLogs, useTriggerWorkflow } from "@/hooks/use-workflows";
+import {
+  useWorkflows,
+  useWorkflowStatus,
+  useWorkflowLogs,
+  useTriggerWorkflow,
+} from "@/hooks/use-workflows";
 
 const mockWorkflows = useWorkflows as ReturnType<typeof vi.fn>;
 const mockWorkflowStatus = useWorkflowStatus as ReturnType<typeof vi.fn>;

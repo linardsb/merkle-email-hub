@@ -8,9 +8,7 @@ function loadFixture(name: string): string {
 }
 
 test.describe("Import Fidelity", () => {
-  test("paste pre-compiled email and preview renders", async ({
-    authenticatedPage: page,
-  }) => {
+  test("paste pre-compiled email and preview renders", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
 
@@ -21,9 +19,7 @@ test.describe("Import Fidelity", () => {
     }
 
     // Wait for editor to load
-    const editor = page
-      .locator("[data-language], .cm-editor, .monaco-editor, textarea")
-      .first();
+    const editor = page.locator("[data-language], .cm-editor, .monaco-editor, textarea").first();
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
     // Paste pre-compiled email HTML
@@ -32,10 +28,7 @@ test.describe("Import Fidelity", () => {
     await page.keyboard.press("ControlOrMeta+a");
     await page.keyboard.type(emailHtml.slice(0, 200)); // Type partial to avoid timeout
     // Full paste via clipboard
-    await page.evaluate(
-      (html) => navigator.clipboard.writeText(html),
-      emailHtml,
-    );
+    await page.evaluate((html) => navigator.clipboard.writeText(html), emailHtml);
     await page.keyboard.press("ControlOrMeta+a");
     await page.keyboard.press("ControlOrMeta+v");
 
@@ -53,9 +46,7 @@ test.describe("Import Fidelity", () => {
     await expect(iframe).toBeVisible({ timeout: 15_000 });
   });
 
-  test("preview iframe has secure sandbox", async ({
-    authenticatedPage: page,
-  }) => {
+  test("preview iframe has secure sandbox", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
 
@@ -72,9 +63,7 @@ test.describe("Import Fidelity", () => {
     }
   });
 
-  test("dark mode toggle does not produce invisible text", async ({
-    authenticatedPage: page,
-  }) => {
+  test("dark mode toggle does not produce invisible text", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
 

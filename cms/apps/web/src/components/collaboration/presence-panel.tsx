@@ -43,16 +43,14 @@ export function PresencePanel({
   onClose,
 }: PresencePanelProps) {
   return (
-    <div className="flex h-full w-64 flex-col border-l border-border bg-card">
+    <div className="border-border bg-card flex h-full w-64 flex-col border-l">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <span className="text-xs font-semibold text-foreground">
-          {"Collaborators"}
-        </span>
+      <div className="border-border flex items-center justify-between border-b px-3 py-2">
+        <span className="text-foreground text-xs font-semibold">{"Collaborators"}</span>
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -61,7 +59,7 @@ export function PresencePanel({
       {/* User list */}
       <div className="flex-1 overflow-y-auto p-2">
         {collaborators.length === 0 ? (
-          <p className="px-2 py-4 text-center text-xs text-muted-foreground">
+          <p className="text-muted-foreground px-2 py-4 text-center text-xs">
             {"No one else is here"}
           </p>
         ) : (
@@ -73,7 +71,7 @@ export function PresencePanel({
               return (
                 <li
                   key={collab.clientId}
-                  className="flex items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+                  className="hover:bg-accent flex items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors"
                 >
                   {/* Avatar */}
                   <div
@@ -85,10 +83,8 @@ export function PresencePanel({
 
                   {/* Name + role */}
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate font-medium text-foreground">
-                      {collab.name}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-foreground truncate font-medium">{collab.name}</span>
+                    <span className="text-muted-foreground text-[10px]">
                       {ROLE_LABELS[collab.role] ?? collab.role}
                     </span>
                   </div>
@@ -103,9 +99,7 @@ export function PresencePanel({
                   <button
                     type="button"
                     onClick={() =>
-                      isFollowed
-                        ? onUnfollow()
-                        : onFollow(collab.clientId, collab.name)
+                      isFollowed ? onUnfollow() : onFollow(collab.clientId, collab.name)
                     }
                     className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
                       isFollowed

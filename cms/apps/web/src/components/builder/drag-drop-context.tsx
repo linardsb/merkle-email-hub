@@ -38,7 +38,7 @@ export function DragDropContext({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -68,15 +68,12 @@ export function DragDropContext({
       onDragStart={(event) => setActiveDragId(event.active.id as string)}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext
-        items={items}
-        strategy={verticalListSortingStrategy}
-      >
+      <SortableContext items={items} strategy={verticalListSortingStrategy}>
         {children}
       </SortableContext>
       <DragOverlay>
         {activeDragId ? (
-          <div className="rounded border border-interactive bg-card px-3 py-2 text-xs font-medium text-foreground shadow-md">
+          <div className="border-interactive bg-card text-foreground rounded border px-3 py-2 text-xs font-medium shadow-md">
             {"Moving section..."}
           </div>
         ) : null}

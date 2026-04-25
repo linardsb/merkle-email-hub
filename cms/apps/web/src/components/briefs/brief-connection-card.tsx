@@ -53,24 +53,23 @@ export function BriefConnectionCard({
           onSelect();
         }
       }}
-      className={`w-full cursor-pointer rounded-lg border-2 bg-card-bg p-4 text-left transition-colors ${
+      className={`bg-card-bg w-full cursor-pointer rounded-lg border-2 p-4 text-left transition-colors ${
         selected
-          ? "border-interactive ring-1 ring-interactive"
+          ? "border-interactive ring-interactive ring-1"
           : "border-card-border hover:bg-surface-hover"
       }`}
     >
       {/* Top row: platform + name + badge */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-xs font-bold text-foreground-muted">
+          <span className="text-foreground-muted inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-xs font-bold">
             {PLATFORM_LABELS[connection.platform]?.[0] ?? "?"}
           </span>
           <div>
-            <p className="text-sm font-medium text-foreground">
-              {connection.name}
-            </p>
-            <p className="text-xs text-foreground-muted">
-              {PLATFORM_LABELS[connection.platform]} &middot; {`Key ····${connection.credential_last4}`}
+            <p className="text-foreground text-sm font-medium">{connection.name}</p>
+            <p className="text-foreground-muted text-xs">
+              {PLATFORM_LABELS[connection.platform]} &middot;{" "}
+              {`Key ····${connection.credential_last4}`}
             </p>
           </div>
         </div>
@@ -78,23 +77,19 @@ export function BriefConnectionCard({
       </div>
 
       {/* Meta row */}
-      <div className="mt-3 flex items-center gap-4 text-xs text-foreground-muted">
+      <div className="text-foreground-muted mt-3 flex items-center gap-4 text-xs">
         {connection.project_name && (
           <span className="flex items-center gap-1">
             <FolderOpen className="h-3.5 w-3.5" />
             {connection.project_name}
           </span>
         )}
-        {connection.items_count > 0 && (
-          <span>{`${connection.items_count} briefs`}</span>
-        )}
-        {lastSynced && (
-          <span>{`Synced ${lastSynced}`}</span>
-        )}
+        {connection.items_count > 0 && <span>{`${connection.items_count} briefs`}</span>}
+        {lastSynced && <span>{`Synced ${lastSynced}`}</span>}
       </div>
 
       {/* Actions */}
-      <div className="mt-3 flex items-center gap-2 border-t border-card-border pt-3">
+      <div className="border-card-border mt-3 flex items-center gap-2 border-t pt-3">
         <button
           type="button"
           onClick={(e) => {
@@ -102,7 +97,7 @@ export function BriefConnectionCard({
             onSync();
           }}
           disabled={syncing}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {syncing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -117,7 +112,7 @@ export function BriefConnectionCard({
             e.stopPropagation();
             onDelete();
           }}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
+          className="border-border text-status-danger hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {"Remove"}

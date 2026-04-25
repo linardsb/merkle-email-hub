@@ -21,19 +21,28 @@ interface ChatPanelProps {
   editorContent?: string;
 }
 
-export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent, editorContent }: ChatPanelProps) {
+export function ChatPanel({
+  projectId = "default",
+  onApplyToEditor,
+  initialAgent,
+  editorContent,
+}: ChatPanelProps) {
   const [agent, setAgent] = useState<AgentMode>(initialAgent ?? "chat");
   const [activeTab, setActiveTab] = useState<ChatPanelTab>("chat");
   const [blueprintMode, setBlueprintMode] = useState(false);
   const [includeHtml, setIncludeHtml] = useState(false);
   const {
-    messages, status, error,
-    sendMessage, sendBlueprintRun, blueprintRunning,
-    stopStreaming, clearMessages, replaceMessages,
+    messages,
+    status,
+    error,
+    sendMessage,
+    sendBlueprintRun,
+    blueprintRunning,
+    stopStreaming,
+    clearMessages,
+    replaceMessages,
   } = useChat(projectId);
-  const {
-    sessions, saveSession, deleteSession, clearAllSessions,
-  } = useChatHistory(projectId);
+  const { sessions, saveSession, deleteSession, clearAllSessions } = useChatHistory(projectId);
 
   const handleSend = useCallback(
     (content: string) => {
@@ -47,14 +56,14 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
         sendMessage(content, agent);
       }
     },
-    [blueprintMode, sendMessage, sendBlueprintRun, agent, includeHtml, editorContent, projectId]
+    [blueprintMode, sendMessage, sendBlueprintRun, agent, includeHtml, editorContent, projectId],
   );
 
   const handleApplyHtml = useCallback(
     (html: string) => {
       onApplyToEditor?.(html);
     },
-    [onApplyToEditor]
+    [onApplyToEditor],
   );
 
   // Save current conversation before clearing
@@ -75,7 +84,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
       setAgent(session.agent);
       setActiveTab("chat");
     },
-    [messages, agent, saveSession, replaceMessages]
+    [messages, agent, saveSession, replaceMessages],
   );
 
   // Auto-save on page unload
@@ -113,13 +122,14 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
     knowledge: "Ask about email best practices...",
     innovation: "Explore new email techniques...",
   };
-  const emptyText = EMPTY_TEXT[agent] ?? "Ask a question about email development, HTML, CSS, or Maizzle.";
+  const emptyText =
+    EMPTY_TEXT[agent] ?? "Ask a question about email development, HTML, CSS, or Maizzle.";
   const placeholder = PLACEHOLDER_TEXT[agent] ?? "Ask the AI assistant...";
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="bg-background flex h-full flex-col">
       {/* Top-level tabs: Chat | History */}
-      <div className="flex gap-1 border-b border-border bg-muted/50 px-2 pt-2" role="tablist">
+      <div className="border-border bg-muted/50 flex gap-1 border-b px-2 pt-2" role="tablist">
         <button
           type="button"
           role="tab"
@@ -127,8 +137,8 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
           onClick={() => setActiveTab("chat")}
           className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-t-md px-4 py-2 text-sm font-medium transition-all ${
             activeTab === "chat"
-              ? "border border-b-0 border-border bg-background text-foreground"
-              : "border border-transparent text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground"
+              ? "border-border bg-background text-foreground border border-b-0"
+              : "text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground border border-transparent"
           }`}
         >
           <MessageSquare className="h-4 w-4" />
@@ -146,8 +156,8 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
           onClick={() => setActiveTab("history")}
           className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-t-md px-4 py-2 text-sm font-medium transition-all ${
             activeTab === "history"
-              ? "border border-b-0 border-border bg-background text-foreground"
-              : "border border-transparent text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground"
+              ? "border-border bg-background text-foreground border border-b-0"
+              : "text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground border border-transparent"
           }`}
         >
           <History className="h-4 w-4" />
@@ -164,29 +174,29 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
       {activeTab === "chat" ? (
         <>
           {/* Blueprint mode toggle + Agent selector / Blueprint label */}
-          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+          <div className="border-border flex items-center gap-2 border-b px-3 py-2">
             {/* Toggle */}
             <button
               type="button"
               onClick={() => setBlueprintMode((v) => !v)}
-              className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors hover:bg-accent"
+              className="hover:bg-accent flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors"
               title={"Toggle Blueprint Mode"}
             >
               {blueprintMode ? (
-                <ToggleRight className="h-4 w-4 text-primary" />
+                <ToggleRight className="text-primary h-4 w-4" />
               ) : (
-                <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                <ToggleLeft className="text-muted-foreground h-4 w-4" />
               )}
-              <Zap className={`h-3 w-3 ${blueprintMode ? "text-primary" : "text-muted-foreground"}`} />
+              <Zap
+                className={`h-3 w-3 ${blueprintMode ? "text-primary" : "text-muted-foreground"}`}
+              />
             </button>
 
             {blueprintMode ? (
               /* Blueprint mode: label + include HTML checkbox */
               <div className="flex flex-1 items-center gap-3">
-                <span className="text-xs font-medium text-primary">
-                  {"Blueprint Pipeline"}
-                </span>
-                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="text-primary text-xs font-medium">{"Blueprint Pipeline"}</span>
+                <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
                   <Checkbox
                     checked={includeHtml}
                     onCheckedChange={(v) => setIncludeHtml(v === true)}
@@ -206,7 +216,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
+                className="text-muted-foreground h-7 shrink-0 gap-1 px-2 text-xs"
                 onClick={handleClear}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -218,14 +228,16 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
           {/* Message area */}
           {messages.length === 0 ? (
             <div className="flex flex-1 items-center justify-center px-6 py-4">
-              <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-3">
                 {blueprintMode ? (
                   <Zap className="h-5 w-5 shrink-0" />
                 ) : (
                   <MessageSquare className="h-5 w-5 shrink-0" />
                 )}
                 <p className="text-sm">
-                  {blueprintMode ? "Blueprint Mode — describe a campaign brief and the full agent pipeline will execute automatically" : emptyText}
+                  {blueprintMode
+                    ? "Blueprint Mode — describe a campaign brief and the full agent pipeline will execute automatically"
+                    : emptyText}
                 </p>
               </div>
             </div>
@@ -235,7 +247,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
 
           {/* Error banner */}
           {status === "error" && error && (
-            <div className="border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="border-destructive/30 bg-destructive/10 text-destructive border-t px-3 py-2 text-xs">
               {"Something went wrong. Please try again."}
             </div>
           )}

@@ -23,9 +23,10 @@ export function RenderingStatsCards({ tests }: Props) {
     tests.length > 0
       ? Math.round(
           tests.reduce((s, test) => {
-            const rate = test.clients_requested > 0
-              ? ((test.clients_completed ?? 0) / test.clients_requested) * 100
-              : 0;
+            const rate =
+              test.clients_requested > 0
+                ? ((test.clients_completed ?? 0) / test.clients_requested) * 100
+                : 0;
             return s + rate;
           }, 0) / tests.length,
         )
@@ -34,7 +35,7 @@ export function RenderingStatsCards({ tests }: Props) {
   // Find worst client (highest fail rate across all tests)
   const clientFailCounts: Record<string, { fails: number; total: number; name: string }> = {};
   for (const test of tests) {
-    for (const s of (test.screenshots ?? [])) {
+    for (const s of test.screenshots ?? []) {
       if (!clientFailCounts[s.client_name]) {
         clientFailCounts[s.client_name] = { fails: 0, total: 0, name: s.client_name };
       }
@@ -61,39 +62,41 @@ export function RenderingStatsCards({ tests }: Props) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-lg border border-card-border bg-card-bg p-4">
+      <div className="border-card-border bg-card-bg rounded-lg border p-4">
         <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{"Total Tests"}</span>
+          <Activity className="text-foreground-muted h-4 w-4" />
+          <span className="text-foreground-muted text-sm">{"Total Tests"}</span>
         </div>
-        <p className="mt-2 text-2xl font-semibold text-foreground">{totalTests}</p>
+        <p className="text-foreground mt-2 text-2xl font-semibold">{totalTests}</p>
       </div>
 
-      <div className="rounded-lg border border-card-border bg-card-bg p-4">
+      <div className="border-card-border bg-card-bg rounded-lg border p-4">
         <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{"Completion Rate"}</span>
+          <Target className="text-foreground-muted h-4 w-4" />
+          <span className="text-foreground-muted text-sm">{"Completion Rate"}</span>
         </div>
         <p className={`mt-2 text-2xl font-semibold ${completionColor}`}>{avgCompletion}%</p>
       </div>
 
-      <div className="rounded-lg border border-card-border bg-card-bg p-4">
+      <div className="border-card-border bg-card-bg rounded-lg border p-4">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{"Most Problematic"}</span>
+          <AlertTriangle className="text-foreground-muted h-4 w-4" />
+          <span className="text-foreground-muted text-sm">{"Most Problematic"}</span>
         </div>
-        <p className="mt-2 text-lg font-semibold text-foreground">{worstName}</p>
+        <p className="text-foreground mt-2 text-lg font-semibold">{worstName}</p>
         {worstRate > 0 && (
-          <p className="text-xs text-status-danger">{worstRate}% {"fail rate"}</p>
+          <p className="text-status-danger text-xs">
+            {worstRate}% {"fail rate"}
+          </p>
         )}
       </div>
 
-      <div className="rounded-lg border border-card-border bg-card-bg p-4">
+      <div className="border-card-border bg-card-bg rounded-lg border p-4">
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{"Last Test"}</span>
+          <Clock className="text-foreground-muted h-4 w-4" />
+          <span className="text-foreground-muted text-sm">{"Last Test"}</span>
         </div>
-        <p className="mt-2 text-2xl font-semibold text-foreground">{lastDate}</p>
+        <p className="text-foreground mt-2 text-2xl font-semibold">{lastDate}</p>
       </div>
     </div>
   );

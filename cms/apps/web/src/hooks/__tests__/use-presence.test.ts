@@ -55,9 +55,7 @@ describe("usePresence", () => {
   });
 
   it("returns empty collaborators initially", () => {
-    const { result } = renderHook(() =>
-      usePresence({ awareness: null, role: "admin" }),
-    );
+    const { result } = renderHook(() => usePresence({ awareness: null, role: "admin" }));
     expect(result.current.collaborators).toEqual([]);
     expect(result.current.followTarget).toBeNull();
   });
@@ -108,9 +106,7 @@ describe("usePresence", () => {
   });
 
   it("stopFollowing clears followTarget", () => {
-    const { result } = renderHook(() =>
-      usePresence({ awareness: null, role: "admin" }),
-    );
+    const { result } = renderHook(() => usePresence({ awareness: null, role: "admin" }));
 
     act(() => result.current.startFollowing(5, "Carol"));
     act(() => result.current.stopFollowing());
@@ -123,12 +119,7 @@ describe("usePresence", () => {
       usePresence({ awareness: awareness as unknown as Awareness, role: "admin" }),
     );
 
-    act(() =>
-      result.current.reportCursorMove(
-        { line: 10, col: 5 },
-        { anchor: 100, head: 110 },
-      ),
-    );
+    act(() => result.current.reportCursorMove({ line: 10, col: 5 }, { anchor: 100, head: 110 }));
 
     expect(setLocalCursorState).toHaveBeenCalledWith(
       awareness,
@@ -139,17 +130,13 @@ describe("usePresence", () => {
 
   it("sets initial activity based on role", () => {
     const awareness = makeAwarenessMock();
-    renderHook(() =>
-      usePresence({ awareness: awareness as unknown as Awareness, role: "viewer" }),
-    );
+    renderHook(() => usePresence({ awareness: awareness as unknown as Awareness, role: "viewer" }));
     expect(setLocalActivity).toHaveBeenCalledWith(awareness, "viewing");
   });
 
   it("sets editing activity for non-viewer roles", () => {
     const awareness = makeAwarenessMock();
-    renderHook(() =>
-      usePresence({ awareness: awareness as unknown as Awareness, role: "admin" }),
-    );
+    renderHook(() => usePresence({ awareness: awareness as unknown as Awareness, role: "admin" }));
     expect(setLocalActivity).toHaveBeenCalledWith(awareness, "editing");
   });
 

@@ -26,10 +26,7 @@ export function useBriefItems(connectionId: number | null) {
 }
 
 export function useBriefDetail(itemId: number | null) {
-  return useSWR<BriefDetail>(
-    itemId ? `/api/v1/briefs/items/${itemId}` : null,
-    fetcher,
-  );
+  return useSWR<BriefDetail>(itemId ? `/api/v1/briefs/items/${itemId}` : null, fetcher);
 }
 
 export function useCreateBriefConnection() {

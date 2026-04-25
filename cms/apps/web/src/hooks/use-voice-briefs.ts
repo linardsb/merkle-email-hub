@@ -68,10 +68,7 @@ export function useVoiceBriefs(projectId: number | null, page = 1) {
 
 /** Single voice brief with full transcript + extracted brief */
 export function useVoiceBrief(projectId: number | null, briefId: number | null) {
-  const key =
-    projectId && briefId
-      ? `/api/v1/projects/${projectId}/voice-briefs/${briefId}`
-      : null;
+  const key = projectId && briefId ? `/api/v1/projects/${projectId}/voice-briefs/${briefId}` : null;
 
   return useSWR<VoiceBriefDetail>(key, fetcher, {
     revalidateOnFocus: false,
@@ -85,9 +82,7 @@ export function voiceBriefAudioUrl(projectId: number, briefId: number): string {
 
 /** Trigger blueprint run from a voice brief */
 export function useGenerateFromBrief(projectId: number | null) {
-  const key = projectId
-    ? `/api/v1/projects/${projectId}/voice-briefs/generate`
-    : null;
+  const key = projectId ? `/api/v1/projects/${projectId}/voice-briefs/generate` : null;
 
   return useSWRMutation<
     Record<string, unknown>,
@@ -104,10 +99,9 @@ export function useDeleteVoiceBrief(projectId: number | null) {
     async (url: string, { arg }: { arg: { brief_id: number } }) => {
       if (!projectId) return;
       const { authFetch } = await import("@/lib/auth-fetch");
-      const res = await authFetch(
-        `/api/v1/projects/${projectId}/voice-briefs/${arg.brief_id}`,
-        { method: "DELETE" },
-      );
+      const res = await authFetch(`/api/v1/projects/${projectId}/voice-briefs/${arg.brief_id}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error("Failed to delete voice brief");
     },
   );

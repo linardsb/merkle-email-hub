@@ -22,7 +22,9 @@ vi.mock("@/hooks/use-mcp", () => ({
 
 vi.mock("@/hooks/use-design-sync", () => ({
   useDesignTokens: vi.fn(),
-  useTokenDiff: vi.fn().mockReturnValue({ data: undefined, error: undefined, isLoading: false, mutate: vi.fn() }),
+  useTokenDiff: vi
+    .fn()
+    .mockReturnValue({ data: undefined, error: undefined, isLoading: false, mutate: vi.fn() }),
 }));
 
 vi.mock("@/components/ui/empty-state", () => ({
@@ -45,8 +47,14 @@ vi.mock("@email-hub/ui/components/ui/skeleton", () => ({
 }));
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: { children: React.ReactNode; href: string } & Record<string, unknown>) => (
-    <a href={href} {...props}>{children}</a>
+  default: ({
+    children,
+    href,
+    ...props
+  }: { children: React.ReactNode; href: string } & Record<string, unknown>) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -114,10 +122,7 @@ describe("BrandColorEditor", () => {
     fireEvent.change(nameInput, { target: { value: "Accent" } });
     fireEvent.click(screen.getByText("Add"));
 
-    expect(onChange).toHaveBeenCalledWith([
-      ...colors,
-      { name: "Accent", hex: "#000000" },
-    ]);
+    expect(onChange).toHaveBeenCalledWith([...colors, { name: "Accent", hex: "#000000" }]);
   });
 
   it("calls onChange when removing a color", () => {
@@ -125,9 +130,9 @@ describe("BrandColorEditor", () => {
     render(<BrandColorEditor colors={colors} onChange={onChange} />);
 
     // There should be two remove buttons (one per color)
-    const removeButtons = screen.getAllByRole("button").filter(
-      (btn) => !btn.textContent?.includes("Add")
-    );
+    const removeButtons = screen
+      .getAllByRole("button")
+      .filter((btn) => !btn.textContent?.includes("Add"));
     fireEvent.click(removeButtons[0]!);
 
     expect(onChange).toHaveBeenCalledWith([colors[1]]);
@@ -145,17 +150,10 @@ describe("BrandColorEditor", () => {
 // 2. BrandTypographyEditor
 // ---------------------------------------------------------------------------
 describe("BrandTypographyEditor", () => {
-  const typography = [
-    { family: "Inter", weights: ["400", "600"], minSize: 12, maxSize: 48 },
-  ];
+  const typography = [{ family: "Inter", weights: ["400", "600"], minSize: 12, maxSize: 48 }];
 
   it("renders font settings", () => {
-    render(
-      <BrandTypographyEditor
-        typography={typography}
-        onChange={vi.fn()}
-      />
-    );
+    render(<BrandTypographyEditor typography={typography} onChange={vi.fn()} />);
 
     expect(screen.getByText("Typography")).toBeInTheDocument();
     expect(screen.getByText("Font Family")).toBeInTheDocument();
@@ -168,17 +166,13 @@ describe("BrandTypographyEditor", () => {
 
   it("calls onChange when font family is updated", () => {
     const onChange = vi.fn();
-    render(
-      <BrandTypographyEditor typography={typography} onChange={onChange} />
-    );
+    render(<BrandTypographyEditor typography={typography} onChange={onChange} />);
 
     fireEvent.change(screen.getByDisplayValue("Inter"), {
       target: { value: "Roboto" },
     });
 
-    expect(onChange).toHaveBeenCalledWith([
-      expect.objectContaining({ family: "Roboto" }),
-    ]);
+    expect(onChange).toHaveBeenCalledWith([expect.objectContaining({ family: "Roboto" })]);
   });
 });
 
@@ -274,18 +268,12 @@ describe("GraphCompletionResult", () => {
       <GraphCompletionResult
         query="What is the best email client?"
         content="The best email client depends on your needs."
-      />
+      />,
     );
 
-    expect(
-      screen.getByText("What is the best email client?")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("The best email client depends on your needs.")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Answer from knowledge graph")
-    ).toBeInTheDocument();
+    expect(screen.getByText("What is the best email client?")).toBeInTheDocument();
+    expect(screen.getByText("The best email client depends on your needs.")).toBeInTheDocument();
+    expect(screen.getByText("Answer from knowledge graph")).toBeInTheDocument();
   });
 });
 
@@ -300,7 +288,12 @@ describe("MCPConfigPanel", () => {
     mockUseMCPTools.mockReturnValue({
       data: [
         { name: "qa_run", enabled: true, category: "qa", description: "Run QA checks" },
-        { name: "render_email", enabled: false, category: "rendering", description: "Render email" },
+        {
+          name: "render_email",
+          enabled: false,
+          category: "rendering",
+          description: "Render email",
+        },
       ],
       mutate: vi.fn(),
     });
@@ -405,9 +398,7 @@ describe("DesignTokensView", () => {
           { name: "Brand Blue", hex: "#0066FF", opacity: 1 },
           { name: "Brand Red", hex: "#FF3333", opacity: 0.8 },
         ],
-        typography: [
-          { name: "Heading", family: "Inter", weight: 700, size: 24, lineHeight: 32 },
-        ],
+        typography: [{ name: "Heading", family: "Inter", weight: 700, size: 24, lineHeight: 32 }],
         spacing: [
           { name: "sm", value: 8 },
           { name: "md", value: 16 },
@@ -441,9 +432,7 @@ describe("DesignTokensView", () => {
 // ---------------------------------------------------------------------------
 describe("VisualQAPanelTab", () => {
   it("renders the Visual QA panel with button", () => {
-    render(
-      <VisualQAPanelTab html="<h1>Hello</h1>" entityType="email" entityId={1} />
-    );
+    render(<VisualQAPanelTab html="<h1>Hello</h1>" entityType="email" entityId={1} />);
 
     expect(screen.getByText("Visual QA")).toBeInTheDocument();
     expect(screen.getByText("Compare screenshots across email clients")).toBeInTheDocument();
@@ -451,18 +440,14 @@ describe("VisualQAPanelTab", () => {
   });
 
   it("disables the button when html is empty", () => {
-    render(
-      <VisualQAPanelTab html="" entityType="email" entityId={1} />
-    );
+    render(<VisualQAPanelTab html="" entityType="email" entityId={1} />);
 
     const button = screen.getByRole("button", { name: /View Visual QA/i });
     expect(button).toBeDisabled();
   });
 
   it("opens dialog when button is clicked", () => {
-    render(
-      <VisualQAPanelTab html="<h1>Hello</h1>" entityType="email" entityId={1} />
-    );
+    render(<VisualQAPanelTab html="<h1>Hello</h1>" entityType="email" entityId={1} />);
 
     fireEvent.click(screen.getByText("View Visual QA"));
     expect(screen.getByTestId("visual-qa-dialog")).toBeInTheDocument();

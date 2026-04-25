@@ -1,13 +1,8 @@
 import { describe, it, expect } from "vitest";
 import type { SectionNode } from "@/types/visual-builder";
 import { DEFAULT_RESPONSIVE, DEFAULT_ADVANCED } from "@/types/visual-builder";
-import type {
-  AppComponentsSchemasVersionResponse as VersionResponse,
-} from "@email-hub/sdk";
-import {
-  inferSlotDefinitions,
-  sectionNodeToBuilderSection,
-} from "../visual-builder-panel";
+import type { AppComponentsSchemasVersionResponse as VersionResponse } from "@email-hub/sdk";
+import { inferSlotDefinitions, sectionNodeToBuilderSection } from "../visual-builder-panel";
 
 function makeSectionNode(overrides: Partial<SectionNode> = {}): SectionNode {
   return {

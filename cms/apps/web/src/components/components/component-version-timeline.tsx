@@ -13,20 +13,16 @@ interface ComponentVersionTimelineProps {
   versions: VersionResponse[];
 }
 
-export function ComponentVersionTimeline({
-  componentId,
-  versions,
-}: ComponentVersionTimelineProps) {
+export function ComponentVersionTimeline({ componentId, versions }: ComponentVersionTimelineProps) {
   const [previewVersion, setPreviewVersion] = useState<number | null>(null);
   const [runningQAVersion, setRunningQAVersion] = useState<number | null>(null);
 
   const handleRunQA = async (versionNumber: number) => {
     setRunningQAVersion(versionNumber);
     try {
-      await mutationFetcher(
-        `/api/v1/components/${componentId}/versions/${versionNumber}/qa`,
-        { arg: {} },
-      );
+      await mutationFetcher(`/api/v1/components/${componentId}/versions/${versionNumber}/qa`, {
+        arg: {},
+      });
       toast.success(`QA completed for v${versionNumber}`);
     } catch {
       toast.error(`QA failed for v${versionNumber}`);
@@ -36,16 +32,10 @@ export function ComponentVersionTimeline({
   };
 
   if (versions.length === 0) {
-    return (
-      <p className="py-8 text-center text-sm text-foreground-muted">
-        {"No versions yet"}
-      </p>
-    );
+    return <p className="text-foreground-muted py-8 text-center text-sm">{"No versions yet"}</p>;
   }
 
-  const previewHtml = versions.find(
-    (v) => v.version_number === previewVersion
-  )?.html_source;
+  const previewHtml = versions.find((v) => v.version_number === previewVersion)?.html_source;
 
   return (
     <div className="space-y-3">
@@ -57,45 +47,37 @@ export function ComponentVersionTimeline({
               <div key={v.id} className="flex gap-3">
                 {/* Timeline line + icon */}
                 <div className="flex flex-col items-center">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-interactive">
+                  <div className="bg-surface-muted text-interactive flex h-8 w-8 items-center justify-center rounded-full">
                     <GitCommitVertical className="h-4 w-4" />
                   </div>
-                  {!isLast && <div className="w-px flex-1 bg-border" />}
+                  {!isLast && <div className="bg-border w-px flex-1" />}
                 </div>
 
                 {/* Content */}
                 <div className={isLast ? "pb-0" : "pb-6"}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-foreground text-sm font-medium">
                       {`v${v.version_number}`}
                     </span>
-                    <span className="text-xs text-foreground-muted">
+                    <span className="text-foreground-muted text-xs">
                       {new Date(v.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-xs text-foreground-muted">
-                    {`by User #${v.created_by_id}`}
-                  </p>
+                  <p className="text-foreground-muted text-xs">{`by User #${v.created_by_id}`}</p>
                   {v.changelog ? (
-                    <p className="mt-1 text-xs text-foreground">
-                      {v.changelog}
-                    </p>
+                    <p className="text-foreground mt-1 text-xs">{v.changelog}</p>
                   ) : (
-                    <p className="mt-1 text-xs text-foreground-muted italic">
-                      {"No changelog"}
-                    </p>
+                    <p className="text-foreground-muted mt-1 text-xs italic">{"No changelog"}</p>
                   )}
                   <div className="mt-1.5 flex gap-2">
                     <button
                       type="button"
                       onClick={() =>
                         setPreviewVersion(
-                          previewVersion === v.version_number
-                            ? null
-                            : v.version_number
+                          previewVersion === v.version_number ? null : v.version_number,
                         )
                       }
-                      className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                      className="text-foreground-muted hover:bg-surface-hover hover:text-foreground inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors"
                     >
                       <Eye className="h-3 w-3" />
                       {"Preview"}
@@ -104,7 +86,7 @@ export function ComponentVersionTimeline({
                       type="button"
                       onClick={() => handleRunQA(v.version_number)}
                       disabled={runningQAVersion === v.version_number}
-                      className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-50"
+                      className="text-foreground-muted hover:bg-surface-hover hover:text-foreground inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors disabled:opacity-50"
                     >
                       {runningQAVersion === v.version_number ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -122,8 +104,8 @@ export function ComponentVersionTimeline({
       </ScrollArea>
 
       {previewVersion != null && previewHtml && (
-        <div className="overflow-hidden rounded-md border border-border">
-          <div className="border-b border-border bg-surface-muted px-3 py-1.5 text-xs font-medium text-foreground-muted">
+        <div className="border-border overflow-hidden rounded-md border">
+          <div className="border-border bg-surface-muted text-foreground-muted border-b px-3 py-1.5 text-xs font-medium">
             {`Preview — v${previewVersion}`}
           </div>
           <ComponentPreview html={previewHtml} height={300} />

@@ -37,9 +37,15 @@ const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 Object.defineProperty(window, "sessionStorage", { value: sessionStorageMock });
@@ -151,9 +157,7 @@ describe("ReportPanel", () => {
     fireEvent.click(screen.getByText("Generate Report"));
 
     // Click regression type
-    const regressionBtn = screen.getAllByText("regression").find(
-      (el) => el.tagName === "BUTTON",
-    );
+    const regressionBtn = screen.getAllByText("regression").find((el) => el.tagName === "BUTTON");
     if (regressionBtn) fireEvent.click(regressionBtn);
 
     expect(screen.getByText("Entity Type")).toBeDefined();

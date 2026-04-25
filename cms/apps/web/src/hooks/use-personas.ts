@@ -11,15 +11,12 @@ export function usePersonas() {
 }
 
 export function usePersona(personaId: number | null) {
-  return useSWR<PersonaResponse>(
-    personaId ? `/api/v1/personas/${personaId}` : null,
-    fetcher
-  );
+  return useSWR<PersonaResponse>(personaId ? `/api/v1/personas/${personaId}` : null, fetcher);
 }
 
 export function useCreatePersona() {
   return useSWRMutation<PersonaResponse, Error, string, PersonaCreate>(
     "/api/v1/personas",
-    mutationFetcher
+    mutationFetcher,
   );
 }

@@ -40,11 +40,9 @@ export function ApprovalRequestDialog({
   if (open && !prevOpen) {
     setNote("");
     if (compiledHtml) {
-      triggerPreCheck({ html: compiledHtml, project_id: projectId }).catch(
-        () => {
-          /* pre-check is informational */
-        },
-      );
+      triggerPreCheck({ html: compiledHtml, project_id: projectId }).catch(() => {
+        /* pre-check is informational */
+      });
     }
   }
   if (open !== prevOpen) {
@@ -71,8 +69,7 @@ export function ApprovalRequestDialog({
       toast.success("Build submitted for approval");
       onSubmitted();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to submit for approval";
+      const message = err instanceof Error ? err.message : "Failed to submit for approval";
       toast.error(message);
     }
   };
@@ -84,18 +81,16 @@ export function ApprovalRequestDialog({
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
           <DialogTitle>{"Submit for Approval"}</DialogTitle>
-          <DialogDescription>
-            {"Submit this build for review before export"}
-          </DialogDescription>
+          <DialogDescription>{"Submit this build for review before export"}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Build info */}
-          <div className="rounded-md border border-border bg-surface-subtle p-3">
+          <div className="border-border bg-surface-subtle rounded-md border p-3">
             <div className="flex items-center gap-2 text-sm">
-              <ShieldCheck className="h-4 w-4 text-foreground-muted" />
+              <ShieldCheck className="text-foreground-muted h-4 w-4" />
               <span className="text-foreground-muted">{"Build"}</span>
-              <span className="font-medium text-foreground">
+              <span className="text-foreground font-medium">
                 {buildId ? `#${buildId}` : "Not available"}
               </span>
             </div>
@@ -125,7 +120,7 @@ export function ApprovalRequestDialog({
           <div>
             <label
               htmlFor="approval-note"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Note for reviewer"}
             </label>
@@ -136,7 +131,7 @@ export function ApprovalRequestDialog({
               placeholder="Add context for the reviewer..."
               rows={3}
               maxLength={2000}
-              className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-interactive focus:outline-none focus:ring-1 focus:ring-interactive"
+              className="border-input-border bg-input-bg text-foreground placeholder:text-foreground-muted focus:border-interactive focus:ring-interactive w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1"
             />
           </div>
         </div>
@@ -146,7 +141,7 @@ export function ApprovalRequestDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -154,7 +149,7 @@ export function ApprovalRequestDialog({
             type="button"
             onClick={handleSubmit}
             disabled={!buildId || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

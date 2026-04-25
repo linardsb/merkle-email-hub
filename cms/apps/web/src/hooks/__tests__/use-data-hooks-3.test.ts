@@ -23,7 +23,9 @@ vi.mock("@/lib/api-error", () => ({
   },
 }));
 
-const mockUseSWR = vi.fn().mockReturnValue({ data: undefined, error: undefined, isLoading: true, mutate: vi.fn() });
+const mockUseSWR = vi
+  .fn()
+  .mockReturnValue({ data: undefined, error: undefined, isLoading: true, mutate: vi.fn() });
 const mockUseSWRMutation = vi.fn().mockReturnValue({ trigger: vi.fn(), isMutating: false });
 vi.mock("swr", () => ({ default: (...args: unknown[]) => mockUseSWR(...args) }));
 vi.mock("swr/mutation", () => ({ default: (...args: unknown[]) => mockUseSWRMutation(...args) }));
@@ -33,7 +35,12 @@ import { mutationFetcher, longMutationFetcher } from "@/lib/mutation-fetcher";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockUseSWR.mockReturnValue({ data: undefined, error: undefined, isLoading: true, mutate: vi.fn() });
+  mockUseSWR.mockReturnValue({
+    data: undefined,
+    error: undefined,
+    isLoading: true,
+    mutate: vi.fn(),
+  });
   mockUseSWRMutation.mockReturnValue({ trigger: vi.fn(), isMutating: false });
 });
 
@@ -70,7 +77,11 @@ describe("use-blueprint-runs", () => {
     it("passes correct key with runId", async () => {
       const { useBlueprintRunDetail } = await import("@/hooks/use-blueprint-runs");
       renderHook(() => useBlueprintRunDetail(99));
-      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/blueprint-runs/99", fetcher, expect.any(Object));
+      expect(mockUseSWR).toHaveBeenCalledWith(
+        "/api/v1/blueprint-runs/99",
+        fetcher,
+        expect.any(Object),
+      );
     });
 
     it("passes null key when runId is null", async () => {
@@ -84,7 +95,11 @@ describe("use-blueprint-runs", () => {
     it("passes correct key with runId", async () => {
       const { useRunCheckpoints } = await import("@/hooks/use-blueprint-runs");
       renderHook(() => useRunCheckpoints("abc-123"));
-      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/blueprints/runs/abc-123/checkpoints", fetcher, expect.any(Object));
+      expect(mockUseSWR).toHaveBeenCalledWith(
+        "/api/v1/blueprints/runs/abc-123/checkpoints",
+        fetcher,
+        expect.any(Object),
+      );
     });
 
     it("passes null key when runId is null", async () => {
@@ -251,7 +266,10 @@ describe("use-briefs", () => {
     it("passes correct mutation key and fetcher", async () => {
       const { useCreateBriefConnection } = await import("@/hooks/use-briefs");
       renderHook(() => useCreateBriefConnection());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/briefs/connections", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/briefs/connections",
+        mutationFetcher,
+      );
     });
   });
 
@@ -259,7 +277,10 @@ describe("use-briefs", () => {
     it("passes correct mutation key", async () => {
       const { useDeleteBriefConnection } = await import("@/hooks/use-briefs");
       renderHook(() => useDeleteBriefConnection());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/briefs/connections/delete", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/briefs/connections/delete",
+        mutationFetcher,
+      );
     });
   });
 
@@ -267,7 +288,10 @@ describe("use-briefs", () => {
     it("passes correct mutation key", async () => {
       const { useSyncBriefConnection } = await import("@/hooks/use-briefs");
       renderHook(() => useSyncBriefConnection());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/briefs/connections/sync", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/briefs/connections/sync",
+        mutationFetcher,
+      );
     });
   });
 
@@ -304,7 +328,10 @@ describe("use-outlook-analysis", () => {
     it("passes correct mutation key and longMutationFetcher", async () => {
       const { useOutlookAnalysis } = await import("@/hooks/use-outlook-analysis");
       renderHook(() => useOutlookAnalysis());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/qa/outlook-analysis", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/qa/outlook-analysis",
+        longMutationFetcher,
+      );
     });
   });
 
@@ -312,7 +339,10 @@ describe("use-outlook-analysis", () => {
     it("passes correct mutation key and longMutationFetcher", async () => {
       const { useOutlookModernize } = await import("@/hooks/use-outlook-analysis");
       renderHook(() => useOutlookModernize());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/qa/outlook-modernize", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/qa/outlook-modernize",
+        longMutationFetcher,
+      );
     });
   });
 });
@@ -325,7 +355,10 @@ describe("use-css-compile", () => {
     it("passes correct mutation key and longMutationFetcher", async () => {
       const { useCSSCompile } = await import("@/hooks/use-css-compile");
       renderHook(() => useCSSCompile());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/email/compile-css", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/email/compile-css",
+        longMutationFetcher,
+      );
     });
   });
 });
@@ -338,7 +371,10 @@ describe("use-gmail-intelligence", () => {
     it("passes correct mutation key", async () => {
       const { useGmailPredict } = await import("@/hooks/use-gmail-intelligence");
       renderHook(() => useGmailPredict());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/qa/gmail-predict", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/qa/gmail-predict",
+        longMutationFetcher,
+      );
     });
   });
 
@@ -346,7 +382,10 @@ describe("use-gmail-intelligence", () => {
     it("passes correct mutation key", async () => {
       const { useGmailOptimize } = await import("@/hooks/use-gmail-intelligence");
       renderHook(() => useGmailOptimize());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/qa/gmail-optimize", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/qa/gmail-optimize",
+        longMutationFetcher,
+      );
     });
   });
 
@@ -354,7 +393,10 @@ describe("use-gmail-intelligence", () => {
     it("passes correct mutation key", async () => {
       const { useDeliverabilityScore } = await import("@/hooks/use-gmail-intelligence");
       renderHook(() => useDeliverabilityScore());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/qa/deliverability-score", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/qa/deliverability-score",
+        longMutationFetcher,
+      );
     });
   });
 
@@ -375,7 +417,10 @@ describe("use-schema-inject", () => {
     it("passes correct mutation key and longMutationFetcher", async () => {
       const { useSchemaInject } = await import("@/hooks/use-schema-inject");
       renderHook(() => useSchemaInject());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/email/inject-schema", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/email/inject-schema",
+        longMutationFetcher,
+      );
     });
   });
 });
@@ -597,7 +642,10 @@ describe("use-visual-qa", () => {
     it("passes correct mutation key and longMutationFetcher", async () => {
       const { useCaptureScreenshots } = await import("@/hooks/use-visual-qa");
       renderHook(() => useCaptureScreenshots());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/rendering/screenshots", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/rendering/screenshots",
+        longMutationFetcher,
+      );
     });
   });
 
@@ -605,7 +653,10 @@ describe("use-visual-qa", () => {
     it("passes correct mutation key and mutationFetcher", async () => {
       const { useVisualDiff } = await import("@/hooks/use-visual-qa");
       renderHook(() => useVisualDiff());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/rendering/visual-diff", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/rendering/visual-diff",
+        mutationFetcher,
+      );
     });
   });
 
@@ -663,7 +714,10 @@ describe("use-tolgee", () => {
     it("passes correct mutation key", async () => {
       const { useCreateTolgeeConnection } = await import("@/hooks/use-tolgee");
       renderHook(() => useCreateTolgeeConnection());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/connectors/tolgee/connect", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/connectors/tolgee/connect",
+        mutationFetcher,
+      );
     });
   });
 
@@ -671,7 +725,10 @@ describe("use-tolgee", () => {
     it("passes correct key with connectionId", async () => {
       const { useTolgeeLanguages } = await import("@/hooks/use-tolgee");
       renderHook(() => useTolgeeLanguages(11));
-      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/connectors/tolgee/connections/11/languages", fetcher);
+      expect(mockUseSWR).toHaveBeenCalledWith(
+        "/api/v1/connectors/tolgee/connections/11/languages",
+        fetcher,
+      );
     });
 
     it("passes null key when connectionId is null", async () => {
@@ -685,7 +742,10 @@ describe("use-tolgee", () => {
     it("passes correct mutation key", async () => {
       const { useSyncKeys } = await import("@/hooks/use-tolgee");
       renderHook(() => useSyncKeys());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/connectors/tolgee/sync-keys", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/connectors/tolgee/sync-keys",
+        mutationFetcher,
+      );
     });
   });
 
@@ -693,7 +753,10 @@ describe("use-tolgee", () => {
     it("passes correct mutation key", async () => {
       const { usePullTranslations } = await import("@/hooks/use-tolgee");
       renderHook(() => usePullTranslations());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/connectors/tolgee/pull", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/connectors/tolgee/pull",
+        mutationFetcher,
+      );
     });
   });
 
@@ -701,7 +764,10 @@ describe("use-tolgee", () => {
     it("passes correct mutation key and longMutationFetcher", async () => {
       const { useLocaleBuild } = await import("@/hooks/use-tolgee");
       renderHook(() => useLocaleBuild());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/connectors/tolgee/build-locales", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/connectors/tolgee/build-locales",
+        longMutationFetcher,
+      );
     });
   });
 });
@@ -738,7 +804,10 @@ describe("use-plugins", () => {
     it("passes correct mutation key with encoded name", async () => {
       const { usePluginEnable } = await import("@/hooks/use-plugins");
       renderHook(() => usePluginEnable("my-plugin"));
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/plugins/my-plugin/enable", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/plugins/my-plugin/enable",
+        mutationFetcher,
+      );
     });
   });
 
@@ -746,7 +815,10 @@ describe("use-plugins", () => {
     it("passes correct mutation key", async () => {
       const { usePluginDisable } = await import("@/hooks/use-plugins");
       renderHook(() => usePluginDisable("test"));
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/plugins/test/disable", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/plugins/test/disable",
+        mutationFetcher,
+      );
     });
   });
 
@@ -754,7 +826,10 @@ describe("use-plugins", () => {
     it("passes correct mutation key", async () => {
       const { usePluginRestart } = await import("@/hooks/use-plugins");
       renderHook(() => usePluginRestart("test"));
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/plugins/test/restart", mutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/plugins/test/restart",
+        mutationFetcher,
+      );
     });
   });
 });
@@ -842,7 +917,10 @@ describe("use-reports", () => {
     it("passes correct mutation key", async () => {
       const { useGenerateApprovalReport } = await import("@/hooks/use-reports");
       renderHook(() => useGenerateApprovalReport());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/reports/approval", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/reports/approval",
+        longMutationFetcher,
+      );
     });
   });
 
@@ -850,7 +928,10 @@ describe("use-reports", () => {
     it("passes correct mutation key", async () => {
       const { useGenerateRegressionReport } = await import("@/hooks/use-reports");
       renderHook(() => useGenerateRegressionReport());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/reports/regression", longMutationFetcher);
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/reports/regression",
+        longMutationFetcher,
+      );
     });
   });
 
@@ -858,7 +939,10 @@ describe("use-reports", () => {
     it("passes correct mutation key with reportId", async () => {
       const { useReportDownload } = await import("@/hooks/use-reports");
       renderHook(() => useReportDownload("rpt-123"));
-      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/reports/rpt-123", expect.any(Function));
+      expect(mockUseSWRMutation).toHaveBeenCalledWith(
+        "/api/v1/reports/rpt-123",
+        expect.any(Function),
+      );
     });
 
     it("passes empty string key when reportId is null", async () => {
@@ -898,7 +982,9 @@ describe("use-penpot", () => {
       });
       const { result } = renderHook(() => usePenpotConnections());
       expect(result.current.data).toHaveLength(2);
-      expect(result.current.data?.every((c: { provider: string }) => c.provider === "penpot")).toBe(true);
+      expect(result.current.data?.every((c: { provider: string }) => c.provider === "penpot")).toBe(
+        true,
+      );
     });
   });
 });

@@ -33,14 +33,10 @@ function SectionHeader({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center justify-between py-1 text-xs font-medium text-foreground-muted"
+      className="text-foreground-muted flex w-full items-center justify-between py-1 text-xs font-medium"
     >
       <span>{label}</span>
-      {expanded ? (
-        <ChevronUp className="h-3.5 w-3.5" />
-      ) : (
-        <ChevronDown className="h-3.5 w-3.5" />
-      )}
+      {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
     </button>
   );
 }
@@ -70,7 +66,7 @@ export function GmailPredictionPanel({
   const schema = useSchemaInject();
 
   return (
-    <div className="rounded-lg bg-surface-muted p-3">
+    <div className="bg-surface-muted rounded-lg p-3">
       {/* Header */}
       <button
         type="button"
@@ -78,20 +74,22 @@ export function GmailPredictionPanel({
         className="mb-2 flex w-full items-center justify-between"
       >
         <div className="flex items-center gap-2">
-          <Mail className="h-4 w-4 text-foreground-muted" />
-          <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
+          <Mail className="text-foreground-muted h-4 w-4" />
+          <h3 className="text-foreground-muted text-xs font-medium uppercase tracking-wider">
             {"Gmail Intelligence"}
           </h3>
         </div>
         {expanded ? (
-          <ChevronUp className="h-3.5 w-3.5 text-foreground-muted" />
+          <ChevronUp className="text-foreground-muted h-3.5 w-3.5" />
         ) : (
-          <ChevronDown className="h-3.5 w-3.5 text-foreground-muted" />
+          <ChevronDown className="text-foreground-muted h-3.5 w-3.5" />
         )}
       </button>
 
       {!expanded && !predict.data && (
-        <p className="text-xs text-foreground-muted">{"Run a prediction to see Gmail AI summary analysis."}</p>
+        <p className="text-foreground-muted text-xs">
+          {"Run a prediction to see Gmail AI summary analysis."}
+        </p>
       )}
 
       {expanded && (
@@ -108,27 +106,23 @@ export function GmailPredictionPanel({
                 {/* Input fields */}
                 <div className="space-y-1.5">
                   <div>
-                    <label className="text-[10px] text-foreground-muted">
-                      {"Subject Line"}
-                    </label>
+                    <label className="text-foreground-muted text-[10px]">{"Subject Line"}</label>
                     <input
                       type="text"
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                       placeholder={"Enter email subject"}
-                      className="mt-0.5 w-full rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                      className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-1"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-foreground-muted">
-                      {"Sender Name"}
-                    </label>
+                    <label className="text-foreground-muted text-[10px]">{"Sender Name"}</label>
                     <input
                       type="text"
                       value={fromName}
                       onChange={(e) => setFromName(e.target.value)}
                       placeholder={"Enter sender name"}
-                      className="mt-0.5 w-full rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                      className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-1"
                     />
                   </div>
                 </div>
@@ -144,7 +138,7 @@ export function GmailPredictionPanel({
                       from_name: fromName.trim(),
                     })
                   }
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+                  className="border-border bg-card text-foreground hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   {predict.isMutating ? (
                     <>
@@ -156,9 +150,7 @@ export function GmailPredictionPanel({
                   )}
                 </button>
                 {predict.error && (
-                  <p className="text-xs text-status-error">
-                    {predict.error.message}
-                  </p>
+                  <p className="text-status-error text-xs">{predict.error.message}</p>
                 )}
 
                 {/* Prediction result */}
@@ -167,9 +159,9 @@ export function GmailPredictionPanel({
                     <SummaryCardPreview prediction={predict.data} />
 
                     {/* Optimize section */}
-                    <div className="border-t border-border pt-2">
+                    <div className="border-border border-t pt-2">
                       <div>
-                        <label className="text-[10px] text-foreground-muted">
+                        <label className="text-foreground-muted text-[10px]">
                           {"Target Summary (optional)"}
                         </label>
                         <input
@@ -177,7 +169,7 @@ export function GmailPredictionPanel({
                           value={targetSummary}
                           onChange={(e) => setTargetSummary(e.target.value)}
                           placeholder={"Desired summary focus"}
-                          className="mt-0.5 w-full rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                          className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-1"
                         />
                       </div>
                       <button
@@ -191,7 +183,7 @@ export function GmailPredictionPanel({
                             target_summary: targetSummary.trim() || undefined,
                           })
                         }
-                        className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 mt-1.5 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                       >
                         {optimize.isMutating ? (
                           <>
@@ -203,22 +195,20 @@ export function GmailPredictionPanel({
                         )}
                       </button>
                       {optimize.error && (
-                        <p className="mt-1 text-xs text-status-error">
-                          {optimize.error.message}
-                        </p>
+                        <p className="text-status-error mt-1 text-xs">{optimize.error.message}</p>
                       )}
                     </div>
 
                     {/* Optimize results */}
                     {optimize.data && (
-                      <div className="rounded border border-border bg-card p-2.5 space-y-1.5">
+                      <div className="border-border bg-card space-y-1.5 rounded border p-2.5">
                         {optimize.data.suggested_subjects.length > 0 && (
                           <div>
-                            <h4 className="text-[10px] font-medium text-foreground-muted">
+                            <h4 className="text-foreground-muted text-[10px] font-medium">
                               {"Suggested Subjects"}
                             </h4>
                             {optimize.data.suggested_subjects.map((s, i) => (
-                              <p key={i} className="text-xs text-foreground">
+                              <p key={i} className="text-foreground text-xs">
                                 {s}
                               </p>
                             ))}
@@ -226,11 +216,11 @@ export function GmailPredictionPanel({
                         )}
                         {optimize.data.suggested_previews.length > 0 && (
                           <div>
-                            <h4 className="text-[10px] font-medium text-foreground-muted">
+                            <h4 className="text-foreground-muted text-[10px] font-medium">
                               {"Suggested Previews"}
                             </h4>
                             {optimize.data.suggested_previews.map((p, i) => (
-                              <p key={i} className="text-xs text-foreground">
+                              <p key={i} className="text-foreground text-xs">
                                 {p}
                               </p>
                             ))}
@@ -238,10 +228,10 @@ export function GmailPredictionPanel({
                         )}
                         {optimize.data.reasoning && (
                           <div>
-                            <h4 className="text-[10px] font-medium text-foreground-muted">
+                            <h4 className="text-foreground-muted text-[10px] font-medium">
                               {"Reasoning"}
                             </h4>
-                            <p className="text-[10px] text-foreground-muted">
+                            <p className="text-foreground-muted text-[10px]">
                               {optimize.data.reasoning}
                             </p>
                           </div>
@@ -255,7 +245,7 @@ export function GmailPredictionPanel({
           </div>
 
           {/* Section 2: Deliverability Score */}
-          <div className="border-t border-border pt-2">
+          <div className="border-border border-t pt-2">
             <SectionHeader
               label={"Deliverability Score"}
               expanded={showDeliverability}
@@ -267,7 +257,7 @@ export function GmailPredictionPanel({
                   type="button"
                   disabled={deliverability.isMutating}
                   onClick={() => deliverability.trigger({ html })}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+                  className="border-border bg-card text-foreground hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   {deliverability.isMutating ? (
                     <>
@@ -279,19 +269,15 @@ export function GmailPredictionPanel({
                   )}
                 </button>
                 {deliverability.error && (
-                  <p className="text-xs text-status-error">
-                    {deliverability.error.message}
-                  </p>
+                  <p className="text-status-error text-xs">{deliverability.error.message}</p>
                 )}
-                {deliverability.data && (
-                  <DeliverabilityGauge result={deliverability.data} />
-                )}
+                {deliverability.data && <DeliverabilityGauge result={deliverability.data} />}
               </div>
             )}
           </div>
 
           {/* Section 3: Schema.org Markup */}
-          <div className="border-t border-border pt-2">
+          <div className="border-border border-t pt-2">
             <SectionHeader
               label={"Schema.org Markup"}
               expanded={showSchema}
@@ -308,7 +294,7 @@ export function GmailPredictionPanel({
                       subject: subject.trim() || undefined,
                     })
                   }
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+                  className="border-border bg-card text-foreground hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   {schema.isMutating ? (
                     <>
@@ -320,22 +306,15 @@ export function GmailPredictionPanel({
                   )}
                 </button>
                 {schema.error && (
-                  <p className="text-xs text-status-error">
-                    {schema.error.message}
-                  </p>
+                  <p className="text-status-error text-xs">{schema.error.message}</p>
                 )}
-                {schema.data && (
-                  <SchemaPreview
-                    result={schema.data}
-                    onApply={onHtmlUpdate}
-                  />
-                )}
+                {schema.data && <SchemaPreview result={schema.data} onApply={onHtmlUpdate} />}
               </div>
             )}
           </div>
 
           {/* Section 4: BIMI Readiness */}
-          <div className="border-t border-border pt-2">
+          <div className="border-border border-t pt-2">
             <SectionHeader
               label={"BIMI Readiness"}
               expanded={showBIMI}

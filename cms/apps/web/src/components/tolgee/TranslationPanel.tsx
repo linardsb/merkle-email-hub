@@ -74,15 +74,10 @@ export function TranslationPanel({
   onTranslationEdit,
 }: TranslationPanelProps) {
   const { trigger: syncKeys, isMutating: isSyncing } = useSyncKeys();
-  const { trigger: pullTranslations, isMutating: isPulling } =
-    usePullTranslations();
+  const { trigger: pullTranslations, isMutating: isPulling } = usePullTranslations();
 
-  const [syncedKeys, setSyncedKeys] = useState<Record<string, string> | null>(
-    null,
-  );
-  const [pullResults, setPullResults] = useState<
-    TranslationPullResponse[] | null
-  >(null);
+  const [syncedKeys, setSyncedKeys] = useState<Record<string, string> | null>(null);
+  const [pullResults, setPullResults] = useState<TranslationPullResponse[] | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingCell, setEditingCell] = useState<{
@@ -91,10 +86,7 @@ export function TranslationPanel({
   } | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const nonBaseLanguages = useMemo(
-    () => languages.filter((l) => !l.base),
-    [languages],
-  );
+  const nonBaseLanguages = useMemo(() => languages.filter((l) => !l.base), [languages]);
 
   const keyRows = useMemo(
     () => buildKeyRows(syncedKeys, pullResults, languages),
@@ -105,17 +97,13 @@ export function TranslationPanel({
     let rows = keyRows;
 
     if (statusFilter !== "all") {
-      rows = rows.filter((row) =>
-        Object.values(row.statuses).some((s) => s === statusFilter),
-      );
+      rows = rows.filter((row) => Object.values(row.statuses).some((s) => s === statusFilter));
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       rows = rows.filter(
-        (row) =>
-          row.key.toLowerCase().includes(q) ||
-          row.sourceText.toLowerCase().includes(q),
+        (row) => row.key.toLowerCase().includes(q) || row.sourceText.toLowerCase().includes(q),
       );
     }
 
@@ -169,14 +157,7 @@ export function TranslationPanel({
     } catch {
       toast.error("Failed to sync translation keys");
     }
-  }, [
-    connectionId,
-    templateId,
-    tolgeeProjectId,
-    languages,
-    syncKeys,
-    pullTranslations,
-  ]);
+  }, [connectionId, templateId, tolgeeProjectId, languages, syncKeys, pullTranslations]);
 
   const handlePull = useCallback(async () => {
     try {
@@ -216,12 +197,12 @@ export function TranslationPanel({
   return (
     <div className="flex h-full flex-col">
       {/* ── Toolbar ── */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+      <div className="border-border flex items-center gap-2 border-b px-3 py-2">
         <button
           type="button"
           onClick={handleSync}
           disabled={isLoading}
-          className="flex items-center gap-1.5 rounded-md bg-interactive px-2.5 py-1.5 text-xs font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+          className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {isSyncing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -235,7 +216,7 @@ export function TranslationPanel({
           type="button"
           onClick={handlePull}
           disabled={isLoading || !syncedKeys}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {isPulling ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -245,7 +226,7 @@ export function TranslationPanel({
           {"Pull Latest"}
         </button>
 
-        <div className="mx-2 h-4 w-px bg-border" />
+        <div className="bg-border mx-2 h-4 w-px" />
 
         {/* Status filter */}
         <div className="flex gap-1">
@@ -269,41 +250,36 @@ export function TranslationPanel({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
+          <Search className="text-foreground-muted absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search keys…"
-            className="w-48 rounded-md border border-input-border bg-input-bg py-1 pl-7 pr-2 text-xs text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
+            className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-48 rounded-md border py-1 pl-7 pr-2 text-xs focus:outline-none focus:ring-1"
           />
         </div>
       </div>
 
       {/* ── Progress bars ── */}
       {keyRows.length > 0 && (
-        <div className="flex gap-4 border-b border-border px-3 py-2">
+        <div className="border-border flex gap-4 border-b px-3 py-2">
           {nonBaseLanguages.map((lang) => {
             const prog = localeProgress[lang.tag];
             if (!prog) return null;
-            const pct =
-              prog.total > 0
-                ? Math.round((prog.translated / prog.total) * 100)
-                : 0;
+            const pct = prog.total > 0 ? Math.round((prog.translated / prog.total) * 100) : 0;
             return (
               <div key={lang.tag} className="flex items-center gap-2 text-xs">
                 <span className="text-foreground-muted">
                   {lang.flag_emoji} {lang.name}
                 </span>
-                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-inset">
+                <div className="bg-surface-inset h-1.5 w-16 overflow-hidden rounded-full">
                   <div
-                    className="h-full bg-status-success transition-all"
+                    className="bg-status-success h-full transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span className="tabular-nums text-foreground-muted">
-                  {pct}%
-                </span>
+                <span className="text-foreground-muted tabular-nums">{pct}%</span>
               </div>
             );
           })}
@@ -313,27 +289,25 @@ export function TranslationPanel({
       {/* ── Table ── */}
       <div className="flex-1 overflow-auto">
         {!syncedKeys ? (
-          <div className="flex h-full items-center justify-center text-sm text-foreground-muted">
-            {"Click \"Sync Keys\" to extract translation keys from the template"}
+          <div className="text-foreground-muted flex h-full items-center justify-center text-sm">
+            {'Click "Sync Keys" to extract translation keys from the template'}
           </div>
         ) : filteredRows.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-foreground-muted">
+          <div className="text-foreground-muted flex h-full items-center justify-center text-sm">
             {"No keys match the current filter"}
           </div>
         ) : (
           <table className="w-full text-xs">
-            <thead className="sticky top-0 z-10 bg-surface">
-              <tr className="border-b border-border">
-                <th className="px-3 py-2 text-left font-medium text-foreground-muted">
-                  {"Key"}
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-foreground-muted">
+            <thead className="bg-surface sticky top-0 z-10">
+              <tr className="border-border border-b">
+                <th className="text-foreground-muted px-3 py-2 text-left font-medium">{"Key"}</th>
+                <th className="text-foreground-muted px-3 py-2 text-left font-medium">
                   {"Source"}
                 </th>
                 {nonBaseLanguages.map((lang) => (
                   <th
                     key={lang.tag}
-                    className="px-3 py-2 text-left font-medium text-foreground-muted"
+                    className="text-foreground-muted px-3 py-2 text-left font-medium"
                   >
                     {lang.flag_emoji} {lang.name}
                   </th>
@@ -342,14 +316,11 @@ export function TranslationPanel({
             </thead>
             <tbody>
               {filteredRows.map((row) => (
-                <tr
-                  key={row.key}
-                  className="border-b border-border hover:bg-surface-hover"
-                >
-                  <td className="max-w-[12rem] truncate px-3 py-2 font-mono text-foreground-muted">
+                <tr key={row.key} className="border-border hover:bg-surface-hover border-b">
+                  <td className="text-foreground-muted max-w-[12rem] truncate px-3 py-2 font-mono">
                     {row.key}
                   </td>
-                  <td className="max-w-[16rem] truncate px-3 py-2 text-foreground">
+                  <td className="text-foreground max-w-[16rem] truncate px-3 py-2">
                     {row.sourceText}
                   </td>
                   {nonBaseLanguages.map((lang) => {
@@ -357,8 +328,7 @@ export function TranslationPanel({
                     const badge = STATUS_BADGE[status];
                     const translation = row.translations[lang.tag] ?? "";
                     const isEditing =
-                      editingCell?.key === row.key &&
-                      editingCell?.locale === lang.tag;
+                      editingCell?.key === row.key && editingCell?.locale === lang.tag;
 
                     return (
                       <td key={lang.tag} className="px-3 py-2">
@@ -373,12 +343,12 @@ export function TranslationPanel({
                                 if (e.key === "Escape") handleEditCancel();
                               }}
                               autoFocus
-                              className="w-full rounded border border-input-focus bg-input-bg px-1.5 py-0.5 text-xs text-foreground focus:outline-none"
+                              className="border-input-focus bg-input-bg text-foreground w-full rounded border px-1.5 py-0.5 text-xs focus:outline-none"
                             />
                             <button
                               type="button"
                               onClick={handleEditSave}
-                              className="text-xs text-interactive hover:text-interactive-hover"
+                              className="text-interactive hover:text-interactive-hover text-xs"
                             >
                               {"Save"}
                             </button>
@@ -386,9 +356,7 @@ export function TranslationPanel({
                         ) : (
                           <button
                             type="button"
-                            onClick={() =>
-                              handleEditStart(row.key, lang.tag, translation)
-                            }
+                            onClick={() => handleEditStart(row.key, lang.tag, translation)}
                             className="group flex w-full items-center gap-1.5 text-left"
                           >
                             <span
@@ -396,7 +364,7 @@ export function TranslationPanel({
                             >
                               {badge.label}
                             </span>
-                            <span className="max-w-[10rem] truncate text-foreground group-hover:text-interactive">
+                            <span className="text-foreground group-hover:text-interactive max-w-[10rem] truncate">
                               {translation || "—"}
                             </span>
                           </button>

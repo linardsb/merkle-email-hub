@@ -8,7 +8,15 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@email-hub/ui/components/ui/dialog";
-import { Loader2, CheckCircle2, AlertCircle, ArrowLeft, ArrowRight, ExternalLink, Puzzle } from "../icons";
+import {
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  ExternalLink,
+  Puzzle,
+} from "../icons";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DesignFileBrowser } from "./design-file-browser";
@@ -51,7 +59,9 @@ function StatusBadge({ status }: { status: string }) {
   const fallback = { className: "bg-surface-hover text-foreground-muted", label: "Pending" };
   const info = statusMap[status] ?? fallback;
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${info.className}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${info.className}`}
+    >
       {info.label}
     </span>
   );
@@ -77,14 +87,12 @@ function StepIndicator({ steps, currentIndex }: { steps: string[]; currentIndex:
           </div>
           <span
             className={`text-xs ${
-              i === currentIndex ? "font-medium text-foreground" : "text-foreground-muted"
+              i === currentIndex ? "text-foreground font-medium" : "text-foreground-muted"
             }`}
           >
             {label}
           </span>
-          {i < steps.length - 1 && (
-            <div className="h-px w-6 bg-card-border" />
-          )}
+          {i < steps.length - 1 && <div className="bg-card-border h-px w-6" />}
         </div>
       ))}
     </div>
@@ -111,10 +119,7 @@ function ImportDesignWizard({
 
   const { trigger: generateBrief, isMutating: isGenerating } = useGenerateBrief();
   const { trigger: createImport, isMutating: isCreating } = useCreateDesignImport();
-  const { data: polledImport } = useDesignImport(
-    step === "converting" ? importId : null,
-    true,
-  );
+  const { data: polledImport } = useDesignImport(step === "converting" ? importId : null, true);
 
   // Auto-advance when conversion completes
   useEffect(() => {
@@ -125,12 +130,7 @@ function ImportDesignWizard({
     }
   }, [polledImport]);
 
-  const steps = [
-    "Select Frames",
-    "Review Brief",
-    "Converting",
-    "Result",
-  ];
+  const steps = ["Select Frames", "Review Brief", "Converting", "Result"];
   const stepIndex = ["select-frames", "review-brief", "converting", "result"].indexOf(step);
 
   const handleGenerateBrief = async () => {
@@ -186,7 +186,7 @@ function ImportDesignWizard({
       {/* Step 1: Select Frames */}
       {step === "select-frames" && (
         <div className="space-y-4">
-          <p className="text-sm text-foreground-muted">{"Select frames to import"}</p>
+          <p className="text-foreground-muted text-sm">{"Select frames to import"}</p>
           <DesignFileBrowser
             connectionId={connectionId}
             selectedNodeIds={selectedNodeIds}
@@ -197,7 +197,7 @@ function ImportDesignWizard({
               type="button"
               onClick={handleGenerateBrief}
               disabled={selectedNodeIds.length === 0 || isGenerating}
-              className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+              className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
             >
               {isGenerating ? (
                 <>
@@ -217,22 +217,27 @@ function ImportDesignWizard({
 
       {/* Step 2: Review Brief (loading state while auto-generating) */}
       {step === "review-brief" && !briefData && (
-        <div className="flex flex-col items-center justify-center py-12 gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-foreground-muted" />
-          <p className="text-sm text-foreground-muted">{"Analyzing design and generating brief…"}</p>
-          <p className="text-xs text-foreground-muted">{`${selectedNodeIds.length} frames selected`}</p>
+        <div className="flex flex-col items-center justify-center gap-3 py-12">
+          <Loader2 className="text-foreground-muted h-6 w-6 animate-spin" />
+          <p className="text-foreground-muted text-sm">
+            {"Analyzing design and generating brief…"}
+          </p>
+          <p className="text-foreground-muted text-xs">{`${selectedNodeIds.length} frames selected`}</p>
         </div>
       )}
 
       {/* Step 2: Review Brief (ready) */}
       {step === "review-brief" && briefData && (
         <div className="space-y-4">
-          <div className="flex items-center gap-4 text-sm text-foreground-muted">
+          <div className="text-foreground-muted flex items-center gap-4 text-sm">
             <span>{`Layout: ${briefData.layout_summary}`}</span>
             <span>{`${briefData.sections_detected} sections detected`}</span>
           </div>
           <div>
-            <label htmlFor="import-brief" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="import-brief"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               {"Campaign Brief"}
             </label>
             <textarea
@@ -240,15 +245,19 @@ function ImportDesignWizard({
               value={editedBrief}
               onChange={(e) => setEditedBrief(e.target.value)}
               rows={12}
-              className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 font-mono text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
+              className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 font-mono text-sm focus:outline-none focus:ring-1"
             />
-            <p className="mt-1 text-xs text-foreground-muted">{"Edit the generated brief before conversion. The AI Scaffolder will use this to produce your email template."}</p>
+            <p className="text-foreground-muted mt-1 text-xs">
+              {
+                "Edit the generated brief before conversion. The AI Scaffolder will use this to produce your email template."
+              }
+            </p>
           </div>
           <div className="flex justify-between">
             <button
               type="button"
               onClick={() => setStep("select-frames")}
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+              className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               {"Back"}
@@ -257,7 +266,7 @@ function ImportDesignWizard({
               type="button"
               onClick={handleStartConversion}
               disabled={editedBrief.trim().length < 10 || isCreating}
-              className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+              className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
             >
               {isCreating ? (
                 <>
@@ -275,11 +284,11 @@ function ImportDesignWizard({
       {/* Step 3: Converting */}
       {step === "converting" && (
         <div className="flex flex-col items-center gap-4 py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-interactive" />
-          <p className="text-sm font-medium text-foreground">{"Converting your design to an email template…"}</p>
-          {polledImport && (
-            <StatusBadge status={polledImport.status} />
-          )}
+          <Loader2 className="text-interactive h-8 w-8 animate-spin" />
+          <p className="text-foreground text-sm font-medium">
+            {"Converting your design to an email template…"}
+          </p>
+          {polledImport && <StatusBadge status={polledImport.status} />}
         </div>
       )}
 
@@ -288,23 +297,23 @@ function ImportDesignWizard({
         <div className="flex flex-col items-center gap-4 py-6">
           {importResult.status === "completed" ? (
             <>
-              <CheckCircle2 className="h-10 w-10 text-status-success" />
-              <p className="text-sm font-medium text-foreground">{"Template created successfully!"}</p>
+              <CheckCircle2 className="text-status-success h-10 w-10" />
+              <p className="text-foreground text-sm font-medium">
+                {"Template created successfully!"}
+              </p>
 
               {/* Imported assets */}
               {importResult.assets.length > 0 && (
                 <div className="w-full">
-                  <h4 className="mb-2 text-sm font-medium text-foreground">
-                    {"Imported Assets"}
-                  </h4>
+                  <h4 className="text-foreground mb-2 text-sm font-medium">{"Imported Assets"}</h4>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {importResult.assets.map((asset) => (
                       <div
                         key={asset.id}
-                        className="flex flex-col items-center gap-1 rounded-md border border-card-border bg-card-bg p-2"
+                        className="border-card-border bg-card-bg flex flex-col items-center gap-1 rounded-md border p-2"
                       >
-                        <div className="h-12 w-12 rounded bg-surface-hover" />
-                        <span className="truncate text-xs text-foreground-muted">
+                        <div className="bg-surface-hover h-12 w-12 rounded" />
+                        <span className="text-foreground-muted truncate text-xs">
                           {asset.node_name}
                         </span>
                       </div>
@@ -322,7 +331,7 @@ function ImportDesignWizard({
                         `/projects/${importResult.project_id}/workspace?template=${importResult.result_template_id}&view=code`,
                       )
                     }
-                    className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+                    className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
                   >
                     <ExternalLink className="h-4 w-4" />
                     {"Open in Workspace"}
@@ -332,14 +341,14 @@ function ImportDesignWizard({
             </>
           ) : (
             <>
-              <AlertCircle className="h-10 w-10 text-status-danger" />
-              <p className="text-sm font-medium text-foreground">
+              <AlertCircle className="text-status-danger h-10 w-10" />
+              <p className="text-foreground text-sm font-medium">
                 {`Conversion failed: ${importResult.error_message ?? "Unknown error"}`}
               </p>
               <button
                 type="button"
                 onClick={() => setStep("review-brief")}
-                className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+                className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
               >
                 {"Try Again"}
               </button>
@@ -353,11 +362,7 @@ function ImportDesignWizard({
 
 // ── Extract Components Tab ──
 
-function ExtractComponentsWizard({
-  connectionId,
-}: {
-  connectionId: number;
-}) {
+function ExtractComponentsWizard({ connectionId }: { connectionId: number }) {
   const [step, setStep] = useState<ExtractStep>("select-components");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [extractImportId, setExtractImportId] = useState<number | null>(null);
@@ -365,7 +370,8 @@ function ExtractComponentsWizard({
   const router = useRouter();
 
   const { data: componentList, isLoading } = useDesignComponents(connectionId);
-  const { trigger: extractComponents, isMutating: isExtracting } = useExtractComponents(connectionId);
+  const { trigger: extractComponents, isMutating: isExtracting } =
+    useExtractComponents(connectionId);
   const { data: polledImport } = useDesignImport(
     step === "extracting" ? extractImportId : null,
     true,
@@ -382,9 +388,7 @@ function ExtractComponentsWizard({
   }, [polledImport]);
 
   const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const toggleAll = () => {
@@ -415,16 +419,16 @@ function ExtractComponentsWizard({
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
+          <Loader2 className="text-foreground-muted h-5 w-5 animate-spin" />
         </div>
       );
     }
 
     if (components.length === 0) {
       return (
-        <div className="rounded-lg border border-card-border bg-card-bg px-4 py-8 text-center">
-          <Puzzle className="mx-auto mb-2 h-8 w-8 text-foreground-muted" />
-          <p className="text-sm text-foreground-muted">{"No pages found in this design file"}</p>
+        <div className="border-card-border bg-card-bg rounded-lg border px-4 py-8 text-center">
+          <Puzzle className="text-foreground-muted mx-auto mb-2 h-8 w-8" />
+          <p className="text-foreground-muted text-sm">{"No pages found in this design file"}</p>
         </div>
       );
     }
@@ -432,11 +436,11 @@ function ExtractComponentsWizard({
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-foreground-muted">{"Select components to extract"}</p>
+          <p className="text-foreground-muted text-sm">{"Select components to extract"}</p>
           <button
             type="button"
             onClick={toggleAll}
-            className="text-xs font-medium text-interactive hover:underline"
+            className="text-interactive text-xs font-medium hover:underline"
           >
             {selectedIds.length === components.length ? "Deselect All" : "Select All"}
           </button>
@@ -460,17 +464,17 @@ function ExtractComponentsWizard({
                   <img
                     src={comp.thumbnail_url}
                     alt={`Thumbnail for ${comp.name}`}
-                    className="h-16 w-full rounded border border-card-border object-contain"
+                    className="border-card-border h-16 w-full rounded border object-contain"
                   />
                 ) : (
-                  <div className="flex h-16 w-full items-center justify-center rounded border border-card-border bg-surface-hover">
-                    <Puzzle className="h-6 w-6 text-foreground-muted" />
+                  <div className="border-card-border bg-surface-hover flex h-16 w-full items-center justify-center rounded border">
+                    <Puzzle className="text-foreground-muted h-6 w-6" />
                   </div>
                 )}
                 <div className="w-full">
-                  <p className="truncate text-xs font-medium text-foreground">{comp.name}</p>
+                  <p className="text-foreground truncate text-xs font-medium">{comp.name}</p>
                   {comp.containing_page && (
-                    <p className="truncate text-xs text-foreground-muted">{comp.containing_page}</p>
+                    <p className="text-foreground-muted truncate text-xs">{comp.containing_page}</p>
                   )}
                 </div>
               </button>
@@ -483,11 +487,9 @@ function ExtractComponentsWizard({
             type="button"
             onClick={handleExtract}
             disabled={selectedIds.length === 0 || isExtracting}
-            className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
-            {isExtracting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : null}
+            {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {`Extract Selected (${selectedIds.length})`}
           </button>
         </div>
@@ -499,8 +501,10 @@ function ExtractComponentsWizard({
   if (step === "extracting") {
     return (
       <div className="flex flex-col items-center gap-4 py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-interactive" />
-        <p className="text-sm font-medium text-foreground">{"Extracting components and generating HTML…"}</p>
+        <Loader2 className="text-interactive h-8 w-8 animate-spin" />
+        <p className="text-foreground text-sm font-medium">
+          {"Extracting components and generating HTML…"}
+        </p>
         {polledImport && <StatusBadge status={polledImport.status} />}
       </div>
     );
@@ -511,8 +515,8 @@ function ExtractComponentsWizard({
     <div className="flex flex-col items-center gap-4 py-6">
       {polledImport?.status === "failed" ? (
         <>
-          <AlertCircle className="h-10 w-10 text-status-danger" />
-          <p className="text-sm font-medium text-foreground">
+          <AlertCircle className="text-status-danger h-10 w-10" />
+          <p className="text-foreground text-sm font-medium">
             {`Conversion failed: ${polledImport.error_message ?? "Unknown error"}`}
           </p>
           <button
@@ -521,21 +525,21 @@ function ExtractComponentsWizard({
               setStep("select-components");
               setExtractImportId(null);
             }}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Try Again"}
           </button>
         </>
       ) : (
         <>
-          <CheckCircle2 className="h-10 w-10 text-status-success" />
-          <p className="text-sm font-medium text-foreground">
+          <CheckCircle2 className="text-status-success h-10 w-10" />
+          <p className="text-foreground text-sm font-medium">
             {`${totalComponents} components extracted successfully!`}
           </p>
           <button
             type="button"
             onClick={() => router.push("/components")}
-            className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
           >
             <ExternalLink className="h-4 w-4" />
             {"View in Component Library"}
@@ -572,13 +576,11 @@ export function DesignImportDialog({
       <DialogContent className="max-w-[48rem]">
         <DialogHeader>
           <DialogTitle>{`Import from ${connectionName}`}</DialogTitle>
-          <DialogDescription className="sr-only">
-            {"Import Design"}
-          </DialogDescription>
+          <DialogDescription className="sr-only">{"Import Design"}</DialogDescription>
         </DialogHeader>
 
         {/* Tab bar */}
-        <div className="flex gap-1 rounded-lg border border-card-border bg-card-bg p-1">
+        <div className="border-card-border bg-card-bg flex gap-1 rounded-lg border p-1">
           <button
             type="button"
             onClick={() => setActiveTab("import")}
@@ -606,14 +608,9 @@ export function DesignImportDialog({
         {/* Tab content */}
         <div className="min-h-[20rem]">
           {activeTab === "import" ? (
-            <ImportDesignWizard
-              connectionId={connectionId}
-              initialNodeIds={initialNodeIds}
-            />
+            <ImportDesignWizard connectionId={connectionId} initialNodeIds={initialNodeIds} />
           ) : (
-            <ExtractComponentsWizard
-              connectionId={connectionId}
-            />
+            <ExtractComponentsWizard connectionId={connectionId} />
           )}
         </div>
       </DialogContent>

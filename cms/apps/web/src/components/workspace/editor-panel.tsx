@@ -13,34 +13,26 @@ import { ViewSwitcher, type ViewMode } from "./view-switcher";
 import { ImportDialog } from "@/components/builder/import-dialog";
 
 const CodeEditor = dynamic(
-  () =>
-    import("@/components/workspace/editor/code-editor").then(
-      (mod) => mod.CodeEditor
-    ),
+  () => import("@/components/workspace/editor/code-editor").then((mod) => mod.CodeEditor),
   {
     ssr: false,
     loading: () => <EditorLoading />,
-  }
+  },
 );
 
 const VisualBuilderPanel = dynamic(
-  () =>
-    import("@/components/builder/visual-builder-panel").then(
-      (mod) => mod.VisualBuilderPanel
-    ),
+  () => import("@/components/builder/visual-builder-panel").then((mod) => mod.VisualBuilderPanel),
   {
     ssr: false,
     loading: () => <EditorLoading />,
-  }
+  },
 );
 
 function EditorLoading() {
   return (
-    <div className="flex h-full items-center justify-center bg-background">
-      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      <span className="ml-2 text-sm text-muted-foreground">
-        {"Loading editor..."}
-      </span>
+    <div className="bg-background flex h-full items-center justify-center">
+      <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+      <span className="text-muted-foreground ml-2 text-sm">{"Loading editor..."}</span>
     </div>
   );
 }
@@ -79,7 +71,25 @@ interface EditorPanelProps {
   };
 }
 
-export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange, onSelectionChange, collaborative, projectId, onViewChange, initialView, builderProps }: EditorPanelProps, ref) {
+export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(function EditorPanel(
+  {
+    value,
+    onChange,
+    onSave,
+    saveStatus,
+    readOnly,
+    brandConfig,
+    onBrandViolationsChange,
+    onCursorOffsetChange,
+    onSelectionChange,
+    collaborative,
+    projectId,
+    onViewChange,
+    initialView,
+    builderProps,
+  }: EditorPanelProps,
+  ref,
+) {
   // Persist view mode per project in localStorage.
   // initialView prop (from ?view= query param) takes precedence over stored value.
   const storageKey = projectId ? `editor-view-${projectId}` : null;
@@ -100,7 +110,7 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
       setActiveTab(tab);
       onViewChange?.(tab);
     },
-    [onViewChange]
+    [onViewChange],
   );
 
   // Import HTML dialog (available in code mode)
@@ -109,7 +119,7 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
     (annotatedHtml: string) => {
       onChange(annotatedHtml);
     },
-    [onChange]
+    [onChange],
   );
 
   // Sync engine — only active in split mode
@@ -145,7 +155,7 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
       onChange(html);
       if (isSplit) syncCodeChange(html);
     },
-    [onChange, isSplit, syncCodeChange]
+    [onChange, isSplit, syncCodeChange],
   );
 
   // Builder code change handler — HTML flows to parent in all modes.
@@ -155,19 +165,23 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
     (html: string) => {
       onChange(html);
     },
-    [onChange]
+    [onChange],
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background">
+    <div className="bg-background flex h-full flex-col overflow-hidden">
       {/* View switcher + Import HTML */}
-      <div className="flex items-center justify-between border-b border-default bg-surface">
-        <ViewSwitcher activeView={activeTab} onViewChange={handleTabChange} syncStatus={isSplit ? syncStatus : undefined} />
+      <div className="border-default bg-surface flex items-center justify-between border-b">
+        <ViewSwitcher
+          activeView={activeTab}
+          onViewChange={handleTabChange}
+          syncStatus={isSplit ? syncStatus : undefined}
+        />
         {activeTab === "code" && !readOnly && (
           <button
             type="button"
             onClick={() => setImportDialogOpen(true)}
-            className="mr-2 flex items-center gap-1.5 rounded-md border border-input px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="border-input text-muted-foreground hover:bg-accent hover:text-foreground mr-2 flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium"
             title="Import HTML email"
           >
             <FileCode className="h-3.5 w-3.5" />
@@ -178,13 +192,13 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
 
       {/* Parse error banner (split mode) */}
       {isSplit && parseError && (
-        <div className="flex items-center gap-2 border-b border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 text-destructive" />
+        <div className="border-border bg-muted text-muted-foreground flex items-center gap-2 border-b px-3 py-1.5 text-xs">
+          <AlertTriangle className="text-destructive h-3.5 w-3.5 flex-shrink-0" />
           <span className="flex-1">{parseError}</span>
           <button
             type="button"
             onClick={dismissParseError}
-            className="text-xs text-muted-foreground underline hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground text-xs underline"
           >
             {"Dismiss"}
           </button>
@@ -226,7 +240,7 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
 
         {activeTab === "split" && (
           <div className="flex h-full overflow-hidden">
-            <div className="w-1/2 border-r border-default overflow-hidden">
+            <div className="border-default w-1/2 overflow-hidden border-r">
               <CodeEditor
                 ref={ref}
                 value={value}

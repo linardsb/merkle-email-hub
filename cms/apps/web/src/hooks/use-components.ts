@@ -31,28 +31,28 @@ export function useComponents(options: UseComponentsOptions = {}) {
 
   return useSWR<PaginatedResponseComponentResponse>(
     `/api/v1/components/?${params.toString()}`,
-    fetcher
+    fetcher,
   );
 }
 
 export function useComponent(componentId: number | null) {
   return useSWR<ComponentResponse>(
     componentId ? `/api/v1/components/${componentId}` : null,
-    fetcher
+    fetcher,
   );
 }
 
 export function useComponentVersions(componentId: number | null) {
   return useSWR<VersionResponse[]>(
     componentId ? `/api/v1/components/${componentId}/versions` : null,
-    fetcher
+    fetcher,
   );
 }
 
 export function useComponentCompatibility(componentId: number | null) {
   return useSWR<ComponentCompatibilityResponse>(
     componentId ? `/api/v1/components/${componentId}/compatibility` : null,
-    fetcher
+    fetcher,
   );
 }
 
@@ -84,7 +84,7 @@ interface VersionCreate {
 export function useCreateComponent() {
   return useSWRMutation<ComponentResponse, Error, string, ComponentCreate>(
     "/api/v1/components/",
-    mutationFetcher
+    mutationFetcher,
   );
 }
 
@@ -99,7 +99,7 @@ export function useUpdateComponent(id: number | null) {
       });
       if (!res.ok) throw new Error("Failed to update component");
       return res.json();
-    }
+    },
   );
 }
 
@@ -109,24 +109,21 @@ export function useDeleteComponent(id: number | null) {
     async (url: string) => {
       const res = await authFetch(url, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete component");
-    }
+    },
   );
 }
 
 export function useCreateVersion(componentId: number | null) {
   return useSWRMutation<VersionResponse, Error, string, VersionCreate>(
     componentId ? `/api/v1/components/${componentId}/versions` : "",
-    mutationFetcher
+    mutationFetcher,
   );
 }
 
 /**
  * Trigger QA checks for a specific component version.
  */
-export function useRunComponentQA(
-  componentId: number | null,
-  versionNumber: number | null,
-) {
+export function useRunComponentQA(componentId: number | null, versionNumber: number | null) {
   return useSWRMutation<unknown, Error, string, Record<string, never>>(
     componentId && versionNumber
       ? `/api/v1/components/${componentId}/versions/${versionNumber}/qa`

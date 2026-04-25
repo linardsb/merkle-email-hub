@@ -25,7 +25,7 @@ export function ComponentVersionCompareDialog({
 }: ComponentVersionCompareDialogProps) {
   const sortedVersions = useMemo(
     () => [...versions].sort((a, b) => b.version_number - a.version_number),
-    [versions]
+    [versions],
   );
 
   const [beforeVersion, setBeforeVersion] = useState<number | null>(null);
@@ -33,18 +33,12 @@ export function ComponentVersionCompareDialog({
 
   const latestVersion = sortedVersions[0] ?? null;
   const secondLatest = sortedVersions[1] ?? null;
-  const effectiveAfter =
-    afterVersion ?? (latestVersion ? latestVersion.version_number : null);
+  const effectiveAfter = afterVersion ?? (latestVersion ? latestVersion.version_number : null);
   const effectiveBefore =
-    beforeVersion ??
-    (secondLatest ? secondLatest.version_number : effectiveAfter);
+    beforeVersion ?? (secondLatest ? secondLatest.version_number : effectiveAfter);
 
-  const beforeData = sortedVersions.find(
-    (v) => v.version_number === effectiveBefore
-  );
-  const afterData = sortedVersions.find(
-    (v) => v.version_number === effectiveAfter
-  );
+  const beforeData = sortedVersions.find((v) => v.version_number === effectiveBefore);
+  const afterData = sortedVersions.find((v) => v.version_number === effectiveAfter);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,7 +52,7 @@ export function ComponentVersionCompareDialog({
 
         {sortedVersions.length < 2 ? (
           <div className="flex flex-1 items-center justify-center">
-            <p className="text-sm text-foreground-muted">
+            <p className="text-foreground-muted text-sm">
               {"At least two versions are required for comparison"}
             </p>
           </div>
@@ -71,7 +65,7 @@ export function ComponentVersionCompareDialog({
               onSelectVersion={setBeforeVersion}
               versionData={beforeData ?? null}
             />
-            <div className="w-px bg-border" />
+            <div className="bg-border w-px" />
             <ComparePane
               label="After"
               versions={sortedVersions}
@@ -100,15 +94,15 @@ function ComparePane({
   versionData: VersionResponse | null;
 }) {
   return (
-    <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border">
-      <div className="flex items-center justify-between border-b border-border bg-surface-muted px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+    <div className="border-border flex flex-1 flex-col overflow-hidden rounded-lg border">
+      <div className="border-border bg-surface-muted flex items-center justify-between border-b px-3 py-2">
+        <span className="text-foreground-muted text-xs font-semibold uppercase tracking-wider">
           {label}
         </span>
         <select
           value={selectedVersion ?? ""}
           onChange={(e) => onSelectVersion(Number(e.target.value))}
-          className="rounded-md border border-input-border bg-surface px-2 py-1 text-sm text-foreground"
+          className="border-input-border bg-surface text-foreground rounded-md border px-2 py-1 text-sm"
         >
           {versions.map((v) => (
             <option key={v.version_number} value={v.version_number}>
@@ -119,10 +113,8 @@ function ComparePane({
       </div>
 
       {versionData && (
-        <div className="border-b border-border px-3 py-1.5 text-xs text-foreground-muted">
-          <span>
-            {`Created ${new Date(versionData.created_at).toLocaleDateString()}`}
-          </span>
+        <div className="border-border text-foreground-muted border-b px-3 py-1.5 text-xs">
+          <span>{`Created ${new Date(versionData.created_at).toLocaleDateString()}`}</span>
           {versionData.changelog ? (
             <span className="ml-2">&middot; {versionData.changelog}</span>
           ) : (
@@ -131,19 +123,17 @@ function ComparePane({
         </div>
       )}
 
-      <div className="flex-1 overflow-auto bg-surface-muted p-2">
+      <div className="bg-surface-muted flex-1 overflow-auto p-2">
         {versionData ? (
           <iframe
             srcDoc={versionData.html_source}
             sandbox=""
             title={`${label} — v${versionData.version_number}`}
-            className="h-full w-full border-0 bg-surface"
+            className="bg-surface h-full w-full border-0"
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-foreground-muted">
-              {"Select version"}
-            </p>
+            <p className="text-foreground-muted text-sm">{"Select version"}</p>
           </div>
         )}
       </div>

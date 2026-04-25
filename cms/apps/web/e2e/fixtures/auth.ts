@@ -1,9 +1,5 @@
 import { test as base, type Page } from "@playwright/test";
-import {
-  BACKEND_URL,
-  TEST_USER_EMAIL,
-  TEST_USER_PASSWORD,
-} from "./constants";
+import { BACKEND_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD } from "./constants";
 
 type AuthFixtures = {
   authenticatedPage: Page;

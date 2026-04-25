@@ -27,8 +27,7 @@ export const cssPropertyRules: CssPropertySupport[] = [
     value: "grid",
     severity: "error",
     unsupportedClients: ["Outlook", "Gmail (Android)", "Yahoo"],
-    reason:
-      "display:grid has no support in Outlook and limited support elsewhere",
+    reason: "display:grid has no support in Outlook and limited support elsewhere",
   },
 
   // Warnings — partial support
@@ -37,8 +36,7 @@ export const cssPropertyRules: CssPropertySupport[] = [
     value: "flex",
     severity: "warning",
     unsupportedClients: ["Outlook (Windows)", "Gmail (Android)"],
-    reason:
-      "display:flex is not supported in Outlook on Windows. Use tables for reliable layouts",
+    reason: "display:flex is not supported in Outlook on Windows. Use tables for reliable layouts",
   },
   {
     property: "float",
@@ -52,24 +50,21 @@ export const cssPropertyRules: CssPropertySupport[] = [
     value: null,
     severity: "warning",
     unsupportedClients: ["Outlook (Windows)"],
-    reason:
-      "max-width is ignored in Outlook on Windows. Use a fixed width with MSO conditionals",
+    reason: "max-width is ignored in Outlook on Windows. Use a fixed width with MSO conditionals",
   },
   {
     property: "background-image",
     value: null,
     severity: "warning",
     unsupportedClients: ["Outlook (Windows)"],
-    reason:
-      "background-image requires VML fallback for Outlook. Use <!--[if mso]> with v:fill",
+    reason: "background-image requires VML fallback for Outlook. Use <!--[if mso]> with v:fill",
   },
   {
     property: "border-radius",
     value: null,
     severity: "warning",
     unsupportedClients: ["Outlook (Windows)"],
-    reason:
-      "border-radius is ignored in Outlook on Windows. Rounded corners will appear square",
+    reason: "border-radius is ignored in Outlook on Windows. Rounded corners will appear square",
   },
   {
     property: "box-shadow",

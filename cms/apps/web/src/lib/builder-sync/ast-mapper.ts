@@ -83,14 +83,11 @@ export function restoreEspTokens(html: string, tokenMap: EspTokenMap): string {
  *
  * Works on placeholder strings (__ESP_N__), not raw ESP syntax.
  */
-export function internalizeStructuralEsp(
-  html: string,
-  tokenMap: EspTokenMap
-): string {
+export function internalizeStructuralEsp(html: string, tokenMap: EspTokenMap): string {
   // Build sets for conditional types based on the original token content
-  const openTokens = new Set<string>();   // {% if %}, {% unless %}, %%[IF...]%%
-  const elseTokens = new Set<string>();   // {% else %}, {% elsif %}, %%[ELSE...]%%
-  const closeTokens = new Set<string>();  // {% endif %}, {% endunless %}, %%[ENDIF]%%
+  const openTokens = new Set<string>(); // {% if %}, {% unless %}, %%[IF...]%%
+  const elseTokens = new Set<string>(); // {% else %}, {% elsif %}, %%[ELSE...]%%
+  const closeTokens = new Set<string>(); // {% endif %}, {% endunless %}, %%[ENDIF]%%
 
   for (const [placeholder, original] of tokenMap.tokens) {
     const trimmed = original.trim();
@@ -131,22 +128,17 @@ export function internalizeStructuralEsp(
 
   // Cap <tr> content length to prevent backtracking on large rows
   const trPattern = `<tr\\b[^>]*>[\\s\\S]{0,10000}?</tr>`;
-  const elseBranch = phElse
-    ? `(?:\\s*(?:${phElse})\\s*${trPattern})*`
-    : "";
+  const elseBranch = phElse ? `(?:\\s*(?:${phElse})\\s*${trPattern})*` : "";
   const fullPattern = new RegExp(
     `(${phOpen})\\s*(${trPattern})${elseBranch}\\s*(${phClose})`,
-    "gi"
+    "gi",
   );
 
   return html.replace(fullPattern, (fullMatch, open: string, ...rest: unknown[]) => {
     // Parse the match to extract branches
     // Simpler approach: find all <tr>...</tr> blocks and their preceding tokens
     const branches: Array<{ token: string | null; trHtml: string }> = [];
-    const branchPattern = new RegExp(
-      `(?:(${phAll})\\s*)?(${trPattern})`,
-      "gi"
-    );
+    const branchPattern = new RegExp(`(?:(${phAll})\\s*)?(${trPattern})`, "gi");
     // Skip the open token — it's captured as group 1 of fullPattern
     let branchMatch;
     const innerHtml = fullMatch.slice(open.length);
@@ -186,11 +178,7 @@ export function internalizeStructuralEsp(
  * Inject ESP placeholder tokens inside each <td> cell of a <tr>.
  * <tr><td>content</td></tr> → <tr><td>OPEN content CLOSE</td></tr>
  */
-function injectTokensIntoTr(
-  trHtml: string,
-  openToken: string,
-  closeToken: string
-): string {
+function injectTokensIntoTr(trHtml: string, openToken: string, closeToken: string): string {
   if (!openToken && !closeToken) return trHtml;
 
   // Replace each <td...>content</td> with <td...>OPEN content CLOSE</td>
@@ -201,7 +189,7 @@ function injectTokensIntoTr(
       const prefix = openToken ? `${openToken} ` : "";
       const suffix = closeToken ? ` ${closeToken}` : "";
       return `${tdOpen}${prefix}${content.trim()}${suffix}${tdClose}`;
-    }
+    },
   );
 }
 
@@ -251,14 +239,7 @@ export function parseInlineStyle(style: string): Record<string, string> {
 // ── DOM helpers ──
 
 /** Tags that are structural, not content — skip when counting children */
-const NON_CONTENT_TAGS = new Set([
-  "STYLE",
-  "SCRIPT",
-  "META",
-  "LINK",
-  "TITLE",
-  "HEAD",
-]);
+const NON_CONTENT_TAGS = new Set(["STYLE", "SCRIPT", "META", "LINK", "TITLE", "HEAD"]);
 
 function isContentElement(el: Element): boolean {
   return !NON_CONTENT_TAGS.has(el.tagName);
@@ -288,10 +269,7 @@ function isHiddenHelperElement(el: Element): boolean {
  *   multi-child node is found. When false, returns the deepest
  *   single-child leaf (used by sectionsToHtml to find insertion point).
  */
-export function findContentRoot(
-  body: Element,
-  requireChildren = true
-): Element | null {
+export function findContentRoot(body: Element, requireChildren = true): Element | null {
   let current: Element = body;
   let deepest: Element = body;
   const MAX_DEPTH = 20;
@@ -308,7 +286,7 @@ export function findContentRoot(
     }
 
     const children = Array.from(current.children).filter(
-      (el) => isContentElement(el) && !isHiddenHelperElement(el)
+      (el) => isContentElement(el) && !isHiddenHelperElement(el),
     );
 
     if (children.length === 0) {
@@ -389,29 +367,33 @@ export function isColumnGroup(children: Element[]): boolean {
   const firstClasses = (children[0] as HTMLElement)?.className?.split(/\s+/).filter(Boolean) ?? [];
   if (firstClasses.length > 0) {
     const shared = firstClasses.find((cls) =>
-      children.every((el) => (el as HTMLElement).classList?.contains(cls))
+      children.every((el) => (el as HTMLElement).classList?.contains(cls)),
     );
     if (shared) return true;
   }
 
   // Heuristic 2: width attributes sum to ~100%
-  const percentWidths = children.map((el) => {
-    const w = el.getAttribute("width");
-    if (!w) return 0;
-    return w.endsWith("%") ? parseFloat(w) : 0;
-  }).filter((w) => w > 0);
+  const percentWidths = children
+    .map((el) => {
+      const w = el.getAttribute("width");
+      if (!w) return 0;
+      return w.endsWith("%") ? parseFloat(w) : 0;
+    })
+    .filter((w) => w > 0);
   if (percentWidths.length === children.length) {
     const sum = percentWidths.reduce((a, b) => a + b, 0);
     if (sum >= 90 && sum <= 105) return true;
   }
 
   // Heuristic 3: pixel widths that approximately sum to a container width
-  const pxWidths = children.map((el) => {
-    const w = el.getAttribute("width");
-    if (!w) return 0;
-    const n = parseFloat(w);
-    return !w.endsWith("%") && n > 0 ? n : 0;
-  }).filter((w) => w > 0);
+  const pxWidths = children
+    .map((el) => {
+      const w = el.getAttribute("width");
+      if (!w) return 0;
+      const n = parseFloat(w);
+      return !w.endsWith("%") && n > 0 ? n : 0;
+    })
+    .filter((w) => w > 0);
   if (pxWidths.length === children.length && pxWidths.length >= 2) {
     const sum = pxWidths.reduce((a, b) => a + b, 0);
     // Common container widths: 600, 640, 580, 560, etc.
@@ -502,23 +484,16 @@ export function htmlToSections(html: string): SectionNode[] | null {
     const sections: SectionNode[] = [];
     for (const el of annotated) {
       const id = el.getAttribute("data-section-id") ?? crypto.randomUUID();
-      const componentId = parseInt(
-        el.getAttribute("data-component-id") ?? "0",
-        10
-      );
-      const componentName =
-        el.getAttribute("data-component-name") ?? "Section";
+      const componentId = parseInt(el.getAttribute("data-component-id") ?? "0", 10);
+      const componentName = el.getAttribute("data-component-name") ?? "Section";
 
       const slotValues: Record<string, string> = {};
       for (const slotEl of el.querySelectorAll("[data-slot-name]")) {
         const slotName = slotEl.getAttribute("data-slot-name");
-        if (slotName)
-          slotValues[slotName] = DOMPurify.sanitize(slotEl.innerHTML);
+        if (slotName) slotValues[slotName] = DOMPurify.sanitize(slotEl.innerHTML);
       }
 
-      const styleOverrides = parseInlineStyle(
-        el.getAttribute("style") ?? ""
-      );
+      const styleOverrides = parseInlineStyle(el.getAttribute("style") ?? "");
 
       const precedingContent = capturePrecedingContent(el);
       const fragment = restoreEspTokens((el as HTMLElement).outerHTML, tokenMap);
@@ -548,21 +523,18 @@ export function htmlToSections(html: string): SectionNode[] | null {
   // Check if all children form a column group — treat as single section
   if (isColumnGroup(children)) {
     const parentName = inferSectionName(contentRoot);
-    const name = parentName === "Section" || parentName === "Tbody"
-      ? "Columns"
-      : parentName;
-    const fragment = restoreEspTokens(
-      (contentRoot as HTMLElement).innerHTML,
-      tokenMap
-    );
-    return [{
-      id: crypto.randomUUID(),
-      componentId: 0,
-      componentName: name,
-      slotValues: {},
-      styleOverrides: {},
-      htmlFragment: fragment,
-    }];
+    const name = parentName === "Section" || parentName === "Tbody" ? "Columns" : parentName;
+    const fragment = restoreEspTokens((contentRoot as HTMLElement).innerHTML, tokenMap);
+    return [
+      {
+        id: crypto.randomUUID(),
+        componentId: 0,
+        componentName: name,
+        slotValues: {},
+        styleOverrides: {},
+        htmlFragment: fragment,
+      },
+    ];
   }
 
   const sections: SectionNode[] = [];
@@ -589,9 +561,7 @@ export function htmlToSections(html: string): SectionNode[] | null {
       slotValues: {},
       styleOverrides: {},
       htmlFragment: fragment,
-      precedingContent: precedingContent
-        ? restoreEspTokens(precedingContent, tokenMap)
-        : undefined,
+      precedingContent: precedingContent ? restoreEspTokens(precedingContent, tokenMap) : undefined,
     });
   }
 
@@ -608,10 +578,7 @@ export function htmlToSections(html: string): SectionNode[] | null {
  * serializes back. Preserves doctype and document structure.
  * Emits precedingContent (comments, text) before each section.
  */
-export function sectionsToHtml(
-  sections: SectionNode[],
-  templateShell: string
-): string {
+export function sectionsToHtml(sections: SectionNode[], templateShell: string): string {
   // Build a unified token map: extract ESP tokens from ALL sources using
   // a shared counter so placeholders are unique across shell + all sections.
   const unifiedMap: EspTokenMap = { tokens: new Map(), counter: 0 };
@@ -720,10 +687,7 @@ export function sectionsToHtml(
 /**
  * Compute minimal diff between two section arrays.
  */
-export function diffSections(
-  prev: SectionNode[],
-  next: SectionNode[]
-): SectionDiff[] {
+export function diffSections(prev: SectionNode[], next: SectionNode[]): SectionDiff[] {
   const diffs: SectionDiff[] = [];
   const nextIds = new Set(next.map((s) => s.id));
 

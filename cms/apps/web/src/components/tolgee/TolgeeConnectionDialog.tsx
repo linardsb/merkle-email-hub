@@ -11,10 +11,7 @@ import {
 import { Loader2, CheckCircle2 } from "../icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
-import {
-  useCreateTolgeeConnection,
-  useTolgeeLanguages,
-} from "@/hooks/use-tolgee";
+import { useCreateTolgeeConnection, useTolgeeLanguages } from "@/hooks/use-tolgee";
 import { useProjects } from "@/hooks/use-projects";
 import type { TolgeeLanguage } from "@/types/tolgee";
 
@@ -75,9 +72,7 @@ export function TolgeeConnectionDialog({
         pat: pat.trim(),
       });
       await mutate(
-        (key: unknown) =>
-          typeof key === "string" &&
-          key.startsWith("/api/v1/connectors/tolgee"),
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/connectors/tolgee"),
         undefined,
         { revalidate: true },
       );
@@ -114,15 +109,13 @@ export function TolgeeConnectionDialog({
         {connectedId && languages ? (
           // ── Post-connection: show languages ──
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-status-success">
+            <div className="text-status-success flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              <span className="text-sm font-medium">
-                {"Connected successfully"}
-              </span>
+              <span className="text-sm font-medium">{"Connected successfully"}</span>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
+              <label className="text-foreground mb-1.5 block text-sm font-medium">
                 {"Available Languages"}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -137,11 +130,7 @@ export function TolgeeConnectionDialog({
                   >
                     <span>{lang.flag_emoji}</span>
                     <span>{lang.name}</span>
-                    {lang.base && (
-                      <span className="text-xs text-foreground-muted">
-                        {"(Base)"}
-                      </span>
-                    )}
+                    {lang.base && <span className="text-foreground-muted text-xs">{"(Base)"}</span>}
                   </span>
                 ))}
               </div>
@@ -151,7 +140,7 @@ export function TolgeeConnectionDialog({
               <button
                 type="button"
                 onClick={handleDone}
-                className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
               >
                 {"Done"}
               </button>
@@ -164,7 +153,7 @@ export function TolgeeConnectionDialog({
               <div>
                 <label
                   htmlFor="tolgee-name"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Connection Name"}
                 </label>
@@ -183,18 +172,14 @@ export function TolgeeConnectionDialog({
               <div>
                 <label
                   htmlFor="tolgee-project"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Hub Project"}
                 </label>
                 <select
                   id="tolgee-project"
                   value={projectId ?? ""}
-                  onChange={(e) =>
-                    setProjectId(
-                      e.target.value ? Number(e.target.value) : null,
-                    )
-                  }
+                  onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}
                   disabled={isMutating}
                   className={selectClass}
                 >
@@ -210,10 +195,10 @@ export function TolgeeConnectionDialog({
               <div>
                 <label
                   htmlFor="tolgee-url"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Tolgee URL"}
-                  <span className="ml-1 text-foreground-muted">
+                  <span className="text-foreground-muted ml-1">
                     {"(optional — uses default if blank)"}
                   </span>
                 </label>
@@ -231,7 +216,7 @@ export function TolgeeConnectionDialog({
               <div>
                 <label
                   htmlFor="tolgee-project-id"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Tolgee Project ID"}
                 </label>
@@ -250,7 +235,7 @@ export function TolgeeConnectionDialog({
               <div>
                 <label
                   htmlFor="tolgee-pat"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Personal Access Token"}
                 </label>
@@ -271,7 +256,7 @@ export function TolgeeConnectionDialog({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+                className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
               >
                 {"Cancel"}
               </button>
@@ -279,7 +264,7 @@ export function TolgeeConnectionDialog({
                 type="button"
                 onClick={handleConnect}
                 disabled={!isValid || isMutating}
-                className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isMutating ? (
                   <span className="flex items-center gap-1.5">

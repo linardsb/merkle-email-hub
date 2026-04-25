@@ -11,10 +11,7 @@ import {
 import { Loader2, Check, ChevronLeft, ChevronRight, Search } from "../icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
-import {
-  useCreateDesignConnection,
-  useBrowseDesignFiles,
-} from "@/hooks/use-design-sync";
+import { useCreateDesignConnection, useBrowseDesignFiles } from "@/hooks/use-design-sync";
 import { useProjects } from "@/hooks/use-projects";
 import type { DesignProvider, DesignFileBrowse } from "@/types/design-sync";
 import { ApiError } from "@/lib/api-error";
@@ -93,9 +90,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
   // Group files by folder
   const groupedFiles = useMemo(() => {
     const filtered = searchQuery
-      ? files.filter((f) =>
-          f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (f.folder?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      ? files.filter(
+          (f) =>
+            f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (f.folder?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false),
         )
       : files;
 
@@ -268,11 +266,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                 {s < step ? <Check className="h-3.5 w-3.5" /> : s}
               </div>
               {s < 3 && (
-                <div
-                  className={`h-px w-8 ${
-                    s < step ? "bg-success-muted" : "bg-border"
-                  }`}
-                />
+                <div className={`h-px w-8 ${s < step ? "bg-success-muted" : "bg-border"}`} />
               )}
             </div>
           ))}
@@ -282,7 +276,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
         {step === 1 && (
           <div className="space-y-4">
             <div>
-              <label htmlFor="design-provider" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="design-provider"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"Design Tool"}
               </label>
               <select
@@ -301,7 +298,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
             </div>
 
             <div>
-              <label htmlFor="design-token" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="design-token"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"Access Token"}
               </label>
               <input
@@ -319,7 +319,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                 disabled={isLoading}
                 className={inputClass}
               />
-              <p className="mt-1 text-xs text-foreground-muted">
+              <p className="text-foreground-muted mt-1 text-xs">
                 {provider === "mock"
                   ? "Any value works for demo mode."
                   : "Generate a token from your design tool's developer settings."}
@@ -331,7 +331,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                 type="button"
                 onClick={handleBrowse}
                 disabled={!accessToken.trim() || isLoading}
-                className="flex items-center gap-1.5 rounded-md bg-interactive px-4 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isBrowsing ? (
                   <>
@@ -355,11 +355,14 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
             {browseUnsupported ? (
               /* Fallback: manual URL input */
               <div className="space-y-3">
-                <p className="text-sm text-foreground-muted">
+                <p className="text-foreground-muted text-sm">
                   {`File browsing is not yet supported for ${PROVIDERS.find((p) => p.value === provider)?.label ?? provider}. Enter a file URL manually.`}
                 </p>
                 <div>
-                  <label htmlFor="manual-url" className="mb-1.5 block text-sm font-medium text-foreground">
+                  <label
+                    htmlFor="manual-url"
+                    className="text-foreground mb-1.5 block text-sm font-medium"
+                  >
                     {"Design File URL"}
                   </label>
                   <input
@@ -368,9 +371,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                     value={manualUrl}
                     onChange={(e) => setManualUrl(e.target.value)}
                     placeholder={
-                      provider === "figma"
-                        ? "https://www.figma.com/design/..."
-                        : "Paste file URL…"
+                      provider === "figma" ? "https://www.figma.com/design/..." : "Paste file URL…"
                     }
                     disabled={isLoading}
                     className={inputClass}
@@ -380,7 +381,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+                    className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     {"Back"}
@@ -389,7 +390,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                     type="button"
                     onClick={handleManualContinue}
                     disabled={!manualUrl.trim()}
-                    className="flex items-center gap-1.5 rounded-md bg-interactive px-4 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                    className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
                   >
                     {"Continue"}
                     <ChevronRight className="h-4 w-4" />
@@ -400,7 +401,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
               /* Visual file grid */
               <>
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-foreground-muted" />
+                  <Search className="text-foreground-muted absolute left-2.5 top-2.5 h-4 w-4" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -410,15 +411,15 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                   />
                 </div>
 
-                <div className="max-h-[20rem] overflow-y-auto rounded-md border border-border">
+                <div className="border-border max-h-[20rem] overflow-y-auto rounded-md border">
                   {Object.keys(groupedFiles).length === 0 ? (
-                    <p className="p-4 text-center text-sm text-foreground-muted">
+                    <p className="text-foreground-muted p-4 text-center text-sm">
                       {"No files found."}
                     </p>
                   ) : (
                     Object.entries(groupedFiles).map(([folder, folderFiles]) => (
                       <div key={folder}>
-                        <div className="sticky top-0 border-b border-border bg-surface-sunken px-3 py-1.5 text-xs font-medium text-foreground-muted">
+                        <div className="border-border bg-surface-sunken text-foreground-muted sticky top-0 border-b px-3 py-1.5 text-xs font-medium">
                           {folder}
                         </div>
                         <div className="grid grid-cols-2 gap-2 p-2">
@@ -427,10 +428,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                               key={file.file_id}
                               type="button"
                               onClick={() => handleSelectFile(file)}
-                              className="group flex flex-col overflow-hidden rounded-md border border-border text-left transition-colors hover:border-interactive hover:bg-surface-hover"
+                              className="border-border hover:border-interactive hover:bg-surface-hover group flex flex-col overflow-hidden rounded-md border text-left transition-colors"
                             >
                               {file.thumbnail_url ? (
-                                <div className="flex h-24 items-center justify-center overflow-hidden bg-surface-sunken">
+                                <div className="bg-surface-sunken flex h-24 items-center justify-center overflow-hidden">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={file.thumbnail_url}
@@ -439,18 +440,18 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                                   />
                                 </div>
                               ) : (
-                                <div className="flex h-24 items-center justify-center bg-surface-sunken">
-                                  <span className="text-2xl text-foreground-muted">
+                                <div className="bg-surface-sunken flex h-24 items-center justify-center">
+                                  <span className="text-foreground-muted text-2xl">
                                     {file.name.charAt(0).toUpperCase()}
                                   </span>
                                 </div>
                               )}
                               <div className="px-2 py-1.5">
-                                <p className="truncate text-xs font-medium text-foreground">
+                                <p className="text-foreground truncate text-xs font-medium">
                                   {file.name}
                                 </p>
                                 {file.last_modified && (
-                                  <p className="text-[10px] text-foreground-muted">
+                                  <p className="text-foreground-muted text-[10px]">
                                     {new Date(file.last_modified).toLocaleDateString()}
                                   </p>
                                 )}
@@ -467,12 +468,12 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+                    className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     {"Back"}
                   </button>
-                  <span className="text-xs text-foreground-muted self-center">
+                  <span className="text-foreground-muted self-center text-xs">
                     {`${files.length} file${files.length === 1 ? "" : "s"}`}
                   </span>
                 </div>
@@ -485,7 +486,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <label htmlFor="design-name" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="design-name"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"Connection Name"}
               </label>
               <input
@@ -501,14 +505,17 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
             </div>
 
             <div>
-              <label htmlFor="design-url-readonly" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="design-url-readonly"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"Design File URL"}
               </label>
               <input
                 id="design-url-readonly"
                 type="text"
                 value={fileUrl}
-                readOnly={!!selectedFile}
+                readOnly={Boolean(selectedFile)}
                 onChange={selectedFile ? undefined : (e) => setManualUrl(e.target.value)}
                 disabled={isCreating}
                 className={`${inputClass} ${selectedFile ? "bg-surface-sunken" : ""}`}
@@ -516,7 +523,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
             </div>
 
             <div>
-              <label htmlFor="design-project" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="design-project"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"Link to Project"}
               </label>
               <select
@@ -540,7 +550,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                 type="button"
                 onClick={() => setStep(2)}
                 disabled={isCreating}
-                className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+                className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
                 {"Back"}
@@ -549,7 +559,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
                 type="button"
                 onClick={handleConnect}
                 disabled={!isStep3Valid || isCreating}
-                className="rounded-md bg-interactive px-4 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-4 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isCreating ? (
                   <span className="flex items-center gap-1.5">

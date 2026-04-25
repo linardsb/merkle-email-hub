@@ -18,7 +18,7 @@ export function CollaboratorAvatars({ collaborators, maxVisible = 3 }: Collabora
       {visible.map((collab) => (
         <div
           key={collab.clientId}
-          className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card text-[10px] font-medium text-white"
+          className="border-card flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] font-medium text-white"
           style={{ backgroundColor: collab.color }}
           title={collab.name}
         >
@@ -26,7 +26,7 @@ export function CollaboratorAvatars({ collaborators, maxVisible = 3 }: Collabora
         </div>
       ))}
       {overflow > 0 && (
-        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[10px] font-medium text-foreground">
+        <div className="border-card bg-muted text-foreground flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] font-medium">
           +{overflow}
         </div>
       )}

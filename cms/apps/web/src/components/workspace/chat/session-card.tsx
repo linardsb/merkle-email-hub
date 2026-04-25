@@ -41,21 +41,19 @@ export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) 
   const label = AGENT_LABELS[session.agent] ?? session.agent;
 
   return (
-    <div className="group rounded-lg border border-border bg-card p-3 transition-colors hover:border-border-accent">
+    <div className="border-border bg-card hover:border-border-accent group rounded-lg border p-3 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
               {label}
             </Badge>
-            <span className="text-[11px] text-muted-foreground">{timeAgo}</span>
+            <span className="text-muted-foreground text-[11px]">{timeAgo}</span>
           </div>
 
-          <p className="mt-1.5 line-clamp-2 text-xs text-foreground">
-            {session.preview}
-          </p>
+          <p className="text-foreground mt-1.5 line-clamp-2 text-xs">{session.preview}</p>
 
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-[11px]">
             {`${session.messageCount} messages`}
           </p>
         </div>
@@ -73,7 +71,7 @@ export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) 
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+            className="text-muted-foreground hover:text-destructive h-6 w-6 p-0"
             onClick={() => onDelete(session.id)}
             title={"Delete session"}
           >

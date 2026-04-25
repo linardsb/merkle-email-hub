@@ -26,7 +26,7 @@ interface BlockPaletteProps {
 export function BlockPalette({ onAddBlock }: BlockPaletteProps) {
   return (
     <div className="space-y-1 p-2">
-      <h3 className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+      <h3 className="text-muted-foreground px-1 text-[10px] uppercase tracking-wider">
         {"Blocks"}
       </h3>
       {PALETTE_ITEMS.map((item) => (
@@ -34,7 +34,7 @@ export function BlockPalette({ onAddBlock }: BlockPaletteProps) {
           key={item.type}
           type="button"
           onClick={() => onAddBlock(item.type)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-raised"
+          className="text-foreground hover:bg-surface-raised flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors"
         >
           {item.icon}
           <span>{BLOCK_TYPE_LABELS[item.type] ?? item.type}</span>

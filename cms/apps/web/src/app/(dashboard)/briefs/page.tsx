@@ -70,7 +70,7 @@ export default function BriefsPage() {
   // Resolve design connection for the selected brief connection via shared project_id
   const selectedDesignConnection = (() => {
     if (!selectedConnection?.project_id || !designConnections) return null;
-    return designConnections.find(dc => dc.project_id === selectedConnection.project_id) ?? null;
+    return designConnections.find((dc) => dc.project_id === selectedConnection.project_id) ?? null;
   })();
 
   return (
@@ -78,17 +78,19 @@ export default function BriefsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <ClipboardList className="h-8 w-8 text-foreground-accent" />
+          <ClipboardList className="text-foreground-accent h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{"Client Briefs"}</h1>
-            <p className="text-sm text-foreground-muted">{"Connect your project management tools to import and track campaign briefs"}</p>
+            <h1 className="text-foreground text-2xl font-semibold">{"Client Briefs"}</h1>
+            <p className="text-foreground-muted text-sm">
+              {"Connect your project management tools to import and track campaign briefs"}
+            </p>
           </div>
         </div>
         {activeTab === "connections" && (
           <button
             type="button"
             onClick={() => setDialogOpen(true)}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
           >
             {"Connect Platform"}
           </button>
@@ -96,7 +98,7 @@ export default function BriefsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border" role="tablist">
+      <div className="border-border flex gap-1 border-b" role="tablist">
         <button
           type="button"
           role="tab"
@@ -104,7 +106,7 @@ export default function BriefsPage() {
           onClick={() => setActiveTab("overview")}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "overview"
-              ? "border-b-2 border-interactive text-foreground"
+              ? "border-interactive text-foreground border-b-2"
               : "text-foreground-muted hover:text-foreground"
           }`}
         >
@@ -117,7 +119,7 @@ export default function BriefsPage() {
           onClick={() => setActiveTab("connections")}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "connections"
-              ? "border-b-2 border-interactive text-foreground"
+              ? "border-interactive text-foreground border-b-2"
               : "text-foreground-muted hover:text-foreground"
           }`}
         >
@@ -132,12 +134,12 @@ export default function BriefsPage() {
         <>
           {/* Error state */}
           {error ? (
-            <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
-              <p className="text-sm text-foreground-muted">{"Failed to load brief connections"}</p>
+            <div className="border-card-border bg-card-bg rounded-lg border px-4 py-12 text-center">
+              <p className="text-foreground-muted text-sm">{"Failed to load brief connections"}</p>
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="mt-2 text-sm font-medium text-interactive hover:underline"
+                className="text-interactive mt-2 text-sm font-medium hover:underline"
               >
                 {"Try again"}
               </button>
@@ -146,12 +148,14 @@ export default function BriefsPage() {
             <EmptyState
               icon={ClipboardList}
               title={"No brief connections"}
-              description={"Connect a project management tool to import campaign briefs and sync tasks."}
+              description={
+                "Connect a project management tool to import campaign briefs and sync tasks."
+              }
               action={
                 <button
                   type="button"
                   onClick={() => setDialogOpen(true)}
-                  className="text-sm font-medium text-interactive hover:underline"
+                  className="text-interactive text-sm font-medium hover:underline"
                 >
                   {"Connect Platform"}
                 </button>
@@ -175,17 +179,20 @@ export default function BriefsPage() {
 
           {/* Brief Items Panel */}
           {selectedConnection && selectedConnection.status === "connected" && (
-            <div className="rounded-lg border border-card-border bg-card-bg p-5">
+            <div className="border-card-border bg-card-bg rounded-lg border p-5">
               <div className="mb-3 flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => setImportOpen(true)}
-                  className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+                  className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
                 >
                   {"Import to Project"}
                 </button>
               </div>
-              <BriefItemsPanel connection={selectedConnection} designConnection={selectedDesignConnection} />
+              <BriefItemsPanel
+                connection={selectedConnection}
+                designConnection={selectedDesignConnection}
+              />
             </div>
           )}
         </>

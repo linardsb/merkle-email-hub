@@ -43,8 +43,22 @@ function makeHealthData(overrides = {}) {
 function makeWorkflowData(overrides = {}) {
   return {
     flows: [
-      { id: "campaign-build", namespace: "hub", description: "Build campaign", is_template: false, revision: 1, has_schedule: true },
-      { id: "qa-pipeline", namespace: "hub", description: "QA pipeline", is_template: true, revision: 2, has_schedule: false },
+      {
+        id: "campaign-build",
+        namespace: "hub",
+        description: "Build campaign",
+        is_template: false,
+        revision: 1,
+        has_schedule: true,
+      },
+      {
+        id: "qa-pipeline",
+        namespace: "hub",
+        description: "QA pipeline",
+        is_template: true,
+        revision: 2,
+        has_schedule: false,
+      },
     ],
     ...overrides,
   };
@@ -52,7 +66,18 @@ function makeWorkflowData(overrides = {}) {
 
 function makePenpotData() {
   return [
-    { id: 1, name: "Brand Kit", provider: "penpot", file_key: "abc", file_url: "", access_token_last4: "1234", status: "connected", last_synced_at: null, project_id: 1, project_name: "Marketing" },
+    {
+      id: 1,
+      name: "Brand Kit",
+      provider: "penpot",
+      file_key: "abc",
+      file_url: "",
+      access_token_last4: "1234",
+      status: "connected",
+      last_synced_at: null,
+      project_id: 1,
+      project_name: "Marketing",
+    },
   ];
 }
 

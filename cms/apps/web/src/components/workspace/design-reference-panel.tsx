@@ -38,24 +38,26 @@ export function DesignReferencePanel({
   onClose,
 }: DesignReferencePanelProps) {
   // Auto-detect: design import that produced this template
-  const { data: autoImport, isLoading: autoLoading } =
-    useDesignImportByTemplate(templateId, projectId);
+  const { data: autoImport, isLoading: autoLoading } = useDesignImportByTemplate(
+    templateId,
+    projectId,
+  );
 
   // Fallback: manual connection picker
   const [manualConnectionId, setManualConnectionId] = useState<number | null>(null);
   const { data: connections } = useDesignConnections();
 
   const activeConnectionId = autoImport?.connection_id ?? manualConnectionId;
-  const hasAutoDetect = !!autoImport;
+  const hasAutoDetect = Boolean(autoImport);
   const { data: tokens, isLoading: tokensLoading } = useDesignTokens(activeConnectionId);
   const activeConnection = connections?.find((c) => c.id === activeConnectionId);
 
   return (
-    <div className="flex h-full w-80 flex-col border-l border-border bg-card">
+    <div className="border-border bg-card flex h-full w-80 flex-col border-l">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+      <div className="border-border flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">
-          <Palette className="h-4 w-4 text-foreground-muted" />
+          <Palette className="text-foreground-muted h-4 w-4" />
           <h3 className="text-sm font-semibold">{"Design Reference"}</h3>
         </div>
         <div className="flex items-center gap-1">
@@ -64,7 +66,7 @@ export function DesignReferencePanel({
               href={activeConnection.file_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1 text-foreground-muted transition-colors hover:text-foreground"
+              className="text-foreground-muted hover:text-foreground p-1 transition-colors"
               title={"Open in Figma"}
             >
               <ExternalLink className="h-4 w-4" />
@@ -73,7 +75,7 @@ export function DesignReferencePanel({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-foreground-muted transition-colors hover:text-foreground"
+            className="text-foreground-muted hover:text-foreground p-1 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -86,14 +88,12 @@ export function DesignReferencePanel({
           {autoLoading ? (
             <Skeleton className="h-8 w-full" />
           ) : hasAutoDetect ? (
-            <p className="text-xs text-foreground-muted">
+            <p className="text-foreground-muted text-xs">
               {`From design: ${activeConnection?.name ?? ""}`}
             </p>
           ) : (
             <div>
-              <label className="mb-1 block text-xs text-foreground-muted">
-                {"Design source"}
-              </label>
+              <label className="text-foreground-muted mb-1 block text-xs">{"Design source"}</label>
               <Select
                 value={manualConnectionId?.toString() ?? ""}
                 onValueChange={(v) => setManualConnectionId(Number(v))}
@@ -117,13 +117,10 @@ export function DesignReferencePanel({
           {/* Design assets */}
           {autoImport?.assets && autoImport.assets.length > 0 && (
             <section>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+              <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
                 {"Design Assets"}
               </h4>
-              <AssetViewer
-                assets={autoImport.assets}
-                connectionId={autoImport.connection_id}
-              />
+              <AssetViewer assets={autoImport.assets} connectionId={autoImport.connection_id} />
             </section>
           )}
 
@@ -145,15 +142,19 @@ export function DesignReferencePanel({
               hasSelection={hasEditorSelection}
             />
           ) : activeConnectionId ? (
-            <p className="text-xs text-foreground-muted">{"No tokens extracted yet"}</p>
+            <p className="text-foreground-muted text-xs">{"No tokens extracted yet"}</p>
           ) : null}
 
           {/* Empty state */}
           {!autoLoading && !hasAutoDetect && !manualConnectionId && (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <Palette className="h-8 w-8 text-foreground-muted" />
-              <p className="text-sm text-foreground-muted">{"No design linked"}</p>
-              <p className="text-xs text-foreground-muted">{"This template wasn’t created from a Figma import. Select a design connection above to view tokens."}</p>
+              <Palette className="text-foreground-muted h-8 w-8" />
+              <p className="text-foreground-muted text-sm">{"No design linked"}</p>
+              <p className="text-foreground-muted text-xs">
+                {
+                  "This template wasn’t created from a Figma import. Select a design connection above to view tokens."
+                }
+              </p>
             </div>
           )}
         </div>

@@ -7,9 +7,18 @@ import type { ActivityState, Collaborator } from "@/types/collaboration";
 
 /** Cursor palette — 12 distinct colors for peer differentiation */
 const CURSOR_COLORS = [
-  "#E06C75", "#61AFEF", "#98C379", "#E5C07B",
-  "#C678DD", "#56B6C2", "#BE5046", "#D19A66",
-  "#7EC8E3", "#F4A261", "#A78BFA", "#34D399",
+  "#E06C75",
+  "#61AFEF",
+  "#98C379",
+  "#E5C07B",
+  "#C678DD",
+  "#56B6C2",
+  "#BE5046",
+  "#D19A66",
+  "#7EC8E3",
+  "#F4A261",
+  "#A78BFA",
+  "#34D399",
 ];
 
 export interface CollabUser {
@@ -24,10 +33,7 @@ const IDLE_TIMEOUT_MS = 60_000;
  * Set the local user's awareness state.
  * This is shared with all peers in the room.
  */
-export function setLocalUser(
-  awareness: Awareness,
-  user: CollabUser,
-): void {
+export function setLocalUser(awareness: Awareness, user: CollabUser): void {
   awareness.setLocalStateField("user", user);
 }
 

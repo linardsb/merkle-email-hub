@@ -14,7 +14,13 @@ vi.mock("next-auth/react", () => ({
 }));
 
 import { PluginManagerPanel } from "../PluginManagerPanel";
-import { usePlugins, usePluginHealthSummary, usePluginEnable, usePluginDisable, usePluginRestart } from "@/hooks/use-plugins";
+import {
+  usePlugins,
+  usePluginHealthSummary,
+  usePluginEnable,
+  usePluginDisable,
+  usePluginRestart,
+} from "@/hooks/use-plugins";
 import { useSession } from "next-auth/react";
 
 const mockPlugins = usePlugins as ReturnType<typeof vi.fn>;
@@ -48,7 +54,12 @@ function setupMocks({ plugins = [makePlugin()], isLoading = false, role = "admin
   });
   mockHealth.mockReturnValue({
     data: {
-      plugins: plugins.map((p) => ({ name: p.name, status: "healthy", message: null, latency_ms: 10 })),
+      plugins: plugins.map((p) => ({
+        name: p.name,
+        status: "healthy",
+        message: null,
+        latency_ms: 10,
+      })),
       total: plugins.length,
       healthy: plugins.length,
       degraded: 0,

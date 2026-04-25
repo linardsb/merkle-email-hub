@@ -23,12 +23,7 @@ export default function ApprovalDetailPage() {
     notFound();
   }
 
-  const {
-    data: approval,
-    isLoading,
-    error,
-    mutate,
-  } = useApproval(approvalId);
+  const { data: approval, isLoading, error, mutate } = useApproval(approvalId);
   const { data: build } = useBuild(approval?.build_id ?? null);
 
   const [activeTab, setActiveTab] = useState<Tab>("feedback");
@@ -41,13 +36,13 @@ export default function ApprovalDetailPage() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-3rem)] flex-col">
-        <div className="flex h-12 items-center gap-3 border-b border-border px-4">
+        <div className="border-border flex h-12 items-center gap-3 border-b px-4">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-5 w-20 rounded-full" />
         </div>
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-[3] border-r border-border p-6">
+          <div className="border-border flex-[3] border-r p-6">
             <Skeleton className="h-full w-full rounded-lg" />
           </div>
           <div className="flex flex-[2] flex-col gap-3 p-4">
@@ -70,10 +65,7 @@ export default function ApprovalDetailPage() {
           retryLabel={"Try again"}
         />
         <div className="text-center">
-          <Link
-            href={`/approvals`}
-            className="text-sm text-interactive hover:underline"
-          >
+          <Link href={`/approvals`} className="text-interactive text-sm hover:underline">
             {"Back to Approvals"}
           </Link>
         </div>
@@ -89,53 +81,47 @@ export default function ApprovalDetailPage() {
   return (
     <div className="flex h-[calc(100vh-3rem)] flex-col">
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
+      <div className="border-border bg-card flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-3">
           <Link
             href={`/approvals`}
-            className="flex items-center gap-1 text-sm text-foreground-muted transition-colors hover:text-foreground"
+            className="text-foreground-muted hover:text-foreground flex items-center gap-1 text-sm transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             {"Back to Approvals"}
           </Link>
           <span className="text-foreground-muted">/</span>
-          <h1 className="text-sm font-semibold text-foreground">
-            {`Build #${approval.build_id}`}
-          </h1>
+          <h1 className="text-foreground text-sm font-semibold">{`Build #${approval.build_id}`}</h1>
           <ApprovalStatusBadge status={approval.status} />
           {build && (
             <button
               type="button"
               onClick={() => setCompareOpen(true)}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+              className="border-border bg-surface text-foreground-muted hover:bg-surface-hover hover:text-foreground flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
             >
               <GitCompareArrows className="h-3.5 w-3.5" />
               {"Compare Versions"}
             </button>
           )}
         </div>
-        <div className="flex items-center gap-3 text-xs text-foreground-muted">
-          <span>
-            {`Requested by User #${approval.requested_by_id}`}
-          </span>
+        <div className="text-foreground-muted flex items-center gap-3 text-xs">
+          <span>{`Requested by User #${approval.requested_by_id}`}</span>
           <span>&middot;</span>
-          <span>
-            {new Date(approval.created_at as string).toLocaleDateString()}
-          </span>
+          <span>{new Date(approval.created_at as string).toLocaleDateString()}</span>
         </div>
       </div>
 
       {/* Main content: 2-column */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Preview */}
-        <div className="flex-[3] border-r border-border">
+        <div className="border-border flex-[3] border-r">
           <ApprovalPreview compiledHtml={build?.compiled_html ?? null} />
         </div>
 
         {/* Right: Side panel */}
         <div className="flex flex-[2] flex-col">
           {/* Tabs */}
-          <div className="flex border-b border-border" role="tablist">
+          <div className="border-border flex border-b" role="tablist">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -145,7 +131,7 @@ export default function ApprovalDetailPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
                   activeTab === tab.key
-                    ? "border-b-2 border-interactive text-foreground"
+                    ? "border-interactive text-foreground border-b-2"
                     : "text-foreground-muted hover:text-foreground"
                 }`}
               >
@@ -156,12 +142,8 @@ export default function ApprovalDetailPage() {
 
           {/* Tab content */}
           <div className="flex-1 overflow-y-auto">
-            {activeTab === "feedback" && (
-              <ApprovalFeedbackPanel approvalId={approvalId} />
-            )}
-            {activeTab === "audit" && (
-              <ApprovalAuditTimeline approvalId={approvalId} />
-            )}
+            {activeTab === "feedback" && <ApprovalFeedbackPanel approvalId={approvalId} />}
+            {activeTab === "audit" && <ApprovalAuditTimeline approvalId={approvalId} />}
           </div>
 
           {/* Decision bar */}
@@ -174,11 +156,7 @@ export default function ApprovalDetailPage() {
       </div>
 
       {build && (
-        <VersionCompareDialog
-          open={compareOpen}
-          onOpenChange={setCompareOpen}
-          build={build}
-        />
+        <VersionCompareDialog open={compareOpen} onOpenChange={setCompareOpen} build={build} />
       )}
     </div>
   );

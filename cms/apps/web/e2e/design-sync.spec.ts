@@ -1,18 +1,13 @@
 import { test, expect } from "./fixtures";
 
 test.describe("Design Sync", () => {
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "API-heavy flow — Chromium only"
-  );
+  test.skip(({ browserName }) => browserName !== "chromium", "API-heavy flow — Chromium only");
 
   test("design sync page loads", async ({ authenticatedPage: page }) => {
     await page.goto("/design-sync");
     await expect(page.locator("main")).toBeVisible();
     await expect(
-      page
-        .getByRole("heading", { name: /design/i })
-        .or(page.getByText(/design sync/i).first())
+      page.getByRole("heading", { name: /design/i }).or(page.getByText(/design sync/i).first()),
     ).toBeVisible({ timeout: 10_000 });
   });
 
@@ -22,9 +17,9 @@ test.describe("Design Sync", () => {
 
     if (await connectButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
       await connectButton.click();
-      await expect(
-        page.getByRole("dialog").or(page.locator("dialog"))
-      ).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByRole("dialog").or(page.locator("dialog"))).toBeVisible({
+        timeout: 5_000,
+      });
     }
   });
 

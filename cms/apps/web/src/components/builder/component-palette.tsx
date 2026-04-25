@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { Search, Layout, Type, MousePointerClick, MousePointer, Sparkles, Wrench, Puzzle } from "../icons";
+import {
+  Search,
+  Layout,
+  Type,
+  MousePointerClick,
+  MousePointer,
+  Sparkles,
+  Wrench,
+  Puzzle,
+} from "../icons";
 import { useComponents } from "@/hooks/use-components";
 import { SECTION_CATEGORIES, type SectionCategory } from "@/types/visual-builder";
 import type { ComponentResponse } from "@email-hub/sdk";
@@ -31,23 +40,22 @@ function PaletteCard({ component }: { component: ComponentResponse }) {
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`flex items-center gap-2 rounded border border-border bg-card p-2 text-sm cursor-grab active:cursor-grabbing hover:bg-accent transition-colors ${
+      className={`border-border bg-card hover:bg-accent flex cursor-grab items-center gap-2 rounded border p-2 text-sm transition-colors active:cursor-grabbing ${
         isDragging ? "opacity-50" : ""
       }`}
       role="button"
       tabIndex={0}
       aria-label={`Drag ${component.name} to canvas`}
     >
-      <Icon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+      <Icon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-xs font-medium text-foreground">
-          {component.name}
-        </div>
+        <div className="text-foreground truncate text-xs font-medium">{component.name}</div>
         <div className="flex items-center gap-1">
-          <span className="truncate text-[10px] text-muted-foreground">
-            {category}
-          </span>
-          <CompatibilityBadge badge={component.compatibility_badge} className="!px-1 !py-0 !text-[8px]" />
+          <span className="text-muted-foreground truncate text-[10px]">{category}</span>
+          <CompatibilityBadge
+            badge={component.compatibility_badge}
+            className="!px-1 !py-0 !text-[8px]"
+          />
         </div>
       </div>
     </div>
@@ -69,21 +77,21 @@ export function ComponentPalette() {
   return (
     <div className="flex h-full flex-col">
       {/* Search */}
-      <div className="border-b border-border p-2">
+      <div className="border-border border-b p-2">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search components..."
-            className="w-full rounded border border-input bg-background py-1.5 pl-7 pr-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring w-full rounded border py-1.5 pl-7 pr-2 text-xs focus:outline-none focus:ring-1"
           />
         </div>
       </div>
 
       {/* Category pills */}
-      <div className="flex flex-wrap gap-1 border-b border-border p-2">
+      <div className="border-border flex flex-wrap gap-1 border-b p-2">
         <button
           type="button"
           onClick={() => setActiveCategory("all")}
@@ -116,14 +124,11 @@ export function ComponentPalette() {
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-12 animate-pulse rounded border border-border bg-muted"
-              />
+              <div key={i} className="border-border bg-muted h-12 animate-pulse rounded border" />
             ))}
           </div>
         ) : components.length === 0 ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center text-xs">
             {"No components found"}
           </div>
         ) : (

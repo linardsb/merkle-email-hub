@@ -21,9 +21,7 @@ export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
       <Accordion type="single" collapsible className="px-4">
         {html && (
           <AccordionItem value="outlook">
-            <AccordionTrigger className="py-3 text-sm">
-              {"Outlook Advisor"}
-            </AccordionTrigger>
+            <AccordionTrigger className="py-3 text-sm">{"Outlook Advisor"}</AccordionTrigger>
             <AccordionContent>
               <OutlookAdvisorPanel html={html} onHtmlUpdate={onHtmlUpdate} />
             </AccordionContent>
@@ -32,9 +30,7 @@ export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
 
         {html && (
           <AccordionItem value="css">
-            <AccordionTrigger className="py-3 text-sm">
-              {"CSS Compiler"}
-            </AccordionTrigger>
+            <AccordionTrigger className="py-3 text-sm">{"CSS Compiler"}</AccordionTrigger>
             <AccordionContent>
               <CSSCompilerPanel html={html} onHtmlUpdate={onHtmlUpdate} />
             </AccordionContent>
@@ -43,9 +39,7 @@ export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
 
         {html && (
           <AccordionItem value="gmail">
-            <AccordionTrigger className="py-3 text-sm">
-              {"Gmail Intelligence"}
-            </AccordionTrigger>
+            <AccordionTrigger className="py-3 text-sm">{"Gmail Intelligence"}</AccordionTrigger>
             <AccordionContent>
               <GmailPredictionPanel html={html} onHtmlUpdate={onHtmlUpdate} />
             </AccordionContent>
@@ -53,7 +47,7 @@ export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
         )}
 
         {!html && (
-          <p className="py-4 text-center text-xs text-muted-foreground">
+          <p className="text-muted-foreground py-4 text-center text-xs">
             {"Compile the template first to use email client tools."}
           </p>
         )}

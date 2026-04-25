@@ -35,8 +35,7 @@ function computeMetrics(items: QAResultResponse[]): QADashboardMetrics {
     };
   }
 
-  const avgScore =
-    items.reduce((sum, r) => sum + r.overall_score, 0) / totalRuns;
+  const avgScore = items.reduce((sum, r) => sum + r.overall_score, 0) / totalRuns;
   const passRate = items.filter((r) => r.passed).length / totalRuns;
   const overrideCount = items.filter((r) => r.override).length;
 
@@ -62,8 +61,7 @@ function computeMetrics(items: QAResultResponse[]): QADashboardMetrics {
   });
 
   const sorted = [...items].sort(
-    (a, b) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
   const scoreTrend = sorted.slice(-20).map((r) => ({
     score: r.overall_score,
@@ -84,10 +82,7 @@ function computeMetrics(items: QAResultResponse[]): QADashboardMetrics {
 export function useQADashboard() {
   const { data, isLoading, error, mutate } = useQAResults({ page: 1, pageSize: 50 });
 
-  const metrics = useMemo(
-    () => computeMetrics(data?.items ?? []),
-    [data?.items]
-  );
+  const metrics = useMemo(() => computeMetrics(data?.items ?? []), [data?.items]);
 
   return {
     metrics,

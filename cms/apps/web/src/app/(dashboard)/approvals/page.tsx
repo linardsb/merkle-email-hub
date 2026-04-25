@@ -11,13 +11,7 @@ import { useApprovals } from "@/hooks/use-approvals";
 import { ApprovalCard } from "@/components/approvals/approval-card";
 import type { ApprovalResponse } from "@email-hub/sdk";
 
-const STATUS_FILTERS = [
-  "all",
-  "pending",
-  "approved",
-  "rejected",
-  "revision_requested",
-] as const;
+const STATUS_FILTERS = ["all", "pending", "approved", "rejected", "revision_requested"] as const;
 
 const FILTER_LABELS: Record<string, string> = {
   all: "All",
@@ -60,8 +54,8 @@ export default function ApprovalsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <ClipboardCheck className="h-6 w-6 text-foreground" />
-        <h1 className="text-2xl font-bold text-foreground">{"Approvals"}</h1>
+        <ClipboardCheck className="text-foreground h-6 w-6" />
+        <h1 className="text-foreground text-2xl font-bold">{"Approvals"}</h1>
       </div>
 
       {/* Status filter tabs */}
@@ -90,7 +84,11 @@ export default function ApprovalsPage() {
           ))}
         </div>
       ) : error ? (
-        <ErrorState message={"Failed to load approvals"} onRetry={() => mutate()} retryLabel={"Try again"} />
+        <ErrorState
+          message={"Failed to load approvals"}
+          onRetry={() => mutate()}
+          retryLabel={"Try again"}
+        />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={ClipboardCheck}
@@ -100,11 +98,7 @@ export default function ApprovalsPage() {
       ) : (
         <div className="animate-fade-in grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((approval) => (
-            <ApprovalCard
-              key={approval.id}
-              approval={approval}
-              onClick={handleApprovalClick}
-            />
+            <ApprovalCard key={approval.id} approval={approval} onClick={handleApprovalClick} />
           ))}
         </div>
       )}

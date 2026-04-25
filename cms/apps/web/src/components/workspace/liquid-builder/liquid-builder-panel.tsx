@@ -14,14 +14,8 @@ interface LiquidBuilderPanelProps {
 }
 
 export function LiquidBuilderPanel({ code, onCodeChange }: LiquidBuilderPanelProps) {
-  const {
-    blocks,
-    parseFromCode,
-    updateBlock,
-    removeBlock,
-    addBlock,
-    moveBlock,
-  } = useLiquidBuilder(code);
+  const { blocks, parseFromCode, updateBlock, removeBlock, addBlock, moveBlock } =
+    useLiquidBuilder(code);
 
   const isInternalUpdate = useRef(false);
 
@@ -36,7 +30,7 @@ export function LiquidBuilderPanel({ code, onCodeChange }: LiquidBuilderPanelPro
   // When blocks change, serialize back to code
   const handleBlockUpdate = useCallback(
     (id: string, updates: Partial<LiquidBlock>) => {
-      updateBlock(id, (block) => ({ ...block, ...updates } as LiquidBlock));
+      updateBlock(id, (block) => ({ ...block, ...updates }) as LiquidBlock);
     },
     [updateBlock],
   );
@@ -61,7 +55,7 @@ export function LiquidBuilderPanel({ code, onCodeChange }: LiquidBuilderPanelPro
     <div className="flex h-full flex-col">
       <div className="flex flex-1 overflow-hidden">
         {/* Palette sidebar */}
-        <div className="w-36 flex-shrink-0 border-r border-default bg-surface overflow-y-auto">
+        <div className="border-default bg-surface w-36 flex-shrink-0 overflow-y-auto border-r">
           <BlockPalette onAddBlock={handleAddBlock} />
         </div>
 

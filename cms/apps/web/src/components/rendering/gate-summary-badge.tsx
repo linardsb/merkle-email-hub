@@ -3,7 +3,10 @@
 import { CheckCircle2, AlertTriangle, XCircle } from "../icons";
 import type { GateVerdict } from "@/types/rendering-gate";
 
-const VERDICT_STYLES: Record<GateVerdict, { bg: string; text: string; icon: typeof CheckCircle2; label: string }> = {
+const VERDICT_STYLES: Record<
+  GateVerdict,
+  { bg: string; text: string; icon: typeof CheckCircle2; label: string }
+> = {
   pass: {
     bg: "bg-badge-success-bg",
     text: "text-badge-success-text",
@@ -34,7 +37,9 @@ export function GateSummaryBadge({ verdict, blockingCount }: Props) {
   const Icon = style.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${style.bg} ${style.text}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${style.bg} ${style.text}`}
+    >
       <Icon className="h-3.5 w-3.5" />
       {style.label}
       {verdict === "block" && blockingCount ? ` (${blockingCount})` : ""}

@@ -12,9 +12,7 @@ export function AssetViewer({ assets, connectionId }: AssetViewerProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   if (assets.length === 0) {
-    return (
-      <p className="text-xs text-foreground-muted">{"No exported assets found"}</p>
-    );
+    return <p className="text-foreground-muted text-xs">{"No exported assets found"}</p>;
   }
 
   const selected = assets[selectedIdx] ?? assets[0];
@@ -25,7 +23,7 @@ export function AssetViewer({ assets, connectionId }: AssetViewerProps) {
   return (
     <div className="space-y-2">
       {/* Main image */}
-      <div className="relative overflow-hidden border border-border bg-surface-elevated">
+      <div className="border-border bg-surface-elevated relative overflow-hidden border">
         <img
           src={assetUrl}
           alt={selected.node_name}
@@ -51,11 +49,7 @@ export function AssetViewer({ assets, connectionId }: AssetViewerProps) {
                     : "border-border hover:border-foreground-muted"
                 }`}
               >
-                <img
-                  src={thumbUrl}
-                  alt={asset.node_name}
-                  className="h-10 w-10 object-cover"
-                />
+                <img src={thumbUrl} alt={asset.node_name} className="h-10 w-10 object-cover" />
               </button>
             );
           })}
@@ -64,7 +58,7 @@ export function AssetViewer({ assets, connectionId }: AssetViewerProps) {
 
       {/* Dimensions */}
       {selected.width && selected.height && (
-        <p className="text-[10px] text-foreground-muted">
+        <p className="text-foreground-muted text-[10px]">
           {selected.node_name} · {selected.width}x{selected.height}
         </p>
       )}

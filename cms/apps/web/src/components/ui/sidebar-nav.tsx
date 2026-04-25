@@ -17,9 +17,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
       {items.map((item) => {
         // Exact match for dashboard root, startsWith for other routes
         const isRoot = item.href === "/";
-        const isActive = isRoot
-          ? pathname === "/"
-          : pathname.startsWith(item.href);
+        const isActive = isRoot ? pathname === "/" : pathname.startsWith(item.href);
 
         return (
           <Link

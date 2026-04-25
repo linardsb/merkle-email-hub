@@ -46,9 +46,7 @@ export function useRenderingTestPolling(testId: number | null) {
     fetcher,
     {
       refreshInterval: (data: RenderingTest | undefined) =>
-        data && (data.status === "pending" || data.status === "processing")
-          ? interval
-          : POLL.off,
+        data && (data.status === "pending" || data.status === "processing") ? interval : POLL.off,
       ...SWR_PRESETS.polling,
     },
   );

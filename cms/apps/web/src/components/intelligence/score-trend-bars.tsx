@@ -9,7 +9,7 @@ interface ScoreTrendBarsProps {
 export function ScoreTrendBars({ scoreTrend }: ScoreTrendBarsProps) {
   if (scoreTrend.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-foreground-muted">
+      <p className="text-foreground-muted py-8 text-center text-sm">
         {"Run QA checks on your templates to see intelligence data here."}
       </p>
     );
@@ -24,10 +24,7 @@ export function ScoreTrendBars({ scoreTrend }: ScoreTrendBarsProps) {
       <div className="flex items-end gap-1" style={{ height: "10rem" }}>
         {scoreTrend.map((point, i) => {
           const pct = Math.round(point.score * 100);
-          const dateStr = new Date(point.date).toLocaleDateString(
-            undefined,
-            dateFmt
-          );
+          const dateStr = new Date(point.date).toLocaleDateString(undefined, dateFmt);
           return (
             <div
               key={i}
@@ -43,13 +40,9 @@ export function ScoreTrendBars({ scoreTrend }: ScoreTrendBarsProps) {
           );
         })}
       </div>
-      <div className="mt-2 flex justify-between text-xs text-foreground-muted">
-        <span>
-          {new Date(first.date).toLocaleDateString(undefined, dateFmt)}
-        </span>
-        <span>
-          {new Date(last.date).toLocaleDateString(undefined, dateFmt)}
-        </span>
+      <div className="text-foreground-muted mt-2 flex justify-between text-xs">
+        <span>{new Date(first.date).toLocaleDateString(undefined, dateFmt)}</span>
+        <span>{new Date(last.date).toLocaleDateString(undefined, dateFmt)}</span>
       </div>
     </div>
   );

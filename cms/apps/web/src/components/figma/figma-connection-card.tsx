@@ -42,21 +42,19 @@ export function FigmaConnectionCard({
           onSelect();
         }
       }}
-      className={`w-full cursor-pointer rounded-lg border-2 bg-card-bg p-4 text-left transition-colors ${
+      className={`bg-card-bg w-full cursor-pointer rounded-lg border-2 p-4 text-left transition-colors ${
         selected
-          ? "border-interactive ring-1 ring-interactive"
+          ? "border-interactive ring-interactive ring-1"
           : "border-card-border hover:bg-surface-hover"
       }`}
     >
       {/* Top row: icon + name + badge */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Figma className="h-5 w-5 shrink-0 text-foreground-muted" />
+          <Figma className="text-foreground-muted h-5 w-5 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground">
-              {connection.name}
-            </p>
-            <p className="text-xs text-foreground-muted">
+            <p className="text-foreground text-sm font-medium">{connection.name}</p>
+            <p className="text-foreground-muted text-xs">
               {`Token ····${connection.access_token_last4}`}
             </p>
           </div>
@@ -65,20 +63,18 @@ export function FigmaConnectionCard({
       </div>
 
       {/* Meta row */}
-      <div className="mt-3 flex items-center gap-4 text-xs text-foreground-muted">
+      <div className="text-foreground-muted mt-3 flex items-center gap-4 text-xs">
         {connection.project_name && (
           <span className="flex items-center gap-1">
             <FolderOpen className="h-3.5 w-3.5" />
             {connection.project_name}
           </span>
         )}
-        {lastSynced && (
-          <span>{`Synced ${lastSynced}`}</span>
-        )}
+        {lastSynced && <span>{`Synced ${lastSynced}`}</span>}
       </div>
 
       {/* Actions */}
-      <div className="mt-3 flex items-center gap-2 border-t border-card-border pt-3">
+      <div className="border-card-border mt-3 flex items-center gap-2 border-t pt-3">
         <button
           type="button"
           onClick={(e) => {
@@ -86,7 +82,7 @@ export function FigmaConnectionCard({
             onSync();
           }}
           disabled={syncing}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {syncing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -101,7 +97,7 @@ export function FigmaConnectionCard({
             e.stopPropagation();
             onDelete();
           }}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
+          className="border-border text-status-danger hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
         >
           <Trash2 className="h-3.5 w-3.5" />
           Remove

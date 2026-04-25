@@ -19,7 +19,7 @@ export function BrandTypographyEditor({
   const handleFieldChange = (
     index: number,
     field: keyof BrandTypography,
-    value: string | number | string[]
+    value: string | number | string[],
   ) => {
     const updated = [...typography];
     updated[index] = { ...updated[index]!, [field]: value };
@@ -28,18 +28,13 @@ export function BrandTypographyEditor({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{"Typography"}</h3>
+      <h3 className="text-foreground text-sm font-medium">{"Typography"}</h3>
 
       {typography.map((typo, i) => (
-        <div
-          key={i}
-          className="rounded-md border border-card-border bg-card-bg p-3 space-y-2"
-        >
+        <div key={i} className="border-card-border bg-card-bg space-y-2 rounded-md border p-3">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block text-xs text-foreground-muted">
-                {"Font Family"}
-              </label>
+              <label className="text-foreground-muted mb-1 block text-xs">{"Font Family"}</label>
               <input
                 type="text"
                 value={typo.family}
@@ -49,9 +44,7 @@ export function BrandTypographyEditor({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-foreground-muted">
-                {"Weights"}
-              </label>
+              <label className="text-foreground-muted mb-1 block text-xs">{"Weights"}</label>
               <input
                 type="text"
                 value={typo.weights.join(", ")}
@@ -59,7 +52,7 @@ export function BrandTypographyEditor({
                   handleFieldChange(
                     i,
                     "weights",
-                    e.target.value.split(",").map((w) => w.trim())
+                    e.target.value.split(",").map((w) => w.trim()),
                   )
                 }
                 disabled={disabled}
@@ -70,15 +63,11 @@ export function BrandTypographyEditor({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block text-xs text-foreground-muted">
-                {"Min Size (px)"}
-              </label>
+              <label className="text-foreground-muted mb-1 block text-xs">{"Min Size (px)"}</label>
               <input
                 type="number"
                 value={typo.minSize}
-                onChange={(e) =>
-                  handleFieldChange(i, "minSize", Number(e.target.value))
-                }
+                onChange={(e) => handleFieldChange(i, "minSize", Number(e.target.value))}
                 disabled={disabled}
                 min={8}
                 max={100}
@@ -86,15 +75,11 @@ export function BrandTypographyEditor({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-foreground-muted">
-                {"Max Size (px)"}
-              </label>
+              <label className="text-foreground-muted mb-1 block text-xs">{"Max Size (px)"}</label>
               <input
                 type="number"
                 value={typo.maxSize}
-                onChange={(e) =>
-                  handleFieldChange(i, "maxSize", Number(e.target.value))
-                }
+                onChange={(e) => handleFieldChange(i, "maxSize", Number(e.target.value))}
                 disabled={disabled}
                 min={8}
                 max={200}

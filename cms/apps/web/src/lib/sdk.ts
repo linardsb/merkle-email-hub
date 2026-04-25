@@ -13,10 +13,7 @@ client.interceptors.request.use(async (request) => {
       const { auth } = await import("@/auth");
       const session = await auth();
       if (session?.accessToken) {
-        request.headers.set(
-          "Authorization",
-          `Bearer ${session.accessToken}`
-        );
+        request.headers.set("Authorization", `Bearer ${session.accessToken}`);
       }
     } catch {
       // Auth not available
@@ -39,15 +36,11 @@ client.interceptors.response.use(async (response, request) => {
   if (response.status === 429) {
     const retryAfter = response.headers.get("Retry-After");
     const delayMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 2000;
-    const retryCount =
-      (request as Request & { __retryCount?: number }).__retryCount ?? 0;
+    const retryCount = (request as Request & { __retryCount?: number }).__retryCount ?? 0;
 
     if (retryCount < 1) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, Math.min(delayMs, 10_000))
-      );
-      (request as Request & { __retryCount?: number }).__retryCount =
-        retryCount + 1;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(delayMs, 10_000)));
+      (request as Request & { __retryCount?: number }).__retryCount = retryCount + 1;
       return fetch(request);
     }
   }

@@ -12,17 +12,15 @@ export function BuilderPreview({ assembledHtml, zoom }: BuilderPreviewProps) {
 
   if (!assembledHtml) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+      <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3">
         <Mail className="h-10 w-10 opacity-40" />
-        <p className="text-sm">
-          {"Add sections from the palette to preview your email"}
-        </p>
+        <p className="text-sm">{"Add sections from the palette to preview your email"}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full justify-center overflow-auto bg-muted/30 p-4">
+    <div className="bg-muted/30 flex h-full justify-center overflow-auto p-4">
       <div
         className="origin-top"
         style={{
@@ -34,7 +32,7 @@ export function BuilderPreview({ assembledHtml, zoom }: BuilderPreviewProps) {
           title="Email preview"
           srcDoc={assembledHtml}
           sandbox=""
-          className="w-full border border-border bg-white"
+          className="border-border w-full border bg-white"
           style={{ minHeight: 600, pointerEvents: "none" }}
         />
       </div>

@@ -16,21 +16,17 @@ export function ComponentCoverageCard() {
   const { coverage, isLoading } = useComponentCoverage();
 
   if (isLoading) {
-    return <Skeleton className="h-40 rounded-lg border border-card-border" />;
+    return <Skeleton className="border-card-border h-40 rounded-lg border" />;
   }
 
   if (coverage.total === 0) {
     return (
-      <div className="rounded-lg border border-card-border bg-card-bg p-6">
+      <div className="border-card-border bg-card-bg rounded-lg border p-6">
         <div className="flex items-center gap-2">
-          <Puzzle className="h-5 w-5 text-foreground-muted" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {"Component Coverage"}
-          </h2>
+          <Puzzle className="text-foreground-muted h-5 w-5" />
+          <h2 className="text-foreground text-lg font-semibold">{"Component Coverage"}</h2>
         </div>
-        <p className="mt-2 text-sm text-foreground-muted">
-          {"No components in library yet."}
-        </p>
+        <p className="text-foreground-muted mt-2 text-sm">{"No components in library yet."}</p>
       </div>
     );
   }
@@ -43,22 +39,17 @@ export function ComponentCoverageCard() {
   ];
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-6">
+    <div className="border-card-border bg-card-bg rounded-lg border p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Puzzle className="h-5 w-5 text-foreground-muted" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {"Component Coverage"}
-          </h2>
+          <Puzzle className="text-foreground-muted h-5 w-5" />
+          <h2 className="text-foreground text-lg font-semibold">{"Component Coverage"}</h2>
         </div>
-        <Link
-          href="/components"
-          className="text-sm text-foreground-accent hover:underline"
-        >
+        <Link href="/components" className="text-foreground-accent text-sm hover:underline">
           {"View components"}
         </Link>
       </div>
-      <p className="mt-1 text-sm text-foreground-muted">
+      <p className="text-foreground-muted mt-1 text-sm">
         {`${coverage.total} components in library`}
       </p>
 
@@ -72,7 +63,7 @@ export function ComponentCoverageCard() {
               style={{ width: `${(seg.count / coverage.total) * 100}%` }}
               title={`${seg.label}: ${seg.count}`}
             />
-          ) : null
+          ) : null,
         )}
       </div>
 
@@ -80,10 +71,8 @@ export function ComponentCoverageCard() {
       <div className="mt-3 flex flex-wrap gap-4">
         {segments.map((seg) => (
           <div key={seg.key} className="flex items-center gap-1.5">
-            <div
-              className={`h-2.5 w-2.5 rounded-full ${BADGE_COLORS[seg.key]}`}
-            />
-            <span className="text-xs text-foreground-muted">
+            <div className={`h-2.5 w-2.5 rounded-full ${BADGE_COLORS[seg.key]}`} />
+            <span className="text-foreground-muted text-xs">
               {seg.label} ({seg.count})
             </span>
           </div>

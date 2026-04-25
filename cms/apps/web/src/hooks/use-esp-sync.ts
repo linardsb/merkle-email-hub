@@ -21,10 +21,7 @@ export function useESPConnections() {
 }
 
 export function useESPConnection(id: number | null) {
-  return useSWR<ESPConnectionResponse>(
-    id ? `${BASE}/connections/${id}` : null,
-    fetcher,
-  );
+  return useSWR<ESPConnectionResponse>(id ? `${BASE}/connections/${id}` : null, fetcher);
 }
 
 export function useCreateESPConnection() {

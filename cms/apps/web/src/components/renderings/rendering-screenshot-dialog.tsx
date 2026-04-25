@@ -34,19 +34,23 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props)
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[28rem] rounded-lg border border-card-border bg-card-bg p-0 shadow-xl backdrop:bg-black/50"
+      className="border-card-border bg-card-bg w-full max-w-[28rem] rounded-lg border p-0 shadow-xl backdrop:bg-black/50"
       onClose={() => onOpenChange(false)}
     >
-      <div className="flex items-center justify-between border-b border-card-border p-4">
+      <div className="border-card-border flex items-center justify-between border-b p-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-foreground">{result.client_name ?? ""}</h2>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusLabel(result.status ?? "")}`}>
-            {(result.status ?? "pending").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          <h2 className="text-foreground text-lg font-semibold">{result.client_name ?? ""}</h2>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusLabel(result.status ?? "")}`}
+          >
+            {(result.status ?? "pending")
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase())}
           </span>
         </div>
         <button
           onClick={() => onOpenChange(false)}
-          className="rounded p-1 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+          className="text-foreground-muted hover:bg-surface-muted hover:text-foreground rounded p-1"
         >
           <X className="h-4 w-4" />
         </button>
@@ -57,23 +61,25 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props)
           <img
             src={result.screenshot_url}
             alt={`${result.client_name} rendering`}
-            className="w-full rounded-md border border-card-border object-contain"
+            className="border-card-border w-full rounded-md border object-contain"
           />
         ) : (
-          <div className="flex aspect-[3/2] w-full items-center justify-center rounded-md border border-card-border bg-surface-muted">
+          <div className="border-card-border bg-surface-muted flex aspect-[3/2] w-full items-center justify-center rounded-md border">
             <div className="flex flex-col items-center gap-2">
-              <ImageOff className="h-8 w-8 text-foreground-muted/40" />
-              <p className="text-sm text-foreground-muted">{"Screenshot not yet available"}</p>
+              <ImageOff className="text-foreground-muted/40 h-8 w-8" />
+              <p className="text-foreground-muted text-sm">{"Screenshot not yet available"}</p>
             </div>
           </div>
         )}
 
-        <div className="mt-3 flex items-center gap-4 text-sm text-foreground-muted">
+        <div className="text-foreground-muted mt-3 flex items-center gap-4 text-sm">
           {result.os && <span className="capitalize">{result.os}</span>}
           {result.category && <span className="capitalize">{result.category}</span>}
         </div>
 
-        <p className="mt-4 text-xs text-foreground-muted/60">{"Screenshots are simulated in demo mode"}</p>
+        <p className="text-foreground-muted/60 mt-4 text-xs">
+          {"Screenshots are simulated in demo mode"}
+        </p>
       </div>
     </dialog>
   );

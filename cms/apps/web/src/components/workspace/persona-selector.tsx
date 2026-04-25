@@ -32,7 +32,7 @@ export function PersonaSelector({
 
   if (isLoading) {
     return (
-      <div className="flex h-7 items-center px-2 text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex h-7 items-center px-2 text-xs">
         {"Loading personas..."}
       </div>
     );
@@ -41,13 +41,14 @@ export function PersonaSelector({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger
-          className="flex h-7 items-center gap-1.5 rounded px-2 text-xs transition-colors hover:bg-accent"
-        >
+        <DropdownMenuTrigger className="hover:bg-accent flex h-7 items-center gap-1.5 rounded px-2 text-xs transition-colors">
           <UserCheck className="h-3.5 w-3.5" />
           <span className="max-w-[8rem] truncate">{label}</span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[14rem] bg-popover border border-border shadow-lg">
+        <DropdownMenuContent
+          align="start"
+          className="bg-popover border-border w-[14rem] border shadow-lg"
+        >
           <DropdownMenuItem onSelect={() => onSelect(null)}>
             <span className="text-muted-foreground">{"No persona"}</span>
           </DropdownMenuItem>
@@ -63,22 +64,18 @@ export function PersonaSelector({
                 className={persona.id === selectedPersonaId ? "bg-accent" : ""}
               >
                 <span className="truncate">{persona.name}</span>
-                <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
+                <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
                   {persona.dark_mode && <Moon className="h-3 w-3" />}
                   <DeviceIcon className="h-3 w-3" />
-                  <span className="text-[0.65rem]">
-                    {`${persona.viewport_width ?? 600}px`}
-                  </span>
+                  <span className="text-[0.65rem]">{`${persona.viewport_width ?? 600}px`}</span>
                 </span>
               </DropdownMenuItem>
             );
           })}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
-            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">
-              {"Create custom…"}
-            </span>
+            <Plus className="text-muted-foreground h-3.5 w-3.5" />
+            <span className="text-muted-foreground">{"Create custom…"}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

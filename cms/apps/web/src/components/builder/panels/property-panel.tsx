@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "../../icons";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@email-hub/ui/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@email-hub/ui/components/ui/tabs";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import type { BuilderSection } from "@/types/visual-builder";
 import type { DesignSystemConfig } from "@/types/design-system-config";
@@ -49,11 +44,11 @@ export function PropertyPanel({
   const [activeTab, setActiveTab] = useState("content");
 
   return (
-    <div className="flex h-full w-80 flex-shrink-0 flex-col border-l border-default bg-card">
+    <div className="border-default bg-card flex h-full w-80 flex-shrink-0 flex-col border-l">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-default px-3 py-2">
+      <div className="border-default flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2 overflow-hidden">
-          <span className="truncate text-sm font-medium text-foreground">
+          <span className="text-foreground truncate text-sm font-medium">
             {section.componentName}
           </span>
           <Badge variant="outline" className="text-[10px]">
@@ -63,7 +58,7 @@ export function PropertyPanel({
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
           aria-label="Close property panel"
         >
           <X className="h-4 w-4" />
@@ -71,8 +66,12 @@ export function PropertyPanel({
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col overflow-hidden">
-        <TabsList className="grid w-full grid-cols-4 rounded-none border-b border-default bg-transparent px-1">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex flex-1 flex-col overflow-hidden"
+      >
+        <TabsList className="border-default grid w-full grid-cols-4 rounded-none border-b bg-transparent px-1">
           <TabsTrigger value="content" className="text-[10px]">
             {"Content"}
           </TabsTrigger>
@@ -89,18 +88,10 @@ export function PropertyPanel({
 
         <ScrollArea className="flex-1">
           <TabsContent value="content" className="mt-0">
-            <ContentTab
-              section={section}
-              onUpdate={onUpdate}
-              designSystem={designSystem}
-            />
+            <ContentTab section={section} onUpdate={onUpdate} designSystem={designSystem} />
           </TabsContent>
           <TabsContent value="style" className="mt-0">
-            <StyleTab
-              section={section}
-              onUpdate={onUpdate}
-              designSystem={designSystem}
-            />
+            <StyleTab section={section} onUpdate={onUpdate} designSystem={designSystem} />
           </TabsContent>
           <TabsContent value="responsive" className="mt-0">
             <ResponsiveTab
@@ -111,11 +102,7 @@ export function PropertyPanel({
             />
           </TabsContent>
           <TabsContent value="advanced" className="mt-0">
-            <AdvancedTab
-              section={section}
-              onUpdate={onUpdate}
-              designSystem={designSystem}
-            />
+            <AdvancedTab section={section} onUpdate={onUpdate} designSystem={designSystem} />
           </TabsContent>
         </ScrollArea>
       </Tabs>

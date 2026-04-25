@@ -20,9 +20,7 @@ interface ExportStatusBadgeProps {
 
 export function ExportStatusBadge({ status }: ExportStatusBadgeProps) {
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}
-    >
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}>
       {STATUS_LABELS[status]}
     </span>
   );

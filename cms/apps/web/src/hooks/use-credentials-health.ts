@@ -32,9 +32,8 @@ const fetcher = (url: string) => authFetch(url).then((r) => r.json());
 
 export function useCredentialHealth() {
   const refreshInterval = useSmartPolling(POLL.background);
-  return useSWR<CredentialHealth>(
-    "/api/v1/credentials/health",
-    fetcher,
-    { ...SWR_PRESETS.polling, refreshInterval },
-  );
+  return useSWR<CredentialHealth>("/api/v1/credentials/health", fetcher, {
+    ...SWR_PRESETS.polling,
+    refreshInterval,
+  });
 }

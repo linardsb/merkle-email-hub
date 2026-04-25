@@ -18,10 +18,7 @@ import {
 } from "@email-hub/ui/components/ui/accordion";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
-import {
-  useCompatibilityBrief,
-  useRegenerateBrief,
-} from "@/hooks/use-compatibility-brief";
+import { useCompatibilityBrief, useRegenerateBrief } from "@/hooks/use-compatibility-brief";
 import type { ClientProfileSchema } from "@email-hub/sdk";
 
 interface CompatibilityBriefDialogProps {
@@ -64,7 +61,7 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
       </AccordionTrigger>
       <AccordionContent>
         <div className="space-y-3 pb-2">
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex flex-wrap gap-4 text-xs">
             <span>
               {"Platform"}: <span className="text-foreground">{client.platform}</span>
             </span>
@@ -79,7 +76,7 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
+                  <tr className="border-border text-muted-foreground border-b text-left">
                     <th className="pb-2 pr-4 font-medium">{"CSS Property"}</th>
                     <th className="pb-2 pr-4 font-medium">{"Fallback"}</th>
                     <th className="pb-2 font-medium">{"Technique"}</th>
@@ -87,19 +84,12 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
                 </thead>
                 <tbody>
                   {client.unsupported_properties.map((prop) => (
-                    <tr
-                      key={prop.css}
-                      className="border-b border-border/50"
-                    >
-                      <td className="py-1.5 pr-4 font-mono text-foreground">
-                        {prop.css}
-                      </td>
-                      <td className="py-1.5 pr-4 text-muted-foreground">
+                    <tr key={prop.css} className="border-border/50 border-b">
+                      <td className="text-foreground py-1.5 pr-4 font-mono">{prop.css}</td>
+                      <td className="text-muted-foreground py-1.5 pr-4">
                         {prop.fallback ?? "No fallback available"}
                       </td>
-                      <td className="py-1.5 text-muted-foreground">
-                        {prop.technique ?? "—"}
-                      </td>
+                      <td className="text-muted-foreground py-1.5">{prop.technique ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -134,9 +124,12 @@ export function CompatibilityBriefDialog({
   targetClients,
 }: CompatibilityBriefDialogProps) {
   const hasClients = targetClients && targetClients.length > 0;
-  const { data: brief, isLoading, error, mutate } = useCompatibilityBrief(
-    hasClients ? projectId : null
-  );
+  const {
+    data: brief,
+    isLoading,
+    error,
+    mutate,
+  } = useCompatibilityBrief(hasClients ? projectId : null);
   const { regenerate, isRegenerating } = useRegenerateBrief(projectId);
 
   const handleRegenerate = async () => {
@@ -161,15 +154,17 @@ export function CompatibilityBriefDialog({
         </DialogHeader>
 
         {!hasClients && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {"No priority clients configured. Set priority clients in project settings to generate a focused compatibility brief, or view the full 25-client matrix."}
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            {
+              "No priority clients configured. Set priority clients in project settings to generate a focused compatibility brief, or view the full 25-client matrix."
+            }
           </p>
         )}
 
         {hasClients && isLoading && <LoadingSkeleton />}
 
         {hasClients && error && (
-          <p className="py-8 text-center text-sm text-destructive">
+          <p className="text-destructive py-8 text-center text-sm">
             {"Failed to load compatibility brief"}
           </p>
         )}
@@ -178,27 +173,29 @@ export function CompatibilityBriefDialog({
           <div className="space-y-6">
             {/* Summary */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">{"Summary"}</h3>
+              <h3 className="text-foreground text-sm font-semibold">{"Summary"}</h3>
               <div className="flex gap-3">
-                <Badge variant="secondary">
-                  {`${brief.client_count} email clients`}
-                </Badge>
+                <Badge variant="secondary">{`${brief.client_count} email clients`}</Badge>
                 <Badge variant="secondary">
                   {`${brief.total_risky_properties} risky CSS properties`}
                 </Badge>
               </div>
 
               {brief.dark_mode_warning && (
-                <div className="flex items-start gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-start gap-2 rounded-md border p-3 text-sm">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <p>{"Target audience includes Outlook (Word engine) — requires explicit dark mode overrides via MSO conditionals and color-scheme meta."}</p>
+                  <p>
+                    {
+                      "Target audience includes Outlook (Word engine) — requires explicit dark mode overrides via MSO conditionals and color-scheme meta."
+                    }
+                  </p>
                 </div>
               )}
             </div>
 
             {/* Per-Client Profiles */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">{"Per-Client Profiles"}</h3>
+              <h3 className="text-foreground text-sm font-semibold">{"Per-Client Profiles"}</h3>
               <Accordion type="multiple" className="w-full">
                 {brief.clients.map((client) => (
                   <ClientProfileSection key={client.id} client={client} />
@@ -208,17 +205,21 @@ export function CompatibilityBriefDialog({
 
             {/* Risk Matrix */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">{"Cross-Client Risk Matrix"}</h3>
-              <p className="text-xs text-muted-foreground">{"CSS properties unsupported by 2+ priority clients (highest risk)"}</p>
+              <h3 className="text-foreground text-sm font-semibold">
+                {"Cross-Client Risk Matrix"}
+              </h3>
+              <p className="text-muted-foreground text-xs">
+                {"CSS properties unsupported by 2+ priority clients (highest risk)"}
+              </p>
               {brief.risk_matrix.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
+                <p className="text-muted-foreground py-4 text-center text-sm">
                   {"No CSS properties are unsupported across multiple priority clients."}
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-border text-left text-muted-foreground">
+                      <tr className="border-border text-muted-foreground border-b text-left">
                         <th className="pb-2 pr-4 font-medium">{"CSS Property"}</th>
                         <th className="pb-2 pr-4 font-medium">{"Unsupported In"}</th>
                         <th className="pb-2 font-medium">{"Fallback"}</th>
@@ -226,26 +227,21 @@ export function CompatibilityBriefDialog({
                     </thead>
                     <tbody>
                       {brief.risk_matrix.map((entry) => (
-                        <tr
-                          key={entry.css}
-                          className="border-b border-border/50"
-                        >
-                          <td className="py-1.5 pr-4 font-mono text-foreground">
-                            {entry.css}
-                          </td>
+                        <tr key={entry.css} className="border-border/50 border-b">
+                          <td className="text-foreground py-1.5 pr-4 font-mono">{entry.css}</td>
                           <td className="py-1.5 pr-4">
                             <div className="flex flex-wrap gap-1">
                               {entry.unsupported_in.map((name) => (
                                 <span
                                   key={name}
-                                  className="rounded bg-destructive/10 px-1 py-0.5 text-[10px] text-destructive"
+                                  className="bg-destructive/10 text-destructive rounded px-1 py-0.5 text-[10px]"
                                 >
                                   {name}
                                 </span>
                               ))}
                             </div>
                           </td>
-                          <td className="py-1.5 text-muted-foreground">
+                          <td className="text-muted-foreground py-1.5">
                             {entry.fallback ?? "No fallback available"}
                           </td>
                         </tr>

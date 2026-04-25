@@ -1,7 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, Zap, ShieldCheck, Download, CloudUpload, ClipboardCheck, ImagePlus, Palette, MessageSquare, Wand2, Moon, PenTool, Wrench, Eye, Users, FileSearch, BookOpen, Lightbulb, ArrowLeft, PanelBottom, PanelRight } from "../icons";
+import {
+  Save,
+  Zap,
+  ShieldCheck,
+  Download,
+  CloudUpload,
+  ClipboardCheck,
+  ImagePlus,
+  Palette,
+  MessageSquare,
+  Wand2,
+  Moon,
+  PenTool,
+  Wrench,
+  Eye,
+  Users,
+  FileSearch,
+  BookOpen,
+  Lightbulb,
+  ArrowLeft,
+  PanelBottom,
+  PanelRight,
+} from "../icons";
 import {
   Command,
   CommandInput,
@@ -11,11 +33,7 @@ import {
   CommandItem,
   CommandShortcut,
 } from "@email-hub/ui/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@email-hub/ui/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@email-hub/ui/components/ui/dialog";
 import type { AgentMode } from "@/types/chat";
 
 interface CommandPaletteProps {
@@ -34,7 +52,11 @@ interface CommandPaletteProps {
   onSelectAgent?: (agent: AgentMode) => void;
 }
 
-const AGENT_ITEMS: { id: AgentMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const AGENT_ITEMS: {
+  id: AgentMode;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "scaffolder", label: "Scaffolder", icon: Wand2 },
   { id: "dark_mode", label: "Dark Mode", icon: Moon },
@@ -85,7 +107,7 @@ export function CommandPalette({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] transition-colors"
       >
         <span className="font-medium">{"⌘K"}</span>
       </button>
@@ -93,14 +115,14 @@ export function CommandPalette({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[52rem] overflow-hidden p-0">
           <DialogTitle className="sr-only">Command Palette</DialogTitle>
-          <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-3 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4">
+          <Command className="[&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-3 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4">
             <CommandInput placeholder={"Type a command or search..."} />
             <CommandList className="max-h-[min(70vh,36rem)] p-2">
               <CommandEmpty>{"No results found."}</CommandEmpty>
 
               {/* Actions & Panels side by side */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-border p-2">
+                <div className="border-border rounded-lg border p-2">
                   <CommandGroup heading={"Actions"}>
                     {onSave && (
                       <CommandItem onSelect={() => run(onSave)}>
@@ -152,7 +174,7 @@ export function CommandPalette({
                 </div>
 
                 <div className="space-y-3">
-                  <div className="rounded-lg border border-border p-2">
+                  <div className="border-border rounded-lg border p-2">
                     <CommandGroup heading={"Panels"}>
                       {onToggleQAPanel && (
                         <CommandItem onSelect={() => run(onToggleQAPanel)}>
@@ -162,7 +184,12 @@ export function CommandPalette({
                         </CommandItem>
                       )}
                       {onDesignRefToggle && (
-                        <CommandItem onSelect={() => { setOpen(false); onDesignRefToggle(!designRefOpen); }}>
+                        <CommandItem
+                          onSelect={() => {
+                            setOpen(false);
+                            onDesignRefToggle(!designRefOpen);
+                          }}
+                        >
                           <Palette className="h-4 w-4" />
                           {"Design Ref"}
                         </CommandItem>
@@ -177,7 +204,7 @@ export function CommandPalette({
                     </CommandGroup>
                   </div>
 
-                  <div className="rounded-lg border border-border p-2">
+                  <div className="border-border rounded-lg border p-2">
                     <CommandGroup heading={"Navigation"}>
                       {onNavigateBack && (
                         <CommandItem onSelect={() => run(onNavigateBack)}>
@@ -191,7 +218,7 @@ export function CommandPalette({
               </div>
 
               {/* Agents in its own bordered section, 2-col grid */}
-              <div className="mt-3 rounded-lg border border-border p-2">
+              <div className="border-border mt-3 rounded-lg border p-2">
                 <CommandGroup heading={"Agents"}>
                   <div className="grid grid-cols-2 gap-1">
                     {AGENT_ITEMS.map((a) => {
@@ -199,7 +226,10 @@ export function CommandPalette({
                       return (
                         <CommandItem
                           key={a.id}
-                          onSelect={() => { setOpen(false); onSelectAgent?.(a.id); }}
+                          onSelect={() => {
+                            setOpen(false);
+                            onSelectAgent?.(a.id);
+                          }}
                         >
                           <Icon className="h-4 w-4" />
                           {a.label}

@@ -2,10 +2,7 @@ import { test, expect } from "./fixtures";
 import { getSharedProjectId } from "./fixtures/constants";
 
 test.describe("Export Flow", () => {
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "API-heavy flow — Chromium only"
-  );
+  test.skip(({ browserName }) => browserName !== "chromium", "API-heavy flow — Chromium only");
 
   // Stub the Maizzle compile proxy — CI doesn't run the sidecar. Real
   // Maizzle integration is covered by the backend test suite; here we only
@@ -19,7 +16,7 @@ test.describe("Export Flow", () => {
           compiled_html: "<html><body><h1>stubbed preview</h1></body></html>",
           build_time_ms: 42,
         }),
-      })
+      }),
     );
   });
 
@@ -35,9 +32,7 @@ test.describe("Export Flow", () => {
     await page.getByRole("menuitem", { name: /^export$/i }).click();
   }
 
-  test("export dialog opens with tabs @smoke", async ({
-    authenticatedPage: page,
-  }) => {
+  test("export dialog opens with tabs @smoke", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
 
@@ -48,21 +43,17 @@ test.describe("Export Flow", () => {
     await expect(page.getByText(/braze/i)).toBeVisible();
   });
 
-  test("Raw HTML tab has download button", async ({
-    authenticatedPage: page,
-  }) => {
+  test("Raw HTML tab has download button", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
     await openExportDialog(page);
 
-    await expect(
-      page.getByRole("button", { name: /download html/i })
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("button", { name: /download html/i })).toBeVisible({
+      timeout: 5_000,
+    });
   });
 
-  test("Braze tab shows name input", async ({
-    authenticatedPage: page,
-  }) => {
+  test("Braze tab shows name input", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
     await openExportDialog(page);
@@ -71,23 +62,17 @@ test.describe("Export Flow", () => {
     await expect(page.locator("#braze-name")).toBeVisible({ timeout: 5_000 });
   });
 
-  test("gate panels appear in export flow", async ({
-    authenticatedPage: page,
-  }) => {
+  test("gate panels appear in export flow", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
     await openExportDialog(page);
 
-    await expect(
-      page
-        .getByText(/qa|quality|rendering|approval/i)
-        .first()
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/qa|quality|rendering|approval/i).first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
-  test("export dialog can be closed", async ({
-    authenticatedPage: page,
-  }) => {
+  test("export dialog can be closed", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
     await openExportDialog(page);

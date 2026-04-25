@@ -12,16 +12,11 @@ interface HistoryPanelProps {
   onClearAll: () => void;
 }
 
-export function HistoryPanel({
-  sessions,
-  onRestore,
-  onDelete,
-  onClearAll,
-}: HistoryPanelProps) {
+export function HistoryPanel({ sessions, onRestore, onDelete, onClearAll }: HistoryPanelProps) {
   if (sessions.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center px-6 py-4">
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+        <div className="text-muted-foreground flex flex-col items-center gap-2">
           <History className="h-5 w-5" />
           <p className="text-sm">{"No conversation history"}</p>
           <p className="text-xs">{"Past conversations will appear here automatically."}</p>
@@ -32,14 +27,12 @@ export function HistoryPanel({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <span className="text-xs text-muted-foreground">
-          {`${sessions.length} sessions`}
-        </span>
+      <div className="border-border flex items-center justify-between border-b px-3 py-2">
+        <span className="text-muted-foreground text-xs">{`${sessions.length} sessions`}</span>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 gap-1 px-2 text-[11px] text-muted-foreground"
+          className="text-muted-foreground h-6 gap-1 px-2 text-[11px]"
           onClick={onClearAll}
         >
           <Trash2 className="h-3 w-3" />

@@ -129,7 +129,8 @@ describe("stripAnnotations", () => {
   });
 
   it("removes all builder annotations from a full element", () => {
-    const html = '<div data-section-id="s1" data-component-id="42" data-component-name="Hero">Content</div>';
+    const html =
+      '<div data-section-id="s1" data-component-id="42" data-component-name="Hero">Content</div>';
     expect(stripAnnotations(html)).toBe("<div>Content</div>");
   });
 
@@ -140,7 +141,7 @@ describe("stripAnnotations", () => {
 
   it("strips annotations from full email template", () => {
     const html = builderDoc(
-      '<tr data-section-id="s1"><td><h1 data-slot-name="headline">Hello</h1></td></tr>'
+      '<tr data-section-id="s1"><td><h1 data-slot-name="headline">Hello</h1></td></tr>',
     );
     const stripped = stripAnnotations(html);
     expect(stripped).not.toContain("data-section-id");
@@ -173,7 +174,7 @@ describe("parseInlineStyle", () => {
 
   it("handles colons in URL values (Bug 3)", () => {
     const result = parseInlineStyle(
-      'background-image: url("data:image/png;base64,abc"); color: blue'
+      'background-image: url("data:image/png;base64,abc"); color: blue',
     );
     expect(result["background-image"]).toContain("data:image/png");
     expect(result.color).toBe("blue");
@@ -181,16 +182,14 @@ describe("parseInlineStyle", () => {
 
   it("handles quoted font-family values with commas", () => {
     const result = parseInlineStyle(
-      'font-family: "Helvetica Neue", Arial, sans-serif; color: #333'
+      'font-family: "Helvetica Neue", Arial, sans-serif; color: #333',
     );
     expect(result["font-family"]).toContain('"Helvetica Neue"');
     expect(result.color).toBe("#333");
   });
 
   it("handles MSO-specific properties", () => {
-    const result = parseInlineStyle(
-      "mso-line-height-rule: exactly; line-height: 20px"
-    );
+    const result = parseInlineStyle("mso-line-height-rule: exactly; line-height: 20px");
     expect(result["mso-line-height-rule"]).toBe("exactly");
     expect(result["line-height"]).toBe("20px");
   });
@@ -209,7 +208,7 @@ describe("parseInlineStyle", () => {
 
 describe("extractEspTokens / restoreEspTokens", () => {
   it("preserves Liquid template tokens", () => {
-    const html = '<td>{% if user.vip %}VIP Content{% endif %}</td>';
+    const html = "<td>{% if user.vip %}VIP Content{% endif %}</td>";
     const { sanitized, tokenMap } = extractEspTokens(html);
     expect(sanitized).not.toContain("{%");
     expect(sanitized).toContain("__ESP_");
@@ -218,7 +217,7 @@ describe("extractEspTokens / restoreEspTokens", () => {
   });
 
   it("preserves Handlebars tokens", () => {
-    const html = '<td>{{user.name}}</td>';
+    const html = "<td>{{user.name}}</td>";
     const { sanitized, tokenMap } = extractEspTokens(html);
     expect(sanitized).not.toContain("{{");
     const restored = restoreEspTokens(sanitized, tokenMap);
@@ -226,7 +225,7 @@ describe("extractEspTokens / restoreEspTokens", () => {
   });
 
   it("preserves AMPscript tokens", () => {
-    const html = '<td>%%first_name%%</td>';
+    const html = "<td>%%first_name%%</td>";
     const { sanitized, tokenMap } = extractEspTokens(html);
     expect(sanitized).not.toContain("%%");
     const restored = restoreEspTokens(sanitized, tokenMap);
@@ -234,7 +233,7 @@ describe("extractEspTokens / restoreEspTokens", () => {
   });
 
   it("preserves ERB/EJS tokens", () => {
-    const html = '<td><%= user.name %></td>';
+    const html = "<td><%= user.name %></td>";
     const { sanitized, tokenMap } = extractEspTokens(html);
     expect(sanitized).not.toContain("<%");
     const restored = restoreEspTokens(sanitized, tokenMap);
@@ -242,7 +241,7 @@ describe("extractEspTokens / restoreEspTokens", () => {
   });
 
   it("preserves multiple ESP syntaxes in the same HTML", () => {
-    const html = '<td>{{name}} - {% if premium %}%%discount_code%%{% endif %}</td>';
+    const html = "<td>{{name}} - {% if premium %}%%discount_code%%{% endif %}</td>";
     const { sanitized, tokenMap } = extractEspTokens(html);
     const restored = restoreEspTokens(sanitized, tokenMap);
     expect(restored).toBe(html);
@@ -260,7 +259,7 @@ describe("extractEspTokens / restoreEspTokens", () => {
 
 describe("internalizeStructuralEsp", () => {
   it("moves Liquid {% if %} from around <tr> to inside <td> (single cell)", () => {
-    const html = '{% if user.vip %}<tr><td>VIP Section</td></tr>{% endif %}';
+    const html = "{% if user.vip %}<tr><td>VIP Section</td></tr>{% endif %}";
     const { sanitized, tokenMap } = extractEspTokens(html);
     const result = internalizeStructuralEsp(sanitized, tokenMap);
     const restored = restoreEspTokens(result, tokenMap);
@@ -287,7 +286,7 @@ describe("internalizeStructuralEsp", () => {
   });
 
   it("moves AMPscript conditionals inside <td>", () => {
-    const html = '%%[IF @vip == true]%%<tr><td>VIP Offer</td></tr>%%[ENDIF]%%';
+    const html = "%%[IF @vip == true]%%<tr><td>VIP Offer</td></tr>%%[ENDIF]%%";
     const { sanitized, tokenMap } = extractEspTokens(html);
     const result = internalizeStructuralEsp(sanitized, tokenMap);
     const restored = restoreEspTokens(result, tokenMap);
@@ -296,7 +295,7 @@ describe("internalizeStructuralEsp", () => {
   });
 
   it("handles multi-cell rows (moves tokens into each <td>)", () => {
-    const html = '{% if show_cols %}<tr><td>Left</td><td>Right</td></tr>{% endif %}';
+    const html = "{% if show_cols %}<tr><td>Left</td><td>Right</td></tr>{% endif %}";
     const { sanitized, tokenMap } = extractEspTokens(html);
     const result = internalizeStructuralEsp(sanitized, tokenMap);
     const restored = restoreEspTokens(result, tokenMap);
@@ -307,7 +306,7 @@ describe("internalizeStructuralEsp", () => {
   });
 
   it("leaves non-structural ESP tokens untouched", () => {
-    const html = '<tr><td>Hello {{user.name}}, {% if premium %}special{% endif %} offer</td></tr>';
+    const html = "<tr><td>Hello {{user.name}}, {% if premium %}special{% endif %} offer</td></tr>";
     const { sanitized, tokenMap } = extractEspTokens(html);
     const result = internalizeStructuralEsp(sanitized, tokenMap);
     const restored = restoreEspTokens(result, tokenMap);
@@ -317,7 +316,7 @@ describe("internalizeStructuralEsp", () => {
   });
 
   it("handles ERB/EJS structural conditionals", () => {
-    const html = '<% if @user.admin? %><tr><td>Admin Panel</td></tr><% end %>';
+    const html = "<% if @user.admin? %><tr><td>Admin Panel</td></tr><% end %>";
     const { sanitized, tokenMap } = extractEspTokens(html);
     const result = internalizeStructuralEsp(sanitized, tokenMap);
     const restored = restoreEspTokens(result, tokenMap);
@@ -359,7 +358,7 @@ describe("isColumnGroup", () => {
   it("detects columns sharing a CSS class", () => {
     const doc = new DOMParser().parseFromString(
       '<div><div class="col">A</div><div class="col">B</div></div>',
-      "text/html"
+      "text/html",
     );
     const children = Array.from(doc.querySelector("div")!.children);
     expect(isColumnGroup(children)).toBe(true);
@@ -368,7 +367,7 @@ describe("isColumnGroup", () => {
   it("detects columns with percentage widths summing to ~100%", () => {
     const doc = new DOMParser().parseFromString(
       '<div><table width="50%"><tr><td>A</td></tr></table><table width="50%"><tr><td>B</td></tr></table></div>',
-      "text/html"
+      "text/html",
     );
     const children = Array.from(doc.querySelector("div")!.children);
     expect(isColumnGroup(children)).toBe(true);
@@ -377,7 +376,7 @@ describe("isColumnGroup", () => {
   it("detects columns with pixel widths summing to container width", () => {
     const doc = new DOMParser().parseFromString(
       '<div><table width="300"><tr><td>A</td></tr></table><table width="300"><tr><td>B</td></tr></table></div>',
-      "text/html"
+      "text/html",
     );
     const children = Array.from(doc.querySelector("div")!.children);
     expect(isColumnGroup(children)).toBe(true);
@@ -386,7 +385,7 @@ describe("isColumnGroup", () => {
   it("detects inline-block display columns", () => {
     const doc = new DOMParser().parseFromString(
       '<div><div style="display:inline-block;width:50%">A</div><div style="display:inline-block;width:50%">B</div></div>',
-      "text/html"
+      "text/html",
     );
     const children = Array.from(doc.querySelector("div")!.children);
     expect(isColumnGroup(children)).toBe(true);
@@ -395,17 +394,14 @@ describe("isColumnGroup", () => {
   it("does not detect unrelated siblings as columns", () => {
     const doc = new DOMParser().parseFromString(
       '<div><div class="header">H</div><div class="body">B</div><div class="footer">F</div></div>',
-      "text/html"
+      "text/html",
     );
     const children = Array.from(doc.querySelector("div")!.children);
     expect(isColumnGroup(children)).toBe(false);
   });
 
   it("rejects single child", () => {
-    const doc = new DOMParser().parseFromString(
-      '<div><div class="col">A</div></div>',
-      "text/html"
-    );
+    const doc = new DOMParser().parseFromString('<div><div class="col">A</div></div>', "text/html");
     const children = Array.from(doc.querySelector("div")!.children);
     expect(isColumnGroup(children)).toBe(false);
   });
@@ -413,7 +409,7 @@ describe("isColumnGroup", () => {
   it("rejects more than 6 children", () => {
     const doc = new DOMParser().parseFromString(
       '<div><div class="c">1</div><div class="c">2</div><div class="c">3</div><div class="c">4</div><div class="c">5</div><div class="c">6</div><div class="c">7</div></div>',
-      "text/html"
+      "text/html",
     );
     const children = Array.from(doc.querySelector("div")!.children);
     expect(isColumnGroup(children)).toBe(false);
@@ -427,7 +423,7 @@ describe("htmlToSections", () => {
     it("parses annotated rows inside table", () => {
       const html = builderDoc(
         `<tr data-section-id="abc" data-component-name="Hero"><td>Hello</td></tr>
-         <tr data-section-id="def" data-component-name="Footer"><td>Bye</td></tr>`
+         <tr data-section-id="def" data-component-name="Footer"><td>Bye</td></tr>`,
       );
 
       const sections = htmlToSections(html);
@@ -445,7 +441,7 @@ describe("htmlToSections", () => {
          </div>
          <div data-section="body" data-section-id="body" data-component-name="Body">
            <p data-slot="body_text" data-slot-name="body_text">Content</p>
-         </div>`
+         </div>`,
       );
 
       const sections = htmlToSections(html);
@@ -457,7 +453,7 @@ describe("htmlToSections", () => {
 
     it("extracts inline style overrides using parseInlineStyle (Bug 3)", () => {
       const html = assemblerDoc(
-        `<div data-section-id="s1" style="background-color: #ff0000; font-size: 16px">Content</div>`
+        `<div data-section-id="s1" style="background-color: #ff0000; font-size: 16px">Content</div>`,
       );
 
       const sections = htmlToSections(html);
@@ -467,7 +463,7 @@ describe("htmlToSections", () => {
 
     it("parses styles with colons in values correctly (Bug 3)", () => {
       const html = assemblerDoc(
-        `<div data-section-id="s1" style="background-image: url('data:image/png;base64,abc'); font-family: 'Helvetica Neue', Arial">Content</div>`
+        `<div data-section-id="s1" style="background-image: url('data:image/png;base64,abc'); font-family: 'Helvetica Neue', Arial">Content</div>`,
       );
 
       const sections = htmlToSections(html);
@@ -478,7 +474,7 @@ describe("htmlToSections", () => {
     it("prefers annotated strategy when both annotations and comments present", () => {
       const html = builderDoc(
         `<!-- section: CommentName -->
-         <tr data-section-id="s1" data-component-name="AttrName"><td>Content</td></tr>`
+         <tr data-section-id="s1" data-component-name="AttrName"><td>Content</td></tr>`,
       );
 
       const sections = htmlToSections(html);
@@ -492,7 +488,7 @@ describe("htmlToSections", () => {
       const html = classicDoc(
         `<tr><td>Header</td></tr>
          <tr><td>Body</td></tr>
-         <tr><td>Footer</td></tr>`
+         <tr><td>Footer</td></tr>`,
       );
 
       const sections = htmlToSections(html);
@@ -516,7 +512,7 @@ describe("htmlToSections", () => {
          </table>
          <table class="column" width="24%" cellpadding="0" cellspacing="0" border="0">
            <tr><td><h3>Feature Four</h3></td></tr>
-         </table>`
+         </table>`,
       );
 
       const sections = htmlToSections(html);
@@ -545,8 +541,8 @@ describe("htmlToSections", () => {
       expect(sections).not.toBeNull();
       expect(sections).toHaveLength(3);
       // The columns-row section should contain both columns
-      const columnsSection = sections!.find((s) =>
-        s.htmlFragment.includes("Col A") && s.htmlFragment.includes("Col B")
+      const columnsSection = sections!.find(
+        (s) => s.htmlFragment.includes("Col A") && s.htmlFragment.includes("Col B"),
       );
       expect(columnsSection).toBeDefined();
     });
@@ -592,7 +588,7 @@ describe("htmlToSections", () => {
     it("falls back to tag-based names for table rows (comments unreliable inside table)", () => {
       const html = builderDoc(
         `<tr><td>Header content</td></tr>
-         <tr><td>Footer content</td></tr>`
+         <tr><td>Footer content</td></tr>`,
       );
 
       const sections = htmlToSections(html);
@@ -780,11 +776,7 @@ describe("htmlToSections", () => {
 // ── sectionsToHtml ──
 
 describe("sectionsToHtml", () => {
-  const makeSection = (
-    id: string,
-    content: string,
-    precedingContent?: string
-  ): SectionNode => ({
+  const makeSection = (id: string, content: string, precedingContent?: string): SectionNode => ({
     id,
     componentId: 0,
     componentName: "Section",
@@ -864,7 +856,7 @@ describe("sectionsToHtml", () => {
   it("preserves ESP tokens through serialization", () => {
     const shell = `<html><body><div class="email"><div>placeholder</div></div></body></html>`;
     const sections = [
-      makeSection("s1", '<div>Hello {{user.name}}, {% if vip %}VIP{% endif %}</div>'),
+      makeSection("s1", "<div>Hello {{user.name}}, {% if vip %}VIP{% endif %}</div>"),
     ];
 
     const result = sectionsToHtml(sections, shell);
@@ -880,7 +872,7 @@ describe("roundtrip: htmlToSections → sectionsToHtml → htmlToSections", () =
   it("roundtrips builder-style email", () => {
     const original = builderDoc(
       `<tr data-section-id="hero" data-component-name="Hero"><td>Welcome</td></tr>
-       <tr data-section-id="footer" data-component-name="Footer"><td>Goodbye</td></tr>`
+       <tr data-section-id="footer" data-component-name="Footer"><td>Goodbye</td></tr>`,
     );
 
     const sections = htmlToSections(original)!;
@@ -900,7 +892,7 @@ describe("roundtrip: htmlToSections → sectionsToHtml → htmlToSections", () =
     const original = classicDoc(
       `<tr><td>Header</td></tr>
        <tr><td>Body</td></tr>
-       <tr><td>Footer</td></tr>`
+       <tr><td>Footer</td></tr>`,
     );
 
     const sections = htmlToSections(original)!;
@@ -933,7 +925,7 @@ describe("roundtrip: htmlToSections → sectionsToHtml → htmlToSections", () =
     const original = assemblerDoc(
       `<div data-section="header" data-section-id="header" data-component-name="Header">
          <h1 data-slot="headline" data-slot-name="headline">Hello World</h1>
-       </div>`
+       </div>`,
     );
 
     const sections = htmlToSections(original)!;
@@ -1068,8 +1060,12 @@ describe("diffSections", () => {
 // ── BuilderSyncEngine ──
 
 describe("BuilderSyncEngine", () => {
-  beforeEach(() => { vi.useFakeTimers(); });
-  afterEach(() => { vi.useRealTimers(); });
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it("syncs code to builder after 500ms debounce", () => {
     const onBuilderUpdate = vi.fn();
@@ -1081,9 +1077,7 @@ describe("BuilderSyncEngine", () => {
       onParseError: vi.fn(),
     });
 
-    engine.onCodeChange(builderDoc(
-      '<tr data-section-id="s1"><td>Hello</td></tr>'
-    ));
+    engine.onCodeChange(builderDoc('<tr data-section-id="s1"><td>Hello</td></tr>'));
     expect(onBuilderUpdate).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(400);
@@ -1108,11 +1102,16 @@ describe("BuilderSyncEngine", () => {
 
     engine.setTemplateShell(builderDoc(""));
 
-    engine.onBuilderChange([{
-      id: "s1", componentId: 0, componentName: "Header",
-      slotValues: {}, styleOverrides: {},
-      htmlFragment: '<tr data-section-id="s1"><td>Header</td></tr>',
-    }]);
+    engine.onBuilderChange([
+      {
+        id: "s1",
+        componentId: 0,
+        componentName: "Header",
+        slotValues: {},
+        styleOverrides: {},
+        htmlFragment: '<tr data-section-id="s1"><td>Header</td></tr>',
+      },
+    ]);
 
     vi.advanceTimersByTime(100);
     expect(onCodeUpdate).not.toHaveBeenCalled();
@@ -1155,14 +1154,19 @@ describe("BuilderSyncEngine", () => {
 
     engine.setTemplateShell(builderDoc(""));
 
-    engine.onCodeChange(builderDoc('<tr><td>from code</td></tr>'));
+    engine.onCodeChange(builderDoc("<tr><td>from code</td></tr>"));
 
     vi.advanceTimersByTime(100);
-    engine.onBuilderChange([{
-      id: "s1", componentId: 0, componentName: "Section",
-      slotValues: {}, styleOverrides: {},
-      htmlFragment: "<tr><td>Builder wins</td></tr>",
-    }]);
+    engine.onBuilderChange([
+      {
+        id: "s1",
+        componentId: 0,
+        componentName: "Section",
+        slotValues: {},
+        styleOverrides: {},
+        htmlFragment: "<tr><td>Builder wins</td></tr>",
+      },
+    ]);
 
     vi.advanceTimersByTime(500);
 
@@ -1185,8 +1189,10 @@ describe("BuilderSyncEngine", () => {
     vi.advanceTimersByTime(500);
     expect(engine["templateShell"]).toContain("V1");
 
-    const html2 = builderDoc('<tr data-section-id="s1"><td>V2</td></tr>')
-      .replace("<html>", '<html lang="en">');
+    const html2 = builderDoc('<tr data-section-id="s1"><td>V2</td></tr>').replace(
+      "<html>",
+      '<html lang="en">',
+    );
     engine.onCodeChange(html2);
     vi.advanceTimersByTime(500);
     expect(engine["templateShell"]).toContain('lang="en"');

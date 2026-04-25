@@ -1,16 +1,9 @@
 import { test, expect } from "./fixtures";
-import {
-  getSharedProjectId,
-  TEST_USER_EMAIL,
-  TEST_USER_PASSWORD,
-} from "./fixtures/constants";
+import { getSharedProjectId, TEST_USER_EMAIL, TEST_USER_PASSWORD } from "./fixtures/constants";
 
 test.describe("Collaboration", () => {
   test.describe.configure({ retries: 3 });
-  test.skip(
-    ({ browserName }) => browserName === "webkit",
-    "WebSocket behavior — skip WebKit"
-  );
+  test.skip(({ browserName }) => browserName === "webkit", "WebSocket behavior — skip WebKit");
 
   test("presence indicator shows active user", async ({
     authenticatedPage: page,
@@ -47,9 +40,7 @@ test.describe("Collaboration", () => {
     await context2.close();
   });
 
-  test("workspace loads for concurrent sessions", async ({
-    authenticatedPage: page,
-  }) => {
+  test("workspace loads for concurrent sessions", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
     await expect(page.locator("main")).toBeVisible();

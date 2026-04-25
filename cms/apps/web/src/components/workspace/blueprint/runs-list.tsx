@@ -42,7 +42,11 @@ interface BlueprintRunsListProps {
   onResumeRun?: (run: BlueprintRunRecord) => void;
 }
 
-export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: BlueprintRunsListProps) {
+export function BlueprintRunsList({
+  projectId,
+  onApplyResult,
+  onResumeRun,
+}: BlueprintRunsListProps) {
   const [filter, setFilter] = useState<BlueprintRunsFilter>("all");
   const [selectedRun, setSelectedRun] = useState<BlueprintRunRecord | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -56,9 +60,9 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
   }, []);
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="bg-background flex h-full flex-col">
       {/* Filter bar */}
-      <div className="flex items-center gap-1 border-b border-border px-3 py-2 overflow-x-auto scrollbar-none">
+      <div className="border-border scrollbar-none flex items-center gap-1 overflow-x-auto border-b px-3 py-2">
         {FILTER_OPTIONS.map((opt) => (
           <Button
             key={opt.value}
@@ -78,56 +82,63 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
           <div className="flex items-center justify-center py-8">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" />
+            <div className="border-muted border-t-primary h-5 w-5 animate-spin rounded-full border-2" />
           </div>
         )}
 
         {!isLoading && runs.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+          <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8">
             <Zap className="h-5 w-5" />
-            <p className="text-sm">{"No blueprint runs yet. Run a pipeline to see history here."}</p>
+            <p className="text-sm">
+              {"No blueprint runs yet. Run a pipeline to see history here."}
+            </p>
           </div>
         )}
 
         {!isLoading && runs.length > 0 && (
-          <div className="divide-y divide-border">
+          <div className="divide-border divide-y">
             {runs.map((run) => {
               const Icon = STATUS_ICON[run.status] ?? Clock;
               const colorClass = STATUS_COLOR[run.status] ?? "text-muted-foreground";
               const date = new Date(run.created_at);
               const timeAgo = formatRelativeTime(date);
-              const isResumable = (run.status === "failed" || run.status === "cost_cap_exceeded") && run.checkpoint_count > 0;
+              const isResumable =
+                (run.status === "failed" || run.status === "cost_cap_exceeded") &&
+                run.checkpoint_count > 0;
 
               return (
                 <button
                   key={run.id}
                   type="button"
                   onClick={() => handleOpenDetail(run)}
-                  className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                  className="hover:bg-accent/50 flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors"
                 >
                   <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${colorClass}`} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
+                    <p className="text-foreground truncate text-sm font-medium">
                       {run.brief_excerpt}
                     </p>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-2 text-xs">
                       <span>{timeAgo}</span>
                       <span>·</span>
                       <span>{formatDuration(run.duration_ms)}</span>
                       <span>·</span>
                       <span>{`${run.total_tokens.toLocaleString()} tokens`}</span>
                       {run.qa_passed === true && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
                           {"QA Pass"}
                         </Badge>
                       )}
                       {run.qa_passed === false && (
-                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                        <Badge variant="destructive" className="px-1.5 py-0 text-[10px]">
                           {"QA Fail"}
                         </Badge>
                       )}
                       {run.resumed_from && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
+                        <Badge
+                          variant="outline"
+                          className="border-primary/50 text-primary px-1.5 py-0 text-[10px]"
+                        >
                           {"Resumed"}
                         </Badge>
                       )}

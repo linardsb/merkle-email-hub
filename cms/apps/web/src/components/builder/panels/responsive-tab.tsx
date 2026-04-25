@@ -29,7 +29,7 @@ export function ResponsiveTab({
     <div className="space-y-5 p-4">
       {/* Preview mode toggle */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
           {"Preview Mode"}
         </Label>
         <div className="flex gap-1">
@@ -64,33 +64,27 @@ export function ResponsiveTab({
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label className="text-xs font-medium">{"Stack on mobile"}</Label>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-muted-foreground text-[10px]">
             {"Convert side-by-side columns to stacked layout"}
           </p>
         </div>
         <Switch
           checked={responsive.stackOnMobile}
-          onCheckedChange={(checked) =>
-            updateResponsive({ stackOnMobile: checked })
-          }
+          onCheckedChange={(checked) => updateResponsive({ stackOnMobile: checked })}
         />
       </div>
 
       {/* Full width images */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="text-xs font-medium">
-            {"Full width images on mobile"}
-          </Label>
-          <p className="text-[10px] text-muted-foreground">
+          <Label className="text-xs font-medium">{"Full width images on mobile"}</Label>
+          <p className="text-muted-foreground text-[10px]">
             {"Images expand to fill container width"}
           </p>
         </div>
         <Switch
           checked={responsive.fullWidthImageOnMobile}
-          onCheckedChange={(checked) =>
-            updateResponsive({ fullWidthImageOnMobile: checked })
-          }
+          onCheckedChange={(checked) => updateResponsive({ fullWidthImageOnMobile: checked })}
         />
       </div>
 
@@ -102,9 +96,7 @@ export function ResponsiveTab({
             value={responsive.mobileFontSize?.replace("px", "") ?? ""}
             onChange={(e) =>
               updateResponsive({
-                mobileFontSize: e.target.value
-                  ? `${e.target.value}px`
-                  : null,
+                mobileFontSize: e.target.value ? `${e.target.value}px` : null,
               })
             }
             placeholder="Default"
@@ -113,7 +105,7 @@ export function ResponsiveTab({
             min={10}
             max={32}
           />
-          <span className="text-xs text-muted-foreground">{"px"}</span>
+          <span className="text-muted-foreground text-xs">{"px"}</span>
         </div>
       </div>
     </div>

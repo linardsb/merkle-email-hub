@@ -40,7 +40,7 @@ export function useProject(projectId: number | null) {
 export function useCreateProject() {
   return useSWRMutation<ProjectResponse, Error, string, ProjectCreate>(
     "/api/v1/projects",
-    mutationFetcher
+    mutationFetcher,
   );
 }
 
@@ -51,6 +51,6 @@ export function useDeleteProject(id: number | null) {
       const { authFetch } = await import("@/lib/auth-fetch");
       const res = await authFetch(url, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete project");
-    }
+    },
   );
 }

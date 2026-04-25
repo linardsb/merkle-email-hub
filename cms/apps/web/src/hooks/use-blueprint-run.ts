@@ -62,38 +62,35 @@ export function useBlueprintRun({ projectId }: UseBlueprintRunOptions) {
     [projectId],
   );
 
-  const resume = useCallback(
-    async (params: BlueprintResumeParams) => {
-      setIsRunning(true);
-      setError(null);
-      setResult(null);
+  const resume = useCallback(async (params: BlueprintResumeParams) => {
+    setIsRunning(true);
+    setError(null);
+    setResult(null);
 
-      try {
-        const res = await authFetch("/api/v1/blueprints/resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(params),
-          timeoutMs: LONG_TIMEOUT_MS,
-        });
+    try {
+      const res = await authFetch("/api/v1/blueprints/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+        timeoutMs: LONG_TIMEOUT_MS,
+      });
 
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          throw new Error(body?.error ?? "Resume failed");
-        }
-
-        const data: BlueprintRunResponse = await res.json();
-        setResult(data);
-        return data;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Resume failed";
-        setError(message);
-        return null;
-      } finally {
-        setIsRunning(false);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "Resume failed");
       }
-    },
-    [],
-  );
+
+      const data: BlueprintRunResponse = await res.json();
+      setResult(data);
+      return data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Resume failed";
+      setError(message);
+      return null;
+    } finally {
+      setIsRunning(false);
+    }
+  }, []);
 
   const reset = useCallback(() => {
     setResult(null);

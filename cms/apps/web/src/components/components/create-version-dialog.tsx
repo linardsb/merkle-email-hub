@@ -19,11 +19,7 @@ interface CreateVersionDialogProps {
   componentId: number;
 }
 
-export function CreateVersionDialog({
-  open,
-  onOpenChange,
-  componentId,
-}: CreateVersionDialogProps) {
+export function CreateVersionDialog({ open, onOpenChange, componentId }: CreateVersionDialogProps) {
   const { trigger, isMutating } = useCreateVersion(componentId);
   const { mutate } = useSWRConfig();
 
@@ -89,10 +85,9 @@ export function CreateVersionDialog({
         default_tokens: parsedTokens,
       });
       await mutate(
-        (key: unknown) =>
-          typeof key === "string" && key.startsWith("/api/v1/components"),
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/components"),
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       );
       toast.success("Version created");
       onOpenChange(false);
@@ -106,21 +101,16 @@ export function CreateVersionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[36rem] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-[36rem] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{"Create New Version"}</DialogTitle>
-          <DialogDescription>
-            {"Upload updated HTML/CSS for this component."}
-          </DialogDescription>
+          <DialogDescription>{"Upload updated HTML/CSS for this component."}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* HTML Source */}
           <div>
-            <label
-              htmlFor="ver-html"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <label htmlFor="ver-html" className="text-foreground mb-1.5 block text-sm font-medium">
               {"HTML Source"}
             </label>
             <textarea
@@ -136,14 +126,9 @@ export function CreateVersionDialog({
 
           {/* CSS Source */}
           <div>
-            <label
-              htmlFor="ver-css"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <label htmlFor="ver-css" className="text-foreground mb-1.5 block text-sm font-medium">
               {"CSS Source"}
-              <span className="ml-1 font-normal text-foreground-muted">
-                {"(optional)"}
-              </span>
+              <span className="text-foreground-muted ml-1 font-normal">{"(optional)"}</span>
             </label>
             <textarea
               id="ver-css"
@@ -160,12 +145,10 @@ export function CreateVersionDialog({
           <div>
             <label
               htmlFor="ver-changelog"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Changelog"}
-              <span className="ml-1 font-normal text-foreground-muted">
-                {"(optional)"}
-              </span>
+              <span className="text-foreground-muted ml-1 font-normal">{"(optional)"}</span>
             </label>
             <textarea
               id="ver-changelog"
@@ -184,7 +167,7 @@ export function CreateVersionDialog({
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-xs font-medium text-interactive hover:underline"
+            className="text-interactive text-xs font-medium hover:underline"
           >
             {showAdvanced ? "Hide advanced fields" : "Show advanced fields (slots, tokens)"}
           </button>
@@ -193,10 +176,10 @@ export function CreateVersionDialog({
               <div>
                 <label
                   htmlFor="ver-slots"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Slot Definitions"}
-                  <span className="ml-1 font-normal text-foreground-muted">
+                  <span className="text-foreground-muted ml-1 font-normal">
                     {"(JSON, optional)"}
                   </span>
                 </label>
@@ -213,10 +196,10 @@ export function CreateVersionDialog({
               <div>
                 <label
                   htmlFor="ver-tokens"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Default Tokens"}
-                  <span className="ml-1 font-normal text-foreground-muted">
+                  <span className="text-foreground-muted ml-1 font-normal">
                     {"(JSON, optional)"}
                   </span>
                 </label>
@@ -238,7 +221,7 @@ export function CreateVersionDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -246,7 +229,7 @@ export function CreateVersionDialog({
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

@@ -11,9 +11,21 @@ export const SAMPLE_DATA: Record<string, unknown> = {
     tier: "gold",
   },
   products: [
-    { name: "Running Shoes", price: "$129.99", image_url: "https://picsum.photos/seed/shoes/200/200" },
-    { name: "Training T-Shirt", price: "$49.99", image_url: "https://picsum.photos/seed/shirt/200/200" },
-    { name: "Water Bottle", price: "$24.99", image_url: "https://picsum.photos/seed/bottle/200/200" },
+    {
+      name: "Running Shoes",
+      price: "$129.99",
+      image_url: "https://picsum.photos/seed/shoes/200/200",
+    },
+    {
+      name: "Training T-Shirt",
+      price: "$49.99",
+      image_url: "https://picsum.photos/seed/shirt/200/200",
+    },
+    {
+      name: "Water Bottle",
+      price: "$24.99",
+      image_url: "https://picsum.photos/seed/bottle/200/200",
+    },
   ],
   company: {
     name: "Acme Inc.",

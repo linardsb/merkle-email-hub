@@ -28,9 +28,7 @@ export function ColorContextMenu({ hex, name, children }: ColorContextMenuProps)
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuItem onClick={() => copyAndNotify(hex, "HEX")}>
-          HEX: {hex}
-        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => copyAndNotify(hex, "HEX")}>HEX: {hex}</DropdownMenuItem>
         <DropdownMenuItem onClick={() => copyAndNotify(hexToRgbString(hex), "RGB")}>
           RGB: {hexToRgbString(hex)}
         </DropdownMenuItem>
@@ -89,13 +87,17 @@ export function FontContextMenu({
           {cssShorthand}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => copyAndNotify(`font-['${escapedFamily}']`, "Tailwind font")}>
+        <DropdownMenuItem
+          onClick={() => copyAndNotify(`font-['${escapedFamily}']`, "Tailwind font")}
+        >
           font-[&apos;{escapedFamily}&apos;]
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => copyAndNotify(`text-[${size}px]`, "Tailwind size")}>
           text-[{size}px]
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => copyAndNotify(`leading-[${lineHeight}px]`, "Tailwind leading")}>
+        <DropdownMenuItem
+          onClick={() => copyAndNotify(`leading-[${lineHeight}px]`, "Tailwind leading")}
+        >
           leading-[{lineHeight}px]
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -34,22 +34,14 @@ export function useVisualDiff() {
 }
 
 /** Fetch baselines for an entity. */
-export function useBaselines(
-  entityType: VisualQAEntityType | null,
-  entityId: number | null,
-) {
+export function useBaselines(entityType: VisualQAEntityType | null, entityId: number | null) {
   const key =
-    entityType && entityId
-      ? `/api/v1/rendering/baselines/${entityType}/${entityId}`
-      : null;
+    entityType && entityId ? `/api/v1/rendering/baselines/${entityType}/${entityId}` : null;
   return useSWR<BaselineListResponse, ApiError>(key, fetcher);
 }
 
 /** Update (upsert) a baseline image for a specific client. */
-export function useUpdateBaseline(
-  entityType: VisualQAEntityType,
-  entityId: number,
-) {
+export function useUpdateBaseline(entityType: VisualQAEntityType, entityId: number) {
   return useSWRMutation<BaselineResponse, ApiError, string, BaselineUpdateRequest>(
     `/api/v1/rendering/baselines/${entityType}/${entityId}`,
     async (url: string, { arg }: { arg: BaselineUpdateRequest }) => {

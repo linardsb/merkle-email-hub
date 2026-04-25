@@ -31,10 +31,7 @@ export function useGateConfig(projectId: number | null) {
   );
 }
 
-async function putMutationFetcher<T>(
-  url: string,
-  { arg }: { arg: unknown },
-): Promise<T> {
+async function putMutationFetcher<T>(url: string, { arg }: { arg: unknown }): Promise<T> {
   const res = await authFetch(url, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

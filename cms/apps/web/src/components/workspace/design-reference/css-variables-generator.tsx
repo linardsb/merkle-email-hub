@@ -20,12 +20,7 @@ export function CssVariablesGenerator({ tokens, editor }: CssVariablesGeneratorP
   };
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleGenerate}
-      className="h-7 gap-1.5 text-xs"
-    >
+    <Button variant="outline" size="sm" onClick={handleGenerate} className="h-7 gap-1.5 text-xs">
       <Code2 className="h-3.5 w-3.5" />
       {"Generate CSS Variables"}
     </Button>

@@ -10,7 +10,12 @@ import type { Collaborator, FollowTarget, CollaborationStatus } from "@/types/co
 
 vi.mock("lucide-react", () => {
   const icon = ({ className, "aria-label": ariaLabel, ...rest }: Record<string, unknown>) => (
-    <span className={className as string} aria-label={ariaLabel as string} data-testid="icon" {...rest} />
+    <span
+      className={className as string}
+      aria-label={ariaLabel as string}
+      data-testid="icon"
+      {...rest}
+    />
   );
   return {
     MessageSquare: icon,
@@ -44,19 +49,13 @@ vi.mock("lucide-react", () => {
 });
 
 vi.mock("@email-hub/ui/components/ui/button", () => ({
-  Button: ({
-    children,
-    ...props
-  }: { children: React.ReactNode } & Record<string, unknown>) => (
+  Button: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) => (
     <button {...props}>{children}</button>
   ),
 }));
 
 vi.mock("@email-hub/ui/components/ui/badge", () => ({
-  Badge: ({
-    children,
-    ...props
-  }: { children: React.ReactNode } & Record<string, unknown>) => (
+  Badge: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) => (
     <span {...props}>{children}</span>
   ),
 }));
@@ -74,17 +73,19 @@ vi.mock("@email-hub/ui/components/ui/dropdown-menu", () => ({
       {children}
     </div>
   ),
-  DropdownMenuContent: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) => (
+  DropdownMenuContent: ({
+    children,
+    ...props
+  }: { children: React.ReactNode } & Record<string, unknown>) => (
     <div data-testid="dropdown-content" {...props}>
       {children}
     </div>
   ),
-  DropdownMenuGroup: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DropdownMenuLabel: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) => (
-    <div {...props}>{children}</div>
-  ),
+  DropdownMenuGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuLabel: ({
+    children,
+    ...props
+  }: { children: React.ReactNode } & Record<string, unknown>) => <div {...props}>{children}</div>,
   DropdownMenuItem: ({
     children,
     onClick,
@@ -223,27 +224,21 @@ describe("MessageBubble", () => {
 
   it("renders user message aligned to end (justify-end class)", () => {
     const msg = makeMessage({ role: "user", content: "User text" });
-    const { container } = render(
-      <MessageBubble message={msg} onApplyHtml={onApplyHtml} />
-    );
+    const { container } = render(<MessageBubble message={msg} onApplyHtml={onApplyHtml} />);
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).toContain("justify-end");
   });
 
   it("renders assistant message without justify-end", () => {
     const msg = makeMessage({ role: "assistant", content: "Reply" });
-    const { container } = render(
-      <MessageBubble message={msg} onApplyHtml={onApplyHtml} />
-    );
+    const { container } = render(<MessageBubble message={msg} onApplyHtml={onApplyHtml} />);
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).not.toContain("justify-end");
   });
 
   it("renders streaming indicator when streaming with content", () => {
     const msg = makeMessage({ isStreaming: true, content: "Partial..." });
-    const { container } = render(
-      <MessageBubble message={msg} onApplyHtml={onApplyHtml} />
-    );
+    const { container } = render(<MessageBubble message={msg} onApplyHtml={onApplyHtml} />);
     // The blinking cursor span
     const cursor = container.querySelector(".animate-pulse");
     expect(cursor).toBeInTheDocument();
@@ -304,9 +299,7 @@ describe("ChatInput", () => {
 
   it("renders a textarea with placeholder", () => {
     render(<ChatInput {...defaultProps} />);
-    expect(
-      screen.getByPlaceholderText("Ask the AI assistant...")
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Ask the AI assistant...")).toBeInTheDocument();
   });
 
   it("renders custom placeholder", () => {
@@ -333,9 +326,7 @@ describe("ChatInput", () => {
 
   it("calls onSend with trimmed content when send button is clicked", () => {
     render(<ChatInput {...defaultProps} />);
-    const textarea = screen.getByPlaceholderText(
-      "Ask the AI assistant..."
-    ) as HTMLTextAreaElement;
+    const textarea = screen.getByPlaceholderText("Ask the AI assistant...") as HTMLTextAreaElement;
     fireEvent.input(textarea, { target: { value: "  Hello world  " } });
     textarea.value = "  Hello world  ";
     fireEvent.click(screen.getByLabelText("Send message"));
@@ -344,9 +335,7 @@ describe("ChatInput", () => {
 
   it("clears textarea after sending", () => {
     render(<ChatInput {...defaultProps} />);
-    const textarea = screen.getByPlaceholderText(
-      "Ask the AI assistant..."
-    ) as HTMLTextAreaElement;
+    const textarea = screen.getByPlaceholderText("Ask the AI assistant...") as HTMLTextAreaElement;
     textarea.value = "Hello";
     fireEvent.click(screen.getByLabelText("Send message"));
     expect(textarea.value).toBe("");
@@ -453,11 +442,7 @@ describe("PresencePanel", () => {
     const collaborators = [makeCollaborator({ clientId: 42, name: "Alice" })];
     const followTarget: FollowTarget = { clientId: 42, name: "Alice" };
     render(
-      <PresencePanel
-        {...defaultProps}
-        collaborators={collaborators}
-        followTarget={followTarget}
-      />
+      <PresencePanel {...defaultProps} collaborators={collaborators} followTarget={followTarget} />,
     );
     expect(screen.getByText("Following")).toBeInTheDocument();
   });
@@ -473,11 +458,7 @@ describe("PresencePanel", () => {
     const collaborators = [makeCollaborator({ clientId: 7, name: "Carol" })];
     const followTarget: FollowTarget = { clientId: 7, name: "Carol" };
     render(
-      <PresencePanel
-        {...defaultProps}
-        collaborators={collaborators}
-        followTarget={followTarget}
-      />
+      <PresencePanel {...defaultProps} collaborators={collaborators} followTarget={followTarget} />,
     );
     fireEvent.click(screen.getByText("Following"));
     expect(defaultProps.onUnfollow).toHaveBeenCalled();
@@ -629,9 +610,7 @@ describe("OfflineBanner", () => {
     mockUseNetworkStatus.mockReturnValue(false);
     render(<OfflineBanner />);
     expect(
-      screen.getByText(
-        "You appear to be offline. Some features may be unavailable."
-      )
+      screen.getByText("You appear to be offline. Some features may be unavailable."),
     ).toBeInTheDocument();
   });
 
@@ -639,17 +618,13 @@ describe("OfflineBanner", () => {
     mockUseNetworkStatus.mockReturnValue(false);
     const { rerender } = render(<OfflineBanner />);
     expect(
-      screen.getByText(
-        "You appear to be offline. Some features may be unavailable."
-      )
+      screen.getByText("You appear to be offline. Some features may be unavailable."),
     ).toBeInTheDocument();
 
     mockUseNetworkStatus.mockReturnValue(true);
     rerender(<OfflineBanner />);
     expect(
-      screen.queryByText(
-        "You appear to be offline. Some features may be unavailable."
-      )
+      screen.queryByText("You appear to be offline. Some features may be unavailable."),
     ).not.toBeInTheDocument();
   });
 });

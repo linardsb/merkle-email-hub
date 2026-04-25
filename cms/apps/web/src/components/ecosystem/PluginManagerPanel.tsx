@@ -16,9 +16,7 @@ export function PluginManagerPanel() {
   const plugins = pluginList?.plugins ?? [];
   const filtered = filter === "all" ? plugins : plugins.filter((p) => p.status === filter);
 
-  const healthMap = new Map(
-    (health?.plugins ?? []).map((h) => [h.name, h]),
-  );
+  const healthMap = new Map((health?.plugins ?? []).map((h) => [h.name, h]));
 
   const filters: { label: string; value: StatusFilter }[] = [
     { label: "All", value: "all" },
@@ -33,13 +31,13 @@ export function PluginManagerPanel() {
       {/* Health Summary */}
       {health && (
         <div className="flex gap-3">
-          <span className="rounded-full bg-status-success/10 px-3 py-1 text-sm font-medium text-status-success">
+          <span className="bg-status-success/10 text-status-success rounded-full px-3 py-1 text-sm font-medium">
             {health.healthy} healthy
           </span>
-          <span className="rounded-full bg-status-warning/10 px-3 py-1 text-sm font-medium text-status-warning">
+          <span className="bg-status-warning/10 text-status-warning rounded-full px-3 py-1 text-sm font-medium">
             {health.degraded} degraded
           </span>
-          <span className="rounded-full bg-status-error/10 px-3 py-1 text-sm font-medium text-status-error">
+          <span className="bg-status-error/10 text-status-error rounded-full px-3 py-1 text-sm font-medium">
             {health.unhealthy} unhealthy
           </span>
         </div>
@@ -47,7 +45,7 @@ export function PluginManagerPanel() {
 
       {/* Filter Tabs */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-1 rounded-lg border border-card-border bg-card-bg p-1">
+        <div className="border-card-border bg-card-bg flex gap-1 rounded-lg border p-1">
           {filters.map((f) => (
             <button
               key={f.value}
@@ -64,7 +62,7 @@ export function PluginManagerPanel() {
         </div>
         <button
           onClick={() => mutate()}
-          className="flex items-center gap-1.5 rounded-md border border-card-border px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-hover"
+          className="border-card-border text-foreground-muted hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Refresh
@@ -75,11 +73,14 @@ export function PluginManagerPanel() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-lg border border-card-border bg-card-bg" />
+            <div
+              key={i}
+              className="border-card-border bg-card-bg h-20 animate-pulse rounded-lg border"
+            />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-foreground-muted">No plugins match this filter.</p>
+        <p className="text-foreground-muted py-8 text-center">No plugins match this filter.</p>
       ) : (
         <div className="space-y-3">
           {filtered.map((plugin) => (

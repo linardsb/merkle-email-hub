@@ -17,12 +17,13 @@ import type { VisualQAEntityType } from "@/types/rendering";
 
 type SidebarTab = "qa" | "testing" | "clients" | "intelligence";
 
-const TABS: { id: SidebarTab; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
-  { id: "qa", icon: ShieldCheck, label: "QA" },
-  { id: "testing", icon: FlaskConical, label: "Testing" },
-  { id: "clients", icon: Monitor, label: "Clients" },
-  { id: "intelligence", icon: Brain, label: "Intelligence" },
-];
+const TABS: { id: SidebarTab; icon: React.ComponentType<{ className?: string }>; label: string }[] =
+  [
+    { id: "qa", icon: ShieldCheck, label: "QA" },
+    { id: "testing", icon: FlaskConical, label: "Testing" },
+    { id: "clients", icon: Monitor, label: "Clients" },
+    { id: "intelligence", icon: Brain, label: "Intelligence" },
+  ];
 
 interface ToolSidebarProps {
   result: QAResultResponse;
@@ -48,9 +49,9 @@ export function ToolSidebar({
   const [activeTab, setActiveTab] = useState<SidebarTab>("qa");
 
   return (
-    <div className="flex h-full w-80 flex-col border-l border-border bg-card">
+    <div className="border-border bg-card flex h-full w-80 flex-col border-l">
       {/* Tab bar */}
-      <div className="flex items-center border-b border-border">
+      <div className="border-border flex items-center border-b">
         <TooltipProvider delayDuration={300}>
           <div className="flex flex-1 items-center">
             {TABS.map((tab) => {
@@ -64,7 +65,7 @@ export function ToolSidebar({
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex flex-1 items-center justify-center py-2.5 transition-colors ${
                         isActive
-                          ? "border-b-2 border-primary text-foreground"
+                          ? "border-primary text-foreground border-b-2"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -83,7 +84,7 @@ export function ToolSidebar({
           type="button"
           onClick={onClose}
           aria-label={"Close sidebar"}
-          className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground mr-1"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground mr-1 rounded p-1.5 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -92,14 +93,16 @@ export function ToolSidebar({
       {/* Tab content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {activeTab === "qa" && (
-          <QATab result={result} onOverrideSuccess={onOverrideSuccess} onHighlightSection={onHighlightSection} />
+          <QATab
+            result={result}
+            onOverrideSuccess={onOverrideSuccess}
+            onHighlightSection={onHighlightSection}
+          />
         )}
         {activeTab === "testing" && (
           <TestingTab html={html} entityType={entityType} entityId={entityId} />
         )}
-        {activeTab === "clients" && (
-          <EmailClientsTab html={html} onHtmlUpdate={onHtmlUpdate} />
-        )}
+        {activeTab === "clients" && <EmailClientsTab html={html} onHtmlUpdate={onHtmlUpdate} />}
         {activeTab === "intelligence" && <IntelligenceTab />}
       </div>
     </div>

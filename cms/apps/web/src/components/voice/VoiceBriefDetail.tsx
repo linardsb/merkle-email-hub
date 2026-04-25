@@ -79,14 +79,14 @@ export function VoiceBriefDetail({
 
         {isLoading ? (
           <div className="flex flex-col gap-3 py-4">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-skeleton" />
-            <div className="h-20 animate-pulse rounded bg-skeleton" />
-            <div className="h-32 animate-pulse rounded bg-skeleton" />
+            <div className="bg-skeleton h-4 w-3/4 animate-pulse rounded" />
+            <div className="bg-skeleton h-20 animate-pulse rounded" />
+            <div className="bg-skeleton h-32 animate-pulse rounded" />
           </div>
         ) : brief ? (
           <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto py-2">
             {/* Meta row */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-xs">
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3" />
                 {brief.submitted_by}
@@ -94,7 +94,8 @@ export function VoiceBriefDetail({
               {brief.duration_seconds != null && (
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {Math.floor(brief.duration_seconds / 60)}:{String(Math.round(brief.duration_seconds % 60)).padStart(2, "0")}
+                  {Math.floor(brief.duration_seconds / 60)}:
+                  {String(Math.round(brief.duration_seconds % 60)).padStart(2, "0")}
                 </span>
               )}
               {brief.confidence != null && (
@@ -118,7 +119,7 @@ export function VoiceBriefDetail({
               <button
                 type="button"
                 onClick={togglePlayback}
-                className="flex items-center gap-2 rounded px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded px-3 py-1.5 text-xs"
               >
                 {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
                 {isPlaying ? "Pause" : "Play"}
@@ -127,14 +128,14 @@ export function VoiceBriefDetail({
 
             {/* Transcript with segment highlighting */}
             {brief.transcript_text && (
-              <div className="rounded-md border border-default bg-surface-muted p-3">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">{"Transcript"}</p>
-                <div className="text-sm leading-relaxed text-foreground">
+              <div className="border-default bg-surface-muted rounded-md border p-3">
+                <p className="text-muted-foreground mb-1 text-xs font-medium">{"Transcript"}</p>
+                <div className="text-foreground text-sm leading-relaxed">
                   {brief.transcript_segments.length > 0
                     ? brief.transcript_segments.map((seg, i) => (
                         <span
                           key={i}
-                          className={`transition-colors ${isSegmentActive(seg) ? "rounded bg-interactive/20 px-0.5" : ""}`}
+                          className={`transition-colors ${isSegmentActive(seg) ? "bg-interactive/20 rounded px-0.5" : ""}`}
                         >
                           {seg.text}{" "}
                         </span>
@@ -146,32 +147,34 @@ export function VoiceBriefDetail({
 
             {/* Extracted brief */}
             {brief.brief && (
-              <div className="rounded-md border border-default bg-surface-muted p-3">
-                <p className="mb-2 text-xs font-medium text-muted-foreground">{"Extracted Brief"}</p>
+              <div className="border-default bg-surface-muted rounded-md border p-3">
+                <p className="text-muted-foreground mb-2 text-xs font-medium">
+                  {"Extracted Brief"}
+                </p>
                 <div className="grid gap-2 text-xs">
                   <div>
-                    <span className="font-medium text-foreground">{"Topic"}:</span>{" "}
+                    <span className="text-foreground font-medium">{"Topic"}:</span>{" "}
                     <span className="text-muted-foreground">{brief.brief.topic}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-foreground">{"Tone"}:</span>{" "}
+                    <span className="text-foreground font-medium">{"Tone"}:</span>{" "}
                     <span className="text-muted-foreground">{brief.brief.tone}</span>
                   </div>
                   {brief.brief.cta_text && (
                     <div>
-                      <span className="font-medium text-foreground">{"CTA"}:</span>{" "}
+                      <span className="text-foreground font-medium">{"CTA"}:</span>{" "}
                       <span className="text-muted-foreground">{brief.brief.cta_text}</span>
                     </div>
                   )}
                   {brief.brief.audience && (
                     <div>
-                      <span className="font-medium text-foreground">{"Audience"}:</span>{" "}
+                      <span className="text-foreground font-medium">{"Audience"}:</span>{" "}
                       <span className="text-muted-foreground">{brief.brief.audience}</span>
                     </div>
                   )}
                   <div>
-                    <span className="font-medium text-foreground">{"Sections"}:</span>
-                    <ul className="ml-4 mt-1 list-disc text-muted-foreground">
+                    <span className="text-foreground font-medium">{"Sections"}:</span>
+                    <ul className="text-muted-foreground ml-4 mt-1 list-disc">
                       {brief.brief.sections.map((s, i) => (
                         <li key={i}>
                           <span className="font-medium">{s.type}</span>: {s.description}
@@ -181,8 +184,8 @@ export function VoiceBriefDetail({
                   </div>
                   {brief.brief.constraints.length > 0 && (
                     <div>
-                      <span className="font-medium text-foreground">{"Constraints"}:</span>
-                      <ul className="ml-4 mt-1 list-disc text-muted-foreground">
+                      <span className="text-foreground font-medium">{"Constraints"}:</span>
+                      <ul className="text-muted-foreground ml-4 mt-1 list-disc">
                         {brief.brief.constraints.map((c, i) => (
                           <li key={i}>{c}</li>
                         ))}
@@ -199,7 +202,7 @@ export function VoiceBriefDetail({
           <button
             type="button"
             onClick={handleDelete}
-            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-status-danger"
+            className="text-muted-foreground hover:bg-accent hover:text-status-danger flex items-center gap-1.5 rounded px-3 py-1.5 text-xs"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {"Dismiss"}
@@ -208,7 +211,7 @@ export function VoiceBriefDetail({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded px-3 py-1.5 text-xs"
             >
               {"Close"}
             </button>
@@ -217,7 +220,7 @@ export function VoiceBriefDetail({
                 type="button"
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium bg-interactive text-foreground-inverse hover:bg-interactive/90 disabled:opacity-50"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive/90 flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium disabled:opacity-50"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 {isGenerating ? "Generating..." : "Generate Email"}

@@ -19,33 +19,21 @@ interface VersionCompareDialogProps {
   build: BuildResponse;
 }
 
-export function VersionCompareDialog({
-  open,
-  onOpenChange,
-  build,
-}: VersionCompareDialogProps) {
+export function VersionCompareDialog({ open, onOpenChange, build }: VersionCompareDialogProps) {
   // Look up template by matching build's template_name within the project
   const { data: templatesData } = useTemplates(open ? build.project_id : null);
   const template = useMemo(
-    () =>
-      templatesData?.items.find(
-        (tmpl) => tmpl.name === build.template_name
-      ) ?? null,
-    [templatesData, build.template_name]
+    () => templatesData?.items.find((tmpl) => tmpl.name === build.template_name) ?? null,
+    [templatesData, build.template_name],
   );
 
   // Fetch all versions for this template
-  const { data: versions, isLoading: versionsLoading } = useTemplateVersions(
-    template?.id ?? null
-  );
+  const { data: versions, isLoading: versionsLoading } = useTemplateVersions(template?.id ?? null);
 
   // Sort versions descending (latest first)
   const sortedVersions = useMemo(
-    () =>
-      versions
-        ? [...versions].sort((a, b) => b.version_number - a.version_number)
-        : [],
-    [versions]
+    () => (versions ? [...versions].sort((a, b) => b.version_number - a.version_number) : []),
+    [versions],
   );
 
   // Selected version numbers for left (before) and right (after) panes
@@ -55,27 +43,21 @@ export function VersionCompareDialog({
   // Auto-select: After = latest, Before = second-latest (or same if only one)
   const latestVersion = sortedVersions[0] ?? null;
   const secondLatest = sortedVersions[1] ?? null;
-  const effectiveAfter =
-    afterVersion ?? (latestVersion ? latestVersion.version_number : null);
+  const effectiveAfter = afterVersion ?? (latestVersion ? latestVersion.version_number : null);
   const effectiveBefore =
-    beforeVersion ??
-    (secondLatest
-      ? secondLatest.version_number
-      : effectiveAfter);
+    beforeVersion ?? (secondLatest ? secondLatest.version_number : effectiveAfter);
 
-  const beforeData = sortedVersions.find(
-    (v) => v.version_number === effectiveBefore
-  );
-  const afterData = sortedVersions.find(
-    (v) => v.version_number === effectiveAfter
-  );
+  const beforeData = sortedVersions.find((v) => v.version_number === effectiveBefore);
+  const afterData = sortedVersions.find((v) => v.version_number === effectiveAfter);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] max-w-7xl flex-col">
         <DialogHeader>
           <DialogTitle>{"Version Comparison"}</DialogTitle>
-          <DialogDescription>{"Side-by-side visual comparison of template versions"}</DialogDescription>
+          <DialogDescription>
+            {"Side-by-side visual comparison of template versions"}
+          </DialogDescription>
         </DialogHeader>
 
         {versionsLoading ? (
@@ -85,7 +67,7 @@ export function VersionCompareDialog({
           </div>
         ) : sortedVersions.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
-            <p className="text-sm text-foreground-muted">
+            <p className="text-foreground-muted text-sm">
               {"No version history available for this template"}
             </p>
           </div>
@@ -101,7 +83,7 @@ export function VersionCompareDialog({
             />
 
             {/* Divider */}
-            <div className="w-px bg-border" />
+            <div className="bg-border w-px" />
 
             {/* After pane */}
             <VersionPane
@@ -133,16 +115,16 @@ function VersionPane({
   versionData: VersionResponse | null;
 }) {
   return (
-    <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border">
+    <div className="border-border flex flex-1 flex-col overflow-hidden rounded-lg border">
       {/* Header: label + version selector */}
-      <div className="flex items-center justify-between border-b border-border bg-surface-muted px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+      <div className="border-border bg-surface-muted flex items-center justify-between border-b px-3 py-2">
+        <span className="text-foreground-muted text-xs font-semibold uppercase tracking-wider">
           {label}
         </span>
         <select
           value={selectedVersion ?? ""}
           onChange={(e) => onSelectVersion(Number(e.target.value))}
-          className="rounded-md border border-input-border bg-surface px-2 py-1 text-sm text-foreground"
+          className="border-input-border bg-surface text-foreground rounded-md border px-2 py-1 text-sm"
         >
           {versions.map((v) => (
             <option key={v.version_number} value={v.version_number}>
@@ -154,34 +136,28 @@ function VersionPane({
 
       {/* Version metadata */}
       {versionData && (
-        <div className="border-b border-border px-3 py-1.5 text-xs text-foreground-muted">
-          <span>
-            {`Created ${new Date(versionData.created_at).toLocaleDateString()}`}
-          </span>
+        <div className="border-border text-foreground-muted border-b px-3 py-1.5 text-xs">
+          <span>{`Created ${new Date(versionData.created_at).toLocaleDateString()}`}</span>
           {versionData.changelog ? (
             <span className="ml-2">&middot; {versionData.changelog}</span>
           ) : (
-            <span className="ml-2 italic">
-              &middot; {"No changelog"}
-            </span>
+            <span className="ml-2 italic">&middot; {"No changelog"}</span>
           )}
         </div>
       )}
 
       {/* Preview iframe */}
-      <div className="flex-1 overflow-auto bg-surface-muted p-2">
+      <div className="bg-surface-muted flex-1 overflow-auto p-2">
         {versionData ? (
           <iframe
             srcDoc={versionData.html_source}
             sandbox=""
             title={`${label} — v${versionData.version_number}`}
-            className="h-full w-full border-0 bg-surface"
+            className="bg-surface h-full w-full border-0"
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-foreground-muted">
-              {"Select version"}
-            </p>
+            <p className="text-foreground-muted text-sm">{"Select version"}</p>
           </div>
         )}
       </div>

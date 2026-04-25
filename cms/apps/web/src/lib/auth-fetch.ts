@@ -15,7 +15,7 @@ export const LONG_TIMEOUT_MS = 120_000;
  */
 export async function authFetch(
   input: RequestInfo | URL,
-  init?: RequestInit & { timeoutMs?: number }
+  init?: RequestInit & { timeoutMs?: number },
 ): Promise<Response> {
   const token = await getAccessToken();
 
@@ -66,7 +66,10 @@ async function getAccessToken(): Promise<string | null> {
     const token = session?.accessToken ?? null;
 
     if (!token) {
-      console.warn("[authFetch] No access token in session", { hasSession: !!session, keys: session ? Object.keys(session) : [] });
+      console.warn("[authFetch] No access token in session", {
+        hasSession: Boolean(session),
+        keys: session ? Object.keys(session) : [],
+      });
     }
 
     if (token) {

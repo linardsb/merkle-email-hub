@@ -16,15 +16,15 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body className="bg-surface text-foreground antialiased">
-        <div className="flex min-h-screen flex-col items-center justify-center text-center p-6">
+        <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
           <h1 className="text-2xl font-semibold">Application Error</h1>
-          <p className="mt-2 text-foreground-muted">
+          <p className="text-foreground-muted mt-2">
             A critical error occurred. Please reload the page.
           </p>
           <button
             type="button"
             onClick={reset}
-            className="mt-6 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover mt-6 rounded-md px-4 py-2 text-sm font-medium transition-colors"
           >
             Reload Page
           </button>

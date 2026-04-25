@@ -14,15 +14,15 @@ export function BlockAssign({ block, onUpdate }: BlockAssignProps) {
         type="text"
         value={block.name}
         onChange={(e) => onUpdate({ name: e.target.value })}
-        className="w-28 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
+        className="border-default bg-input text-foreground focus:ring-interactive w-28 rounded border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-1"
         placeholder="variable"
       />
-      <span className="text-xs text-muted-foreground">=</span>
+      <span className="text-muted-foreground text-xs">=</span>
       <input
         type="text"
         value={block.expression}
         onChange={(e) => onUpdate({ expression: e.target.value })}
-        className="flex-1 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
+        className="border-default bg-input text-foreground focus:ring-interactive flex-1 rounded border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-1"
         placeholder={"'value' or expression"}
       />
     </div>

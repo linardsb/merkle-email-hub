@@ -6,9 +6,7 @@ import { DEFAULT_RESPONSIVE, DEFAULT_ADVANCED } from "@/types/visual-builder";
 
 // Mock @dnd-kit
 vi.mock("@dnd-kit/core", () => ({
-  DndContext: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
+  DndContext: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useDraggable: () => ({
     attributes: {},
     listeners: {},
@@ -18,9 +16,7 @@ vi.mock("@dnd-kit/core", () => ({
   useDroppable: () => ({ setNodeRef: vi.fn(), isOver: false }),
 }));
 vi.mock("@dnd-kit/sortable", () => ({
-  SortableContext: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
+  SortableContext: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useSortable: () => ({
     attributes: {},
     listeners: {},
@@ -72,9 +68,7 @@ describe("BuilderCanvas", () => {
 
   it("renders empty canvas with drag-here message", () => {
     render(<BuilderCanvas {...defaultProps} />);
-    expect(
-      screen.getByText("Drag components here to start building"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Drag components here to start building")).toBeInTheDocument();
   });
 
   it("renders sections in order", () => {
@@ -90,9 +84,7 @@ describe("BuilderCanvas", () => {
   it("selecting a section calls onSelect with section id", () => {
     const onSelect = vi.fn();
     const sections = [makeSection({ id: "s1" })];
-    render(
-      <BuilderCanvas {...defaultProps} sections={sections} onSelect={onSelect} />,
-    );
+    render(<BuilderCanvas {...defaultProps} sections={sections} onSelect={onSelect} />);
     const sectionEl = screen.getByRole("button", {
       name: /Section: Hero Banner/,
     });
@@ -135,13 +127,7 @@ describe("BuilderCanvas", () => {
 
   it("selected section shows action toolbar with duplicate and delete", () => {
     const sections = [makeSection({ id: "s1" })];
-    render(
-      <BuilderCanvas
-        {...defaultProps}
-        sections={sections}
-        selectedSectionId="s1"
-      />,
-    );
+    render(<BuilderCanvas {...defaultProps} sections={sections} selectedSectionId="s1" />);
     expect(screen.getByLabelText("Duplicate section")).toBeInTheDocument();
     expect(screen.getByLabelText("Remove section")).toBeInTheDocument();
     expect(screen.getByLabelText("Drag to reorder")).toBeInTheDocument();
@@ -149,13 +135,7 @@ describe("BuilderCanvas", () => {
 
   it("unselected section hides action toolbar", () => {
     const sections = [makeSection({ id: "s1" })];
-    render(
-      <BuilderCanvas
-        {...defaultProps}
-        sections={sections}
-        selectedSectionId={null}
-      />,
-    );
+    render(<BuilderCanvas {...defaultProps} sections={sections} selectedSectionId={null} />);
     expect(screen.queryByLabelText("Duplicate section")).not.toBeInTheDocument();
   });
 
@@ -203,22 +183,12 @@ describe("BuilderCanvas", () => {
     ];
     render(<BuilderCanvas {...defaultProps} sections={sections} />);
     const names = screen.getAllByRole("button").map((el) => el.getAttribute("aria-label"));
-    expect(names).toEqual([
-      "Section: First",
-      "Section: Second",
-      "Section: Third",
-    ]);
+    expect(names).toEqual(["Section: First", "Section: Second", "Section: Third"]);
   });
 
   it("section has aria-selected attribute", () => {
     const sections = [makeSection({ id: "s1" })];
-    render(
-      <BuilderCanvas
-        {...defaultProps}
-        sections={sections}
-        selectedSectionId="s1"
-      />,
-    );
+    render(<BuilderCanvas {...defaultProps} sections={sections} selectedSectionId="s1" />);
     const section = screen.getByRole("button", {
       name: /Section: Hero Banner/,
     });
@@ -228,9 +198,7 @@ describe("BuilderCanvas", () => {
   it("Enter key on section calls onSelect", () => {
     const onSelect = vi.fn();
     const sections = [makeSection({ id: "s1" })];
-    render(
-      <BuilderCanvas {...defaultProps} sections={sections} onSelect={onSelect} />,
-    );
+    render(<BuilderCanvas {...defaultProps} sections={sections} onSelect={onSelect} />);
     const section = screen.getByRole("button", {
       name: /Section: Hero Banner/,
     });
@@ -239,18 +207,14 @@ describe("BuilderCanvas", () => {
   });
 
   it("section content renders HTML", () => {
-    const sections = [
-      makeSection({ html: "<div data-testid='content'>Email content</div>" }),
-    ];
+    const sections = [makeSection({ html: "<div data-testid='content'>Email content</div>" })];
     render(<BuilderCanvas {...defaultProps} sections={sections} />);
     expect(screen.getByTestId("content")).toBeInTheDocument();
   });
 
   it("no sections shows empty state, not section list", () => {
     render(<BuilderCanvas {...defaultProps} sections={[]} />);
-    expect(
-      screen.getByText("Drag components here to start building"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Drag components here to start building")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Section:/ })).not.toBeInTheDocument();
   });
 });

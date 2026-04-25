@@ -7,10 +7,7 @@
  * New code should prefer `use-design-sync.ts` directly.
  */
 
-import {
-  useCreateDesignConnection,
-  useDesignTokens,
-} from "@/hooks/use-design-sync";
+import { useCreateDesignConnection, useDesignTokens } from "@/hooks/use-design-sync";
 import type { DesignConnectionCreate } from "@/types/design-sync";
 
 // Re-export Figma-compatible types from design-sync

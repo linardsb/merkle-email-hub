@@ -6,7 +6,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@email-hub/ui/components/ui/dialog";
-import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff, Building2, Puzzle, Link as LinkIcon } from "../icons";
+import {
+  Calendar,
+  Users,
+  Paperclip,
+  Tag,
+  AlertCircle,
+  Loader2,
+  ExternalLink,
+  ImageOff,
+  Building2,
+  Puzzle,
+  Link as LinkIcon,
+} from "../icons";
 import { useBriefDetail } from "@/hooks/use-briefs";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
@@ -21,7 +33,14 @@ interface BriefDetailDialogProps {
   onConnectDesign?: () => void;
 }
 
-export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection, onSyncDesign, onConnectDesign }: BriefDetailDialogProps) {
+export function BriefDetailDialog({
+  itemId,
+  open,
+  onOpenChange,
+  designConnection,
+  onSyncDesign,
+  onConnectDesign,
+}: BriefDetailDialogProps) {
   const { data: detail, isLoading } = useBriefDetail(open ? itemId : null);
 
   return (
@@ -33,15 +52,13 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
               {detail?.external_id ? `${detail.external_id} — ` : ""}
               {detail?.title ?? "Brief Details"}
             </DialogTitle>
-            {detail?.platform && (
-              <BriefPlatformBadge platform={detail.platform} />
-            )}
+            {detail?.platform && <BriefPlatformBadge platform={detail.platform} />}
           </div>
         </DialogHeader>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
+            <Loader2 className="text-foreground-muted h-5 w-5 animate-spin" />
           </div>
         ) : detail ? (
           <div className="space-y-4">
@@ -58,9 +75,9 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
             ) : null}
 
             {/* Client + Meta */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-foreground-muted">
+            <div className="text-foreground-muted flex flex-wrap items-center gap-3 text-xs">
               {detail.client_name && (
-                <span className="flex items-center gap-1 rounded-full bg-interactive/15 px-2 py-0.5 font-semibold text-interactive">
+                <span className="bg-interactive/15 text-interactive flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold">
                   <Building2 className="h-3 w-3" />
                   {detail.client_name}
                 </span>
@@ -98,11 +115,11 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
             {/* Labels */}
             {detail.labels.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                <Tag className="mt-0.5 h-3 w-3 text-foreground-muted" />
+                <Tag className="text-foreground-muted mt-0.5 h-3 w-3" />
                 {detail.labels.map((label) => (
                   <span
                     key={label}
-                    className="rounded bg-surface-muted px-1.5 py-0.5 text-xs text-foreground-muted"
+                    className="bg-surface-muted text-foreground-muted rounded px-1.5 py-0.5 text-xs"
                   >
                     {label}
                   </span>
@@ -111,7 +128,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
             )}
 
             {/* Description */}
-            <div className="prose-sm max-h-60 overflow-y-auto rounded border border-card-border bg-surface-muted p-3 text-sm text-foreground whitespace-pre-wrap">
+            <div className="prose-sm border-card-border bg-surface-muted text-foreground max-h-60 overflow-y-auto whitespace-pre-wrap rounded border p-3 text-sm">
               {detail.description || "No description available"}
             </div>
 
@@ -120,21 +137,23 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
               <button
                 type="button"
                 onClick={() => onSyncDesign?.(designConnection.id)}
-                className="flex items-center gap-2 rounded-md border border-interactive/20 bg-interactive/5 px-4 py-3 text-sm font-medium text-interactive transition-colors hover:bg-interactive/10"
+                className="border-interactive/20 bg-interactive/5 text-interactive hover:bg-interactive/10 flex items-center gap-2 rounded-md border px-4 py-3 text-sm font-medium transition-colors"
               >
                 <Puzzle className="h-4 w-4" />
                 Sync & Extract Components
-                <span className="ml-auto text-xs text-foreground-muted">
-                  {designConnection.provider === "figma" ? "from Figma" :
-                   designConnection.provider === "sketch" ? "from Sketch" :
-                   `from ${designConnection.provider}`}
+                <span className="text-foreground-muted ml-auto text-xs">
+                  {designConnection.provider === "figma"
+                    ? "from Figma"
+                    : designConnection.provider === "sketch"
+                      ? "from Sketch"
+                      : `from ${designConnection.provider}`}
                 </span>
               </button>
             ) : onConnectDesign ? (
               <button
                 type="button"
                 onClick={onConnectDesign}
-                className="flex items-center gap-2 rounded-md border border-dashed border-foreground-muted/30 px-4 py-3 text-sm text-foreground-muted transition-colors hover:border-interactive/40 hover:text-interactive"
+                className="border-foreground-muted/30 text-foreground-muted hover:border-interactive/40 hover:text-interactive flex items-center gap-2 rounded-md border border-dashed px-4 py-3 text-sm transition-colors"
               >
                 <LinkIcon className="h-4 w-4" />
                 Connect Design File
@@ -144,7 +163,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
             {/* Resources */}
             {detail.resources && detail.resources.length > 0 && (
               <div>
-                <p className="mb-1.5 text-xs font-medium text-foreground">{"Resources"}</p>
+                <p className="text-foreground mb-1.5 text-xs font-medium">{"Resources"}</p>
                 <BriefResourceLinks resources={detail.resources} maxVisible={10} />
               </div>
             )}
@@ -152,12 +171,12 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
             {/* Attachments */}
             {detail.attachments.length > 0 && (
               <div>
-                <p className="mb-1.5 text-xs font-medium text-foreground">{"Attachments"}</p>
+                <p className="text-foreground mb-1.5 text-xs font-medium">{"Attachments"}</p>
                 <div className="space-y-1">
                   {detail.attachments.map((att) => (
                     <div
                       key={att.id}
-                      className="flex items-center gap-2 rounded border border-card-border px-2 py-1.5 text-xs text-foreground-muted"
+                      className="border-card-border text-foreground-muted flex items-center gap-2 rounded border px-2 py-1.5 text-xs"
                     >
                       <Paperclip className="h-3 w-3 shrink-0" />
                       <span className="truncate">{att.filename}</span>
@@ -171,7 +190,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection
             )}
           </div>
         ) : (
-          <p className="py-4 text-center text-sm text-foreground-muted">{"Brief not found"}</p>
+          <p className="text-foreground-muted py-4 text-center text-sm">{"Brief not found"}</p>
         )}
       </DialogContent>
     </Dialog>

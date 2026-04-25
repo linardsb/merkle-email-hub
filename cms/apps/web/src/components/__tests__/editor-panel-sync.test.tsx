@@ -22,7 +22,9 @@ vi.mock("next/dynamic", () => ({
         <div
           data-testid="visual-builder"
           data-has-synced-sections={Array.isArray(props.syncedSections) ? "true" : "false"}
-          data-has-on-sections-change={typeof props.onSectionsChange === "function" ? "true" : "false"}
+          data-has-on-sections-change={
+            typeof props.onSectionsChange === "function" ? "true" : "false"
+          }
         />
       );
       Mock.displayName = "MockVisualBuilder";
@@ -78,13 +80,7 @@ describe("EditorPanel sync wiring", () => {
       user: { name: "Test", color: "#f00", role: "developer" },
     };
 
-    render(
-      <EditorPanel
-        value="<div>test</div>"
-        onChange={vi.fn()}
-        collaborative={collabMock}
-      />
-    );
+    render(<EditorPanel value="<div>test</div>" onChange={vi.fn()} collaborative={collabMock} />);
 
     const editor = screen.getByTestId("code-editor");
     expect(editor.dataset.collaborative).toBe("true");
@@ -93,13 +89,7 @@ describe("EditorPanel sync wiring", () => {
   it("renders split view with code editor and builder when tab is split", () => {
     localStorage.setItem("editor-view-1", "split");
 
-    render(
-      <EditorPanel
-        value="<div>test</div>"
-        onChange={vi.fn()}
-        projectId={1}
-      />
-    );
+    render(<EditorPanel value="<div>test</div>" onChange={vi.fn()} projectId={1} />);
 
     expect(screen.getByTestId("code-editor")).toBeTruthy();
     expect(screen.getByTestId("visual-builder")).toBeTruthy();
@@ -120,7 +110,7 @@ describe("EditorPanel sync wiring", () => {
         onChange={vi.fn()}
         collaborative={collabMock}
         projectId={2}
-      />
+      />,
     );
 
     const editor = screen.getByTestId("code-editor");
@@ -130,13 +120,7 @@ describe("EditorPanel sync wiring", () => {
   it("does not wire onSectionsChange in split mode (HTML path is higher fidelity)", () => {
     localStorage.setItem("editor-view-3", "split");
 
-    render(
-      <EditorPanel
-        value="<div>test</div>"
-        onChange={vi.fn()}
-        projectId={3}
-      />
-    );
+    render(<EditorPanel value="<div>test</div>" onChange={vi.fn()} projectId={3} />);
 
     const builder = screen.getByTestId("visual-builder");
     // Builder→code flows via useBuilderPreview HTML, not section-level sync
@@ -146,13 +130,7 @@ describe("EditorPanel sync wiring", () => {
   it("passes syncedSections to builder in split mode", () => {
     localStorage.setItem("editor-view-4", "split");
 
-    render(
-      <EditorPanel
-        value="<div>test</div>"
-        onChange={vi.fn()}
-        projectId={4}
-      />
-    );
+    render(<EditorPanel value="<div>test</div>" onChange={vi.fn()} projectId={4} />);
 
     const builder = screen.getByTestId("visual-builder");
     expect(builder.dataset.hasSyncedSections).toBe("true");
@@ -161,13 +139,7 @@ describe("EditorPanel sync wiring", () => {
   it("seeds sync engine when entering split mode", () => {
     localStorage.setItem("editor-view-5", "split");
 
-    render(
-      <EditorPanel
-        value="<html><body>seed</body></html>"
-        onChange={vi.fn()}
-        projectId={5}
-      />
-    );
+    render(<EditorPanel value="<html><body>seed</body></html>" onChange={vi.fn()} projectId={5} />);
 
     expect(mockSyncCodeChange).toHaveBeenCalledWith("<html><body>seed</body></html>");
   });
@@ -185,13 +157,7 @@ describe("EditorPanel sync wiring", () => {
 
     localStorage.setItem("editor-view-6", "split");
 
-    render(
-      <EditorPanel
-        value="<div>bad</div>"
-        onChange={vi.fn()}
-        projectId={6}
-      />
-    );
+    render(<EditorPanel value="<div>bad</div>" onChange={vi.fn()} projectId={6} />);
 
     expect(screen.getByText("HTML structure could not be parsed")).toBeTruthy();
     expect(screen.getByText("Dismiss")).toBeTruthy();

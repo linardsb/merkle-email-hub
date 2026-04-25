@@ -24,35 +24,29 @@ export function BriefItemsPanel({ connection, designConnection }: BriefItemsPane
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
+        <Loader2 className="text-foreground-muted h-5 w-5 animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <p className="py-4 text-center text-sm text-foreground-muted">{"Failed to load brief items"}</p>
+      <p className="text-foreground-muted py-4 text-center text-sm">
+        {"Failed to load brief items"}
+      </p>
     );
   }
 
   if (!items || items.length === 0) {
-    return (
-      <p className="py-4 text-center text-sm text-foreground-muted">{"No brief items"}</p>
-    );
+    return <p className="text-foreground-muted py-4 text-center text-sm">{"No brief items"}</p>;
   }
 
   return (
     <>
       <div className="space-y-2">
-        <h3 className="text-sm font-medium text-foreground">
-          {`Briefs from ${connection.name}`}
-        </h3>
+        <h3 className="text-foreground text-sm font-medium">{`Briefs from ${connection.name}`}</h3>
         {items.map((item) => (
-          <BriefItemCard
-            key={item.id}
-            item={item}
-            onSelect={() => setSelectedItemId(item.id)}
-          />
+          <BriefItemCard key={item.id} item={item} onSelect={() => setSelectedItemId(item.id)} />
         ))}
       </div>
 
@@ -69,22 +63,24 @@ export function BriefItemsPanel({ connection, designConnection }: BriefItemsPane
             setSyncConnection(designConnection);
           }
         }}
-        onConnectDesign={() => { setSelectedItemId(null); setShowConnectDialog(true); }}
+        onConnectDesign={() => {
+          setSelectedItemId(null);
+          setShowConnectDialog(true);
+        }}
       />
 
       {syncConnection && (
         <DesignImportDialog
           open
-          onOpenChange={(open) => { if (!open) setSyncConnection(null); }}
+          onOpenChange={(open) => {
+            if (!open) setSyncConnection(null);
+          }}
           connectionId={syncConnection.id}
           connectionName={syncConnection.name}
           initialTab="components"
         />
       )}
-      <ConnectDesignDialog
-        open={showConnectDialog}
-        onOpenChange={setShowConnectDialog}
-      />
+      <ConnectDesignDialog open={showConnectDialog} onOpenChange={setShowConnectDialog} />
     </>
   );
 }

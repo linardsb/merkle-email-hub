@@ -41,7 +41,7 @@ export function ConfidenceBar({
       title={breakdown ? formatBreakdownTitle(breakdown) : undefined}
       aria-label={label ?? `Confidence: ${clamped.toFixed(0)}%`}
     >
-      <span className={`block ${heightClass} w-full rounded-full bg-surface-muted`}>
+      <span className={`block ${heightClass} bg-surface-muted w-full rounded-full`}>
         <span
           className={`block ${heightClass} rounded-full ${getBarColor(clamped)} transition-all`}
           style={{ width: `${clamped}%` }}
@@ -49,7 +49,7 @@ export function ConfidenceBar({
       </span>
       {threshold != null && (
         <span
-          className={`absolute top-0 ${heightClass} w-0.5 bg-foreground-muted`}
+          className={`absolute top-0 ${heightClass} bg-foreground-muted w-0.5`}
           style={{ left: `${Math.max(0, Math.min(100, threshold))}%` }}
           title={`Threshold: ${threshold}%`}
         />

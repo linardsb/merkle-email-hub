@@ -21,11 +21,7 @@ export function MessageList({ messages, onApplyHtml }: MessageListProps) {
     <ScrollArea className="flex-1">
       <div className="flex flex-col gap-4 p-4">
         {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            onApplyHtml={onApplyHtml}
-          />
+          <MessageBubble key={msg.id} message={msg} onApplyHtml={onApplyHtml} />
         ))}
         <div ref={bottomRef} />
       </div>

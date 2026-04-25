@@ -14,7 +14,12 @@ interface Props {
 
 type DialogState = "idle" | "testing" | "completed" | "error";
 
-export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html: htmlProp }: Props) {
+export function RenderingTestDialog({
+  open,
+  onOpenChange,
+  onTestSubmitted,
+  html: htmlProp,
+}: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const { trigger } = useRequestRendering();
 
@@ -79,21 +84,23 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
   };
 
   const progressPct = polledTest
-    ? Math.round(((polledTest.clients_completed ?? 0) / Math.max(polledTest.clients_requested, 1)) * 100)
+    ? Math.round(
+        ((polledTest.clients_completed ?? 0) / Math.max(polledTest.clients_requested, 1)) * 100,
+      )
     : 0;
 
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[32rem] rounded-lg border border-card-border bg-card-bg p-0 shadow-xl backdrop:bg-black/50"
+      className="border-card-border bg-card-bg w-full max-w-[32rem] rounded-lg border p-0 shadow-xl backdrop:bg-black/50"
       onClose={() => onOpenChange(false)}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-card-border p-4">
-        <h2 className="text-lg font-semibold text-foreground">{"Request Rendering Test"}</h2>
+      <div className="border-card-border flex items-center justify-between border-b p-4">
+        <h2 className="text-foreground text-lg font-semibold">{"Request Rendering Test"}</h2>
         <button
           onClick={() => onOpenChange(false)}
-          className="rounded p-1 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+          className="text-foreground-muted hover:bg-surface-muted hover:text-foreground rounded p-1"
         >
           <X className="h-4 w-4" />
         </button>
@@ -104,12 +111,12 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
           <>
             {/* HTML input */}
             {htmlProp ? (
-              <p className="mb-4 rounded border border-card-border bg-surface-muted p-3 text-sm text-foreground-muted">
+              <p className="border-card-border bg-surface-muted text-foreground-muted mb-4 rounded border p-3 text-sm">
                 {"HTML from current workspace build"}
               </p>
             ) : (
               <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium text-foreground">
+                <label className="text-foreground mb-1 block text-sm font-medium">
                   {"Email HTML"}
                 </label>
                 <textarea
@@ -117,14 +124,14 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
                   onChange={(e) => setHtmlInput(e.target.value)}
                   placeholder={"Paste compiled email HTML here..."}
                   rows={6}
-                  className="w-full rounded border border-card-border bg-surface p-2 font-mono text-sm text-foreground placeholder:text-foreground-muted/50 focus:border-foreground-accent focus:outline-none"
+                  className="border-card-border bg-surface text-foreground placeholder:text-foreground-muted/50 focus:border-foreground-accent w-full rounded border p-2 font-mono text-sm focus:outline-none"
                 />
               </div>
             )}
 
             {/* Subject line */}
             <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium text-foreground">
+              <label className="text-foreground mb-1 block text-sm font-medium">
                 {"Subject Line"}
               </label>
               <input
@@ -132,16 +139,16 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder={"e.g., Your Weekly Newsletter"}
-                className="w-full rounded border border-card-border bg-surface p-2 text-sm text-foreground placeholder:text-foreground-muted/50 focus:border-foreground-accent focus:outline-none"
+                className="border-card-border bg-surface text-foreground placeholder:text-foreground-muted/50 focus:border-foreground-accent w-full rounded border p-2 text-sm focus:outline-none"
               />
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end border-t border-card-border pt-4">
+            <div className="border-card-border flex justify-end border-t pt-4">
               <button
                 onClick={handleSubmit}
                 disabled={!(htmlProp || htmlInput.trim())}
-                className="rounded bg-foreground-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="bg-foreground-accent rounded px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 {"Run Test"}
               </button>
@@ -151,36 +158,36 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
 
         {state === "testing" && (
           <div className="flex flex-col items-center gap-4 py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-foreground-accent" />
+            <Loader2 className="text-foreground-accent h-8 w-8 animate-spin" />
             {polledTest ? (
               <>
-                <p className="text-sm text-foreground-muted">
+                <p className="text-foreground-muted text-sm">
                   {`${polledTest.clients_completed ?? 0}/${polledTest.clients_requested} clients complete`}
                 </p>
-                <div className="h-2 w-48 overflow-hidden rounded-full bg-surface-muted">
+                <div className="bg-surface-muted h-2 w-48 overflow-hidden rounded-full">
                   <div
-                    className="h-full rounded-full bg-foreground-accent transition-all duration-500"
+                    className="bg-foreground-accent h-full rounded-full transition-all duration-500"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
               </>
             ) : (
-              <p className="text-sm text-foreground-muted">{"Processing"}</p>
+              <p className="text-foreground-muted text-sm">{"Processing"}</p>
             )}
           </div>
         )}
 
         {state === "completed" && polledTest && (
           <div className="flex flex-col items-center gap-4 py-8">
-            <CheckCircle className="h-8 w-8 text-status-success" />
-            <p className="text-sm font-medium text-foreground">{"Test Completed"}</p>
+            <CheckCircle className="text-status-success h-8 w-8" />
+            <p className="text-foreground text-sm font-medium">{"Test Completed"}</p>
             <p className="text-foreground-muted">
               {polledTest.clients_completed}/{polledTest.clients_requested} {"Clients"}
             </p>
             <div className="mt-2 flex justify-end">
               <button
                 onClick={() => onOpenChange(false)}
-                className="rounded px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground"
+                className="text-foreground-muted hover:text-foreground rounded px-4 py-2 text-sm font-medium"
               >
                 {"Close"}
               </button>
@@ -190,11 +197,13 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
 
         {state === "error" && (
           <div className="flex flex-col items-center gap-4 py-12">
-            <AlertCircle className="h-8 w-8 text-status-danger" />
-            <p className="text-sm text-foreground">{errorMessage || "Failed to load rendering data"}</p>
+            <AlertCircle className="text-status-danger h-8 w-8" />
+            <p className="text-foreground text-sm">
+              {errorMessage || "Failed to load rendering data"}
+            </p>
             <button
               onClick={handleSubmit}
-              className="rounded px-4 py-2 text-sm font-medium text-foreground-accent hover:opacity-80"
+              className="text-foreground-accent rounded px-4 py-2 text-sm font-medium hover:opacity-80"
             >
               {"Try again"}
             </button>

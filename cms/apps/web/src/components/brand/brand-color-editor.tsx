@@ -30,26 +30,26 @@ export function BrandColorEditor({ colors, onChange, disabled }: BrandColorEdito
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{"Brand Colors"}</h3>
+      <h3 className="text-foreground text-sm font-medium">{"Brand Colors"}</h3>
 
       {/* Existing colors */}
       <div className="flex flex-wrap gap-2">
         {colors.map((color, i) => (
           <div
             key={`${color.name}-${i}`}
-            className="flex items-center gap-2 rounded-md border border-card-border bg-card-bg px-2.5 py-1.5"
+            className="border-card-border bg-card-bg flex items-center gap-2 rounded-md border px-2.5 py-1.5"
           >
             <span
-              className="h-4 w-4 rounded border border-border"
+              className="border-border h-4 w-4 rounded border"
               style={{ backgroundColor: color.hex }}
             />
-            <span className="text-xs font-medium text-foreground">{color.name}</span>
-            <span className="text-xs text-foreground-muted">{color.hex}</span>
+            <span className="text-foreground text-xs font-medium">{color.name}</span>
+            <span className="text-foreground-muted text-xs">{color.hex}</span>
             {!disabled && (
               <button
                 type="button"
                 onClick={() => handleRemove(i)}
-                className="text-foreground-muted transition-colors hover:text-status-danger"
+                className="text-foreground-muted hover:text-status-danger transition-colors"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -75,14 +75,14 @@ export function BrandColorEditor({ colors, onChange, disabled }: BrandColorEdito
               type="color"
               value={newHex}
               onChange={(e) => setNewHex(e.target.value)}
-              className="h-8 w-full cursor-pointer rounded border border-input-border"
+              className="border-input-border h-8 w-full cursor-pointer rounded border"
             />
           </div>
           <button
             type="button"
             onClick={handleAdd}
             disabled={!newName.trim()}
-            className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+            className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
           >
             <Plus className="h-3 w-3" />
             {"Add"}

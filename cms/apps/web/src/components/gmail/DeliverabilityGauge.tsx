@@ -38,22 +38,22 @@ function DimensionBar({ dim }: { dim: DeliverabilityDimension }) {
           </span>
           {dim.issues.length > 0 &&
             (expanded ? (
-              <ChevronUp className="h-3 w-3 text-foreground-muted" />
+              <ChevronUp className="text-foreground-muted h-3 w-3" />
             ) : (
-              <ChevronDown className="h-3 w-3 text-foreground-muted" />
+              <ChevronDown className="text-foreground-muted h-3 w-3" />
             ))}
         </div>
       </button>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="bg-muted mt-1 h-1.5 w-full overflow-hidden rounded-full">
         <div
-          className="h-full rounded-full bg-accent-primary transition-all"
+          className="bg-accent-primary h-full rounded-full transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
       {expanded && dim.issues.length > 0 && (
         <div className="mt-1.5 space-y-1">
           {dim.issues.map((issue: DeliverabilityIssue, i: number) => (
-            <div key={i} className="rounded border border-border bg-card p-2">
+            <div key={i} className="border-border bg-card rounded border p-2">
               <div className="flex items-start gap-1.5">
                 <span
                   className={`mt-0.5 shrink-0 rounded px-1 py-0.5 text-[9px] font-medium ${SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.info}`}
@@ -61,10 +61,8 @@ function DimensionBar({ dim }: { dim: DeliverabilityDimension }) {
                   {issue.severity}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] text-foreground">
-                    {issue.description}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-status-success">
+                  <p className="text-foreground text-[10px]">{issue.description}</p>
+                  <p className="text-status-success mt-0.5 text-[10px]">
                     {"Fix"}: {issue.fix}
                   </p>
                 </div>
@@ -86,9 +84,7 @@ export function DeliverabilityGauge({ result }: DeliverabilityGaugeProps) {
     <div className="space-y-2.5">
       {/* Overall score */}
       <div className="flex items-center gap-2">
-        <span className={`text-2xl font-bold ${scoreColor(result.score)}`}>
-          {result.score}
-        </span>
+        <span className={`text-2xl font-bold ${scoreColor(result.score)}`}>{result.score}</span>
         <span
           className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
             result.passed
@@ -101,14 +97,12 @@ export function DeliverabilityGauge({ result }: DeliverabilityGaugeProps) {
       </div>
 
       {/* Summary */}
-      <p className="text-xs text-foreground-muted">{result.summary}</p>
+      <p className="text-foreground-muted text-xs">{result.summary}</p>
 
       {/* Dimension bars */}
       {result.dimensions.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-[10px] font-medium text-foreground-muted">
-            {"Dimensions"}
-          </h4>
+          <h4 className="text-foreground-muted text-[10px] font-medium">{"Dimensions"}</h4>
           {result.dimensions.map((dim) => (
             <DimensionBar key={dim.name} dim={dim} />
           ))}

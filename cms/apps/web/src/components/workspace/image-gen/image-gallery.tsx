@@ -14,14 +14,14 @@ export function ImageGallery({ images, isLoading, onInsert }: ImageGalleryProps)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
+        <Loader2 className="text-foreground-muted h-5 w-5 animate-spin" />
       </div>
     );
   }
 
   if (!images || images.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-foreground-muted">
+      <p className="text-foreground-muted py-8 text-center text-sm">
         {"No generated images yet. Generate your first image above."}
       </p>
     );

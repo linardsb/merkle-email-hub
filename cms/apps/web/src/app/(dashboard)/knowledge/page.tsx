@@ -11,10 +11,7 @@ import {
 } from "@/hooks/use-knowledge";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  SkeletonSearchResult,
-  SkeletonKnowledgeCard,
-} from "@/components/ui/skeletons";
+import { SkeletonSearchResult, SkeletonKnowledgeCard } from "@/components/ui/skeletons";
 import { KnowledgeSearchResultCard } from "@/components/knowledge/knowledge-search-result";
 import { KnowledgeDocumentCard } from "@/components/knowledge/knowledge-document-card";
 import { KnowledgeDocumentDialog } from "@/components/knowledge/knowledge-document-dialog";
@@ -34,9 +31,7 @@ export default function KnowledgePage() {
   // ── State ──
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [activeDomain, setActiveDomain] = useState<string | undefined>(
-    undefined,
-  );
+  const [activeDomain, setActiveDomain] = useState<string | undefined>(undefined);
   const [activeTag, setActiveTag] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
@@ -110,13 +105,10 @@ export default function KnowledgePage() {
   }, [debouncedQuery, activeDomain, searchMode, datasetName, triggerSearch, triggerGraphSearch]);
 
   // ── Handlers ──
-  const handleDomainChange = useCallback(
-    (domain: string | undefined) => {
-      setActiveDomain(domain);
-      setPage(1);
-    },
-    [],
-  );
+  const handleDomainChange = useCallback((domain: string | undefined) => {
+    setActiveDomain(domain);
+    setPage(1);
+  }, []);
 
   const handleTagChange = useCallback((tag: string | undefined) => {
     setActiveTag((prev) => (prev === tag ? undefined : tag));
@@ -129,32 +121,30 @@ export default function KnowledgePage() {
   }, []);
 
   // ── Pagination ──
-  const totalPages = documentsData
-    ? Math.ceil(documentsData.total / PAGE_SIZE)
-    : 0;
+  const totalPages = documentsData ? Math.ceil(documentsData.total / PAGE_SIZE) : 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
-          <BookOpen className="h-8 w-8 text-foreground-accent" />
-          <h1 className="text-2xl font-semibold text-foreground">
-            {"Knowledge Base"}
-          </h1>
+          <BookOpen className="text-foreground-accent h-8 w-8" />
+          <h1 className="text-foreground text-2xl font-semibold">{"Knowledge Base"}</h1>
         </div>
-        <p className="mt-1 text-sm text-foreground-muted">{"Search email development best practices, CSS support, and client quirks"}</p>
+        <p className="text-foreground-muted mt-1 text-sm">
+          {"Search email development best practices, CSS support, and client quirks"}
+        </p>
       </div>
 
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted" />
+        <Search className="text-foreground-muted absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder={"Search the knowledge base..."}
-          className="w-full rounded-lg border border-input-border bg-input-bg py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
+          className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-lg border py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-1"
           aria-label={"Search the knowledge base..."}
         />
       </div>
@@ -162,7 +152,7 @@ export default function KnowledgePage() {
       {/* Search mode toggle — visible when in search mode */}
       {isSearchMode && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-muted-foreground mr-1">{"Search mode"}:</span>
+          <span className="text-muted-foreground mr-1 text-xs">{"Search mode"}:</span>
           <button
             type="button"
             onClick={() => setSearchMode("text")}
@@ -205,7 +195,7 @@ export default function KnowledgePage() {
             <select
               value={datasetName ?? ""}
               onChange={(e) => setDatasetName(e.target.value || undefined)}
-              className="ml-2 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
+              className="border-input bg-background text-foreground ml-2 rounded-md border px-2 py-1 text-xs"
             >
               <option value="">{"All datasets"}</option>
               <option value="email_ontology">{"Email Ontology"}</option>
@@ -254,7 +244,7 @@ export default function KnowledgePage() {
               onClick={() => handleTagChange(tag.name)}
               className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
                 activeTag === tag.name
-                  ? "bg-interactive/15 font-medium text-interactive"
+                  ? "bg-interactive/15 text-interactive font-medium"
                   : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
               }`}
             >
@@ -271,7 +261,7 @@ export default function KnowledgePage() {
           {searchMode === "text" && (
             <>
               {searchData && !searchLoading && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {`${searchData.results.length} results from ${searchData.total_candidates} candidates`}
                 </p>
               )}
@@ -339,7 +329,9 @@ export default function KnowledgePage() {
                 <EmptyState
                   icon={Network}
                   title={"No graph results"}
-                  description={"No entities or relationships found for your query. Try different keywords."}
+                  description={
+                    "No entities or relationships found for your query. Try different keywords."
+                  }
                 />
               ) : graphSearchData ? (
                 <GraphSearchResults results={graphSearchData.results} />
@@ -388,9 +380,7 @@ export default function KnowledgePage() {
       {!isSearchMode && (
         <>
           {documentsData && !docsLoading && (
-            <p className="text-sm text-foreground-muted">
-              {`${documentsData.total} documents`}
-            </p>
+            <p className="text-foreground-muted text-sm">{`${documentsData.total} documents`}</p>
           )}
 
           {docsLoading ? (
@@ -426,7 +416,7 @@ export default function KnowledgePage() {
           {/* Pagination */}
           {documentsData && totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-foreground-muted">
+              <p className="text-foreground-muted text-sm">
                 {`Showing ${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, documentsData.total)} of ${documentsData.total}`}
               </p>
               <div className="flex gap-2">
@@ -434,7 +424,7 @@ export default function KnowledgePage() {
                   type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="rounded-md border border-border px-3 py-1 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+                  className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1 text-sm transition-colors disabled:opacity-50"
                 >
                   {"Previous"}
                 </button>
@@ -442,7 +432,7 @@ export default function KnowledgePage() {
                   type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="rounded-md border border-border px-3 py-1 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+                  className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1 text-sm transition-colors disabled:opacity-50"
                 >
                   {"Next"}
                 </button>

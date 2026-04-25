@@ -41,9 +41,10 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
 
   const clients = Object.keys(details.compatibility_matrix);
   const firstClient = clients[0];
-  const allProperties = firstClient !== undefined
-    ? Object.keys(details.compatibility_matrix[firstClient] ?? {}).sort()
-    : [];
+  const allProperties =
+    firstClient !== undefined
+      ? Object.keys(details.compatibility_matrix[firstClient] ?? {}).sort()
+      : [];
 
   const filteredProperties = allProperties.filter((prop) => {
     if (filter === "all") return true;
@@ -63,23 +64,21 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center justify-between text-sm font-medium text-foreground"
+        className="text-foreground flex w-full items-center justify-between text-sm font-medium"
       >
         <span className="flex items-center gap-2">
           {check.passed ? (
-            <ShieldCheck className="h-4 w-4 text-status-success" />
+            <ShieldCheck className="text-status-success h-4 w-4" />
           ) : (
-            <AlertTriangle className="h-4 w-4 text-status-warning" />
+            <AlertTriangle className="text-status-warning h-4 w-4" />
           )}
           CSS Compatibility
-          <span className="text-xs text-muted-foreground">
-            {details.overall_coverage_score}%
-          </span>
+          <span className="text-muted-foreground text-xs">{details.overall_coverage_score}%</span>
         </span>
         {expanded ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          <ChevronUp className="text-muted-foreground h-4 w-4" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
         )}
       </button>
 
@@ -89,10 +88,10 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
           <div className="space-y-1.5">
             {clients.map((client) => (
               <div key={client} className="flex items-center gap-2">
-                <span className="w-24 truncate text-xs text-muted-foreground">
+                <span className="text-muted-foreground w-24 truncate text-xs">
                   {formatClientName(client)}
                 </span>
-                <div className="h-1.5 flex-1 rounded-full bg-muted">
+                <div className="bg-muted h-1.5 flex-1 rounded-full">
                   <div
                     className={`h-1.5 rounded-full transition-all ${
                       (details.client_coverage_score[client] ?? 0) >= 90
@@ -104,7 +103,7 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
                     style={{ width: `${details.client_coverage_score[client] ?? 0}%` }}
                   />
                 </div>
-                <span className="w-10 text-right text-xs text-muted-foreground">
+                <span className="text-muted-foreground w-10 text-right text-xs">
                   {details.client_coverage_score[client] ?? 0}%
                 </span>
               </div>
@@ -124,26 +123,28 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {mode === "all" ? `All (${allProperties.length})` :
-                 mode === "errors" ? `Errors (${details.error_count})` :
-                 `Warnings (${details.warning_count})`}
+                {mode === "all"
+                  ? `All (${allProperties.length})`
+                  : mode === "errors"
+                    ? `Errors (${details.error_count})`
+                    : `Warnings (${details.warning_count})`}
               </button>
             ))}
           </div>
 
           {/* Matrix table */}
           {filteredProperties.length > 0 && (
-            <div className="overflow-x-auto rounded border border-border">
+            <div className="border-border overflow-x-auto rounded border">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">
+                  <tr className="border-border bg-muted/50 border-b">
+                    <th className="text-muted-foreground px-2 py-1.5 text-left font-medium">
                       Property
                     </th>
                     {clients.map((client) => (
                       <th
                         key={client}
-                        className="px-2 py-1.5 text-center font-medium text-muted-foreground"
+                        className="text-muted-foreground px-2 py-1.5 text-center font-medium"
                         title={formatClientName(client)}
                       >
                         {formatClientName(client).slice(0, 8)}
@@ -153,8 +154,8 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
                 </thead>
                 <tbody>
                   {filteredProperties.map((prop) => (
-                    <tr key={prop} className="border-b border-border last:border-0">
-                      <td className="px-2 py-1 font-mono text-foreground">{prop}</td>
+                    <tr key={prop} className="border-border border-b last:border-0">
+                      <td className="text-foreground px-2 py-1 font-mono">{prop}</td>
                       {clients.map((client) => {
                         const status = details.compatibility_matrix[client]?.[prop] ?? "supported";
                         return (
@@ -178,22 +179,23 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
           {/* Conversions detail */}
           {details.conversions.length > 0 && (
             <details className="text-xs">
-              <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
-                {details.conversions.length} conversion{details.conversions.length > 1 ? "s" : ""} applied
+              <summary className="text-muted-foreground hover:text-foreground cursor-pointer font-medium">
+                {details.conversions.length} conversion{details.conversions.length > 1 ? "s" : ""}{" "}
+                applied
               </summary>
               <div className="mt-1.5 space-y-1">
                 {details.conversions.map((conv, i) => (
-                  <div key={i} className="rounded border border-border px-2 py-1.5">
+                  <div key={i} className="border-border rounded border px-2 py-1.5">
                     <div className="flex items-center gap-1">
-                      <span className="font-mono text-destructive line-through">
+                      <span className="text-destructive font-mono line-through">
                         {conv.original_property}: {conv.original_value}
                       </span>
                       <span className="text-muted-foreground">&rarr;</span>
-                      <span className="font-mono text-status-success">
+                      <span className="text-status-success font-mono">
                         {conv.replacement_property}: {conv.replacement_value}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-muted-foreground">{conv.reason}</p>
+                    <p className="text-muted-foreground mt-0.5">{conv.reason}</p>
                   </div>
                 ))}
               </div>
@@ -206,11 +208,11 @@ export function CSSAuditPanel({ check }: CSSAuditPanelProps) {
               {details.issues.map((issue, i) => (
                 <div key={i} className="flex items-start gap-1.5 text-xs">
                   {issue.includes("no fallback") ? (
-                    <XCircle className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
+                    <XCircle className="text-destructive mt-0.5 h-3 w-3 shrink-0" />
                   ) : issue.includes("converted") ? (
-                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-status-warning" />
+                    <AlertTriangle className="text-status-warning mt-0.5 h-3 w-3 shrink-0" />
                   ) : (
-                    <Info className="mt-0.5 h-3 w-3 shrink-0 text-badge-info-text" />
+                    <Info className="text-badge-info-text mt-0.5 h-3 w-3 shrink-0" />
                   )}
                   <span className="text-muted-foreground">{issue}</span>
                 </div>

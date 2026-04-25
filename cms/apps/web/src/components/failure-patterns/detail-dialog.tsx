@@ -9,10 +9,7 @@ interface FailurePatternDetailDialogProps {
   onClose: () => void;
 }
 
-export function FailurePatternDetailDialog({
-  pattern,
-  onClose,
-}: FailurePatternDetailDialogProps) {
+export function FailurePatternDetailDialog({ pattern, onClose }: FailurePatternDetailDialogProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -33,19 +30,14 @@ export function FailurePatternDetailDialog({
       aria-label={"Pattern Detail"}
     >
       <div className="fixed inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
-      <div className="relative z-10 w-full max-w-[32rem] rounded-lg border border-card-border bg-card-bg p-6 shadow-lg">
+      <div className="border-card-border bg-card-bg relative z-10 w-full max-w-[32rem] rounded-lg border p-6 shadow-lg">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-status-warning" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {"Pattern Detail"}
-            </h2>
+            <AlertTriangle className="text-status-warning h-5 w-5" />
+            <h2 className="text-foreground text-lg font-semibold">{"Pattern Detail"}</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="text-foreground-muted hover:text-foreground"
-          >
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -54,37 +46,23 @@ export function FailurePatternDetailDialog({
         <div className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs font-medium text-foreground-muted">
-                {"Agent"}
-              </p>
-              <p className="mt-1 text-sm text-foreground">
+              <p className="text-foreground-muted text-xs font-medium">{"Agent"}</p>
+              <p className="text-foreground mt-1 text-sm">
                 {pattern.agent_name.replace(/_/g, " ")}
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-foreground-muted">
-                {"QA Check"}
-              </p>
-              <p className="mt-1 text-sm text-foreground">
-                {pattern.qa_check.replace(/_/g, " ")}
-              </p>
+              <p className="text-foreground-muted text-xs font-medium">{"QA Check"}</p>
+              <p className="text-foreground mt-1 text-sm">{pattern.qa_check.replace(/_/g, " ")}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-foreground-muted">
-                {"Blueprint"}
-              </p>
-              <p className="mt-1 text-sm text-foreground">
-                {pattern.blueprint_name || "-"}
-              </p>
+              <p className="text-foreground-muted text-xs font-medium">{"Blueprint"}</p>
+              <p className="text-foreground mt-1 text-sm">{pattern.blueprint_name || "-"}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-foreground-muted">
-                {"Confidence"}
-              </p>
-              <p className="mt-1 text-sm text-foreground">
-                {pattern.confidence != null
-                  ? `${Math.round(pattern.confidence * 100)}%`
-                  : "-"}
+              <p className="text-foreground-muted text-xs font-medium">{"Confidence"}</p>
+              <p className="text-foreground mt-1 text-sm">
+                {pattern.confidence != null ? `${Math.round(pattern.confidence * 100)}%` : "-"}
               </p>
             </div>
           </div>
@@ -92,14 +70,12 @@ export function FailurePatternDetailDialog({
           {/* Affected Clients */}
           {pattern.client_ids.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-foreground-muted">
-                {"Affected Clients"}
-              </p>
+              <p className="text-foreground-muted text-xs font-medium">{"Affected Clients"}</p>
               <div className="mt-1 flex flex-wrap gap-1">
                 {pattern.client_ids.map((c) => (
                   <span
                     key={c}
-                    className="rounded bg-surface-muted px-2 py-0.5 text-xs text-foreground"
+                    className="bg-surface-muted text-foreground rounded px-2 py-0.5 text-xs"
                   >
                     {c.replace(/_/g, " ")}
                   </span>
@@ -110,10 +86,8 @@ export function FailurePatternDetailDialog({
 
           {/* Description */}
           <div>
-            <p className="text-xs font-medium text-foreground-muted">
-              {"Description"}
-            </p>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+            <p className="text-foreground-muted text-xs font-medium">{"Description"}</p>
+            <p className="text-foreground mt-1 whitespace-pre-wrap text-sm">
               {pattern.description}
             </p>
           </div>
@@ -121,18 +95,16 @@ export function FailurePatternDetailDialog({
           {/* Workaround */}
           {pattern.workaround && (
             <div>
-              <p className="text-xs font-medium text-foreground-muted">
-                {"Workaround"}
-              </p>
-              <p className="mt-1 rounded bg-surface-muted p-3 text-sm text-foreground">
+              <p className="text-foreground-muted text-xs font-medium">{"Workaround"}</p>
+              <p className="bg-surface-muted text-foreground mt-1 rounded p-3 text-sm">
                 {pattern.workaround}
               </p>
             </div>
           )}
 
           {/* Metadata */}
-          <div className="border-t border-card-border pt-4">
-            <div className="grid grid-cols-2 gap-4 text-xs text-foreground-muted">
+          <div className="border-card-border border-t pt-4">
+            <div className="text-foreground-muted grid grid-cols-2 gap-4 text-xs">
               <div>
                 <p className="font-medium">{"First Seen"}</p>
                 <p>{new Date(pattern.first_seen).toLocaleString()}</p>

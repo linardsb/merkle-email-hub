@@ -84,13 +84,13 @@ export function ImageGenDialog({
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="flex border-b border-border">
+        <div className="border-border flex border-b">
           <button
             type="button"
             onClick={() => setActiveTab("generate")}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === "generate"
-                ? "border-b-2 border-interactive text-foreground"
+                ? "border-interactive text-foreground border-b-2"
                 : "text-foreground-muted hover:text-foreground"
             }`}
           >
@@ -101,7 +101,7 @@ export function ImageGenDialog({
             onClick={() => setActiveTab("gallery")}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === "gallery"
-                ? "border-b-2 border-interactive text-foreground"
+                ? "border-interactive text-foreground border-b-2"
                 : "text-foreground-muted hover:text-foreground"
             }`}
           >
@@ -113,7 +113,10 @@ export function ImageGenDialog({
           <div className="space-y-4">
             {/* Prompt */}
             <div>
-              <label htmlFor="img-prompt" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="img-prompt"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"Describe the image"}
               </label>
               <textarea
@@ -129,7 +132,7 @@ export function ImageGenDialog({
 
             {/* Style Presets */}
             <div>
-              <p className="mb-1.5 text-sm font-medium text-foreground">{"Style"}</p>
+              <p className="text-foreground mb-1.5 text-sm font-medium">{"Style"}</p>
               <StylePresetGrid selected={style} onSelect={setStyle} />
             </div>
 
@@ -139,7 +142,7 @@ export function ImageGenDialog({
                 type="button"
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isMutating}
-                className="rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isMutating ? (
                   <span className="flex items-center gap-1.5">
@@ -154,11 +157,7 @@ export function ImageGenDialog({
           </div>
         ) : (
           <div className="max-h-96 overflow-y-auto">
-            <ImageGallery
-              images={gallery}
-              isLoading={galleryLoading}
-              onInsert={handleInsert}
-            />
+            <ImageGallery images={gallery} isLoading={galleryLoading} onInsert={handleInsert} />
           </div>
         )}
       </DialogContent>

@@ -8,6 +8,6 @@ import type { ExportRequest, ExportResponse } from "@/types/connectors";
 export function useExport() {
   return useSWRMutation<ExportResponse, ApiError, string, ExportRequest>(
     "/api/v1/connectors/export",
-    longMutationFetcher
+    longMutationFetcher,
   );
 }

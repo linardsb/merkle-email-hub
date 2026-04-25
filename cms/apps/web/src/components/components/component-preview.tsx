@@ -30,16 +30,10 @@ export function ComponentPreview({
     if (!darkMode) return html;
 
     if (html.includes("</head>")) {
-      return html.replace(
-        "</head>",
-        `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n</head>`
-      );
+      return html.replace("</head>", `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n</head>`);
     }
     if (html.includes("<head>")) {
-      return html.replace(
-        "<head>",
-        `<head>\n${DARK_MODE_META}\n${DARK_MODE_STYLE}`
-      );
+      return html.replace("<head>", `<head>\n${DARK_MODE_META}\n${DARK_MODE_STYLE}`);
     }
     return `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n${html}`;
   }, [html, darkMode]);
@@ -47,20 +41,17 @@ export function ComponentPreview({
   if (!srcdoc) {
     return (
       <div
-        className="flex flex-col items-center justify-center bg-surface-muted text-center"
+        className="bg-surface-muted flex flex-col items-center justify-center text-center"
         style={{ height: `${height}px` }}
       >
-        <Eye className="h-8 w-8 text-foreground-muted" />
-        <p className="mt-2 text-xs text-foreground-muted">{"No source available"}</p>
+        <Eye className="text-foreground-muted h-8 w-8" />
+        <p className="text-foreground-muted mt-2 text-xs">{"No source available"}</p>
       </div>
     );
   }
 
   return (
-    <div
-      className="overflow-hidden bg-surface-muted"
-      style={{ height: `${height}px` }}
-    >
+    <div className="bg-surface-muted overflow-hidden" style={{ height: `${height}px` }}>
       <iframe
         srcDoc={srcdoc}
         sandbox="allow-same-origin"

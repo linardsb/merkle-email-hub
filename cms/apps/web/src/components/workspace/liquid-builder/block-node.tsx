@@ -41,14 +41,9 @@ interface BlockNodeProps {
 }
 
 export function BlockNode({ block, onUpdate, onRemove }: BlockNodeProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: block.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: block.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -64,25 +59,25 @@ export function BlockNode({ block, onUpdate, onRemove }: BlockNodeProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-md border border-default ${BLOCK_COLORS[block.type]} border-l-4 bg-card`}
+      className={`border-default rounded-md border ${BLOCK_COLORS[block.type]} bg-card border-l-4`}
     >
-      <div className="flex items-center gap-2 border-b border-default px-2 py-1.5">
+      <div className="border-default flex items-center gap-2 border-b px-2 py-1.5">
         <button
           type="button"
-          className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         {BLOCK_ICONS[block.type]}
-        <span className="flex-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-muted-foreground flex-1 text-xs font-medium uppercase tracking-wider">
           {BLOCK_TYPE_LABELS[block.type] ?? block.type}
         </span>
         <button
           type="button"
           onClick={() => onRemove(block.id)}
-          className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-0.5 transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>

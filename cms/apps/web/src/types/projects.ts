@@ -6,8 +6,4 @@ export type ProjectCategory =
   | "automated"
   | "other";
 
-export type CreationMethod =
-  | "blank"
-  | "ai_scaffolder"
-  | "from_components"
-  | "clone_existing";
+export type CreationMethod = "blank" | "ai_scaffolder" | "from_components" | "clone_existing";

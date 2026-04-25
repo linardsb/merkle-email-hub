@@ -20,19 +20,19 @@ export function BlueprintResultCard({ result, onApplyHtml }: BlueprintResultCard
   const totalTokens = Object.values(result.model_usage ?? {}).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="mt-2 space-y-3 rounded-lg border border-border bg-card p-3">
+    <div className="border-border bg-card mt-2 space-y-3 rounded-lg border p-3">
       {/* Status banner */}
       <StatusBanner status={result.status} qaPassed={result.qa_passed ?? null} />
 
       {/* Audience summary if available */}
       {result.audience_summary && (
-        <p className="text-xs text-muted-foreground">{result.audience_summary}</p>
+        <p className="text-muted-foreground text-xs">{result.audience_summary}</p>
       )}
 
       {/* Pipeline timeline */}
       {result.progress && result.progress.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <p className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
             {"Pipeline"}
           </p>
           <PipelineTimeline progress={result.progress} handoffHistory={result.handoff_history} />
@@ -45,21 +45,23 @@ export function BlueprintResultCard({ result, onApplyHtml }: BlueprintResultCard
       )}
 
       {/* Stats row */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-4 text-xs">
         {totalMs > 0 && <span>{formatDuration(totalMs)}</span>}
-        {totalTokens > 0 && <span>{totalTokens.toLocaleString()} {"tokens"}</span>}
+        {totalTokens > 0 && (
+          <span>
+            {totalTokens.toLocaleString()} {"tokens"}
+          </span>
+        )}
         {result.skipped_nodes && result.skipped_nodes.length > 0 && (
-          <span>{result.skipped_nodes.length} {"skipped"}</span>
+          <span>
+            {result.skipped_nodes.length} {"skipped"}
+          </span>
         )}
       </div>
 
       {/* Apply button */}
       {result.html && (
-        <Button
-          size="sm"
-          className="w-full gap-2"
-          onClick={() => onApplyHtml(result.html)}
-        >
+        <Button size="sm" className="w-full gap-2" onClick={() => onApplyHtml(result.html)}>
           <Zap className="h-3.5 w-3.5" />
           {"Apply Generated HTML to Editor"}
         </Button>

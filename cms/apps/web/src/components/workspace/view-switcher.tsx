@@ -11,7 +11,11 @@ interface ViewSwitcherProps {
   syncStatus?: SyncStatus;
 }
 
-const VIEWS: { value: ViewMode; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
+const VIEWS: {
+  value: ViewMode;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}[] = [
   { value: "code", icon: Code, label: "Code" },
   { value: "builder", icon: Layout, label: "Builder" },
   { value: "split", icon: Columns, label: "Split" },
@@ -29,10 +33,10 @@ export function ViewSwitcher({ activeView, onViewChange, syncStatus }: ViewSwitc
 
   return (
     <div className="flex items-center gap-2 px-2 py-1.5">
-      <div className="relative flex items-center rounded-md border border-border bg-muted/50 p-0.5">
+      <div className="border-border bg-muted/50 relative flex items-center rounded-md border p-0.5">
         {/* Sliding background indicator */}
         <div
-          className="absolute top-0.5 bottom-0.5 rounded-sm bg-background shadow-sm transition-transform duration-200 ease-out"
+          className="bg-background absolute bottom-0.5 top-0.5 rounded-sm shadow-sm transition-transform duration-200 ease-out"
           style={{
             width: `calc(${100 / VIEWS.length}% - 2px)`,
             transform: `translateX(calc(${activeIndex} * 100% + ${activeIndex * 2}px))`,
@@ -63,7 +67,7 @@ export function ViewSwitcher({ activeView, onViewChange, syncStatus }: ViewSwitc
         <div className="flex items-center gap-1.5">
           <div className={`h-1.5 w-1.5 rounded-full ${SYNC_STATUS_COLORS[syncStatus]}`} />
           {syncStatus === "parse_error" && (
-            <span className="text-[10px] text-destructive">{"Parse error"}</span>
+            <span className="text-destructive text-[10px]">{"Parse error"}</span>
           )}
         </div>
       )}

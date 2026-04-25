@@ -41,25 +41,22 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      if (file.size > 2 * 1024 * 1024) {
-        setError("File exceeds 2MB limit");
-        return;
-      }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("File exceeds 2MB limit");
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        setHtml(reader.result as string);
-        setError(null);
-      };
-      reader.readAsText(file);
-    },
-    []
-  );
+    const reader = new FileReader();
+    reader.onload = () => {
+      setHtml(reader.result as string);
+      setError(null);
+    };
+    reader.readAsText(file);
+  }, []);
 
   const handleImport = useCallback(async () => {
     if (html.length < 10) {
@@ -117,11 +114,11 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="w-[28rem] rounded-lg border border-border bg-card shadow-lg">
+    <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+      <div className="border-border bg-card w-[28rem] rounded-lg border shadow-lg">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Import HTML</h2>
+        <div className="border-border flex items-center justify-between border-b px-4 py-3">
+          <h2 className="text-foreground text-sm font-semibold">Import HTML</h2>
           <button
             onClick={handleCancel}
             className="text-muted-foreground hover:text-foreground"
@@ -139,23 +136,23 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
             <>
               {/* Textarea */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Paste email HTML
                 </label>
                 <textarea
                   value={html}
                   onChange={(e) => setHtml(e.target.value)}
                   placeholder="<!DOCTYPE html>..."
-                  className="h-40 w-full resize-none rounded-md border border-input bg-background px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring h-40 w-full resize-none rounded-md border px-3 py-2 font-mono text-xs focus:outline-none focus:ring-1"
                 />
               </div>
 
               {/* File upload */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">or</span>
+                <span className="text-muted-foreground text-xs">or</span>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-md border border-input px-3 py-1 text-xs text-foreground hover:bg-accent"
+                  className="border-input text-foreground hover:bg-accent rounded-md border px-3 py-1 text-xs"
                 >
                   Upload .html file
                 </button>
@@ -170,13 +167,13 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
 
               {/* ESP Platform */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   ESP Platform (optional)
                 </label>
                 <select
                   value={espPlatform}
                   onChange={(e) => setEspPlatform(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="border-input bg-background text-foreground focus:ring-ring w-full rounded-md border px-3 py-1.5 text-xs focus:outline-none focus:ring-1"
                 >
                   {ESP_PLATFORMS.map((p) => (
                     <option key={p.value} value={p.value}>
@@ -187,28 +184,24 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
               </div>
 
               {/* Error */}
-              {error && (
-                <p className="text-xs text-destructive">{error}</p>
-              )}
+              {error && <p className="text-destructive text-xs">{error}</p>}
             </>
           ) : state === "analyzing" ? (
             <div className="flex flex-col items-center gap-2 py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-xs text-muted-foreground">
-                Analyzing email structure...
-              </p>
+              <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+              <p className="text-muted-foreground text-xs">Analyzing email structure...</p>
             </div>
           ) : state === "done" && result ? (
             <div className="space-y-3">
-              <div className="rounded-md border border-border bg-muted/50 p-3">
-                <p className="text-sm font-medium text-foreground">
+              <div className="border-border bg-muted/50 rounded-md border p-3">
+                <p className="text-foreground text-sm font-medium">
                   {result.sections.length} section{result.sections.length !== 1 ? "s" : ""} detected
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {result.sections.map((s) => (
                     <span
                       key={s.section_id}
-                      className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+                      className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium"
                     >
                       {s.component_name}
                       {s.layout_type === "columns" ? " (columns)" : ""}
@@ -219,11 +212,13 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
 
               {/* Warnings */}
               {result.warnings.length > 0 && (
-                <div className="rounded-md border border-warning/30 bg-warning/5 p-3">
-                  <p className="mb-1 text-xs font-medium text-warning-foreground">Warnings</p>
+                <div className="border-warning/30 bg-warning/5 rounded-md border p-3">
+                  <p className="text-warning-foreground mb-1 text-xs font-medium">Warnings</p>
                   <ul className="space-y-1">
                     {result.warnings.map((w, i) => (
-                      <li key={i} className="text-[10px] text-muted-foreground">{w}</li>
+                      <li key={i} className="text-muted-foreground text-[10px]">
+                        {w}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -233,17 +228,17 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+        <div className="border-border flex items-center justify-end gap-2 border-t px-4 py-3">
           <button
             onClick={handleCancel}
-            className="rounded-md border border-input px-3 py-1.5 text-xs text-foreground hover:bg-accent"
+            className="border-input text-foreground hover:bg-accent rounded-md border px-3 py-1.5 text-xs"
           >
             Cancel
           </button>
           {state === "done" ? (
             <button
               onClick={handleAccept}
-              className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-1.5 text-xs"
             >
               Accept
             </button>
@@ -251,7 +246,7 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
             <button
               onClick={handleImport}
               disabled={state === "analyzing" || html.length < 10}
-              className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-1.5 text-xs disabled:opacity-50"
             >
               Import
             </button>

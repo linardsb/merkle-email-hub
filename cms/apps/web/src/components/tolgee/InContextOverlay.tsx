@@ -30,11 +30,7 @@ function escapeHtml(str: string): string {
  * Injects data-tolgee-key attributes and visual highlights into translatable
  * text spans in the email HTML. Uses string replacement on source text matches.
  */
-function annotateHtml(
-  html: string,
-  keys: TranslationKeyRow[],
-  locale: string,
-): string {
+function annotateHtml(html: string, keys: TranslationKeyRow[], locale: string): string {
   let annotated = html;
 
   for (const keyRow of keys) {
@@ -121,11 +117,9 @@ export function InContextOverlay({
 
       {/* ── Edit Popover ── */}
       {editingKey && activeKeyRow && (
-        <div className="absolute left-1/2 top-16 z-30 w-80 -translate-x-1/2 rounded-md border border-border bg-surface p-3 shadow-lg">
+        <div className="border-border bg-surface absolute left-1/2 top-16 z-30 w-80 -translate-x-1/2 rounded-md border p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground">
-              {activeKeyRow.key}
-            </span>
+            <span className="text-foreground text-xs font-medium">{activeKeyRow.key}</span>
             <button
               type="button"
               onClick={handleEditCancel}
@@ -136,19 +130,12 @@ export function InContextOverlay({
           </div>
 
           <div className="mb-2">
-            <span className="text-[10px] text-foreground-muted">
-              {"Source:"}
-            </span>
-            <p className="text-xs text-foreground">
-              {activeKeyRow.sourceText}
-            </p>
+            <span className="text-foreground-muted text-[10px]">{"Source:"}</span>
+            <p className="text-foreground text-xs">{activeKeyRow.sourceText}</p>
           </div>
 
           <div className="mb-2">
-            <label
-              htmlFor="overlay-edit"
-              className="mb-1 block text-[10px] text-foreground-muted"
-            >
+            <label htmlFor="overlay-edit" className="text-foreground-muted mb-1 block text-[10px]">
               {`Translation (${selectedLocale}):`}
             </label>
             <textarea
@@ -156,7 +143,7 @@ export function InContextOverlay({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               rows={2}
-              className="w-full rounded border border-input-border bg-input-bg px-2 py-1 text-xs text-foreground focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
+              className="border-input-border bg-input-bg text-foreground focus:border-input-focus focus:ring-input-focus w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1"
             />
           </div>
 
@@ -164,14 +151,14 @@ export function InContextOverlay({
             <button
               type="button"
               onClick={handleEditCancel}
-              className="rounded px-2 py-1 text-xs text-foreground hover:bg-surface-hover"
+              className="text-foreground hover:bg-surface-hover rounded px-2 py-1 text-xs"
             >
               {"Cancel"}
             </button>
             <button
               type="button"
               onClick={handleEditSave}
-              className="rounded bg-interactive px-2 py-1 text-xs font-medium text-foreground-inverse hover:bg-interactive-hover"
+              className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded px-2 py-1 text-xs font-medium"
             >
               {"Save"}
             </button>

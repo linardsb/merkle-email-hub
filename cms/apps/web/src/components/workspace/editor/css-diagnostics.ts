@@ -22,8 +22,10 @@ export function computeCssMarkers(model: editor.ITextModel): editor.IMarkerData[
         severity: rule.severity === "error" ? 8 : 4, // MarkerSeverity.Error : Warning
         message: `${rule.reason}\nUnsupported in: ${rule.unsupportedClients.join(", ")}`,
         source: "Can I Email",
-        startLineNumber: startPos.lineNumber, startColumn: startPos.column,
-        endLineNumber: endPos.lineNumber, endColumn: endPos.column,
+        startLineNumber: startPos.lineNumber,
+        startColumn: startPos.column,
+        endLineNumber: endPos.lineNumber,
+        endColumn: endPos.column,
       });
     }
   }

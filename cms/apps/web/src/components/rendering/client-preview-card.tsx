@@ -30,9 +30,9 @@ export function ClientPreviewCard({
   const activeScreenshot = showDark ? darkScreenshot : screenshot;
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-3">
+    <div className="border-card-border bg-card-bg rounded-lg border p-3">
       {/* Screenshot thumbnail */}
-      <div className="relative mb-2 aspect-[4/3] overflow-hidden rounded-md bg-surface-muted">
+      <div className="bg-surface-muted relative mb-2 aspect-[4/3] overflow-hidden rounded-md">
         {activeScreenshot ? (
           <img
             src={`data:image/png;base64,${activeScreenshot}`}
@@ -40,7 +40,7 @@ export function ClientPreviewCard({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-foreground-muted">
+          <div className="text-foreground-muted flex h-full items-center justify-center text-xs">
             No preview
           </div>
         )}
@@ -48,7 +48,7 @@ export function ClientPreviewCard({
         <button
           type="button"
           onClick={() => onViewFull(clientId)}
-          className="absolute right-1.5 top-1.5 rounded bg-surface/80 p-1 text-foreground-muted hover:text-foreground"
+          className="bg-surface/80 text-foreground-muted hover:text-foreground absolute right-1.5 top-1.5 rounded p-1"
           title="View full size"
         >
           <Maximize2 className="h-3.5 w-3.5" />
@@ -57,12 +57,12 @@ export function ClientPreviewCard({
 
       {/* Client name + dark mode toggle */}
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground">{clientName}</span>
+        <span className="text-foreground text-sm font-medium">{clientName}</span>
         {hasDarkVariant && (
           <button
             type="button"
             onClick={() => setShowDark((v) => !v)}
-            className="rounded-full border border-card-border p-1 text-foreground-muted hover:text-foreground"
+            className="border-card-border text-foreground-muted hover:text-foreground rounded-full border p-1"
             title={showDark ? "Show light mode" : "Show dark mode"}
           >
             {showDark ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
@@ -73,7 +73,7 @@ export function ClientPreviewCard({
       {/* Confidence bar + score */}
       <div className="flex items-center gap-2">
         <ConfidenceBar score={confidence} breakdown={breakdown} size="sm" />
-        <span className="shrink-0 font-mono text-xs text-foreground-muted">
+        <span className="text-foreground-muted shrink-0 font-mono text-xs">
           {confidence.toFixed(0)}%
         </span>
       </div>

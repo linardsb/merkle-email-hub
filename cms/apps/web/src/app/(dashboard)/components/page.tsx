@@ -19,9 +19,7 @@ export default function ComponentsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState<string | undefined>(undefined);
-  const [selectedComponentId, setSelectedComponentId] = useState<number | null>(
-    null
-  );
+  const [selectedComponentId, setSelectedComponentId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const session = useSession();
@@ -46,9 +44,7 @@ export default function ComponentsPage() {
 
   const categories = SECTION_CATEGORIES;
 
-  const totalPages = data
-    ? Math.ceil(data.total / PAGE_SIZE)
-    : 0;
+  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
 
   const handleCardClick = (id: number) => {
     setSelectedComponentId(id);
@@ -65,16 +61,14 @@ export default function ComponentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <FileCode className="h-8 w-8 text-foreground-accent" />
-          <h1 className="text-2xl font-semibold text-foreground">
-            {"Component Library"}
-          </h1>
+          <FileCode className="text-foreground-accent h-8 w-8" />
+          <h1 className="text-foreground text-2xl font-semibold">{"Component Library"}</h1>
         </div>
         {canCreate && (
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
           >
             <Plus className="h-4 w-4" />
             {"Create Component"}
@@ -84,13 +78,13 @@ export default function ComponentsPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted" />
+        <Search className="text-foreground-muted absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={"Search components..."}
-          className="w-full rounded-md border border-input-border bg-input-bg py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
+          className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1"
           aria-label={"Search components..."}
         />
       </div>
@@ -132,7 +126,11 @@ export default function ComponentsPage() {
           ))}
         </div>
       ) : error ? (
-        <ErrorState message={"Failed to load components"} onRetry={() => mutate()} retryLabel={"Try again"} />
+        <ErrorState
+          message={"Failed to load components"}
+          onRetry={() => mutate()}
+          retryLabel={"Try again"}
+        />
       ) : data?.items.length === 0 ? (
         <EmptyState
           icon={FileCode}
@@ -154,7 +152,7 @@ export default function ComponentsPage() {
       {/* Pagination */}
       {data && totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-foreground-muted">
+          <p className="text-foreground-muted text-sm">
             {`Showing ${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, data.total)} of ${data.total}`}
           </p>
           <div className="flex gap-2">
@@ -162,7 +160,7 @@ export default function ComponentsPage() {
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {"Previous"}
             </button>
@@ -170,7 +168,7 @@ export default function ComponentsPage() {
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {"Next"}
             </button>

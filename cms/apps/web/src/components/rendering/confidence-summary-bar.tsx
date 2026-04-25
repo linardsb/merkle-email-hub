@@ -19,20 +19,16 @@ function getTierColor(score: number): string {
   return "bg-status-danger";
 }
 
-export function ConfidenceSummaryBar({
-  clientResults,
-  overallScore,
-}: ConfidenceSummaryBarProps) {
+export function ConfidenceSummaryBar({ clientResults, overallScore }: ConfidenceSummaryBarProps) {
   const totalShare = clientResults.reduce((sum, r) => sum + r.market_share, 0);
 
   return (
     <div className="space-y-2">
       {/* Segmented bar */}
-      <div className="flex h-4 w-full overflow-hidden rounded-full bg-surface-muted">
+      <div className="bg-surface-muted flex h-4 w-full overflow-hidden rounded-full">
         {clientResults.map((r) => {
           const widthPct = totalShare > 0 ? (r.market_share / totalShare) * 100 : 0;
-          const displayName =
-            CLIENT_DISPLAY_NAMES[r.client_id as ClientProfile] ?? r.client_id;
+          const displayName = CLIENT_DISPLAY_NAMES[r.client_id as ClientProfile] ?? r.client_id;
           return (
             <span
               key={r.client_id}
@@ -45,9 +41,9 @@ export function ConfidenceSummaryBar({
       </div>
 
       {/* Overall score label */}
-      <p className="text-sm text-foreground-muted">
+      <p className="text-foreground-muted text-sm">
         Overall rendering confidence:{" "}
-        <span className="font-medium text-foreground">{overallScore.toFixed(0)}%</span>
+        <span className="text-foreground font-medium">{overallScore.toFixed(0)}%</span>
       </p>
     </div>
   );
