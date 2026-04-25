@@ -9,15 +9,25 @@ import { BuilderCanvas } from "./builder-canvas";
 import { BuilderPreview } from "./builder-preview";
 import { ZoomControls } from "./zoom-controls";
 import { PropertyPanel } from "./panels";
-import type { BuilderSection, SectionNode } from "@/types/visual-builder";
-import type { SlotDefinition, DefaultTokens } from "@/types/visual-builder";
-import { DEFAULT_RESPONSIVE, DEFAULT_ADVANCED } from "@/types/visual-builder";
+import {
+  DEFAULT_RESPONSIVE,
+  DEFAULT_ADVANCED,
+  type BuilderSection,
+  type SectionNode,
+  type SlotDefinition,
+  type DefaultTokens,
+} from "@/types/visual-builder";
 import type { DesignSystemConfig } from "@/types/design-system-config";
 import type {
   AppComponentsSchemasVersionResponse as VersionResponse,
   ComponentResponse,
 } from "@email-hub/sdk";
-import { BuilderToolbar, DEVICE_WIDTHS, type DevicePreview, type ClientPreview } from "@/components/workspace/builder-toolbar";
+import {
+  BuilderToolbar,
+  DEVICE_WIDTHS,
+  type DevicePreview,
+  type ClientPreview,
+} from "@/components/workspace/builder-toolbar";
 import { BuilderOnboarding } from "@/components/workspace/builder-onboarding";
 import { ImportDialog } from "./import-dialog";
 
@@ -177,7 +187,9 @@ export function VisualBuilderPanel({
         // Design system is optional
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   // Sync assembled HTML to code editor
@@ -195,9 +207,7 @@ export function VisualBuilderPanel({
       if (cached) return cached;
 
       try {
-        const res = await authFetch(
-          `/api/v1/components/${componentId}/versions`
-        );
+        const res = await authFetch(`/api/v1/components/${componentId}/versions`);
         if (!res.ok) return null;
         const versions: VersionResponse[] = await res.json();
         const latest = versions[0];
@@ -214,7 +224,7 @@ export function VisualBuilderPanel({
         return null;
       }
     },
-    []
+    [],
   );
 
   // Apply synced sections from code editor (split mode)
@@ -241,7 +251,9 @@ export function VisualBuilderPanel({
       );
       setSections(builderSections);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [syncedSections, setSections, fetchComponentHtml]);
 
   // Emit SectionNode[] to parent when builder sections change (split mode sync)
@@ -313,7 +325,7 @@ export function VisualBuilderPanel({
 
       addSection(section, atIndex);
     },
-    [fetchComponentHtml, addSection]
+    [fetchComponentHtml, addSection],
   );
 
   // Handle reorder
@@ -325,7 +337,7 @@ export function VisualBuilderPanel({
         moveSection(fromIndex, toIndex);
       }
     },
-    [sections, moveSection]
+    [sections, moveSection],
   );
 
   // Handle property panel updates
@@ -335,7 +347,7 @@ export function VisualBuilderPanel({
         updateSection(selectedSectionId, updates);
       }
     },
-    [selectedSectionId, updateSection]
+    [selectedSectionId, updateSection],
   );
 
   // Stable close callback for PropertyPanel (avoids Escape effect churn)
@@ -346,7 +358,7 @@ export function VisualBuilderPanel({
     (annotatedHtml: string) => {
       onCodeChange(annotatedHtml);
     },
-    [onCodeChange]
+    [onCodeChange],
   );
 
   // Keyboard shortcuts
@@ -403,7 +415,7 @@ export function VisualBuilderPanel({
   ]);
 
   const selectedSection = selectedSectionId
-    ? sections.find((s) => s.id === selectedSectionId) ?? null
+    ? (sections.find((s) => s.id === selectedSectionId) ?? null)
     : null;
 
   // Preview width based on device mode
@@ -417,10 +429,10 @@ export function VisualBuilderPanel({
         onExternalDrop={handleExternalDrop}
       >
         {/* Builder toolbar */}
-        <div className="flex items-center border-b border-border">
+        <div className="border-border flex items-center border-b">
           <button
             onClick={() => setImportDialogOpen(true)}
-            className="ml-2 rounded-md border border-input px-2 py-1 text-[10px] font-medium text-foreground hover:bg-accent"
+            className="border-input text-foreground hover:bg-accent ml-2 rounded-md border px-2 py-1 text-[10px] font-medium"
             title="Import HTML email"
           >
             Import HTML
@@ -441,12 +453,15 @@ export function VisualBuilderPanel({
 
         <div className="flex flex-1 overflow-hidden">
           {/* Palette sidebar */}
-          <div className="w-56 flex-shrink-0 border-r border-border bg-card overflow-hidden" data-builder-palette>
+          <div
+            className="border-border bg-card w-56 flex-shrink-0 overflow-hidden border-r"
+            data-builder-palette
+          >
             <ComponentPalette />
           </div>
 
           {/* Canvas + preview area */}
-          <div className="flex flex-1 flex-col overflow-hidden bg-muted/30">
+          <div className="bg-muted/30 flex flex-1 flex-col overflow-hidden">
             {sections.length > 0 ? (
               <>
                 {/* Canvas */}
@@ -461,10 +476,10 @@ export function VisualBuilderPanel({
                 </div>
 
                 {/* Preview + zoom */}
-                <div className="h-1/3 min-h-32 flex-shrink-0 border-t border-border">
+                <div className="border-border h-1/3 min-h-32 flex-shrink-0 border-t">
                   <div className="flex h-full flex-col">
-                    <div className="flex items-center justify-between border-b border-border px-3 py-1">
-                      <span className="text-[10px] font-medium text-muted-foreground">
+                    <div className="border-border flex items-center justify-between border-b px-3 py-1">
+                      <span className="text-muted-foreground text-[10px] font-medium">
                         {"Preview"}
                       </span>
                       <ZoomControls zoom={zoom} onZoomChange={setZoom} />
@@ -474,10 +489,7 @@ export function VisualBuilderPanel({
                         className="mx-auto h-full transition-all"
                         style={{ maxWidth: previewMaxWidth }}
                       >
-                        <BuilderPreview
-                          assembledHtml={assembledHtml}
-                          zoom={zoom}
-                        />
+                        <BuilderPreview assembledHtml={assembledHtml} zoom={zoom} />
                       </div>
                     </div>
                   </div>
@@ -502,7 +514,9 @@ export function VisualBuilderPanel({
               designSystem={designSystem}
               onClose={handlePanelClose}
               previewMode={previewMode}
-              onPreviewModeChange={(mode) => setDevicePreview(mode === "mobile" ? "mobile" : "desktop")}
+              onPreviewModeChange={(mode) =>
+                setDevicePreview(mode === "mobile" ? "mobile" : "desktop")
+              }
             />
           )}
         </div>

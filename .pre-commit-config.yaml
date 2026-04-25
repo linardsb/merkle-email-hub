@@ -96,17 +96,20 @@ repos:
         files: alembic/versions/.*\.py$
 
   # === Frontend (ESLint + Prettier) ===
+  # Scope matches the gate scope: only cms/apps/web is linted/formatted.
+  # cms/packages and cms/design-system contain generated/templated code
+  # (SDK gen, shadcn/ui) and are intentionally excluded.
   - repo: local
     hooks:
       - id: frontend-lint
         name: frontend eslint
-        entry: bash -c 'cd cms && pnpm --filter web lint --max-warnings=0 2>/dev/null || true'
+        entry: bash -c 'cd cms && pnpm --filter @email-hub/web lint'
         language: system
         pass_filenames: false
-        files: ^cms/.*\.(ts|tsx|js|jsx)$
+        files: ^cms/apps/web/.*\.(ts|tsx|js|jsx)$
       - id: frontend-format
         name: frontend prettier
-        entry: bash -c 'cd cms && pnpm exec prettier --check --ignore-unknown 2>/dev/null || true'
+        entry: bash -c 'cd cms && pnpm --filter @email-hub/web format:check'
         language: system
         pass_filenames: false
-        files: ^cms/.*\.(ts|tsx|js|jsx|json|css)$
+        files: ^cms/apps/web/.*\.(ts|tsx|js|jsx|json|css)$

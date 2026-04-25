@@ -2,15 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PersonaResponse } from "@email-hub/sdk";
-import { notFound } from "next/navigation";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
-import {
-  Group,
-  Panel,
-  Separator,
-  usePanelRef,
-  type PanelSize,
-} from "react-resizable-panels";
+import { notFound, useParams, useSearchParams, useRouter } from "next/navigation";
+import { Group, Panel, Separator, usePanelRef, type PanelSize } from "react-resizable-panels";
 import { toast } from "sonner";
 import { useProject } from "@/hooks/use-projects";
 import {
@@ -77,8 +70,16 @@ export default function WorkspacePage() {
 
   // ── Agent from query param (e.g., ?agent=scaffolder from project creation) ──
   const VALID_AGENTS: AgentMode[] = [
-    "chat", "scaffolder", "dark_mode", "content", "outlook_fixer",
-    "accessibility", "personalisation", "code_reviewer", "knowledge", "innovation",
+    "chat",
+    "scaffolder",
+    "dark_mode",
+    "content",
+    "outlook_fixer",
+    "accessibility",
+    "personalisation",
+    "code_reviewer",
+    "knowledge",
+    "innovation",
   ];
   const agentParam = searchParams.get("agent");
   const initialAgent: AgentMode | undefined =
@@ -87,11 +88,7 @@ export default function WorkspacePage() {
       : undefined;
 
   // ── Data Fetching ──
-  const {
-    data: project,
-    isLoading: projectLoading,
-    error: projectError,
-  } = useProject(projectId);
+  const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId);
   const {
     data: templateData,
     isLoading: templatesLoading,
@@ -102,10 +99,9 @@ export default function WorkspacePage() {
   // ── Active Template ──
   const templateIdParam = searchParams.get("template");
   const [activeTemplateId, setActiveTemplateId] = useState<number | null>(
-    templateIdParam ? Number(templateIdParam) : null
+    templateIdParam ? Number(templateIdParam) : null,
   );
-  const activeTemplate =
-    templates.find((tpl) => tpl.id === activeTemplateId) ?? null;
+  const activeTemplate = templates.find((tpl) => tpl.id === activeTemplateId) ?? null;
 
   // Sync activeTemplateId when URL param changes (e.g. after design sync import)
   useEffect(() => {
@@ -127,10 +123,7 @@ export default function WorkspacePage() {
 
   // Load latest version content
   const latestVersionNumber = activeTemplate?.latest_version ?? null;
-  const { data: latestVersion } = useTemplateVersion(
-    activeTemplateId,
-    latestVersionNumber
-  );
+  const { data: latestVersion } = useTemplateVersion(activeTemplateId, latestVersionNumber);
 
   // ── Editor State ──
   const [editorContent, setEditorContent] = useState(DEFAULT_TEMPLATE);
@@ -142,14 +135,11 @@ export default function WorkspacePage() {
   // ── Preview State ──
   const [compiledHtml, setCompiledHtml] = useState<string | null>(null);
   const [buildTimeMs, setBuildTimeMs] = useState<number | null>(null);
-  const { trigger: triggerPreview, isMutating: isCompiling } =
-    useEmailPreview();
+  const { trigger: triggerPreview, isMutating: isCompiling } = useEmailPreview();
 
   // ── QA State ──
   const { trigger: triggerQA, isMutating: isRunningQA } = useQARun();
-  const [qaResultData, setQaResultData] = useState<QAResultResponse | null>(
-    null
-  );
+  const [qaResultData, setQaResultData] = useState<QAResultResponse | null>(null);
   const [qaPanelOpen, setQaPanelOpen] = useState(false);
 
   // ── Export State ──
@@ -177,36 +167,31 @@ export default function WorkspacePage() {
   const [brandViolations, setBrandViolations] = useState(0);
 
   // ── Collaboration ──
-  const { status: collabStatus, doc: collabDoc, awareness } = useCollaboration(projectId, activeTemplateId);
   const {
-    collaborators,
-    followTarget,
-    startFollowing,
-    stopFollowing,
-  } = usePresence({ awareness, role: "developer" });
+    status: collabStatus,
+    doc: collabDoc,
+    awareness,
+  } = useCollaboration(projectId, activeTemplateId);
+  const { collaborators, followTarget, startFollowing, stopFollowing } = usePresence({
+    awareness,
+    role: "developer",
+  });
   const [presencePanelOpen, setPresencePanelOpen] = useState(false);
 
   // ── View Mode ──
   const VALID_VIEWS: ViewMode[] = ["code", "builder", "split"];
   const viewParam = searchParams.get("view");
   const initialView: ViewMode =
-    viewParam && VALID_VIEWS.includes(viewParam as ViewMode)
-      ? (viewParam as ViewMode)
-      : "code";
+    viewParam && VALID_VIEWS.includes(viewParam as ViewMode) ? (viewParam as ViewMode) : "code";
   const [viewMode, setViewMode] = useState<ViewMode>(initialView);
 
   // ── Persona State ──
   const { data: personas, isLoading: personasLoading } = usePersonas();
-  const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(
-    null
-  );
+  const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(null);
 
-  const handlePersonaSelect = useCallback(
-    (persona: PersonaResponse | null) => {
-      setSelectedPersonaId(persona?.id ?? null);
-    },
-    []
-  );
+  const handlePersonaSelect = useCallback((persona: PersonaResponse | null) => {
+    setSelectedPersonaId(persona?.id ?? null);
+  }, []);
 
   // Sync editor content when version data loads
   const autoCompiledRef = useRef(false);
@@ -265,8 +250,7 @@ export default function WorkspacePage() {
             : "idle";
 
   // ── Mutations ──
-  const { trigger: saveVersion, isMutating: isSaving } =
-    useSaveVersion(activeTemplateId);
+  const { trigger: saveVersion, isMutating: isSaving } = useSaveVersion(activeTemplateId);
   const { trigger: createTemplate } = useCreateTemplate(projectId);
 
   // ── Handlers ──
@@ -275,7 +259,7 @@ export default function WorkspacePage() {
       setEditorContent(newValue);
       if (saveStatus === "saved") setSaveStatus("idle");
     },
-    [saveStatus]
+    [saveStatus],
   );
 
   const handleSave = useCallback(async () => {
@@ -307,9 +291,7 @@ export default function WorkspacePage() {
         setSavedContent(editorContent);
         setSaveStatus("saved");
         mutateTemplates();
-        toast.success(
-          `Changes saved as version ${result.version_number}`
-        );
+        toast.success(`Changes saved as version ${result.version_number}`);
 
         // Auto-clear "saved" indicator after 3s
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -356,7 +338,7 @@ export default function WorkspacePage() {
       url.searchParams.set("template", String(template.id));
       router.replace(url.pathname + url.search, { scroll: false });
     },
-    [router]
+    [router],
   );
 
   const handleCreateTemplate = useCallback(async () => {
@@ -378,24 +360,18 @@ export default function WorkspacePage() {
     }
   }, [createTemplate, mutateTemplates]);
 
-  const handleApplyToEditor = useCallback(
-    (html: string) => {
-      setEditorContent(html);
-      setSaveStatus("idle");
-      toast.success("AI output applied to editor");
-    },
-    []
-  );
+  const handleApplyToEditor = useCallback((html: string) => {
+    setEditorContent(html);
+    setSaveStatus("idle");
+    toast.success("AI output applied to editor");
+  }, []);
 
-  const handleApplyBlueprintResult = useCallback(
-    (html: string) => {
-      setEditorContent(html);
-      setSaveStatus("idle");
-      setBlueprintOpen(false);
-      toast.success("AI output applied to editor");
-    },
-    [],
-  );
+  const handleApplyBlueprintResult = useCallback((html: string) => {
+    setEditorContent(html);
+    setSaveStatus("idle");
+    setBlueprintOpen(false);
+    toast.success("AI output applied to editor");
+  }, []);
 
   const handleRestoreVersion = useCallback(
     (html: string, versionNumber: number) => {
@@ -439,9 +415,7 @@ export default function WorkspacePage() {
         if (result.passed) {
           toast.success("All QA checks passed");
         } else {
-          toast.warning(
-            `${result.checks_total - result.checks_passed} QA check(s) failed`
-          );
+          toast.warning(`${result.checks_total - result.checks_passed} QA check(s) failed`);
         }
       }
     } catch {
@@ -451,9 +425,7 @@ export default function WorkspacePage() {
 
   const handleQAOverrideSuccess = useCallback(() => {
     if (qaResultData?.id) {
-      fetcher<QAResultResponse>(
-        `/api/v1/qa/results/${qaResultData.id}`
-      )
+      fetcher<QAResultResponse>(`/api/v1/qa/results/${qaResultData.id}`)
         .then((updated) => setQaResultData(updated))
         .catch(() => {
           /* override succeeded; panel will show stale data until next QA run */
@@ -475,7 +447,7 @@ export default function WorkspacePage() {
     const html = sanitizeHtml(stripAnnotations(editorContent));
     navigator.clipboard.writeText(html).then(
       () => toast.success("HTML copied to clipboard"),
-      () => toast.error("Failed to copy HTML")
+      () => toast.error("Failed to copy HTML"),
     );
   }, [editorContent]);
 
@@ -524,7 +496,11 @@ export default function WorkspacePage() {
   const handleInsertImage = useCallback(
     (url: string, width: number, height: number, alt: string) => {
       const escapeAttr = (s: string): string =>
-        s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        s
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
       const imgTag = `<img src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" width="${width}" height="${height}" style="max-width: 100%; height: auto;" />`;
       setEditorContent((prev) => {
         const offset = Math.min(cursorOffsetRef.current, prev.length);
@@ -606,7 +582,7 @@ export default function WorkspacePage() {
   if (projectLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">{"Loading workspace..."}</p>
+        <p className="text-muted-foreground text-sm">{"Loading workspace..."}</p>
       </div>
     );
   }
@@ -614,8 +590,10 @@ export default function WorkspacePage() {
   if (projectError || !project) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-destructive">
-          {projectError?.status === 403 ? "You don't have access to this project" : "Project not found"}
+        <p className="text-destructive text-sm">
+          {projectError?.status === 403
+            ? "You don't have access to this project"
+            : "Project not found"}
         </p>
       </div>
     );
@@ -686,13 +664,23 @@ export default function WorkspacePage() {
                   saveStatus={effectiveSaveStatus}
                   brandConfig={brandConfig}
                   onBrandViolationsChange={setBrandViolations}
-                  onCursorOffsetChange={(offset) => { cursorOffsetRef.current = offset; }}
+                  onCursorOffsetChange={(offset) => {
+                    cursorOffsetRef.current = offset;
+                  }}
                   onSelectionChange={setHasEditorSelection}
-                  collaborative={collabDoc && awareness && collabStatus === "connected" ? {
-                    doc: collabDoc,
-                    awareness,
-                    user: { name: "You", color: getCursorColor(collabDoc.clientID), role: "developer" },
-                  } : undefined}
+                  collaborative={
+                    collabDoc && awareness && collabStatus === "connected"
+                      ? {
+                          doc: collabDoc,
+                          awareness,
+                          user: {
+                            name: "You",
+                            color: getCursorColor(collabDoc.clientID),
+                            role: "developer",
+                          },
+                        }
+                      : undefined
+                  }
                   projectId={projectId}
                   onViewChange={setViewMode}
                   initialView={viewParam ? initialView : undefined}
@@ -707,8 +695,8 @@ export default function WorkspacePage() {
                 />
               </Panel>
 
-              <Separator className="flex w-1.5 items-center justify-center bg-border transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50">
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              <Separator className="bg-border hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50 flex w-1.5 items-center justify-center transition-colors">
+                <GripVertical className="text-muted-foreground h-4 w-4" />
               </Separator>
 
               <Panel defaultSize={50} minSize={25}>
@@ -728,8 +716,8 @@ export default function WorkspacePage() {
           </Panel>
 
           {/* Horizontal resize handle */}
-          <Separator className="flex h-1.5 items-center justify-center bg-border transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50">
-            <GripHorizontal className="h-4 w-4 text-muted-foreground" />
+          <Separator className="bg-border hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50 flex h-1.5 items-center justify-center transition-colors">
+            <GripHorizontal className="text-muted-foreground h-4 w-4" />
           </Separator>
 
           {/* Bottom: AI Chat (collapsible) */}
@@ -849,7 +837,7 @@ export default function WorkspacePage() {
         <button
           type="button"
           onClick={() => chatPanelRef.current?.expand()}
-          className="flex w-full items-center justify-center gap-2 border-t border-border bg-card py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-2 border-t py-1.5 text-xs transition-colors"
         >
           <ChevronUp className="h-3.5 w-3.5" />
           {"Expand AI Assistant"}

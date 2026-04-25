@@ -15,8 +15,7 @@ import { Badge } from "@email-hub/ui/components/ui/badge";
 import { Label } from "@email-hub/ui/components/ui/label";
 import { Input } from "@email-hub/ui/components/ui/input";
 import { useBlueprintRun } from "@/hooks/use-blueprint-run";
-import { useAllBriefItems } from "@/hooks/use-briefs";
-import { useBriefDetail } from "@/hooks/use-briefs";
+import { useAllBriefItems, useBriefDetail } from "@/hooks/use-briefs";
 import {
   PipelineTimeline,
   StatusBanner,
@@ -48,38 +47,32 @@ function BriefCard({
       onClick={onSelect}
       className={`group relative flex gap-3 rounded-lg border p-2.5 text-left transition-colors ${
         selected
-          ? "border-primary bg-primary/5 ring-1 ring-primary"
+          ? "border-primary bg-primary/5 ring-primary ring-1"
           : "border-border bg-card hover:border-muted-foreground/40"
       }`}
     >
       {/* Thumbnail */}
-      <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-muted">
+      <div className="bg-muted h-20 w-28 shrink-0 overflow-hidden rounded-md">
         {brief.thumbnail_url ? (
-          <img
-            src={brief.thumbnail_url}
-            alt={brief.title}
-            className="h-full w-full object-cover"
-          />
+          <img src={brief.thumbnail_url} alt={brief.title} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <FileText className="h-8 w-8 text-muted-foreground/40" />
+            <FileText className="text-muted-foreground/40 h-8 w-8" />
           </div>
         )}
       </div>
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">
-          {brief.title}
-        </p>
+        <p className="text-foreground truncate text-sm font-medium">{brief.title}</p>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           {brief.client_name && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
               {brief.client_name}
             </Badge>
           )}
           {brief.platform && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
               {brief.platform}
             </Badge>
           )}
@@ -87,10 +80,7 @@ function BriefCard({
         {brief.labels.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {brief.labels.slice(0, 3).map((label) => (
-              <span
-                key={label}
-                className="text-[10px] text-muted-foreground"
-              >
+              <span key={label} className="text-muted-foreground text-[10px]">
                 #{label}
               </span>
             ))}
@@ -101,7 +91,7 @@ function BriefCard({
       {/* Selected indicator */}
       {selected && (
         <div className="absolute right-2 top-2">
-          <CheckCircle2 className="h-4 w-4 text-primary" />
+          <CheckCircle2 className="text-primary h-4 w-4" />
         </div>
       )}
     </button>
@@ -174,13 +164,15 @@ export function BlueprintRunDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[52rem] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[52rem]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
             {"Generate with Blueprint"}
           </DialogTitle>
-          <DialogDescription>{"Run a multi-agent pipeline to generate, validate, and optimise your email template."}</DialogDescription>
+          <DialogDescription>
+            {"Run a multi-agent pipeline to generate, validate, and optimise your email template."}
+          </DialogDescription>
         </DialogHeader>
 
         {!result && !isRunning && (
@@ -188,11 +180,9 @@ export function BlueprintRunDialog({
             {/* Blueprint selector */}
             <div>
               <Label className="text-sm font-medium">{"Pipeline"}</Label>
-              <div className="mt-1.5 rounded-lg border border-border bg-muted/50 p-3">
-                <p className="text-sm font-medium text-foreground">
-                  {"Full Campaign"}
-                </p>
-                <p className="text-xs text-muted-foreground">
+              <div className="border-border bg-muted/50 mt-1.5 rounded-lg border p-3">
+                <p className="text-foreground text-sm font-medium">{"Full Campaign"}</p>
+                <p className="text-muted-foreground text-xs">
                   {"Generate a complete email from brief — scaffold, QA, fix, build, export"}
                 </p>
               </div>
@@ -202,7 +192,7 @@ export function BlueprintRunDialog({
             <div>
               <Label className="text-sm font-medium">{"Select a Brief"}</Label>
               <div className="relative mt-1.5">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                 <Input
                   value={briefSearch}
                   onChange={(e) => setBriefSearch(e.target.value)}
@@ -210,13 +200,13 @@ export function BlueprintRunDialog({
                   className="pl-9"
                 />
               </div>
-              <div className="mt-2 max-h-[20rem] overflow-y-auto rounded-lg border border-border">
+              <div className="border-border mt-2 max-h-[20rem] overflow-y-auto rounded-lg border">
                 {!briefItems || briefItems.length === 0 ? (
-                  <p className="p-4 text-center text-sm text-muted-foreground">
+                  <p className="text-muted-foreground p-4 text-center text-sm">
                     {"No briefs found. Connect a project management tool in the Briefs page."}
                   </p>
                 ) : filteredBriefs.length === 0 ? (
-                  <p className="p-4 text-center text-sm text-muted-foreground">
+                  <p className="text-muted-foreground p-4 text-center text-sm">
                     {"No briefs match your search."}
                   </p>
                 ) : (
@@ -235,26 +225,28 @@ export function BlueprintRunDialog({
             </div>
 
             {/* Include HTML checkbox */}
-            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+            <label className="text-foreground flex cursor-pointer items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={includeHtml}
                 onChange={(e) => setIncludeHtml(e.target.checked)}
-                className="h-4 w-4 rounded border-border"
+                className="border-border h-4 w-4 rounded"
               />
               {"Include current editor HTML as starting point"}
             </label>
 
             {error && (
-              <p className="text-sm text-destructive">{"Blueprint run failed. Please try again."}</p>
+              <p className="text-destructive text-sm">
+                {"Blueprint run failed. Please try again."}
+              </p>
             )}
           </div>
         )}
 
         {isRunning && (
           <div className="flex flex-col items-center justify-center gap-3 py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-            <p className="text-sm text-muted-foreground">{"Running..."}</p>
+            <div className="border-muted border-t-primary h-8 w-8 animate-spin rounded-full border-2" />
+            <p className="text-muted-foreground text-sm">{"Running..."}</p>
           </div>
         )}
 
@@ -264,11 +256,11 @@ export function BlueprintRunDialog({
 
             {/* Audience summary */}
             {result.audience_summary && (
-              <div className="rounded-lg border border-border bg-muted/50 p-3">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="border-border bg-muted/50 rounded-lg border p-3">
+                <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
                   {"Audience Context"}
                 </p>
-                <p className="mt-1 text-xs text-foreground">{result.audience_summary}</p>
+                <p className="text-foreground mt-1 text-xs">{result.audience_summary}</p>
               </div>
             )}
 
@@ -276,8 +268,8 @@ export function BlueprintRunDialog({
 
             {/* Skipped nodes */}
             {(result.skipped_nodes ?? []).length > 0 && (
-              <div className="rounded-lg border border-border bg-muted/50 p-3">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="border-border bg-muted/50 rounded-lg border p-3">
+                <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
                   {"Skipped by routing"}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -292,7 +284,7 @@ export function BlueprintRunDialog({
                     {(result.routing_decisions ?? [])
                       .filter((rd) => rd.action === "skip")
                       .map((rd, i) => (
-                        <p key={i} className="text-xs text-muted-foreground">
+                        <p key={i} className="text-muted-foreground text-xs">
                           <span className="font-medium">{formatNodeName(rd.node_name)}</span>
                           {" — "}
                           {rd.reason}
@@ -307,7 +299,7 @@ export function BlueprintRunDialog({
 
             {/* Token usage */}
             {totalTokens > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {`${totalTokens.toLocaleString()} tokens`}
               </p>
             )}
@@ -331,9 +323,7 @@ export function BlueprintRunDialog({
               <Button variant="outline" onClick={handleClose}>
                 {"Close"}
               </Button>
-              <Button onClick={handleApply}>
-                {"Apply to Editor"}
-              </Button>
+              <Button onClick={handleApply}>{"Apply to Editor"}</Button>
             </>
           )}
         </DialogFooter>
