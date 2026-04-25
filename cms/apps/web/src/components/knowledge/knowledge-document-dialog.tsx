@@ -8,10 +8,7 @@ import {
   DialogTitle,
 } from "@email-hub/ui/components/ui/dialog";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
-import {
-  useKnowledgeDocument,
-  useKnowledgeDocumentContent,
-} from "@/hooks/use-knowledge";
+import { useKnowledgeDocument, useKnowledgeDocumentContent } from "@/hooks/use-knowledge";
 
 type Tab = "content" | "metadata";
 
@@ -21,11 +18,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export function KnowledgeDocumentDialog({
-  documentId,
-  open,
-  onOpenChange,
-}: Props) {
+export function KnowledgeDocumentDialog({ documentId, open, onOpenChange }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("content");
 
   const { data: doc } = useKnowledgeDocument(documentId);
@@ -47,18 +40,14 @@ export function KnowledgeDocumentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>
-            {doc?.title ?? doc?.filename ?? "Document Details"}
-          </DialogTitle>
-          {doc?.description && (
-            <p className="text-sm text-foreground-muted">{doc.description}</p>
-          )}
+          <DialogTitle>{doc?.title ?? doc?.filename ?? "Document Details"}</DialogTitle>
+          {doc?.description && <p className="text-foreground-muted text-sm">{doc.description}</p>}
         </DialogHeader>
 
         {/* Document meta summary */}
         {doc && (
-          <div className="flex flex-wrap items-center gap-3 text-xs text-foreground-muted">
-            <span className="rounded-full bg-surface-muted px-2 py-0.5">
+          <div className="text-foreground-muted flex flex-wrap items-center gap-3 text-xs">
+            <span className="bg-surface-muted rounded-full px-2 py-0.5">
               {doc.domain.replace(/_/g, " ")}
             </span>
             <span>{`${doc.chunk_count} chunks`}</span>
@@ -72,7 +61,7 @@ export function KnowledgeDocumentDialog({
             {doc.tags.map((tag) => (
               <span
                 key={tag.id}
-                className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-interactive"
+                className="bg-surface-muted text-interactive rounded-full px-2 py-0.5 text-xs font-medium"
               >
                 {tag.name}
               </span>
@@ -81,7 +70,7 @@ export function KnowledgeDocumentDialog({
         )}
 
         {/* Tab bar */}
-        <div className="flex gap-1 border-b border-border" role="tablist">
+        <div className="border-border flex gap-1 border-b" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -91,7 +80,7 @@ export function KnowledgeDocumentDialog({
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.key
-                  ? "border-b-2 border-interactive text-foreground"
+                  ? "border-interactive text-foreground border-b-2"
                   : "text-foreground-muted hover:text-foreground"
               }`}
             >
@@ -107,21 +96,16 @@ export function KnowledgeDocumentDialog({
               {content?.chunks && content.chunks.length > 0 ? (
                 <div className="space-y-3 pr-4">
                   {content.chunks.map((chunk) => (
-                    <div
-                      key={chunk.chunk_index}
-                      className="rounded-md bg-surface-muted p-3"
-                    >
-                      <p className="mb-1 text-xs font-medium text-foreground-muted">
+                    <div key={chunk.chunk_index} className="bg-surface-muted rounded-md p-3">
+                      <p className="text-foreground-muted mb-1 text-xs font-medium">
                         {`Chunk ${chunk.chunk_index + 1}`}
                       </p>
-                      <p className="whitespace-pre-wrap text-sm text-foreground">
-                        {chunk.content}
-                      </p>
+                      <p className="text-foreground whitespace-pre-wrap text-sm">{chunk.content}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-foreground-muted">
+                <p className="text-foreground-muted py-8 text-center text-sm">
                   {"No content available"}
                 </p>
               )}
@@ -141,12 +125,9 @@ export function KnowledgeDocumentDialog({
                   ["Last Updated", formatDate(doc.updated_at)],
                 ] as const
               ).map(([label, value]) => (
-                <div
-                  key={label}
-                  className="flex justify-between border-b border-border py-2"
-                >
+                <div key={label} className="border-border flex justify-between border-b py-2">
                   <span className="text-foreground-muted">{label}</span>
-                  <span className="font-medium text-foreground">{value}</span>
+                  <span className="text-foreground font-medium">{value}</span>
                 </div>
               ))}
             </div>

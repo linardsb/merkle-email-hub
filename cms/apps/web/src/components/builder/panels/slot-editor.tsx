@@ -15,12 +15,7 @@ interface SlotEditorProps {
   designSystem: DesignSystemConfig | null;
 }
 
-export function SlotEditor({
-  slot,
-  value,
-  onChange,
-  designSystem,
-}: SlotEditorProps) {
+export function SlotEditor({ slot, value, onChange, designSystem }: SlotEditorProps) {
   const label = slot.label || slot.slot_id;
   const charCount = value.length;
   const overLimit = slot.max_chars !== null && charCount > slot.max_chars;
@@ -30,9 +25,7 @@ export function SlotEditor({
       <div className="flex items-center justify-between">
         <Label className="text-xs font-medium">
           {label}
-          {slot.required && (
-            <span className="ml-0.5 text-destructive">{"*"}</span>
-          )}
+          {slot.required && <span className="text-destructive ml-0.5">{"*"}</span>}
         </Label>
         {slot.max_chars !== null && (
           <span
@@ -52,7 +45,7 @@ function renderControl(
   slot: SlotDefinition,
   value: string,
   onChange: (v: string) => void,
-  designSystem: DesignSystemConfig | null
+  designSystem: DesignSystemConfig | null,
 ) {
   switch (slot.slot_type) {
     case "headline":
@@ -88,19 +81,11 @@ function renderControl(
 
     case "social":
       return (
-        <p className="text-xs text-muted-foreground">
-          {"Configured in project design system"}
-        </p>
+        <p className="text-muted-foreground text-xs">{"Configured in project design system"}</p>
       );
 
     case "divider":
-      return (
-        <DividerEditor
-          value={value}
-          onChange={onChange}
-          designSystem={designSystem}
-        />
-      );
+      return <DividerEditor value={value} onChange={onChange} designSystem={designSystem} />;
 
     default:
       return (
@@ -241,7 +226,7 @@ function DividerEditor({
         min={1}
         max={20}
       />
-      <span className="text-xs text-muted-foreground">{"px"}</span>
+      <span className="text-muted-foreground text-xs">{"px"}</span>
       {palette.length > 0 && (
         <PaletteColorPicker
           value={parsed.color}

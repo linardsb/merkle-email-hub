@@ -45,16 +45,9 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
     error: screenshotsError,
   } = useScreenshotsWithConfidence();
 
-  const {
-    data: gateResult,
-    trigger: triggerGate,
-    isMutating: gateLoading,
-  } = useGateEvaluate();
+  const { data: gateResult, trigger: triggerGate, isMutating: gateLoading } = useGateEvaluate();
 
-  const {
-    data: calibrationSummary,
-    isLoading: calibrationLoading,
-  } = useCalibrationSummary();
+  const { data: calibrationSummary, isLoading: calibrationLoading } = useCalibrationSummary();
 
   const { trigger: triggerCalibration } = useTriggerCalibration();
 
@@ -86,25 +79,13 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
     setPreviewClientId(clientId);
   }, []);
 
-  // -- Empty state --
-  if (!html && !screenshotData) {
-    return (
-      <EmptyState
-        icon={MonitorSmartphone}
-        title="No email to preview"
-        description="Select a project and build an email to see rendering previews."
-      />
-    );
-  }
-
   // Build confidence data from gate results for the summary bar
   const clientResults = useMemo(
     () =>
       gateResult?.client_results.map((cr) => ({
         client_id: cr.client_name,
         score: cr.confidence_score,
-        market_share:
-          CLIENT_MARKET_SHARE[cr.client_name as ClientProfile] ?? 0.05,
+        market_share: CLIENT_MARKET_SHARE[cr.client_name as ClientProfile] ?? 0.05,
       })) ?? [],
     [gateResult],
   );
@@ -119,21 +100,27 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
 
   // Build screenshot lookup
   const screenshotMap = useMemo(
-    () =>
-      new Map(
-        screenshotData?.screenshots.map((s) => [s.client_name, s.image_base64]) ?? [],
-      ),
+    () => new Map(screenshotData?.screenshots.map((s) => [s.client_name, s.image_base64]) ?? []),
     [screenshotData],
   );
 
   // Only show base clients as cards (dark variants accessed via toggle)
   const baseClients = useMemo(
     () =>
-      gateResult
-        ? gateResult.client_results.filter((cr) => isBaseClient(cr.client_name))
-        : [],
+      gateResult ? gateResult.client_results.filter((cr) => isBaseClient(cr.client_name)) : [],
     [gateResult],
   );
+
+  // -- Empty state --
+  if (!html && !screenshotData) {
+    return (
+      <EmptyState
+        icon={MonitorSmartphone}
+        title="No email to preview"
+        description="Select a project and build an email to see rendering previews."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -143,7 +130,7 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
           <button
             type="button"
             onClick={handleRender}
-            className="rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-4 py-2 text-sm font-medium"
           >
             Generate Rendering Previews
           </button>
@@ -153,8 +140,8 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
       {/* Loading state */}
       {(screenshotsLoading || gateLoading) && (
         <div className="flex flex-col items-center gap-3 py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-foreground-muted" />
-          <p className="text-sm text-foreground-muted">Generating rendering previews...</p>
+          <Loader2 className="text-foreground-muted h-6 w-6 animate-spin" />
+          <p className="text-foreground-muted text-sm">Generating rendering previews...</p>
         </div>
       )}
 
@@ -171,18 +158,14 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
       {screenshotData && gateResult && (
         <>
           {/* 1. Confidence Summary Bar */}
-          <ConfidenceSummaryBar
-            clientResults={clientResults}
-            overallScore={overallScore}
-          />
+          <ConfidenceSummaryBar clientResults={clientResults} overallScore={overallScore} />
 
           {/* 2. Preview Grid */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {baseClients.map((cr) => {
               const darkId = getDarkVariantId(cr.client_name);
               const displayName =
-                CLIENT_DISPLAY_NAMES[cr.client_name as ClientProfile] ??
-                cr.client_name;
+                CLIENT_DISPLAY_NAMES[cr.client_name as ClientProfile] ?? cr.client_name;
               return (
                 <ClientPreviewCard
                   key={cr.client_name}
@@ -191,9 +174,7 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
                   screenshot={screenshotMap.get(cr.client_name) ?? null}
                   confidence={cr.confidence_score}
                   hasDarkVariant={darkId != null}
-                  darkScreenshot={
-                    darkId ? (screenshotMap.get(darkId) ?? null) : null
-                  }
+                  darkScreenshot={darkId ? (screenshotMap.get(darkId) ?? null) : null}
                   onViewFull={handleViewFull}
                 />
               );
@@ -201,11 +182,9 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
           </div>
 
           {/* 3. Gate Status */}
-          <div className="rounded-lg border border-card-border bg-card-bg p-4">
+          <div className="border-card-border bg-card-bg rounded-lg border p-4">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
-                Rendering Gate
-              </span>
+              <span className="text-foreground text-sm font-medium">Rendering Gate</span>
               <GateSummaryBadge
                 verdict={gateResult.verdict}
                 blockingCount={gateResult.blocking_clients.length}
@@ -235,10 +214,7 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
             <ClientPreviewCard
               key={s.client_name}
               clientId={s.client_name}
-              clientName={
-                CLIENT_DISPLAY_NAMES[s.client_name as ClientProfile] ??
-                s.client_name
-              }
+              clientName={CLIENT_DISPLAY_NAMES[s.client_name as ClientProfile] ?? s.client_name}
               screenshot={s.image_base64}
               confidence={0}
               onViewFull={handleViewFull}
@@ -250,19 +226,19 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
       {/* Full-size preview dialog */}
       <dialog
         ref={previewDialogRef}
-        className="w-full max-w-[28rem] rounded-lg border border-card-border bg-card-bg p-0 shadow-xl backdrop:bg-black/50"
+        className="border-card-border bg-card-bg w-full max-w-[28rem] rounded-lg border p-0 shadow-xl backdrop:bg-black/50"
         onClose={() => setPreviewClientId(null)}
       >
         {previewClientId && (
           <>
-            <div className="flex items-center justify-between border-b border-card-border p-4">
-              <h2 className="text-lg font-semibold text-foreground">
+            <div className="border-card-border flex items-center justify-between border-b p-4">
+              <h2 className="text-foreground text-lg font-semibold">
                 {CLIENT_DISPLAY_NAMES[previewClientId as ClientProfile] ?? previewClientId}
               </h2>
               <button
                 type="button"
                 onClick={() => setPreviewClientId(null)}
-                className="rounded p-1 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+                className="text-foreground-muted hover:bg-surface-muted hover:text-foreground rounded p-1"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -272,11 +248,11 @@ export function RenderingDashboard({ html, projectId }: RenderingDashboardProps)
                 <img
                   src={`data:image/png;base64,${screenshotMap.get(previewClientId)}`}
                   alt={`${CLIENT_DISPLAY_NAMES[previewClientId as ClientProfile] ?? previewClientId} full preview`}
-                  className="w-full rounded-md border border-card-border object-contain"
+                  className="border-card-border w-full rounded-md border object-contain"
                 />
               ) : (
-                <div className="flex aspect-[3/2] items-center justify-center rounded-md border border-card-border bg-surface-muted">
-                  <p className="text-sm text-foreground-muted">No screenshot available</p>
+                <div className="border-card-border bg-surface-muted flex aspect-[3/2] items-center justify-center rounded-md border">
+                  <p className="text-foreground-muted text-sm">No screenshot available</p>
                 </div>
               )}
             </div>

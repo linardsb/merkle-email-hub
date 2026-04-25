@@ -72,17 +72,12 @@ export function useExportHistory() {
     notifyListeners();
   }, []);
 
-  const updateRecord = useCallback(
-    (localId: string, updates: Partial<ExportHistoryRecord>) => {
-      const current = getSnapshot();
-      const updated = current.map((r) =>
-        r.local_id === localId ? { ...r, ...updates } : r
-      );
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      notifyListeners();
-    },
-    []
-  );
+  const updateRecord = useCallback((localId: string, updates: Partial<ExportHistoryRecord>) => {
+    const current = getSnapshot();
+    const updated = current.map((r) => (r.local_id === localId ? { ...r, ...updates } : r));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    notifyListeners();
+  }, []);
 
   return { records, addRecord, updateRecord };
 }

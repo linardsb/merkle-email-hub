@@ -34,9 +34,7 @@ vi.mock("@/lib/api-error", () => ({
 const mockUseSWR = vi
   .fn()
   .mockReturnValue({ data: undefined, error: undefined, isLoading: true, mutate: vi.fn() });
-const mockUseSWRMutation = vi
-  .fn()
-  .mockReturnValue({ trigger: vi.fn(), isMutating: false });
+const mockUseSWRMutation = vi.fn().mockReturnValue({ trigger: vi.fn(), isMutating: false });
 vi.mock("swr", () => ({ default: (...args: unknown[]) => mockUseSWR(...args) }));
 vi.mock("swr/mutation", () => ({ default: (...args: unknown[]) => mockUseSWRMutation(...args) }));
 

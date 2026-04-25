@@ -48,10 +48,7 @@ export interface LocaleBuildResponse {
 
 // ── UI State Types ───────────────────────────────────────────────────
 
-export type TranslationStatus =
-  | "translated"
-  | "untranslated"
-  | "machine-translated";
+export type TranslationStatus = "translated" | "untranslated" | "machine-translated";
 
 export interface TranslationKeyRow {
   key: string;

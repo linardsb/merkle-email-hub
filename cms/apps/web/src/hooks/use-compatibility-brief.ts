@@ -10,7 +10,7 @@ export function useCompatibilityBrief(projectId: number | null) {
   return useSWR<CompatibilityBriefResponse>(
     projectId ? `/api/v1/projects/${projectId}/compatibility-brief` : null,
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 600_000 }
+    { revalidateOnFocus: false, dedupingInterval: 600_000 },
   );
 }
 

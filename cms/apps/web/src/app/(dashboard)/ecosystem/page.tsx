@@ -33,13 +33,13 @@ export default function EcosystemPage() {
           <Globe className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Ecosystem</h1>
         </div>
-        <p className="mt-1 text-sm text-foreground-muted">
+        <p className="text-foreground-muted mt-1 text-sm">
           Manage plugins, workflows, translations, reports, and design integrations.
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 rounded-lg border border-card-border bg-card-bg p-1">
+      <div className="border-card-border bg-card-bg flex gap-1 rounded-lg border p-1">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -72,15 +72,15 @@ function TranslationsTab() {
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="h-8 w-48 animate-pulse rounded bg-surface-hover" />
-        <div className="h-64 animate-pulse rounded-lg border border-card-border bg-card-bg" />
+        <div className="bg-surface-hover h-8 w-48 animate-pulse rounded" />
+        <div className="border-card-border bg-card-bg h-64 animate-pulse rounded-lg border" />
       </div>
     );
   }
 
   if (!connection || connection.tolgee_project_id === null) {
     return (
-      <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
+      <div className="border-card-border bg-card-bg rounded-lg border p-8 text-center">
         <p className="text-foreground-muted">
           No Tolgee connection configured. Set up a connection in the Connectors page.
         </p>

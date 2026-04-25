@@ -12,10 +12,9 @@ import {
 import { FileText, Wand2, Blocks, Copy, Loader2 } from "../icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
-import { useCreateProject } from "@/hooks/use-projects";
+import { useCreateProject, useProjects } from "@/hooks/use-projects";
 import { useOrgs } from "@/hooks/use-orgs";
 import { useComponents } from "@/hooks/use-components";
-import { useProjects } from "@/hooks/use-projects";
 import type { AgentMode } from "@/types/chat";
 import type { ConnectorPlatform } from "@/types/connectors";
 import type { ProjectCategory, CreationMethod } from "@/types/projects";
@@ -103,10 +102,7 @@ interface CreateProjectDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateProjectDialog({
-  open,
-  onOpenChange,
-}: CreateProjectDialogProps) {
+export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogProps) {
   const router = useRouter();
   const { trigger, isMutating } = useCreateProject();
   const { mutate } = useSWRConfig();
@@ -160,7 +156,7 @@ export function CreateProjectDialog({
 
   const handleToggleComponent = (id: number) => {
     setSelectedComponents((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
     );
   };
 
@@ -177,7 +173,7 @@ export function CreateProjectDialog({
       await mutate(
         (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/projects"),
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       );
       // Auto-create Figma connection if URL provided
       if (figmaUrl.trim() && project) {
@@ -208,9 +204,7 @@ export function CreateProjectDialog({
           params.set("components", selectedComponents.join(","));
         }
         const query = params.toString();
-        router.push(
-          `/projects/${project.id}/workspace${query ? `?${query}` : ""}`
-        );
+        router.push(`/projects/${project.id}/workspace${query ? `?${query}` : ""}`);
       }
     } catch {
       toast.error("Failed to create project");
@@ -225,10 +219,12 @@ export function CreateProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[36rem] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-[36rem] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{"Create New Project"}</DialogTitle>
-          <DialogDescription>{"Set up a new email project with your preferred starting point."}</DialogDescription>
+          <DialogDescription>
+            {"Set up a new email project with your preferred starting point."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -238,7 +234,7 @@ export function CreateProjectDialog({
           <div>
             <label
               htmlFor="project-name"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Project Name"}
             </label>
@@ -258,7 +254,7 @@ export function CreateProjectDialog({
           <div>
             <label
               htmlFor="project-description"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Description"}
             </label>
@@ -278,16 +274,14 @@ export function CreateProjectDialog({
             <div>
               <label
                 htmlFor="project-org"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Client Organization"}
               </label>
               <select
                 id="project-org"
                 value={clientOrgId ?? ""}
-                onChange={(e) =>
-                  setClientOrgId(e.target.value ? Number(e.target.value) : null)
-                }
+                onChange={(e) => setClientOrgId(e.target.value ? Number(e.target.value) : null)}
                 disabled={isMutating}
                 className={selectClass}
               >
@@ -303,7 +297,7 @@ export function CreateProjectDialog({
             <div>
               <label
                 htmlFor="project-category"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Category"}
               </label>
@@ -327,16 +321,14 @@ export function CreateProjectDialog({
           <div>
             <label
               htmlFor="project-esp"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Target ESP"}
             </label>
             <select
               id="project-esp"
               value={targetEsp}
-              onChange={(e) =>
-                setTargetEsp(e.target.value as ConnectorPlatform | "")
-              }
+              onChange={(e) => setTargetEsp(e.target.value as ConnectorPlatform | "")}
               disabled={isMutating}
               className={selectClass}
             >
@@ -351,7 +343,7 @@ export function CreateProjectDialog({
 
           {/* Target Email Clients */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
+            <label className="text-foreground mb-1.5 block text-sm font-medium">
               {"Priority Email Clients"}
             </label>
             <TargetClientsSelector
@@ -359,8 +351,10 @@ export function CreateProjectDialog({
               onChange={setTargetClients}
               disabled={isMutating}
             />
-            <p className="mt-1 text-xs text-foreground-muted">
-              {"QA checks all 25 clients. Priority clients get prominent display in results and drive agent retry focus."}
+            <p className="text-foreground-muted mt-1 text-xs">
+              {
+                "QA checks all 25 clients. Priority clients get prominent display in results and drive agent retry focus."
+              }
             </p>
           </div>
 
@@ -368,7 +362,7 @@ export function CreateProjectDialog({
           <div>
             <label
               htmlFor="project-figma-url"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Figma File URL"}
             </label>
@@ -381,17 +375,17 @@ export function CreateProjectDialog({
               disabled={isMutating}
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="text-foreground-muted mt-1 text-xs">
               {"Optional — link a Figma design file to this project"}
             </p>
           </div>
 
           {/* ── Separator ── */}
-          <div className="border-t border-border" />
+          <div className="border-border border-t" />
 
           {/* ── Creation Method ── */}
           <div>
-            <p className="mb-3 text-sm font-medium text-foreground">
+            <p className="text-foreground mb-3 text-sm font-medium">
               {"How do you want to start?"}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -412,17 +406,13 @@ export function CreateProjectDialog({
                   >
                     <Icon
                       className={`h-5 w-5 ${
-                        selected
-                          ? "text-interactive"
-                          : "text-foreground-muted"
+                        selected ? "text-interactive" : "text-foreground-muted"
                       }`}
                     />
-                    <span className="text-sm font-medium text-foreground">
-                      {m.dynamic && selected
-                        ? AGENT_LABELS[selectedAgent]
-                        : m.label}
+                    <span className="text-foreground text-sm font-medium">
+                      {m.dynamic && selected ? AGENT_LABELS[selectedAgent] : m.label}
                     </span>
-                    <span className="text-xs leading-snug text-foreground-muted">
+                    <span className="text-foreground-muted text-xs leading-snug">
                       {m.dynamic && selected
                         ? "Describe your campaign and let AI generate the initial template"
                         : m.description}
@@ -441,7 +431,7 @@ export function CreateProjectDialog({
               <div>
                 <label
                   htmlFor="project-agent"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"AI Agent"}
                 </label>
@@ -462,7 +452,7 @@ export function CreateProjectDialog({
               <div>
                 <label
                   htmlFor="project-ai-brief"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {"Campaign Brief"}
                 </label>
@@ -470,7 +460,9 @@ export function CreateProjectDialog({
                   id="project-ai-brief"
                   value={aiBrief}
                   onChange={(e) => setAiBrief(e.target.value)}
-                  placeholder={"Describe the campaign: audience, goal, tone, key content sections..."}
+                  placeholder={
+                    "Describe the campaign: audience, goal, tone, key content sections..."
+                  }
                   rows={3}
                   disabled={isMutating}
                   className={inputClass + " resize-none"}
@@ -482,15 +474,15 @@ export function CreateProjectDialog({
           {/* Component picker */}
           {method === "from_components" && (
             <div>
-              <p className="mb-2 text-sm font-medium text-foreground">
+              <p className="text-foreground mb-2 text-sm font-medium">
                 {"Select components to include:"}
               </p>
-              <div className="max-h-[10rem] space-y-1.5 overflow-y-auto rounded-md border border-card-border bg-card-bg p-2">
+              <div className="border-card-border bg-card-bg max-h-[10rem] space-y-1.5 overflow-y-auto rounded-md border p-2">
                 {components?.items && components.items.length > 0 ? (
                   components.items.map((comp) => (
                     <label
                       key={comp.id}
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors hover:bg-surface-hover"
+                      className="hover:bg-surface-hover flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors"
                     >
                       <input
                         type="checkbox"
@@ -500,13 +492,11 @@ export function CreateProjectDialog({
                         className="accent-interactive"
                       />
                       <span className="text-foreground">{comp.name}</span>
-                      <span className="ml-auto text-xs text-foreground-muted">
-                        {comp.category}
-                      </span>
+                      <span className="text-foreground-muted ml-auto text-xs">{comp.category}</span>
                     </label>
                   ))
                 ) : (
-                  <p className="py-2 text-center text-xs text-foreground-muted">
+                  <p className="text-foreground-muted py-2 text-center text-xs">
                     No components available
                   </p>
                 )}
@@ -519,18 +509,14 @@ export function CreateProjectDialog({
             <div>
               <label
                 htmlFor="project-clone-source"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Select project to clone from:"}
               </label>
               <select
                 id="project-clone-source"
                 value={cloneProjectId ?? ""}
-                onChange={(e) =>
-                  setCloneProjectId(
-                    e.target.value ? Number(e.target.value) : null
-                  )
-                }
+                onChange={(e) => setCloneProjectId(e.target.value ? Number(e.target.value) : null)}
                 disabled={isMutating}
                 className={selectClass}
               >
@@ -550,7 +536,7 @@ export function CreateProjectDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -558,7 +544,7 @@ export function CreateProjectDialog({
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

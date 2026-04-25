@@ -16,9 +16,7 @@ function DropZone({ id }: DropZoneProps) {
     <div
       ref={setNodeRef}
       className={`mx-auto transition-all ${
-        isOver
-          ? "h-8 border-2 border-dashed border-interactive bg-interactive/10"
-          : "h-1"
+        isOver ? "border-interactive bg-interactive/10 h-8 border-2 border-dashed" : "h-1"
       }`}
       style={{ maxWidth: 600 }}
     />
@@ -31,16 +29,12 @@ function EmptyDropZone() {
   return (
     <div ref={setNodeRef} className="flex h-full items-center justify-center">
       <div
-        className={`flex flex-col items-center gap-3 rounded-lg border-2 border-dashed p-8 text-muted-foreground transition-colors ${
-          isOver
-            ? "border-interactive bg-interactive/10"
-            : "border-border"
+        className={`text-muted-foreground flex flex-col items-center gap-3 rounded-lg border-2 border-dashed p-8 transition-colors ${
+          isOver ? "border-interactive bg-interactive/10" : "border-border"
         }`}
       >
         <ArrowDown className="h-8 w-8 opacity-40" />
-        <p className="text-sm">
-          {"Drag components here to start building"}
-        </p>
+        <p className="text-sm">{"Drag components here to start building"}</p>
       </div>
     </div>
   );

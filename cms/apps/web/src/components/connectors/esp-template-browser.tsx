@@ -38,7 +38,7 @@ export function ESPTemplateBrowser({
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-sm text-foreground-muted">
+      <div className="text-foreground-muted flex items-center gap-2 py-8 text-sm">
         <Loader2 className="h-4 w-4 animate-spin" />
         {"Loading remote templates…"}
       </div>
@@ -48,11 +48,11 @@ export function ESPTemplateBrowser({
   if (error) {
     return (
       <div className="flex items-center gap-3 py-8">
-        <p className="text-sm text-status-danger">{"Failed to load templates"}</p>
+        <p className="text-status-danger text-sm">{"Failed to load templates"}</p>
         <button
           type="button"
           onClick={() => mutate()}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+          className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           {"Retry"}
@@ -64,24 +64,24 @@ export function ESPTemplateBrowser({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-foreground">{"Remote Templates"}</h3>
+        <h3 className="text-foreground text-sm font-medium">{"Remote Templates"}</h3>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted" />
+        <Search className="text-foreground-muted absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={"Search templates…"}
-          className="w-full rounded-md border border-input-border bg-input-bg py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
+          className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-1"
         />
       </div>
 
       {/* Template list */}
       {filtered.length === 0 ? (
-        <p className="py-4 text-center text-sm text-foreground-muted">
+        <p className="text-foreground-muted py-4 text-center text-sm">
           {"No templates found on this ESP"}
         </p>
       ) : (
@@ -89,11 +89,11 @@ export function ESPTemplateBrowser({
           {filtered.map((tpl) => (
             <div
               key={tpl.id}
-              className="flex items-center justify-between rounded-md border border-card-border bg-card-bg p-3"
+              className="border-card-border bg-card-bg flex items-center justify-between rounded-md border p-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{tpl.name}</p>
-                <div className="mt-1 flex items-center gap-2 text-xs text-foreground-muted">
+                <p className="text-foreground truncate text-sm font-medium">{tpl.name}</p>
+                <div className="text-foreground-muted mt-1 flex items-center gap-2 text-xs">
                   <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${espInfo.color}`}>
                     {espInfo.label}
                   </span>
@@ -109,7 +109,7 @@ export function ESPTemplateBrowser({
                 <button
                   type="button"
                   onClick={() => onPreview(tpl)}
-                  className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+                  className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
                 >
                   <Eye className="h-3.5 w-3.5" />
                   {"Template Preview"}
@@ -118,7 +118,7 @@ export function ESPTemplateBrowser({
                   type="button"
                   onClick={() => onImport(tpl.id)}
                   disabled={importing === tpl.id}
-                  className="flex items-center gap-1.5 rounded-md bg-interactive px-2.5 py-1 text-xs font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                  className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   {importing === tpl.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />

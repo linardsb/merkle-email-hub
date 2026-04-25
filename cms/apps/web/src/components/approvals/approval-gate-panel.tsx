@@ -9,23 +9,18 @@ interface ApprovalGatePanelProps {
   onRequestApproval: () => void;
 }
 
-export function ApprovalGatePanel({
-  approvalResult,
-  onRequestApproval,
-}: ApprovalGatePanelProps) {
+export function ApprovalGatePanel({ approvalResult, onRequestApproval }: ApprovalGatePanelProps) {
   if (!approvalResult.required) return null;
 
   if (approvalResult.passed) {
     return (
-      <div className="rounded-lg border border-border p-4">
+      <div className="border-border rounded-lg border p-4">
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-status-success" />
-          <span className="text-sm font-medium text-status-success">
-            {"Approved"}
-          </span>
+          <CheckCircle2 className="text-status-success h-4 w-4" />
+          <span className="text-status-success text-sm font-medium">{"Approved"}</span>
         </div>
         {approvalResult.approved_by && (
-          <p className="mt-1 text-xs text-foreground-muted">
+          <p className="text-foreground-muted mt-1 text-xs">
             {"Approved by"} {approvalResult.approved_by}
             {approvalResult.approved_at &&
               ` on ${new Date(approvalResult.approved_at).toLocaleDateString()}`}
@@ -36,31 +31,25 @@ export function ApprovalGatePanel({
   }
 
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="border-border rounded-lg border p-4">
       <div className="flex items-center gap-2">
-        <ShieldAlert className="h-4 w-4 text-status-warning" />
-        <span className="text-sm font-medium text-foreground">
-          {"Approval Required"}
-        </span>
+        <ShieldAlert className="text-status-warning h-4 w-4" />
+        <span className="text-foreground text-sm font-medium">{"Approval Required"}</span>
       </div>
       {approvalResult.reason && (
-        <p className="mt-1 text-sm text-foreground-muted">
-          {approvalResult.reason}
-        </p>
+        <p className="text-foreground-muted mt-1 text-sm">{approvalResult.reason}</p>
       )}
       {approvalResult.approval_id ? (
         <div className="mt-2 flex items-center gap-2">
-          <Clock className="h-3.5 w-3.5 text-foreground-muted" />
-          <span className="text-xs text-foreground-muted">
-            {"Pending review"}
-          </span>
+          <Clock className="text-foreground-muted h-3.5 w-3.5" />
+          <span className="text-foreground-muted text-xs">{"Pending review"}</span>
           <ApprovalStatusBadge status="pending" />
         </div>
       ) : (
         <button
           type="button"
           onClick={onRequestApproval}
-          className="mt-2 text-sm font-medium text-interactive hover:underline"
+          className="text-interactive mt-2 text-sm font-medium hover:underline"
         >
           {"Submit for Approval"}
         </button>

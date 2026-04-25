@@ -18,23 +18,20 @@ import type {
 export function useApprovals(projectId: number | null) {
   return useSWR<ApprovalResponse[]>(
     projectId ? `/api/v1/approvals/?project_id=${projectId}` : null,
-    fetcher
+    fetcher,
   );
 }
 
 /** Get a single approval by ID. */
 export function useApproval(approvalId: number | null) {
-  return useSWR<ApprovalResponse>(
-    approvalId ? `/api/v1/approvals/${approvalId}` : null,
-    fetcher
-  );
+  return useSWR<ApprovalResponse>(approvalId ? `/api/v1/approvals/${approvalId}` : null, fetcher);
 }
 
 /** Submit a template for approval. */
 export function useCreateApproval() {
   return useSWRMutation<ApprovalResponse, ApiError, string, ApprovalCreate>(
     "/api/v1/approvals/",
-    mutationFetcher
+    mutationFetcher,
   );
 }
 
@@ -42,7 +39,7 @@ export function useCreateApproval() {
 export function useApprovalDecide(approvalId: number) {
   return useSWRMutation<ApprovalResponse, ApiError, string, ApprovalDecision>(
     `/api/v1/approvals/${approvalId}/decide`,
-    mutationFetcher
+    mutationFetcher,
   );
 }
 
@@ -50,7 +47,7 @@ export function useApprovalDecide(approvalId: number) {
 export function useApprovalFeedback(approvalId: number | null) {
   return useSWR<FeedbackResponse[]>(
     approvalId ? `/api/v1/approvals/${approvalId}/feedback` : null,
-    fetcher
+    fetcher,
   );
 }
 
@@ -68,14 +65,11 @@ export function useAddFeedback(approvalId: number) {
 export function useApprovalAudit(approvalId: number | null) {
   return useSWR<AuditResponse[]>(
     approvalId ? `/api/v1/approvals/${approvalId}/audit` : null,
-    fetcher
+    fetcher,
   );
 }
 
 /** Get an email build (for preview HTML). */
 export function useBuild(buildId: number | null) {
-  return useSWR<BuildResponse>(
-    buildId ? `/api/v1/email/builds/${buildId}` : null,
-    fetcher
-  );
+  return useSWR<BuildResponse>(buildId ? `/api/v1/email/builds/${buildId}` : null, fetcher);
 }

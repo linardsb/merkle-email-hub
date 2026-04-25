@@ -26,9 +26,7 @@ interface UseBuilderSyncReturn {
   dismissParseError: () => void;
 }
 
-export function useBuilderSync({
-  enabled,
-}: UseBuilderSyncOptions): UseBuilderSyncReturn {
+export function useBuilderSync({ enabled }: UseBuilderSyncOptions): UseBuilderSyncReturn {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("synced");
   const [parseError, setParseError] = useState<string | null>(null);
   const [parsedSections, setParsedSections] = useState<SectionNode[]>([]);
@@ -58,14 +56,11 @@ export function useBuilderSync({
     return () => engine.dispose();
   }, [enabled]);
 
-  const handleCodeChange = useCallback(
-    (html: string) => engineRef.current?.onCodeChange(html),
-    []
-  );
+  const handleCodeChange = useCallback((html: string) => engineRef.current?.onCodeChange(html), []);
 
   const handleBuilderChange = useCallback(
     (sections: SectionNode[]) => engineRef.current?.onBuilderChange(sections),
-    []
+    [],
   );
 
   const dismissParseError = useCallback(() => {

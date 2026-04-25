@@ -18,7 +18,8 @@ async function proxy(req: NextRequest) {
   // Forward client IP so backend rate limiter can distinguish users
   if (!headers.has("X-Real-IP")) {
     const forwarded = req.headers.get("x-forwarded-for");
-    const clientIp = forwarded?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "127.0.0.1";
+    const clientIp =
+      forwarded?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "127.0.0.1";
     headers.set("X-Real-IP", clientIp);
   }
 

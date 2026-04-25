@@ -68,23 +68,21 @@ function ColorSwatch({
         onDragStart={handleDragStart}
       >
         <div
-          className="h-8 w-8 border border-card-border transition-shadow hover:shadow-md"
+          className="border-card-border h-8 w-8 border transition-shadow hover:shadow-md"
           style={{ backgroundColor: color.hex, opacity: color.opacity }}
         />
         <span
           className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center text-[10px] font-semibold ${
-            count === 0
-              ? "bg-warning text-on-warning"
-              : "bg-surface-elevated text-foreground-muted"
-          } border border-border`}
+            count === 0 ? "bg-warning text-on-warning" : "bg-surface-elevated text-foreground-muted"
+          } border-border border`}
         >
           {count}
         </span>
-        <span className="text-[10px] text-foreground-muted">{color.hex}</span>
+        <span className="text-foreground-muted text-[10px]">{color.hex}</span>
         <button
           type="button"
           onClick={handleFind}
-          className="absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center bg-surface text-foreground-muted hover:text-foreground group-hover:flex"
+          className="bg-surface text-foreground-muted hover:text-foreground absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center group-hover:flex"
           title={"Find in code"}
         >
           <Search className="h-3 w-3" />
@@ -94,13 +92,7 @@ function ColorSwatch({
   );
 }
 
-function FontRow({
-  typo,
-  editor,
-}: {
-  typo: DesignTypography;
-  editor: EditorBridge;
-}) {
+function FontRow({ typo, editor }: { typo: DesignTypography; editor: EditorBridge }) {
   const handleClick = () => {
     editor.insertAtCursor(`font-family: '${typo.family}';`);
     toast.success("Inserted at cursor");
@@ -122,14 +114,14 @@ function FontRow({
       lineHeight={typo.lineHeight}
     >
       <div
-        className="group flex cursor-pointer items-center justify-between border border-border px-2 py-1.5 transition-colors hover:bg-surface-elevated"
+        className="border-border hover:bg-surface-elevated group flex cursor-pointer items-center justify-between border px-2 py-1.5 transition-colors"
         onClick={handleClick}
         draggable
         onDragStart={handleDragStart}
       >
         <div className="min-w-0">
           <p className="truncate text-xs font-medium">{typo.name}</p>
-          <span className="text-[10px] text-foreground-muted">
+          <span className="text-foreground-muted text-[10px]">
             {typo.family} · {typo.weight} · {typo.size}px
           </span>
         </div>
@@ -170,7 +162,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {tokens.colors.length > 0 && (
         <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+          <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
             {"Colors"}
           </h4>
           <div className="grid grid-cols-4 gap-3">
@@ -189,7 +181,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {offBrandColors.length > 0 && (
         <section>
-          <h4 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-warning">
+          <h4 className="text-warning mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide">
             <AlertTriangle className="h-3 w-3" />
             {"Off-brand colors"}
           </h4>
@@ -200,22 +192,20 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 border border-border px-2 py-1 text-xs transition-colors hover:bg-surface-elevated"
+                      className="border-border hover:bg-surface-elevated flex w-full items-center gap-2 border px-2 py-1 text-xs transition-colors"
                       onClick={() => {
                         editor.replaceAll(obc.hex, obc.closestHex);
-                        toast.success(
-                          `Replaced ${obc.hex} → ${obc.closestHex}`,
-                        );
+                        toast.success(`Replaced ${obc.hex} → ${obc.closestHex}`);
                       }}
                     >
                       <div className="flex items-center gap-1">
                         <div
-                          className="h-4 w-4 border border-card-border"
+                          className="border-card-border h-4 w-4 border"
                           style={{ backgroundColor: obc.hex }}
                         />
-                        <ArrowRightLeft className="h-3 w-3 text-foreground-muted" />
+                        <ArrowRightLeft className="text-foreground-muted h-3 w-3" />
                         <div
-                          className="h-4 w-4 border border-card-border"
+                          className="border-card-border h-4 w-4 border"
                           style={{ backgroundColor: obc.closestHex }}
                         />
                       </div>
@@ -234,7 +224,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {tokens.typography.length > 0 && (
         <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+          <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
             {"Typography"}
           </h4>
           <div className="space-y-1.5">
@@ -247,7 +237,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {tokens.spacing.length > 0 && (
         <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+          <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
             {"Spacing"}
           </h4>
           <div className="grid grid-cols-3 gap-2">
@@ -266,10 +256,10 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
                 }}
               >
                 <div
-                  className="h-2 bg-interactive"
+                  className="bg-interactive h-2"
                   style={{ width: `${Math.min(sp.value, 60)}px` }}
                 />
-                <span className="text-[10px] text-foreground-muted">
+                <span className="text-foreground-muted text-[10px]">
                   {sp.name}: {sp.value}px
                 </span>
               </div>

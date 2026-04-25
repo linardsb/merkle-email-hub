@@ -15,7 +15,7 @@ export function ImagePreviewCard({ image, onInsert }: ImagePreviewCardProps) {
   });
 
   return (
-    <div className="group rounded-md border border-card-border bg-card-bg overflow-hidden">
+    <div className="border-card-border bg-card-bg group overflow-hidden rounded-md border">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={image.url}
@@ -24,8 +24,8 @@ export function ImagePreviewCard({ image, onInsert }: ImagePreviewCardProps) {
         loading="lazy"
       />
       <div className="p-2">
-        <p className="text-xs text-foreground line-clamp-2">{image.prompt}</p>
-        <div className="mt-1 flex items-center justify-between text-xs text-foreground-muted">
+        <p className="text-foreground line-clamp-2 text-xs">{image.prompt}</p>
+        <div className="text-foreground-muted mt-1 flex items-center justify-between text-xs">
           <span>{createdDate}</span>
           <span>{image.style}</span>
         </div>
@@ -33,7 +33,7 @@ export function ImagePreviewCard({ image, onInsert }: ImagePreviewCardProps) {
           <button
             type="button"
             onClick={() => onInsert(image)}
-            className="flex flex-1 items-center justify-center gap-1 rounded border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover flex flex-1 items-center justify-center gap-1 rounded border px-2 py-1 text-xs font-medium transition-colors"
           >
             <ImagePlus className="h-3 w-3" />
             {"Insert"}
@@ -41,7 +41,7 @@ export function ImagePreviewCard({ image, onInsert }: ImagePreviewCardProps) {
           <a
             href={image.url}
             download
-            className="flex items-center justify-center rounded border border-border px-2 py-1 text-xs text-foreground-muted transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground-muted hover:bg-surface-hover flex items-center justify-center rounded border px-2 py-1 text-xs transition-colors"
           >
             <Download className="h-3 w-3" />
           </a>

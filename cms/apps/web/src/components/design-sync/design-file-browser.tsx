@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { ChevronRight, ChevronDown, FileText, Frame, Group, Component, Type, Square, Loader2 } from "../icons";
+import {
+  ChevronRight,
+  ChevronDown,
+  FileText,
+  Frame,
+  Group,
+  Component,
+  Type,
+  Square,
+  Loader2,
+} from "../icons";
 import { useDesignFileStructure } from "@/hooks/use-design-sync";
 import type { DesignNode } from "@/types/design-sync";
 
@@ -11,23 +21,36 @@ interface DesignFileBrowserProps {
   onSelectionChange: (nodeIds: string[]) => void;
 }
 
-const SELECTABLE_TYPES = new Set(["FRAME", "GROUP", "COMPONENT", "COMPONENT_SET", "INSTANCE", "SECTION"]);
+const SELECTABLE_TYPES = new Set([
+  "FRAME",
+  "GROUP",
+  "COMPONENT",
+  "COMPONENT_SET",
+  "INSTANCE",
+  "SECTION",
+]);
 
 /** Generic Figma node names that carry no semantic meaning */
 const GENERIC_NAMES = new Set([
-  "mj-wrapper", "mj-section", "mj-column", "mj-body", "mj-hero",
-  "wrapper", "frame", "group", "section", "component", "row", "container",
+  "mj-wrapper",
+  "mj-section",
+  "mj-column",
+  "mj-body",
+  "mj-hero",
+  "wrapper",
+  "frame",
+  "group",
+  "section",
+  "component",
+  "row",
+  "container",
 ]);
 
 /**
  * Infer a meaningful section label for children of an email wrapper frame.
  * Mirrors the backend layout_analyzer classification logic.
  */
-function inferSectionLabel(
-  node: DesignNode,
-  index: number,
-  total: number,
-): string | null {
+function inferSectionLabel(node: DesignNode, index: number, total: number): string | null {
   const rawName = node.name.toLowerCase().trim();
   if (!GENERIC_NAMES.has(rawName) && !rawName.startsWith("frame ")) return null;
 
@@ -117,12 +140,13 @@ function TreeNode({
   // Check partial selection (some children selected, not all)
   const selectableChildren = collectSelectableIds(node);
   const selectedChildCount = selectableChildren.filter((id) => selectedIds.has(id)).length;
-  const isIndeterminate = !isSelected && selectedChildCount > 0 && selectedChildCount < selectableChildren.length;
+  const isIndeterminate =
+    !isSelected && selectedChildCount > 0 && selectedChildCount < selectableChildren.length;
 
   return (
     <div>
       <div
-        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-surface-hover"
+        className="hover:bg-surface-hover flex items-center gap-1.5 rounded-md px-1.5 py-1"
         style={{ paddingLeft: `${depth * 1.25 + 0.375}rem` }}
       >
         {/* Expand/collapse toggle */}
@@ -130,7 +154,7 @@ function TreeNode({
           <button
             type="button"
             onClick={() => onToggleExpand(node.id)}
-            className="flex h-5 w-5 shrink-0 items-center justify-center text-foreground-muted"
+            className="text-foreground-muted flex h-5 w-5 shrink-0 items-center justify-center"
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -151,7 +175,7 @@ function TreeNode({
               if (el) el.indeterminate = isIndeterminate;
             }}
             onChange={() => onToggleSelect(node)}
-            className="h-3.5 w-3.5 shrink-0 rounded border-input-border accent-interactive"
+            className="border-input-border accent-interactive h-3.5 w-3.5 shrink-0 rounded"
           />
         ) : (
           <span className="w-3.5 shrink-0" />
@@ -165,7 +189,7 @@ function TreeNode({
               e.stopPropagation();
               if (isSelectable) onToggleSelect(node);
             }}
-            className={`h-24 w-32 shrink-0 overflow-hidden rounded border-2 bg-surface-sunken transition-colors ${
+            className={`bg-surface-sunken h-24 w-32 shrink-0 overflow-hidden rounded border-2 transition-colors ${
               isSelected ? "border-interactive" : "border-card-border hover:border-foreground-muted"
             }`}
           >
@@ -177,7 +201,9 @@ function TreeNode({
             />
           </button>
         ) : (
-          <Icon className={`h-4 w-4 shrink-0 ${isPage ? "text-foreground" : "text-foreground-muted"}`} />
+          <Icon
+            className={`h-4 w-4 shrink-0 ${isPage ? "text-foreground" : "text-foreground-muted"}`}
+          />
         )}
 
         {/* Node name — clickable to expand/collapse */}
@@ -185,19 +211,21 @@ function TreeNode({
           <button
             type="button"
             onClick={() => onToggleExpand(node.id)}
-            className={`truncate text-sm text-left ${isPage ? "font-medium text-foreground" : "text-foreground"} hover:underline`}
+            className={`truncate text-left text-sm ${isPage ? "text-foreground font-medium" : "text-foreground"} hover:underline`}
           >
             {displayName}
           </button>
         ) : (
-          <span className={`truncate text-sm ${isPage ? "font-medium text-foreground" : "text-foreground"}`}>
+          <span
+            className={`truncate text-sm ${isPage ? "text-foreground font-medium" : "text-foreground"}`}
+          >
             {displayName}
           </span>
         )}
 
         {/* Dimensions */}
         {node.width !== null && node.height !== null && !isPage && (
-          <span className="shrink-0 text-xs text-foreground-muted">
+          <span className="text-foreground-muted shrink-0 text-xs">
             {Math.round(node.width)}&times;{Math.round(node.height)}
           </span>
         )}
@@ -297,20 +325,20 @@ export function DesignFileBrowser({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
-        <span className="ml-2 text-sm text-foreground-muted">{"Loading file structure…"}</span>
+        <Loader2 className="text-foreground-muted h-5 w-5 animate-spin" />
+        <span className="text-foreground-muted ml-2 text-sm">{"Loading file structure…"}</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-card-border bg-card-bg px-4 py-8 text-center">
-        <p className="text-sm text-foreground-muted">{"Failed to load file structure"}</p>
+      <div className="border-card-border bg-card-bg rounded-lg border px-4 py-8 text-center">
+        <p className="text-foreground-muted text-sm">{"Failed to load file structure"}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="mt-2 text-sm font-medium text-interactive hover:underline"
+          className="text-interactive mt-2 text-sm font-medium hover:underline"
         >
           {"Try again"}
         </button>
@@ -320,8 +348,8 @@ export function DesignFileBrowser({
 
   if (!structure?.pages || structure.pages.length === 0) {
     return (
-      <div className="rounded-lg border border-card-border bg-card-bg px-4 py-8 text-center">
-        <p className="text-sm text-foreground-muted">{"No pages found in this design file"}</p>
+      <div className="border-card-border bg-card-bg rounded-lg border px-4 py-8 text-center">
+        <p className="text-foreground-muted text-sm">{"No pages found in this design file"}</p>
       </div>
     );
   }
@@ -329,14 +357,14 @@ export function DesignFileBrowser({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-foreground">{"File Structure"}</h3>
+        <h3 className="text-foreground text-sm font-medium">{"File Structure"}</h3>
         {selectedNodeIds.length > 0 && (
-          <span className="text-xs text-foreground-muted">
+          <span className="text-foreground-muted text-xs">
             {`${selectedNodeIds.length} frames selected`}
           </span>
         )}
       </div>
-      <div className="max-h-[24rem] overflow-y-auto rounded-lg border border-card-border bg-card-bg py-1">
+      <div className="border-card-border bg-card-bg max-h-[24rem] overflow-y-auto rounded-lg border py-1">
         {structure.pages.map((page) => (
           <TreeNode
             key={page.id}

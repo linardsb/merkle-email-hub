@@ -56,41 +56,37 @@ export function PluginRow({ plugin, health, onMutated }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-4">
+    <div className="border-card-border bg-card-bg rounded-lg border p-4">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className={`inline-block h-2.5 w-2.5 rounded-full ${style.dot}`} />
             <span className="font-medium">{plugin.name}</span>
-            <span className="text-xs text-foreground-muted">v{plugin.version}</span>
-            <span className="rounded border border-card-border px-1.5 py-0.5 text-xs text-foreground-muted">
+            <span className="text-foreground-muted text-xs">v{plugin.version}</span>
+            <span className="border-card-border text-foreground-muted rounded border px-1.5 py-0.5 text-xs">
               {plugin.plugin_type}
             </span>
           </div>
-          <p className="mt-1 text-sm text-foreground-muted">{plugin.description}</p>
+          <p className="text-foreground-muted mt-1 text-sm">{plugin.description}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {plugin.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-surface-hover px-2 py-0.5 text-xs text-foreground-muted"
+                className="bg-surface-hover text-foreground-muted rounded-full px-2 py-0.5 text-xs"
               >
                 {tag}
               </span>
             ))}
-            <span className="text-xs text-foreground-muted">by {plugin.author}</span>
+            <span className="text-foreground-muted text-xs">by {plugin.author}</span>
           </div>
           {health && health.latency_ms > 0 && (
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="text-foreground-muted mt-1 text-xs">
               Health: {health.status} · {health.latency_ms}ms
               {health.message && ` · ${health.message}`}
             </p>
           )}
-          {plugin.error && (
-            <p className="mt-1 text-xs text-status-error">{plugin.error}</p>
-          )}
-          {error && (
-            <p className="mt-1 text-xs text-status-error">{error}</p>
-          )}
+          {plugin.error && <p className="text-status-error mt-1 text-xs">{plugin.error}</p>}
+          {error && <p className="text-status-error mt-1 text-xs">{error}</p>}
         </div>
 
         {isAdmin && (
@@ -110,7 +106,7 @@ export function PluginRow({ plugin, health, onMutated }: Props) {
               <button
                 onClick={handleRestart}
                 disabled={isBusy}
-                className="rounded-md border border-card-border p-1.5 text-foreground-muted hover:bg-surface-hover disabled:opacity-50"
+                className="border-card-border text-foreground-muted hover:bg-surface-hover rounded-md border p-1.5 disabled:opacity-50"
                 title="Restart plugin"
               >
                 <RotateCcw className="h-4 w-4" />

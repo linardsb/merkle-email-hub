@@ -58,10 +58,7 @@ export function usePresence({ awareness, role }: UsePresenceOptions): UsePresenc
   }, [awareness]);
 
   const reportCursorMove = useCallback(
-    (
-      cursor: { line: number; col: number },
-      selection: { anchor: number; head: number } | null,
-    ) => {
+    (cursor: { line: number; col: number }, selection: { anchor: number; head: number } | null) => {
       if (!awareness) return;
       setLocalCursorState(awareness, cursor, selection);
     },

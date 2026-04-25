@@ -27,23 +27,32 @@ const ESP_PROVIDERS: { value: ESPType; label: string }[] = [
   { value: "taxi", label: "Taxi" },
 ];
 
-const CREDENTIAL_FIELDS: Record<ESPType, { key: string; label: string; placeholder: string; type?: string }[]> = {
-  braze: [
-    { key: "api_key", label: "API Key", placeholder: "Enter API key", type: "password" },
-  ],
+const CREDENTIAL_FIELDS: Record<
+  ESPType,
+  { key: string; label: string; placeholder: string; type?: string }[]
+> = {
+  braze: [{ key: "api_key", label: "API Key", placeholder: "Enter API key", type: "password" }],
   sfmc: [
     { key: "client_id", label: "Client ID", placeholder: "Enter client ID" },
-    { key: "client_secret", label: "Client Secret", placeholder: "Enter client secret", type: "password" },
+    {
+      key: "client_secret",
+      label: "Client Secret",
+      placeholder: "Enter client secret",
+      type: "password",
+    },
     { key: "subdomain", label: "Subdomain", placeholder: "e.g., mc563885gzdyr890y1re4gym8znk" },
   ],
   adobe_campaign: [
     { key: "client_id", label: "Client ID", placeholder: "Enter client ID" },
-    { key: "client_secret", label: "Client Secret", placeholder: "Enter client secret", type: "password" },
+    {
+      key: "client_secret",
+      label: "Client Secret",
+      placeholder: "Enter client secret",
+      type: "password",
+    },
     { key: "org_id", label: "Organization ID", placeholder: "Enter Adobe IMS org ID" },
   ],
-  taxi: [
-    { key: "api_key", label: "API Key", placeholder: "Enter API key", type: "password" },
-  ],
+  taxi: [{ key: "api_key", label: "API Key", placeholder: "Enter API key", type: "password" }],
 };
 
 export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConnectionDialogProps) {
@@ -108,15 +117,17 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
           <DialogTitle>{"Connect to ESP"}</DialogTitle>
-          <DialogDescription>{"Add a connection to an email service provider. For local demo, use Braze with any API key."}</DialogDescription>
+          <DialogDescription>
+            {
+              "Add a connection to an email service provider. For local demo, use Braze with any API key."
+            }
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Provider */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              {"Provider"}
-            </label>
+            <label className="text-foreground mb-1.5 block text-sm font-medium">{"Provider"}</label>
             <div className="flex gap-2">
               {ESP_PROVIDERS.map((p) => (
                 <button
@@ -130,7 +141,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
                   className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                     espType === p.value
                       ? "bg-interactive text-foreground-inverse"
-                      : "border border-input-border bg-input-bg text-foreground hover:bg-surface-hover"
+                      : "border-input-border bg-input-bg text-foreground hover:bg-surface-hover border"
                   } disabled:opacity-50`}
                 >
                   {p.label}
@@ -141,7 +152,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
 
           {/* Connection Name */}
           <div>
-            <label htmlFor="esp-name" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label htmlFor="esp-name" className="text-foreground mb-1.5 block text-sm font-medium">
               {"Connection Name"}
             </label>
             <input
@@ -158,7 +169,10 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
 
           {/* Project */}
           <div>
-            <label htmlFor="esp-project" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="esp-project"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               {"Project"}
             </label>
             <select
@@ -180,7 +194,10 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
           {/* Dynamic credential fields */}
           {fields.map((field) => (
             <div key={field.key}>
-              <label htmlFor={`esp-cred-${field.key}`} className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor={`esp-cred-${field.key}`}
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {field.label}
               </label>
               <input
@@ -202,7 +219,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -210,7 +227,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

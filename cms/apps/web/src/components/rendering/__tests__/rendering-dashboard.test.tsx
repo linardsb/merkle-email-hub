@@ -31,8 +31,18 @@ const mockUseSession = useSession as ReturnType<typeof vi.fn>;
 function makeScreenshotData() {
   return {
     screenshots: [
-      { client_name: "gmail_web", image_base64: "abc123", viewport: "1280x1024", browser: "chrome" },
-      { client_name: "outlook_web", image_base64: "def456", viewport: "1280x1024", browser: "chrome" },
+      {
+        client_name: "gmail_web",
+        image_base64: "abc123",
+        viewport: "1280x1024",
+        browser: "chrome",
+      },
+      {
+        client_name: "outlook_web",
+        image_base64: "def456",
+        viewport: "1280x1024",
+        browser: "chrome",
+      },
     ],
     clients_rendered: 2,
     clients_failed: 0,
@@ -85,13 +95,15 @@ function makeCalibrationSummary() {
   };
 }
 
-function setupMocks(overrides: {
-  screenshots?: ReturnType<typeof makeScreenshotData> | undefined;
-  gateResult?: ReturnType<typeof makeGateResult> | undefined;
-  screenshotsLoading?: boolean;
-  gateLoading?: boolean;
-  role?: string;
-} = {}) {
+function setupMocks(
+  overrides: {
+    screenshots?: ReturnType<typeof makeScreenshotData> | undefined;
+    gateResult?: ReturnType<typeof makeGateResult> | undefined;
+    screenshotsLoading?: boolean;
+    gateLoading?: boolean;
+    role?: string;
+  } = {},
+) {
   const screenshotsTrigger = vi.fn();
   const gateTrigger = vi.fn();
 

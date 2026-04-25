@@ -21,14 +21,9 @@ export function SectionWrapper({
   onRemove,
   onDuplicate,
 }: SectionWrapperProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: section.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: section.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -41,9 +36,7 @@ export function SectionWrapper({
       ref={setNodeRef}
       style={style}
       className={`group relative cursor-pointer ${
-        isSelected
-          ? "ring-2 ring-interactive"
-          : "ring-1 ring-transparent hover:ring-border"
+        isSelected ? "ring-interactive ring-2" : "hover:ring-border ring-1 ring-transparent"
       }`}
       onClick={(e) => {
         e.stopPropagation();
@@ -62,7 +55,7 @@ export function SectionWrapper({
     >
       {/* Section label */}
       <div
-        className={`absolute -top-5 left-2 z-10 rounded-t px-1.5 py-0.5 text-[10px] bg-card text-muted-foreground ${
+        className={`bg-card text-muted-foreground absolute -top-5 left-2 z-10 rounded-t px-1.5 py-0.5 text-[10px] ${
           isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         } transition-opacity`}
       >
@@ -71,10 +64,10 @@ export function SectionWrapper({
 
       {/* Action toolbar */}
       {isSelected && (
-        <div className="absolute -top-3 right-2 z-10 flex gap-0.5 rounded bg-card shadow-sm border border-border">
+        <div className="bg-card border-border absolute -top-3 right-2 z-10 flex gap-0.5 rounded border shadow-sm">
           <button
             type="button"
-            className="cursor-grab p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            className="text-muted-foreground hover:text-foreground cursor-grab p-1 active:cursor-grabbing"
             aria-label="Drag to reorder"
             {...attributes}
             {...listeners}
@@ -83,7 +76,7 @@ export function SectionWrapper({
           </button>
           <button
             type="button"
-            className="p-1 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground p-1"
             onClick={(e) => {
               e.stopPropagation();
               onDuplicate();
@@ -94,7 +87,7 @@ export function SectionWrapper({
           </button>
           <button
             type="button"
-            className="p-1 text-muted-foreground hover:text-destructive"
+            className="text-muted-foreground hover:text-destructive p-1"
             onClick={(e) => {
               e.stopPropagation();
               onRemove();

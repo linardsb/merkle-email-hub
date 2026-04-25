@@ -64,9 +64,9 @@ export function DesignConnectionCard({
           onSelect();
         }
       }}
-      className={`w-full cursor-pointer rounded-lg border-2 bg-card-bg p-4 text-left transition-colors ${
+      className={`bg-card-bg w-full cursor-pointer rounded-lg border-2 p-4 text-left transition-colors ${
         selected
-          ? "border-interactive ring-1 ring-interactive"
+          ? "border-interactive ring-interactive ring-1"
           : "border-card-border hover:bg-surface-hover"
       }`}
     >
@@ -75,10 +75,8 @@ export function DesignConnectionCard({
         <div className="flex items-center gap-2.5">
           <ProviderIcon provider={connection.provider} className="h-5 w-5 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground">
-              {connection.name}
-            </p>
-            <p className="text-xs text-foreground-muted">
+            <p className="text-foreground text-sm font-medium">{connection.name}</p>
+            <p className="text-foreground-muted text-xs">
               {PROVIDER_LABELS[connection.provider] ?? connection.provider}
               {" · "}
               {`Token ····${connection.access_token_last4}`}
@@ -89,7 +87,7 @@ export function DesignConnectionCard({
       </div>
 
       {/* Meta row */}
-      <div className="mt-3 flex items-center gap-4 text-xs text-foreground-muted">
+      <div className="text-foreground-muted mt-3 flex items-center gap-4 text-xs">
         {connection.project_id && connection.project_name ? (
           <span className="flex items-center gap-1">
             <FolderOpen className="h-3.5 w-3.5" />
@@ -101,7 +99,7 @@ export function DesignConnectionCard({
                   e.stopPropagation();
                   onLinkProject(null);
                 }}
-                className="ml-1 text-foreground-muted hover:text-foreground"
+                className="text-foreground-muted hover:text-foreground ml-1"
                 title="Unlink project"
               >
                 {"×"}
@@ -110,28 +108,28 @@ export function DesignConnectionCard({
           </span>
         ) : onLinkProject && projects && projects.length > 0 ? (
           <span className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-            <FolderOpen className="h-3.5 w-3.5 text-status-warning" />
+            <FolderOpen className="text-status-warning h-3.5 w-3.5" />
             <select
               value=""
               onChange={(e) => {
                 if (e.target.value) onLinkProject(Number(e.target.value));
               }}
-              className="rounded border border-border bg-card-bg px-1.5 py-0.5 text-xs text-foreground"
+              className="border-border bg-card-bg text-foreground rounded border px-1.5 py-0.5 text-xs"
             >
               <option value="">{"Link to project…"}</option>
               {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </span>
         ) : null}
-        {lastSynced && (
-          <span>{`Synced ${lastSynced}`}</span>
-        )}
+        {lastSynced && <span>{`Synced ${lastSynced}`}</span>}
       </div>
 
       {/* Actions */}
-      <div className="mt-3 flex items-center gap-2 border-t border-card-border pt-3">
+      <div className="border-card-border mt-3 flex items-center gap-2 border-t pt-3">
         <button
           type="button"
           onClick={(e) => {
@@ -139,7 +137,7 @@ export function DesignConnectionCard({
             onSync();
           }}
           disabled={syncing}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {syncing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -155,7 +153,7 @@ export function DesignConnectionCard({
               e.stopPropagation();
               onRefreshToken();
             }}
-            className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
           >
             <KeyRound className="h-3.5 w-3.5" />
             {"Refresh Token"}
@@ -167,7 +165,7 @@ export function DesignConnectionCard({
             e.stopPropagation();
             onDelete();
           }}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
+          className="border-border text-status-danger hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {"Remove"}
@@ -175,14 +173,14 @@ export function DesignConnectionCard({
 
         {connection.status === "connected" && (
           <>
-            <div className="mx-1 h-4 w-px bg-card-border" />
+            <div className="bg-card-border mx-1 h-4 w-px" />
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onImport();
               }}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+              className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               {"Import Design"}
@@ -193,7 +191,7 @@ export function DesignConnectionCard({
                 e.stopPropagation();
                 onExtractComponents();
               }}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+              className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
             >
               <Puzzle className="h-3.5 w-3.5" />
               {"Extract Components"}

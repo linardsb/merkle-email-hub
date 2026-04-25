@@ -17,11 +17,10 @@ import type {
 /** GET /api/v1/ontology/sync-status — poll sync state. */
 export function useOntologySyncStatus() {
   const interval = useSmartPolling(POLL.background);
-  return useSWR<SyncStatusResponse>(
-    "/api/v1/ontology/sync-status",
-    fetcher,
-    { refreshInterval: interval, ...SWR_PRESETS.polling },
-  );
+  return useSWR<SyncStatusResponse>("/api/v1/ontology/sync-status", fetcher, {
+    refreshInterval: interval,
+    ...SWR_PRESETS.polling,
+  });
 }
 
 /** POST /api/v1/ontology/sync — trigger manual sync (admin only). */

@@ -12,12 +12,19 @@ interface Props {
 }
 
 function diffBadge(pct: number) {
-  if (pct < 2) return { label: "< 2% diff", className: "bg-badge-success-bg text-badge-success-text" };
-  if (pct < 5) return { label: "2-5% diff", className: "bg-badge-warning-bg text-badge-warning-text" };
+  if (pct < 2)
+    return { label: "< 2% diff", className: "bg-badge-success-bg text-badge-success-text" };
+  if (pct < 5)
+    return { label: "2-5% diff", className: "bg-badge-warning-bg text-badge-warning-text" };
   return { label: "> 5% diff", className: "bg-badge-danger-bg text-badge-danger-text" };
 }
 
-export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, currentTestId }: Props) {
+export function VisualRegressionDialog({
+  open,
+  onOpenChange,
+  baselineTestId,
+  currentTestId,
+}: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const { trigger, data, isMutating, error } = useRenderingComparison();
 
@@ -36,17 +43,17 @@ export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, cur
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[56rem] rounded-lg border border-card-border bg-card-bg p-0 shadow-xl backdrop:bg-black/50"
+      className="border-card-border bg-card-bg w-full max-w-[56rem] rounded-lg border p-0 shadow-xl backdrop:bg-black/50"
       onClose={() => onOpenChange(false)}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-card-border p-4">
-        <h2 className="text-lg font-semibold text-foreground">
+      <div className="border-card-border flex items-center justify-between border-b p-4">
+        <h2 className="text-foreground text-lg font-semibold">
           {"Visual Regression"}: #{baselineTestId} vs #{currentTestId}
         </h2>
         <button
           onClick={() => onOpenChange(false)}
-          className="rounded p-1 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+          className="text-foreground-muted hover:bg-surface-muted hover:text-foreground rounded p-1"
         >
           <X className="h-4 w-4" />
         </button>
@@ -55,28 +62,28 @@ export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, cur
       <div className="p-4">
         {isMutating && (
           <div className="flex flex-col items-center gap-4 py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-foreground-accent" />
-            <p className="text-sm text-foreground-muted">{"Processing"}</p>
+            <Loader2 className="text-foreground-accent h-8 w-8 animate-spin" />
+            <p className="text-foreground-muted text-sm">{"Processing"}</p>
           </div>
         )}
 
         {error && !isMutating && (
           <div className="flex flex-col items-center gap-4 py-12">
-            <AlertTriangle className="h-8 w-8 text-status-danger" />
-            <p className="text-sm text-foreground">{"Failed to load rendering data"}</p>
+            <AlertTriangle className="text-status-danger h-8 w-8" />
+            <p className="text-foreground text-sm">{"Failed to load rendering data"}</p>
           </div>
         )}
 
         {data && !isMutating && (
           <>
             {/* Summary */}
-            <div className="mb-4 flex items-center gap-3 rounded-lg border border-card-border bg-surface-muted/30 p-3">
+            <div className="border-card-border bg-surface-muted/30 mb-4 flex items-center gap-3 rounded-lg border p-3">
               {data.regressions_found > 0 ? (
-                <AlertTriangle className="h-5 w-5 text-status-warning" />
+                <AlertTriangle className="text-status-warning h-5 w-5" />
               ) : (
-                <CheckCircle className="h-5 w-5 text-status-success" />
+                <CheckCircle className="text-status-success h-5 w-5" />
               )}
-              <span className="text-sm text-foreground">
+              <span className="text-foreground text-sm">
                 {data.regressions_found > 0
                   ? `${data.regressions_found} regressions found across ${data.total_clients} clients`
                   : "No regressions detected"}
@@ -88,15 +95,19 @@ export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, cur
               {(data.diffs ?? []).map((diff) => {
                 const badge = diffBadge(diff.diff_percentage);
                 return (
-                  <div key={diff.client_name} className="rounded-lg border border-card-border p-3">
+                  <div key={diff.client_name} className="border-card-border rounded-lg border p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">{diff.client_name}</span>
+                      <span className="text-foreground text-sm font-medium">
+                        {diff.client_name}
+                      </span>
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+                        >
                           {diff.diff_percentage.toFixed(1)}% — {badge.label}
                         </span>
                         {diff.has_regression && (
-                          <span className="rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs font-medium text-badge-danger-text">
+                          <span className="bg-badge-danger-bg text-badge-danger-text rounded-full px-2 py-0.5 text-xs font-medium">
                             {"Regression"}
                           </span>
                         )}
@@ -104,32 +115,32 @@ export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, cur
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="mb-1 text-xs text-foreground-muted">{"Baseline"}</p>
+                        <p className="text-foreground-muted mb-1 text-xs">{"Baseline"}</p>
                         {diff.baseline_url ? (
                           <img
                             src={diff.baseline_url}
                             alt={`${diff.client_name} baseline`}
-                            className="w-full rounded border border-card-border object-contain"
+                            className="border-card-border w-full rounded border object-contain"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="flex aspect-[3/2] items-center justify-center rounded border border-card-border bg-surface-muted">
-                            <ImageOff className="h-6 w-6 text-foreground-muted/40" />
+                          <div className="border-card-border bg-surface-muted flex aspect-[3/2] items-center justify-center rounded border">
+                            <ImageOff className="text-foreground-muted/40 h-6 w-6" />
                           </div>
                         )}
                       </div>
                       <div>
-                        <p className="mb-1 text-xs text-foreground-muted">{"Current"}</p>
+                        <p className="text-foreground-muted mb-1 text-xs">{"Current"}</p>
                         {diff.current_url ? (
                           <img
                             src={diff.current_url}
                             alt={`${diff.client_name} current`}
-                            className="w-full rounded border border-card-border object-contain"
+                            className="border-card-border w-full rounded border object-contain"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="flex aspect-[3/2] items-center justify-center rounded border border-card-border bg-surface-muted">
-                            <ImageOff className="h-6 w-6 text-foreground-muted/40" />
+                          <div className="border-card-border bg-surface-muted flex aspect-[3/2] items-center justify-center rounded border">
+                            <ImageOff className="text-foreground-muted/40 h-6 w-6" />
                           </div>
                         )}
                       </div>
@@ -143,7 +154,7 @@ export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, cur
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => onOpenChange(false)}
-                className="rounded px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground"
+                className="text-foreground-muted hover:text-foreground rounded px-4 py-2 text-sm font-medium"
               >
                 {"Close"}
               </button>

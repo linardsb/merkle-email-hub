@@ -27,6 +27,6 @@ export function useUpdateProject(projectId: number) {
         throw new ApiError(res.status, message, code);
       }
       return res.json() as Promise<ProjectResponse>;
-    }
+    },
   );
 }

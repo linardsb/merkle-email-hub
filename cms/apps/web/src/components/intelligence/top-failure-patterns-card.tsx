@@ -12,7 +12,7 @@ export function TopFailurePatternsCard() {
   });
 
   if (isLoading) {
-    return <Skeleton className="h-48 rounded-lg border border-card-border" />;
+    return <Skeleton className="border-card-border h-48 rounded-lg border" />;
   }
 
   const items = patterns?.items ?? [];
@@ -20,37 +20,31 @@ export function TopFailurePatternsCard() {
 
   if (totalPatterns === 0) {
     return (
-      <div className="rounded-lg border border-card-border bg-card-bg p-6">
+      <div className="border-card-border bg-card-bg rounded-lg border p-6">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-foreground-muted" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {"Top Failure Patterns"}
-          </h2>
+          <AlertTriangle className="text-foreground-muted h-5 w-5" />
+          <h2 className="text-foreground text-lg font-semibold">{"Top Failure Patterns"}</h2>
         </div>
-        <p className="mt-2 text-sm text-foreground-muted">
-          {"No failure patterns detected yet."}
-        </p>
+        <p className="text-foreground-muted mt-2 text-sm">{"No failure patterns detected yet."}</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-6">
+    <div className="border-card-border bg-card-bg rounded-lg border p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-foreground-muted" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {"Top Failure Patterns"}
-          </h2>
+          <AlertTriangle className="text-foreground-muted h-5 w-5" />
+          <h2 className="text-foreground text-lg font-semibold">{"Top Failure Patterns"}</h2>
         </div>
         <Link
           href="/renderings?tab=patterns"
-          className="text-sm text-foreground-accent hover:underline"
+          className="text-foreground-accent text-sm hover:underline"
         >
           {"View all patterns"}
         </Link>
       </div>
-      <p className="mt-1 text-sm text-foreground-muted">
+      <p className="text-foreground-muted mt-1 text-sm">
         {`${totalPatterns} total patterns tracked across agents`}
       </p>
 
@@ -58,18 +52,18 @@ export function TopFailurePatternsCard() {
         {items.map((pattern, i) => (
           <div
             key={i}
-            className="flex items-center justify-between rounded border border-card-border px-3 py-2"
+            className="border-card-border flex items-center justify-between rounded border px-3 py-2"
           >
             <div className="flex-1 truncate">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-foreground text-sm font-medium">
                 {pattern.agent_name.replace(/_/g, " ")}
               </span>
-              <span className="mx-2 text-foreground-muted">/</span>
-              <span className="text-sm text-foreground-muted">
+              <span className="text-foreground-muted mx-2">/</span>
+              <span className="text-foreground-muted text-sm">
                 {pattern.qa_check.replace(/_/g, " ")}
               </span>
             </div>
-            <span className="ml-2 rounded-full bg-status-danger/10 px-2 py-0.5 text-xs font-medium text-status-danger">
+            <span className="bg-status-danger/10 text-status-danger ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
               {pattern.frequency ?? 1}x
             </span>
           </div>

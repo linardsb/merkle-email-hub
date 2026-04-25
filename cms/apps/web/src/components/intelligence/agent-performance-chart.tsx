@@ -35,19 +35,17 @@ export function AgentPerformanceChart() {
   const maxCount = agentStats.length > 0 ? agentStats[0]!.count : 0;
 
   if (isLoading) {
-    return <Skeleton className="h-64 rounded-lg border border-card-border" />;
+    return <Skeleton className="border-card-border h-64 rounded-lg border" />;
   }
 
   if (agentStats.length === 0) {
     return (
-      <div className="rounded-lg border border-card-border bg-card-bg p-6">
+      <div className="border-card-border bg-card-bg rounded-lg border p-6">
         <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-foreground-muted" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {"Agent Performance"}
-          </h2>
+          <Bot className="text-foreground-muted h-5 w-5" />
+          <h2 className="text-foreground text-lg font-semibold">{"Agent Performance"}</h2>
         </div>
-        <p className="mt-2 text-sm text-foreground-muted">
+        <p className="text-foreground-muted mt-2 text-sm">
           {"No agent performance data yet. Run blueprints to see agent metrics."}
         </p>
       </div>
@@ -55,31 +53,26 @@ export function AgentPerformanceChart() {
   }
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-6">
+    <div className="border-card-border bg-card-bg rounded-lg border p-6">
       <div className="flex items-center gap-2">
-        <Bot className="h-5 w-5 text-foreground-muted" />
-        <h2 className="text-lg font-semibold text-foreground">
-          {"Agent Performance"}
-        </h2>
+        <Bot className="text-foreground-muted h-5 w-5" />
+        <h2 className="text-foreground text-lg font-semibold">{"Agent Performance"}</h2>
       </div>
-      <p className="mt-1 text-sm text-foreground-muted">
+      <p className="text-foreground-muted mt-1 text-sm">
         {"Failure pattern frequency per agent from blueprint runs"}
       </p>
       <div className="mt-4 space-y-3">
         {agentStats.map((agent) => {
-          const pct =
-            maxCount > 0 ? Math.round((agent.count / maxCount) * 100) : 0;
+          const pct = maxCount > 0 ? Math.round((agent.count / maxCount) * 100) : 0;
           return (
             <div key={agent.name}>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-foreground capitalize">
-                  {agent.name.replace(/_/g, " ")}
-                </span>
-                <span className="text-xs text-foreground-muted">
+                <span className="text-foreground capitalize">{agent.name.replace(/_/g, " ")}</span>
+                <span className="text-foreground-muted text-xs">
                   {agent.count} {"patterns"}
                 </span>
               </div>
-              <div className="mt-1 h-2 w-full rounded-full bg-surface-muted">
+              <div className="bg-surface-muted mt-1 h-2 w-full rounded-full">
                 <div
                   className={`h-2 rounded-full transition-all ${severityColorClass(agent.count, maxCount)}`}
                   style={{ width: `${pct}%` }}

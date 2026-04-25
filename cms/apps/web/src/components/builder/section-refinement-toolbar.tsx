@@ -58,12 +58,12 @@ export function SectionRefinementToolbar({
   if (selectedSectionIds.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 shadow-sm">
+    <div className="border-border bg-card flex items-center gap-1 rounded-md border px-2 py-1 shadow-sm">
       {/* Merge (multi-select) */}
       <button
         onClick={handleMerge}
         disabled={!multiSelected}
-        className="rounded px-2 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent disabled:opacity-30"
+        className="text-foreground hover:bg-accent rounded px-2 py-0.5 text-[10px] font-medium disabled:opacity-30"
         title="Merge selected sections"
       >
         Merge
@@ -73,7 +73,7 @@ export function SectionRefinementToolbar({
       <button
         onClick={handleSplit}
         disabled={!singleSelected}
-        className="rounded px-2 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent disabled:opacity-30"
+        className="text-foreground hover:bg-accent rounded px-2 py-0.5 text-[10px] font-medium disabled:opacity-30"
         title="Split section"
       >
         Split
@@ -83,14 +83,14 @@ export function SectionRefinementToolbar({
       <button
         onClick={handleUnwrap}
         disabled={!singleSelected}
-        className="rounded px-2 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent disabled:opacity-30"
+        className="text-foreground hover:bg-accent rounded px-2 py-0.5 text-[10px] font-medium disabled:opacity-30"
         title="Remove section annotation"
       >
         Unwrap
       </button>
 
       {/* Rename (single select) */}
-      <div className="border-l border-border pl-1">
+      <div className="border-border border-l pl-1">
         {isRenaming ? (
           <form
             onSubmit={(e) => {
@@ -102,7 +102,7 @@ export function SectionRefinementToolbar({
             <input
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
-              className="w-20 rounded border border-input bg-background px-1.5 py-0.5 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              className="border-input bg-background text-foreground focus:ring-ring w-20 rounded border px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1"
               autoFocus
               onBlur={() => setIsRenaming(false)}
             />
@@ -114,7 +114,7 @@ export function SectionRefinementToolbar({
               setIsRenaming(true);
             }}
             disabled={!singleSelected}
-            className="rounded px-2 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent disabled:opacity-30"
+            className="text-foreground hover:bg-accent rounded px-2 py-0.5 text-[10px] font-medium disabled:opacity-30"
             title="Rename section"
           >
             Rename

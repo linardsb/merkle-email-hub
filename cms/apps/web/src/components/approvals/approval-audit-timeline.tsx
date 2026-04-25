@@ -10,10 +10,7 @@ const DEFAULT_ACTION = {
   label: "Submitted for review",
 } as const;
 
-const ACTION_CONFIG: Record<
-  string,
-  { icon: LucideIcon; colorClass: string; label: string }
-> = {
+const ACTION_CONFIG: Record<string, { icon: LucideIcon; colorClass: string; label: string }> = {
   submitted: {
     icon: Send,
     colorClass: "text-interactive",
@@ -45,24 +42,20 @@ interface ApprovalAuditTimelineProps {
   approvalId: number;
 }
 
-export function ApprovalAuditTimeline({
-  approvalId,
-}: ApprovalAuditTimelineProps) {
+export function ApprovalAuditTimeline({ approvalId }: ApprovalAuditTimelineProps) {
   const { data: entries, isLoading } = useApprovalAudit(approvalId);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
+        <Loader2 className="text-foreground-muted h-5 w-5 animate-spin" />
       </div>
     );
   }
 
   if (!entries?.length) {
     return (
-      <p className="py-8 text-center text-sm text-foreground-muted">
-        {"No audit entries yet"}
-      </p>
+      <p className="text-foreground-muted py-8 text-center text-sm">{"No audit entries yet"}</p>
     );
   }
 
@@ -78,26 +71,22 @@ export function ApprovalAuditTimeline({
             {/* Timeline line + icon */}
             <div className="flex flex-col items-center">
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted ${config.colorClass}`}
+                className={`bg-surface-muted flex h-8 w-8 items-center justify-center rounded-full ${config.colorClass}`}
               >
                 <Icon className="h-4 w-4" />
               </div>
-              {!isLast && <div className="w-px flex-1 bg-border" />}
+              {!isLast && <div className="bg-border w-px flex-1" />}
             </div>
 
             {/* Content */}
             <div className={isLast ? "pb-0" : "pb-6"}>
-              <p className="text-sm font-medium text-foreground">
-                {config.label}
-              </p>
-              <p className="text-xs text-foreground-muted">
+              <p className="text-foreground text-sm font-medium">{config.label}</p>
+              <p className="text-foreground-muted text-xs">
                 {`Requested by User #${entry.actor_id}`} &middot;{" "}
                 {new Date(entry.created_at as string).toLocaleString()}
               </p>
               {entry.details && (
-                <p className="mt-1 text-sm text-foreground-muted">
-                  {entry.details}
-                </p>
+                <p className="text-foreground-muted mt-1 text-sm">{entry.details}</p>
               )}
             </div>
           </div>

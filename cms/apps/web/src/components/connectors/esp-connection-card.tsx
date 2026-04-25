@@ -43,9 +43,9 @@ export function ESPConnectionCard({
           onSelect();
         }
       }}
-      className={`w-full cursor-pointer rounded-lg border-2 bg-card-bg p-4 text-left transition-colors ${
+      className={`bg-card-bg w-full cursor-pointer rounded-lg border-2 p-4 text-left transition-colors ${
         selected
-          ? "border-interactive ring-1 ring-interactive"
+          ? "border-interactive ring-interactive ring-1"
           : "border-card-border hover:bg-surface-hover"
       }`}
     >
@@ -55,9 +55,7 @@ export function ESPConnectionCard({
           <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${espInfo.color}`}>
             {espInfo.label}
           </span>
-          <p className="text-sm font-medium text-foreground">
-            {connection.name}
-          </p>
+          <p className="text-foreground text-sm font-medium">{connection.name}</p>
         </div>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -66,31 +64,25 @@ export function ESPConnectionCard({
               : "bg-status-danger/10 text-status-danger"
           }`}
         >
-          {connection.status === "connected"
-            ? "Connected"
-            : "Error"}
+          {connection.status === "connected" ? "Connected" : "Error"}
         </span>
       </div>
 
       {/* Meta row */}
-      <div className="mt-3 flex items-center gap-4 text-xs text-foreground-muted">
+      <div className="text-foreground-muted mt-3 flex items-center gap-4 text-xs">
         <span>{`Credentials: ****${connection.credentials_hint}`}</span>
-        <span>
-          {lastSynced
-            ? `Last synced ${lastSynced}`
-            : "Never synced"}
-        </span>
+        <span>{lastSynced ? `Last synced ${lastSynced}` : "Never synced"}</span>
       </div>
 
       {/* Actions */}
-      <div className="mt-3 flex items-center gap-2 border-t border-card-border pt-3">
+      <div className="border-card-border mt-3 flex items-center gap-2 border-t pt-3">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
+          className="border-border text-status-danger hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {"Delete"}

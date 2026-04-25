@@ -60,9 +60,7 @@ export function ExportReportMenu({ metrics }: ExportReportMenuProps) {
 
     // Encode CSV with proper escaping
     const csv = rows
-      .map((row) =>
-        row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(",")
-      )
+      .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -91,7 +89,7 @@ export function ExportReportMenu({ metrics }: ExportReportMenuProps) {
           <Printer className="mr-2 h-4 w-4" />
           <div>
             <p>{"Print / PDF"}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {"Opens browser print dialog with PDF option"}
             </p>
           </div>
@@ -100,7 +98,7 @@ export function ExportReportMenu({ metrics }: ExportReportMenuProps) {
           <FileSpreadsheet className="mr-2 h-4 w-4" />
           <div>
             <p>{"Export CSV"}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {"Download check performance and results as CSV"}
             </p>
           </div>

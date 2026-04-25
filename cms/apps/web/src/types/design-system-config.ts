@@ -24,9 +24,7 @@ export interface DesignSystemConfig {
 }
 
 /** Helper to extract palette swatches from a DesignSystemConfig */
-export function extractPaletteSwatches(
-  ds: DesignSystemConfig
-): { role: string; hex: string }[] {
+export function extractPaletteSwatches(ds: DesignSystemConfig): { role: string; hex: string }[] {
   const swatches: { role: string; hex: string }[] = [];
 
   // Add named palette roles

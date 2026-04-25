@@ -112,12 +112,12 @@ export function BuilderOnboarding() {
   const StepIcon = currentStep.icon;
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 w-80 rounded-lg border border-border bg-card p-4 shadow-lg">
+    <div className="border-border bg-card fixed bottom-6 left-6 z-50 w-80 rounded-lg border p-4 shadow-lg">
       {/* Close button */}
       <button
         type="button"
         onClick={complete}
-        className="absolute right-2 top-2 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground absolute right-2 top-2 rounded p-1 transition-colors"
         aria-label="Close onboarding"
       >
         <X className="h-3.5 w-3.5" />
@@ -125,12 +125,12 @@ export function BuilderOnboarding() {
 
       {/* Step content */}
       <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-interactive/10">
-          <StepIcon className="h-4 w-4 text-interactive" />
+        <div className="bg-interactive/10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md">
+          <StepIcon className="text-interactive h-4 w-4" />
         </div>
         <div className="flex-1 pr-4">
-          <h3 className="text-sm font-semibold text-foreground">{currentStep.title}</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">{currentStep.description}</p>
+          <h3 className="text-foreground text-sm font-semibold">{currentStep.title}</h3>
+          <p className="text-muted-foreground mt-0.5 text-xs">{currentStep.description}</p>
         </div>
       </div>
 
@@ -153,14 +153,14 @@ export function BuilderOnboarding() {
           <button
             type="button"
             onClick={complete}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
           >
             {"Skip"}
           </button>
           <button
             type="button"
             onClick={handleNext}
-            className="flex items-center gap-1 rounded-md bg-interactive px-3 py-1 text-xs font-medium text-interactive-foreground transition-colors hover:bg-interactive/90"
+            className="bg-interactive text-interactive-foreground hover:bg-interactive/90 flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition-colors"
           >
             {step < STEPS.length - 1 ? (
               <>

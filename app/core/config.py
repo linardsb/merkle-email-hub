@@ -7,7 +7,7 @@ Environment variables use double-underscore nesting: DATABASE__URL, AUTH__JWT_SE
 from functools import lru_cache
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,7 +29,11 @@ class RedisConfig(BaseModel):
 class AuthConfig(BaseModel):
     """Authentication and JWT settings."""
 
-    jwt_secret_key: str = "CHANGE-ME-IN-PRODUCTION"  # noqa: S105
+    jwt_secret_key: str = Field(
+        default="CHANGE-ME-IN-PRODUCTION-this-is-not-a-real-secret",  # 49 chars; passes min_length, trips prod sentinel
+        min_length=32,
+        description="HS256 signing key; must be >=32 chars (256 bits). Production refuses the default placeholder.",
+    )
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     demo_user_password: str = "admin"  # noqa: S105
@@ -900,6 +904,18 @@ class Settings(BaseSettings):
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> "Settings":
+        """Refuse default placeholder secrets when running in production."""
+        if self.environment == "production":
+            if self.auth.jwt_secret_key.startswith("CHANGE-ME-IN-PRODUCTION"):
+                msg = "AUTH__JWT_SECRET_KEY must not be the default placeholder in production"
+                raise ValueError(msg)
+            if self.auth.demo_user_password == "admin":  # noqa: S105
+                msg = "AUTH__DEMO_USER_PASSWORD must not be 'admin' in production"
+                raise ValueError(msg)
+        return self
 
 
 @lru_cache

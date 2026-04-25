@@ -4,12 +4,7 @@ import { useState } from "react";
 import { Loader2, Check, X, Copy } from "../icons";
 import { useBIMICheck } from "@/hooks/use-gmail-intelligence";
 
-const CHECKLIST_ITEMS = [
-  "dmarcStatus",
-  "bimiRecord",
-  "svgValidation",
-  "cmcStatus",
-] as const;
+const CHECKLIST_ITEMS = ["dmarcStatus", "bimiRecord", "svgValidation", "cmcStatus"] as const;
 
 const CHECKLIST_LABELS: Record<(typeof CHECKLIST_ITEMS)[number], string> = {
   dmarcStatus: "DMARC Status",
@@ -77,13 +72,13 @@ export function BIMIStatusBadge() {
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCheck();
           }}
-          className="flex-1 rounded-md border border-border bg-surface-muted px-2.5 py-1.5 text-xs text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-accent-primary"
+          className="border-border bg-surface-muted text-foreground placeholder:text-foreground-muted focus:ring-accent-primary flex-1 rounded-md border px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1"
         />
         <button
           type="button"
           disabled={isMutating || !domain.trim()}
           onClick={handleCheck}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border bg-card text-foreground hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {isMutating ? (
             <>
@@ -97,9 +92,7 @@ export function BIMIStatusBadge() {
       </div>
 
       {/* Error */}
-      {error && (
-        <p className="text-xs text-status-error">{error.message}</p>
-      )}
+      {error && <p className="text-status-error text-xs">{error.message}</p>}
 
       {data && (
         <div className="space-y-2">
@@ -122,13 +115,13 @@ export function BIMIStatusBadge() {
               return (
                 <div key={item} className="flex items-center gap-2 text-xs">
                   {ok ? (
-                    <Check className="h-3.5 w-3.5 text-status-success" />
+                    <Check className="text-status-success h-3.5 w-3.5" />
                   ) : (
-                    <X className="h-3.5 w-3.5 text-status-error" />
+                    <X className="text-status-error h-3.5 w-3.5" />
                   )}
                   <span className="text-foreground">{CHECKLIST_LABELS[item]}</span>
                   {info && (
-                    <span className="rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-foreground-muted">
+                    <span className="bg-surface-muted text-foreground-muted rounded px-1.5 py-0.5 text-[10px]">
                       {info}
                     </span>
                   )}
@@ -140,11 +133,9 @@ export function BIMIStatusBadge() {
           {/* Issues */}
           {data.issues.length > 0 && (
             <div className="space-y-0.5">
-              <h4 className="text-[10px] font-medium text-foreground-muted">
-                {"Issues"}
-              </h4>
+              <h4 className="text-foreground-muted text-[10px] font-medium">{"Issues"}</h4>
               {data.issues.map((issue, i) => (
-                <p key={i} className="text-[10px] text-status-error">
+                <p key={i} className="text-status-error text-[10px]">
                   {issue}
                 </p>
               ))}
@@ -154,27 +145,23 @@ export function BIMIStatusBadge() {
           {/* Generated TXT record */}
           {data.generated_record && (
             <div>
-              <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
+              <h4 className="text-foreground-muted mb-1 text-[10px] font-medium">
                 {"Recommended TXT Record"}
               </h4>
               <div className="flex items-start gap-1.5">
-                <code className="block flex-1 overflow-x-auto rounded bg-surface-muted p-2 font-mono text-[10px] text-foreground-muted">
+                <code className="bg-surface-muted text-foreground-muted block flex-1 overflow-x-auto rounded p-2 font-mono text-[10px]">
                   {data.generated_record}
                 </code>
                 <button
                   type="button"
                   onClick={() => handleCopy(data.generated_record)}
-                  className="shrink-0 rounded border border-border bg-card p-1 text-foreground-muted transition-colors hover:bg-surface-hover"
+                  className="border-border bg-card text-foreground-muted hover:bg-surface-hover shrink-0 rounded border p-1 transition-colors"
                   title={"Copy"}
                 >
                   <Copy className="h-3 w-3" />
                 </button>
               </div>
-              {copied && (
-                <p className="mt-0.5 text-[10px] text-status-success">
-                  {"Copied!"}
-                </p>
-              )}
+              {copied && <p className="text-status-success mt-0.5 text-[10px]">{"Copied!"}</p>}
             </div>
           )}
         </div>

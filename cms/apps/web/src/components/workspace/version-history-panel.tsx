@@ -5,10 +5,7 @@ import { Clock, RotateCcw, Eye, EyeOff, Loader2 } from "../icons";
 import { toast } from "sonner";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
-import {
-  useTemplateVersions,
-  useRestoreVersion,
-} from "@/hooks/use-templates";
+import { useTemplateVersions, useRestoreVersion } from "@/hooks/use-templates";
 import type { VersionResponse } from "@/types/templates";
 
 interface VersionHistoryPanelProps {
@@ -62,7 +59,9 @@ export function VersionHistoryPanel({
         if (result) {
           onRestore(result.html_source, result.version_number);
           await mutateVersions();
-          toast.success(`Restored to version ${version.version_number} (saved as v${result.version_number})`);
+          toast.success(
+            `Restored to version ${version.version_number} (saved as v${result.version_number})`,
+          );
         }
       } catch {
         toast.error("Failed to restore version");
@@ -70,7 +69,7 @@ export function VersionHistoryPanel({
         setRestoringVersion(null);
       }
     },
-    [isRestoring, currentVersionNumber, restoreVersion, onRestore, mutateVersions]
+    [isRestoring, currentVersionNumber, restoreVersion, onRestore, mutateVersions],
   );
 
   const togglePreview = useCallback((versionId: number) => {
@@ -80,7 +79,7 @@ export function VersionHistoryPanel({
   if (!templateId) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-xs text-muted-foreground">No template selected</p>
+        <p className="text-muted-foreground text-xs">No template selected</p>
       </div>
     );
   }
@@ -88,8 +87,8 @@ export function VersionHistoryPanel({
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center gap-2">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">Loading history...</p>
+        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+        <p className="text-muted-foreground text-xs">Loading history...</p>
       </div>
     );
   }
@@ -97,7 +96,9 @@ export function VersionHistoryPanel({
   if (!versions?.length) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-xs text-muted-foreground">No versions yet — save to create your first version</p>
+        <p className="text-muted-foreground text-xs">
+          No versions yet — save to create your first version
+        </p>
       </div>
     );
   }
@@ -115,12 +116,12 @@ export function VersionHistoryPanel({
               <div
                 className={`group flex items-center gap-3 rounded-md px-3 py-2 text-xs transition-colors ${
                   isCurrent
-                    ? "bg-primary/10 border border-primary/20"
+                    ? "bg-primary/10 border-primary/20 border"
                     : "hover:bg-muted/50 border border-transparent"
                 }`}
               >
                 {/* Version indicator */}
-                <div className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+                <div className="text-muted-foreground flex shrink-0 items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5" />
                   <span className="font-mono font-medium">v{version.version_number}</span>
                 </div>
@@ -141,9 +142,7 @@ export function VersionHistoryPanel({
                     )}
                   </div>
                   {version.changelog && (
-                    <p className="mt-0.5 truncate text-muted-foreground/70">
-                      {version.changelog}
-                    </p>
+                    <p className="text-muted-foreground/70 mt-0.5 truncate">{version.changelog}</p>
                   )}
                 </div>
 
@@ -152,7 +151,7 @@ export function VersionHistoryPanel({
                   <button
                     type="button"
                     onClick={() => togglePreview(version.id)}
-                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
                     title={isPreviewing ? "Hide preview" : "Preview HTML"}
                   >
                     {isPreviewing ? (
@@ -166,7 +165,7 @@ export function VersionHistoryPanel({
                       type="button"
                       onClick={() => handleRestore(version)}
                       disabled={isRestoring}
-                      className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors disabled:opacity-50"
                       title="Restore this version"
                     >
                       {isBeingRestored ? (
@@ -181,8 +180,8 @@ export function VersionHistoryPanel({
 
               {/* Inline HTML preview */}
               {isPreviewing && (
-                <div className="mx-3 mb-1 mt-1 overflow-hidden rounded border border-border bg-muted/30">
-                  <pre className="max-h-48 overflow-auto p-2 text-[10px] leading-relaxed text-muted-foreground">
+                <div className="border-border bg-muted/30 mx-3 mb-1 mt-1 overflow-hidden rounded border">
+                  <pre className="text-muted-foreground max-h-48 overflow-auto p-2 text-[10px] leading-relaxed">
                     <code>
                       {version.html_source.length > 3000
                         ? `${version.html_source.slice(0, 3000)}…`

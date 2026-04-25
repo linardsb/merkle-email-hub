@@ -1,11 +1,3 @@
-export default function WorkspaceLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex h-screen flex-col overflow-hidden bg-surface">
-      {children}
-    </div>
-  );
+export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+  return <div className="bg-surface flex h-screen flex-col overflow-hidden">{children}</div>;
 }

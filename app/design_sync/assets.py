@@ -51,7 +51,9 @@ def _try_resize_image(data: bytes, max_width: int, fmt: str) -> bytes:
 
         from PIL import Image
 
-        img = Image.open(BytesIO(data))
+        from app.shared.imaging import safe_image_open
+
+        img = safe_image_open(BytesIO(data))
         if img.width <= max_width:
             return data
         ratio = max_width / img.width

@@ -8,18 +8,17 @@ export function useComponentCoverage() {
   const { data, ...rest } = useSWR<PaginatedResponseComponentResponse>(
     "/api/v1/components/?page=1&page_size=100",
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const components = data?.items ?? [];
   const coverage = {
     total: components.length,
     full: components.filter((c) => c.compatibility_badge === "full").length,
-    partial: components.filter((c) => c.compatibility_badge === "partial")
-      .length,
+    partial: components.filter((c) => c.compatibility_badge === "partial").length,
     issues: components.filter((c) => c.compatibility_badge === "issues").length,
     untested: components.filter(
-      (c) => !c.compatibility_badge || c.compatibility_badge === "untested"
+      (c) => !c.compatibility_badge || c.compatibility_badge === "untested",
     ).length,
   };
 
@@ -42,6 +41,6 @@ export function useGraphHealth() {
         return { healthy: false };
       }
     },
-    { revalidateOnFocus: false, revalidateOnReconnect: false }
+    { revalidateOnFocus: false, revalidateOnReconnect: false },
   );
 }

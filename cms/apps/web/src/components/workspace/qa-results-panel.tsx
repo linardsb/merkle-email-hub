@@ -42,62 +42,47 @@ export function QAResultsPanel({
   const session = useSession();
   const userRole = session.data?.user?.role;
   const canOverride =
-    !result.passed &&
-    !result.override &&
-    (userRole === "admin" || userRole === "developer");
+    !result.passed && !result.override && (userRole === "admin" || userRole === "developer");
 
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [showPassing, setShowPassing] = useState(false);
 
   const scorePercent = Math.round(result.overall_score * 100);
   const checks = result.checks ?? [];
-  const failedChecks = useMemo(
-    () => checks.filter((c) => !c.passed),
-    [checks]
-  );
-  const passedChecks = useMemo(
-    () => checks.filter((c) => c.passed),
-    [checks]
-  );
-  const cssAuditCheck = useMemo(
-    () => checks.find((c) => c.check_name === "css_audit"),
-    [checks]
-  );
+  const failedChecks = useMemo(() => checks.filter((c) => !c.passed), [checks]);
+  const passedChecks = useMemo(() => checks.filter((c) => c.passed), [checks]);
+  const cssAuditCheck = useMemo(() => checks.find((c) => c.check_name === "css_audit"), [checks]);
   const overriddenNames = useMemo(
     () => new Set(result.override?.checks_overridden ?? []),
-    [result.override?.checks_overridden]
+    [result.override?.checks_overridden],
   );
 
   return (
-    <div className="flex h-full w-80 flex-col border-l border-border bg-card">
+    <div className="border-border bg-card flex h-full w-80 flex-col border-l">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <div className="border-border flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           {result.passed || result.override ? (
-            <ShieldCheck className="h-5 w-5 text-status-success" />
+            <ShieldCheck className="text-status-success h-5 w-5" />
           ) : (
-            <ShieldAlert className="h-5 w-5 text-destructive" />
+            <ShieldAlert className="text-destructive h-5 w-5" />
           )}
-          <h2 className="text-sm font-semibold text-foreground">
-            {"QA Results"}
-          </h2>
+          <h2 className="text-foreground text-sm font-semibold">{"QA Results"}</h2>
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label={"Close"}
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Score summary */}
-      <div className="border-b border-border px-4 py-3">
+      <div className="border-border border-b px-4 py-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-2xl font-bold text-foreground">
-            {scorePercent}%
-          </span>
+          <span className="text-foreground text-2xl font-bold">{scorePercent}%</span>
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
               result.passed || result.override
@@ -105,23 +90,17 @@ export function QAResultsPanel({
                 : "bg-badge-danger-bg text-badge-danger-text"
             }`}
           >
-            {result.passed
-              ? "Passed"
-              : result.override
-                ? "Overridden"
-                : "Failed"}
+            {result.passed ? "Passed" : result.override ? "Overridden" : "Failed"}
           </span>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="text-muted-foreground mt-1 text-xs">
           {`${result.checks_passed} of ${result.checks_total} checks passed`}
         </p>
 
         {/* Override info */}
         {result.override && (
-          <div className="mt-2 rounded border border-status-warning/30 bg-badge-warning-bg px-2.5 py-2 text-xs text-muted-foreground">
-            <p className="font-medium text-badge-warning-text">
-              {"Override applied"}
-            </p>
+          <div className="border-status-warning/30 bg-badge-warning-bg text-muted-foreground mt-2 rounded border px-2.5 py-2 text-xs">
+            <p className="text-badge-warning-text font-medium">{"Override applied"}</p>
             <p className="mt-0.5">{result.override.justification}</p>
           </div>
         )}
@@ -132,7 +111,7 @@ export function QAResultsPanel({
         {/* Failed checks first */}
         {failedChecks.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-xs font-medium uppercase tracking-wider text-destructive">
+            <h3 className="text-destructive text-xs font-medium uppercase tracking-wider">
               {`${failedChecks.length} Failed`}
             </h3>
             {failedChecks.map((check) => (
@@ -152,7 +131,7 @@ export function QAResultsPanel({
             <button
               type="button"
               onClick={() => setShowPassing((v) => !v)}
-              className="flex w-full items-center justify-between text-xs font-medium uppercase tracking-wider text-status-success"
+              className="text-status-success flex w-full items-center justify-between text-xs font-medium uppercase tracking-wider"
             >
               {`${passedChecks.length} Passed`}
               {showPassing ? (
@@ -178,72 +157,68 @@ export function QAResultsPanel({
 
       {/* CSS Compatibility Audit */}
       {cssAuditCheck && (
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-border border-t px-4 py-3">
           <CSSAuditPanel check={cssAuditCheck} />
         </div>
       )}
 
       {/* Visual QA section */}
       {html && entityType && entityId ? (
-        <div className="border-t border-border px-4 py-3">
-          <VisualQAPanelTab
-            html={html}
-            entityType={entityType}
-            entityId={entityId}
-          />
+        <div className="border-border border-t px-4 py-3">
+          <VisualQAPanelTab html={html} entityType={entityType} entityId={entityId} />
         </div>
       ) : null}
 
       {/* Chaos testing section */}
       {html ? (
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-border border-t px-4 py-3">
           <ChaosTestPanel html={html} />
         </div>
       ) : null}
 
       {/* Property testing section */}
-      <div className="border-t border-border px-4 py-3">
+      <div className="border-border border-t px-4 py-3">
         <PropertyTestPanel />
       </div>
 
       {/* Outlook Advisor section */}
       {html ? (
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-border border-t px-4 py-3">
           <OutlookAdvisorPanel html={html} onHtmlUpdate={onHtmlUpdate} />
         </div>
       ) : null}
 
       {/* CSS Compiler section */}
       {html ? (
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-border border-t px-4 py-3">
           <CSSCompilerPanel html={html} onHtmlUpdate={onHtmlUpdate} />
         </div>
       ) : null}
 
       {/* Gmail Intelligence section */}
       {html ? (
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-border border-t px-4 py-3">
           <GmailPredictionPanel html={html} onHtmlUpdate={onHtmlUpdate} />
         </div>
       ) : null}
 
       {/* Ontology Sync section */}
-      <div className="border-t border-border px-4 py-3">
+      <div className="border-border border-t px-4 py-3">
         <OntologySyncPanel />
       </div>
 
       {/* Competitive Intelligence section */}
-      <div className="border-t border-border px-4 py-3">
+      <div className="border-border border-t px-4 py-3">
         <CompetitiveReportPanel />
       </div>
 
       {/* Override button (developer+ only, failing results only) */}
       {canOverride && (
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-border border-t px-4 py-3">
           <button
             type="button"
             onClick={() => setOverrideOpen(true)}
-            className="w-full rounded-md border border-status-warning bg-badge-warning-bg px-3 py-2 text-sm font-medium text-badge-warning-text transition-colors hover:opacity-80"
+            className="border-status-warning bg-badge-warning-bg text-badge-warning-text w-full rounded-md border px-3 py-2 text-sm font-medium transition-colors hover:opacity-80"
           >
             {"Override Failing Checks"}
           </button>

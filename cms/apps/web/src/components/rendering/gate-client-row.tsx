@@ -20,7 +20,7 @@ export function GateClientRow({ result }: Props) {
   const hasDetails = result.blocking_reasons.length > 0 || result.remediation.length > 0;
 
   return (
-    <div className="rounded-md border border-card-border bg-card-bg">
+    <div className="border-card-border bg-card-bg rounded-md border">
       {/* Header row */}
       <button
         type="button"
@@ -29,29 +29,29 @@ export function GateClientRow({ result }: Props) {
         className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm"
       >
         {/* Expand chevron */}
-        <span className="w-4 shrink-0 text-foreground-muted">
+        <span className="text-foreground-muted w-4 shrink-0">
           {hasDetails ? (
-            expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            expanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )
           ) : null}
         </span>
 
         {/* Client name + tier */}
         <span className="w-40 shrink-0">
-          <span className="font-medium text-foreground">{result.client_name}</span>
-          <span className="ml-1.5 text-xs text-foreground-muted">
+          <span className="text-foreground font-medium">{result.client_name}</span>
+          <span className="text-foreground-muted ml-1.5 text-xs">
             {TIER_LABELS[result.tier] ?? result.tier}
           </span>
         </span>
 
         {/* Confidence bar */}
-        <ConfidenceBar
-          score={result.confidence_score}
-          threshold={result.threshold}
-          size="sm"
-        />
+        <ConfidenceBar score={result.confidence_score} threshold={result.threshold} size="sm" />
 
         {/* Score */}
-        <span className="w-14 shrink-0 text-right font-mono text-xs text-foreground-muted">
+        <span className="text-foreground-muted w-14 shrink-0 text-right font-mono text-xs">
           {result.confidence_score.toFixed(0)}%
         </span>
 
@@ -69,11 +69,11 @@ export function GateClientRow({ result }: Props) {
 
       {/* Expanded details */}
       {expanded && hasDetails && (
-        <div className="border-t border-card-border px-3 py-2.5 pl-10 text-xs">
+        <div className="border-card-border border-t px-3 py-2.5 pl-10 text-xs">
           {result.blocking_reasons.length > 0 && (
             <div className="mb-2">
-              <p className="mb-1 font-medium text-foreground">Blocking Reasons</p>
-              <ul className="list-inside list-disc space-y-0.5 text-foreground-muted">
+              <p className="text-foreground mb-1 font-medium">Blocking Reasons</p>
+              <ul className="text-foreground-muted list-inside list-disc space-y-0.5">
                 {result.blocking_reasons.map((reason, i) => (
                   <li key={i}>{reason}</li>
                 ))}
@@ -82,8 +82,8 @@ export function GateClientRow({ result }: Props) {
           )}
           {result.remediation.length > 0 && (
             <div>
-              <p className="mb-1 font-medium text-foreground">Remediation</p>
-              <ul className="list-inside list-disc space-y-0.5 text-foreground-muted">
+              <p className="text-foreground mb-1 font-medium">Remediation</p>
+              <ul className="text-foreground-muted list-inside list-disc space-y-0.5">
                 {result.remediation.map((step, i) => (
                   <li key={i}>{step}</li>
                 ))}

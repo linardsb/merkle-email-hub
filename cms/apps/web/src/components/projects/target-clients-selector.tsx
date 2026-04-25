@@ -5,12 +5,7 @@ import { ChevronDown, ChevronRight, Search } from "../icons";
 import { useEmailClients } from "@/hooks/use-email-clients";
 import type { EmailClientResponse } from "@email-hub/sdk";
 
-const COMMON_CLIENTS = [
-  "gmail_web",
-  "outlook_2019_win",
-  "apple_mail_ios",
-  "apple_mail_macos",
-];
+const COMMON_CLIENTS = ["gmail_web", "outlook_2019_win", "apple_mail_ios", "apple_mail_macos"];
 
 const ENGINE_STYLES: Record<string, string> = {
   word: "bg-destructive/10 text-destructive",
@@ -48,9 +43,7 @@ export function TargetClientsSelector({
   const grouped = useMemo(() => {
     if (!clients) return {};
     const filtered = search
-      ? clients.filter((c) =>
-          c.name.toLowerCase().includes(search.toLowerCase())
-        )
+      ? clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
       : clients;
 
     const groups: Record<string, EmailClientResponse[]> = {};
@@ -64,19 +57,13 @@ export function TargetClientsSelector({
 
   const toggleClient = (id: string) => {
     if (disabled) return;
-    onChange(
-      selected.includes(id)
-        ? selected.filter((s) => s !== id)
-        : [...selected, id]
-    );
+    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
   };
 
   const handleSelectCommon = () => {
     if (disabled) return;
     const availableIds = clients?.map((c) => c.id) ?? [];
-    const commonAvailable = COMMON_CLIENTS.filter((id) =>
-      availableIds.includes(id)
-    );
+    const commonAvailable = COMMON_CLIENTS.filter((id) => availableIds.includes(id));
     onChange(commonAvailable);
   };
 
@@ -91,32 +78,32 @@ export function TargetClientsSelector({
 
   if (isLoading) {
     return (
-      <div className="rounded-md border border-input-border bg-input-bg p-4 text-center text-sm text-muted-foreground">
+      <div className="border-input-border bg-input-bg text-muted-foreground rounded-md border p-4 text-center text-sm">
         {"Loading..."}
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border border-input-border bg-input-bg">
+    <div className="border-input-border bg-input-bg rounded-md border">
       {/* Header: search + common preset */}
-      <div className="flex items-center gap-2 border-b border-border p-2">
+      <div className="border-border flex items-center gap-2 border-b p-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={"Search clients..."}
             disabled={disabled}
-            className="w-full rounded border-0 bg-transparent py-1 pl-7 pr-2 text-sm text-foreground placeholder:text-input-placeholder focus:outline-none disabled:opacity-50"
+            className="text-foreground placeholder:text-input-placeholder w-full rounded border-0 bg-transparent py-1 pl-7 pr-2 text-sm focus:outline-none disabled:opacity-50"
           />
         </div>
         <button
           type="button"
           onClick={handleSelectCommon}
           disabled={disabled}
-          className="shrink-0 rounded px-2 py-1 text-xs font-medium text-interactive transition-colors hover:bg-interactive/10 disabled:opacity-50"
+          className="text-interactive hover:bg-interactive/10 shrink-0 rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {"Select Common"}
         </button>
@@ -132,16 +119,16 @@ export function TargetClientsSelector({
               <button
                 type="button"
                 onClick={() => toggleFamily(family)}
-                className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+                className="text-foreground hover:bg-surface-hover flex w-full items-center gap-1.5 px-3 py-2 text-left text-sm font-medium transition-colors"
               >
                 {isCollapsed ? (
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
                 )}
                 <span>{family}</span>
                 {selCount > 0 && (
-                  <span className="ml-auto text-xs text-interactive">
+                  <span className="text-interactive ml-auto text-xs">
                     {`${selCount} clients selected`}
                   </span>
                 )}
@@ -150,7 +137,7 @@ export function TargetClientsSelector({
                 familyClients.map((client) => (
                   <label
                     key={client.id}
-                    className="flex cursor-pointer items-center gap-2 px-3 py-1.5 pl-8 text-sm transition-colors hover:bg-surface-hover"
+                    className="hover:bg-surface-hover flex cursor-pointer items-center gap-2 px-3 py-1.5 pl-8 text-sm transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -159,13 +146,13 @@ export function TargetClientsSelector({
                       disabled={disabled}
                       className="accent-interactive"
                     />
-                    <span className="flex-1 text-foreground">{client.name}</span>
+                    <span className="text-foreground flex-1">{client.name}</span>
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${ENGINE_STYLES[client.engine] ?? ENGINE_STYLES.custom}`}
                     >
                       {ENGINE_LABELS[client.engine] ?? "Custom"}
                     </span>
-                    <span className="w-10 text-right text-xs text-muted-foreground">
+                    <span className="text-muted-foreground w-10 text-right text-xs">
                       {client.market_share}%
                     </span>
                   </label>
@@ -176,7 +163,7 @@ export function TargetClientsSelector({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
+      <div className="border-border text-muted-foreground border-t px-3 py-1.5 text-xs">
         {selected.length > 0
           ? `${selected.length} clients selected`
           : "No priority clients \u2014 all 25 clients treated equally"}

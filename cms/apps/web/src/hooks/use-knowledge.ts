@@ -23,9 +23,7 @@ interface UseKnowledgeDocumentsOptions {
   tag?: string;
 }
 
-export function useKnowledgeDocuments(
-  options: UseKnowledgeDocumentsOptions = {},
-) {
+export function useKnowledgeDocuments(options: UseKnowledgeDocumentsOptions = {}) {
   const { page = 1, pageSize = 12, domain, tag } = options;
 
   const params = new URLSearchParams({
@@ -35,10 +33,7 @@ export function useKnowledgeDocuments(
   if (domain) params.set("domain", domain);
   if (tag) params.set("tag", tag);
 
-  return useSWR<PaginatedDocuments>(
-    `/api/v1/knowledge/documents?${params.toString()}`,
-    fetcher,
-  );
+  return useSWR<PaginatedDocuments>(`/api/v1/knowledge/documents?${params.toString()}`, fetcher);
 }
 
 export function useKnowledgeDocument(documentId: number | null) {
@@ -58,10 +53,7 @@ export function useKnowledgeDocumentContent(documentId: number | null) {
 // ── Domains & Tags (GET) ──
 
 export function useKnowledgeDomains() {
-  return useSWR<KnowledgeDomainList>(
-    "/api/v1/knowledge/domains",
-    fetcher,
-  );
+  return useSWR<KnowledgeDomainList>("/api/v1/knowledge/domains", fetcher);
 }
 
 export function useKnowledgeTags() {

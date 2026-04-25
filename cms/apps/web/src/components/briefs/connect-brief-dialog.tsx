@@ -44,27 +44,48 @@ const URL_PLACEHOLDERS: Record<BriefPlatform, string> = {
 
 function getCredentialLabel(platform: BriefPlatform) {
   switch (platform) {
-    case "jira": return "API Token";
-    case "asana": return "Personal Access Token";
-    case "monday": return "API Key";
-    case "clickup": return "API Token";
-    case "trello": return "API Key";
-    case "notion": return "Integration Token";
-    case "wrike": return "Access Token";
-    case "basecamp": return "Access Token";
+    case "jira":
+      return "API Token";
+    case "asana":
+      return "Personal Access Token";
+    case "monday":
+      return "API Key";
+    case "clickup":
+      return "API Token";
+    case "trello":
+      return "API Key";
+    case "notion":
+      return "Integration Token";
+    case "wrike":
+      return "Access Token";
+    case "basecamp":
+      return "Access Token";
   }
 }
 
-function buildCredentials(platform: BriefPlatform, credential: string, jiraEmail: string, trelloToken: string): Record<string, string> {
+function buildCredentials(
+  platform: BriefPlatform,
+  credential: string,
+  jiraEmail: string,
+  trelloToken: string,
+): Record<string, string> {
   switch (platform) {
-    case "jira": return { email: jiraEmail.trim(), api_token: credential.trim() };
-    case "asana": return { personal_access_token: credential.trim() };
-    case "monday": return { api_key: credential.trim() };
-    case "clickup": return { api_token: credential.trim() };
-    case "trello": return { api_key: credential.trim(), api_token: trelloToken.trim() };
-    case "notion": return { integration_token: credential.trim() };
-    case "wrike": return { access_token: credential.trim() };
-    case "basecamp": return { access_token: credential.trim() };
+    case "jira":
+      return { email: jiraEmail.trim(), api_token: credential.trim() };
+    case "asana":
+      return { personal_access_token: credential.trim() };
+    case "monday":
+      return { api_key: credential.trim() };
+    case "clickup":
+      return { api_token: credential.trim() };
+    case "trello":
+      return { api_key: credential.trim(), api_token: trelloToken.trim() };
+    case "notion":
+      return { integration_token: credential.trim() };
+    case "wrike":
+      return { access_token: credential.trim() };
+    case "basecamp":
+      return { access_token: credential.trim() };
   }
 }
 
@@ -141,13 +162,18 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
           <DialogTitle>{"Connect Brief Platform"}</DialogTitle>
-          <DialogDescription>{"Link a project management tool to import campaign briefs and tasks."}</DialogDescription>
+          <DialogDescription>
+            {"Link a project management tool to import campaign briefs and tasks."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Connection Name */}
           <div>
-            <label htmlFor="brief-name" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="brief-name"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               {"Connection Name"}
             </label>
             <input
@@ -164,7 +190,10 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
 
           {/* Platform */}
           <div>
-            <label htmlFor="brief-platform" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="brief-platform"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               {"Platform"}
             </label>
             <select
@@ -184,7 +213,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
 
           {/* Project URL */}
           <div>
-            <label htmlFor="brief-url" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label htmlFor="brief-url" className="text-foreground mb-1.5 block text-sm font-medium">
               {"Project / Board URL"}
             </label>
             <input
@@ -201,7 +230,10 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           {/* Jira email (only for Jira) */}
           {needsJiraEmail && (
             <div>
-              <label htmlFor="brief-jira-email" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="brief-jira-email"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"Jira Account Email"}
               </label>
               <input
@@ -218,7 +250,10 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
 
           {/* Primary credential */}
           <div>
-            <label htmlFor="brief-credential" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="brief-credential"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               {getCredentialLabel(platform)}
             </label>
             <input
@@ -227,20 +262,27 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
               value={credential}
               onChange={(e) => setCredential(e.target.value)}
               placeholder={
-                platform === "jira" ? "ATATT3x..."
-                  : platform === "asana" ? "1/12345..."
-                  : "eyJhb..."
+                platform === "jira"
+                  ? "ATATT3x..."
+                  : platform === "asana"
+                    ? "1/12345..."
+                    : "eyJhb..."
               }
               disabled={isMutating}
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-foreground-muted">{"Credentials are encrypted and never stored in plain text."}</p>
+            <p className="text-foreground-muted mt-1 text-xs">
+              {"Credentials are encrypted and never stored in plain text."}
+            </p>
           </div>
 
           {/* Trello extra token (only for Trello) */}
           {needsTrelloToken && (
             <div>
-              <label htmlFor="brief-trello-token" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="brief-trello-token"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"API Token"}
               </label>
               <input
@@ -257,7 +299,10 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
 
           {/* Link to Project */}
           <div>
-            <label htmlFor="brief-project" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="brief-project"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               {"Link to Project"}
             </label>
             <select
@@ -282,7 +327,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -290,7 +335,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

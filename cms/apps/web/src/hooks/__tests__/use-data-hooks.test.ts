@@ -67,16 +67,11 @@ describe("use-projects", () => {
   describe("useProjects", () => {
     it("passes default params key", () => {
       renderHook(() => useProjects());
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/projects?page=1&page_size=10",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/projects?page=1&page_size=10", mockFetcher);
     });
 
     it("passes custom params including clientOrgId and search", () => {
-      renderHook(() =>
-        useProjects({ page: 2, pageSize: 25, clientOrgId: 5, search: "acme" }),
-      );
+      renderHook(() => useProjects({ page: 2, pageSize: 25, clientOrgId: 5, search: "acme" }));
       const key = mockUseSWR.mock.calls[0][0] as string;
       expect(key).toContain("page=2");
       expect(key).toContain("page_size=25");
@@ -88,10 +83,7 @@ describe("use-projects", () => {
   describe("useProject", () => {
     it("passes correct key for valid id", () => {
       renderHook(() => useProject(42));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/projects/42",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/projects/42", mockFetcher);
     });
 
     it("passes null key when id is null", () => {
@@ -103,10 +95,7 @@ describe("use-projects", () => {
   describe("useCreateProject", () => {
     it("passes correct mutation key and fetcher", () => {
       renderHook(() => useCreateProject());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith(
-        "/api/v1/projects",
-        mockMutationFetcher,
-      );
+      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/projects", mockMutationFetcher);
     });
   });
 });
@@ -173,10 +162,7 @@ describe("use-templates", () => {
   describe("useTemplateVersions", () => {
     it("passes correct key for valid id", () => {
       renderHook(() => useTemplateVersions(5));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/templates/5/versions",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/templates/5/versions", mockFetcher);
     });
 
     it("passes null key when id is null", () => {
@@ -188,10 +174,7 @@ describe("use-templates", () => {
   describe("useTemplateVersion", () => {
     it("passes correct key when both params present", () => {
       renderHook(() => useTemplateVersion(5, 2));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/templates/5/versions/2",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/templates/5/versions/2", mockFetcher);
     });
 
     it("passes null key when templateId is null", () => {
@@ -279,10 +262,7 @@ describe("use-qa", () => {
   describe("useQARun", () => {
     it("uses longMutationFetcher for QA run", () => {
       renderHook(() => useQARun());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith(
-        "/api/v1/qa/run",
-        mockLongMutationFetcher,
-      );
+      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/qa/run", mockLongMutationFetcher);
     });
   });
 
@@ -323,9 +303,7 @@ describe("use-qa", () => {
     });
 
     it("includes optional filters in key", () => {
-      renderHook(() =>
-        useQAResults({ page: 3, pageSize: 5, templateVersionId: 12, passed: true }),
-      );
+      renderHook(() => useQAResults({ page: 3, pageSize: 5, templateVersionId: 12, passed: true }));
       const key = mockUseSWR.mock.calls[0][0] as string;
       expect(key).toContain("page=3");
       expect(key).toContain("page_size=5");
@@ -378,10 +356,7 @@ describe("use-approvals", () => {
   describe("useApprovals", () => {
     it("passes correct key for valid projectId", () => {
       renderHook(() => useApprovals(5));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/approvals/?project_id=5",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/approvals/?project_id=5", mockFetcher);
     });
 
     it("passes null key when projectId is null", () => {
@@ -405,10 +380,7 @@ describe("use-approvals", () => {
   describe("useCreateApproval", () => {
     it("passes correct mutation key and fetcher", () => {
       renderHook(() => useCreateApproval());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith(
-        "/api/v1/approvals/",
-        mockMutationFetcher,
-      );
+      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/approvals/", mockMutationFetcher);
     });
   });
 
@@ -425,10 +397,7 @@ describe("use-approvals", () => {
   describe("useApprovalFeedback", () => {
     it("passes correct key for valid id", () => {
       renderHook(() => useApprovalFeedback(20));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/approvals/20/feedback",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/approvals/20/feedback", mockFetcher);
     });
 
     it("passes null key when id is null", () => {
@@ -450,10 +419,7 @@ describe("use-approvals", () => {
   describe("useApprovalAudit", () => {
     it("passes correct key for valid id", () => {
       renderHook(() => useApprovalAudit(30));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/approvals/30/audit",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/approvals/30/audit", mockFetcher);
     });
 
     it("passes null key when id is null", () => {
@@ -465,10 +431,7 @@ describe("use-approvals", () => {
   describe("useBuild", () => {
     it("passes correct key for valid id", () => {
       renderHook(() => useBuild(99));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/email/builds/99",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/email/builds/99", mockFetcher);
     });
 
     it("passes null key when id is null", () => {
@@ -505,9 +468,7 @@ describe("use-components", () => {
     });
 
     it("includes category and search in key", () => {
-      renderHook(() =>
-        useComponents({ page: 2, pageSize: 10, category: "header", search: "nav" }),
-      );
+      renderHook(() => useComponents({ page: 2, pageSize: 10, category: "header", search: "nav" }));
       const key = mockUseSWR.mock.calls[0][0] as string;
       expect(key).toContain("page=2");
       expect(key).toContain("page_size=10");
@@ -531,10 +492,7 @@ describe("use-components", () => {
   describe("useComponentVersions", () => {
     it("passes correct key for valid id", () => {
       renderHook(() => useComponentVersions(6));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/components/6/versions",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/components/6/versions", mockFetcher);
     });
 
     it("passes null key when id is null", () => {
@@ -546,10 +504,7 @@ describe("use-components", () => {
   describe("useComponentCompatibility", () => {
     it("passes correct key for valid id", () => {
       renderHook(() => useComponentCompatibility(6));
-      expect(mockUseSWR).toHaveBeenCalledWith(
-        "/api/v1/components/6/compatibility",
-        mockFetcher,
-      );
+      expect(mockUseSWR).toHaveBeenCalledWith("/api/v1/components/6/compatibility", mockFetcher);
     });
 
     it("passes null key when id is null", () => {
@@ -654,10 +609,7 @@ describe("use-personas", () => {
   describe("useCreatePersona", () => {
     it("passes correct mutation key and fetcher", () => {
       renderHook(() => useCreatePersona());
-      expect(mockUseSWRMutation).toHaveBeenCalledWith(
-        "/api/v1/personas",
-        mockMutationFetcher,
-      );
+      expect(mockUseSWRMutation).toHaveBeenCalledWith("/api/v1/personas", mockMutationFetcher);
     });
   });
 });

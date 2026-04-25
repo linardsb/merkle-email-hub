@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@email-hub/ui/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@email-hub/ui/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -19,11 +15,7 @@ interface PaletteColorPickerProps {
   onChange: (hex: string) => void;
 }
 
-export function PaletteColorPicker({
-  value,
-  palette,
-  onChange,
-}: PaletteColorPickerProps) {
+export function PaletteColorPicker({ value, palette, onChange }: PaletteColorPickerProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -31,7 +23,7 @@ export function PaletteColorPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="h-8 w-8 rounded border border-default shadow-sm transition-shadow hover:shadow-md"
+          className="border-default h-8 w-8 rounded border shadow-sm transition-shadow hover:shadow-md"
           style={{ backgroundColor: value }}
           aria-label={`Color: ${value}`}
         />
@@ -46,7 +38,7 @@ export function PaletteColorPicker({
                     type="button"
                     className={`h-8 w-8 rounded border transition-all ${
                       swatch.hex === value
-                        ? "border-foreground ring-2 ring-ring"
+                        ? "border-foreground ring-ring ring-2"
                         : "border-default hover:scale-110"
                     }`}
                     style={{ backgroundColor: swatch.hex }}
@@ -66,7 +58,7 @@ export function PaletteColorPicker({
           </div>
         </TooltipProvider>
         {palette.length === 0 && (
-          <p className="py-2 text-center text-xs text-muted-foreground">
+          <p className="text-muted-foreground py-2 text-center text-xs">
             {"No palette colors configured"}
           </p>
         )}

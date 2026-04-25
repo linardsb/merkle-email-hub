@@ -1,6 +1,15 @@
 "use client";
 
-import { Monitor, Tablet, Smartphone, ShieldCheck, Zap, Copy, Download, CloudUpload } from "../icons";
+import {
+  Monitor,
+  Tablet,
+  Smartphone,
+  ShieldCheck,
+  Zap,
+  Copy,
+  Download,
+  CloudUpload,
+} from "../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,18 +65,18 @@ export function BuilderToolbar({
 }: BuilderToolbarProps) {
   return (
     <div
-      className="flex h-9 items-center justify-between border-b border-border bg-card px-3 text-xs text-muted-foreground"
+      className="border-border bg-card text-muted-foreground flex h-9 items-center justify-between border-b px-3 text-xs"
       data-builder-toolbar
     >
       {/* Left: Device preview segmented control */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center rounded border border-border">
+        <div className="border-border flex items-center rounded border">
           {deviceButtons.map(({ value, icon: Icon, label }) => (
             <button
               key={value}
               type="button"
               onClick={() => onDevicePreviewChange(value)}
-              className={`rounded p-1 transition-colors hover:bg-accent ${
+              className={`hover:bg-accent rounded p-1 transition-colors ${
                 devicePreview === value ? "bg-accent text-foreground" : ""
               }`}
               title={label}
@@ -82,7 +91,7 @@ export function BuilderToolbar({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="rounded border border-border px-2 py-1 text-xs transition-colors hover:bg-accent"
+              className="border-border hover:bg-accent rounded border px-2 py-1 text-xs transition-colors"
             >
               {clientOptions.find((o) => o.value === clientPreview)?.label ?? "Default view"}
             </button>
@@ -108,7 +117,7 @@ export function BuilderToolbar({
             type="button"
             onClick={onRunQA}
             disabled={isRunningQA}
-            className="flex items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-accent disabled:opacity-50"
+            className="hover:bg-accent flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
             data-builder-qa
           >
             <ShieldCheck className="h-3.5 w-3.5" />
@@ -120,7 +129,7 @@ export function BuilderToolbar({
           <button
             type="button"
             onClick={onAISuggest}
-            className="flex items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-accent"
+            className="hover:bg-accent flex items-center gap-1 rounded px-2 py-1 transition-colors"
           >
             <Zap className="h-3.5 w-3.5" />
             <span>{"AI Suggest"}</span>
@@ -132,7 +141,7 @@ export function BuilderToolbar({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-accent"
+              className="hover:bg-accent flex items-center gap-1 rounded px-2 py-1 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               <span>{"Export"}</span>

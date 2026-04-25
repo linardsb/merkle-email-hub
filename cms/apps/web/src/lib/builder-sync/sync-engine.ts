@@ -78,7 +78,7 @@ export class BuilderSyncEngine {
       if (sections === null) {
         this.callbacks.onStatusChange("parse_error");
         this.callbacks.onParseError(
-          "HTML structure could not be parsed into sections. The code editor remains functional."
+          "HTML structure could not be parsed into sections. The code editor remains functional.",
         );
         return;
       }
@@ -97,10 +97,7 @@ export class BuilderSyncEngine {
   private syncBuilderToCode(sections: SectionNode[]): void {
     this.syncing = true;
     try {
-      const html = sectionsToHtml(
-        sections,
-        this.templateShell || this.lastCodeHtml
-      );
+      const html = sectionsToHtml(sections, this.templateShell || this.lastCodeHtml);
       this.lastCodeHtml = html;
       this.callbacks.onCodeUpdate(html);
       this.callbacks.onStatusChange("synced");

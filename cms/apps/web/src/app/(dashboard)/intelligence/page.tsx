@@ -24,28 +24,22 @@ export default function IntelligencePage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <BarChart3 className="h-8 w-8 text-foreground-accent" />
+          <BarChart3 className="text-foreground-accent h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {"Rendering Intelligence"}
-            </h1>
-            <p className="text-sm text-foreground-muted">{"Quality trends and check analytics across all QA runs"}</p>
+            <h1 className="text-foreground text-2xl font-semibold">{"Rendering Intelligence"}</h1>
+            <p className="text-foreground-muted text-sm">
+              {"Quality trends and check analytics across all QA runs"}
+            </p>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton
-              key={i}
-              className="h-24 rounded-lg border border-card-border"
-            />
+            <Skeleton key={i} className="border-card-border h-24 rounded-lg border" />
           ))}
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton
-              key={i}
-              className="h-64 rounded-lg border border-card-border"
-            />
+            <Skeleton key={i} className="border-card-border h-64 rounded-lg border" />
           ))}
         </div>
       </div>
@@ -56,10 +50,8 @@ export default function IntelligencePage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <BarChart3 className="h-8 w-8 text-foreground-accent" />
-          <h1 className="text-2xl font-semibold text-foreground">
-            {"Rendering Intelligence"}
-          </h1>
+          <BarChart3 className="text-foreground-accent h-8 w-8" />
+          <h1 className="text-foreground text-2xl font-semibold">{"Rendering Intelligence"}</h1>
         </div>
         <ErrorState
           message={"Failed to load intelligence data"}
@@ -74,12 +66,12 @@ export default function IntelligencePage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <BarChart3 className="h-8 w-8 text-foreground-accent" />
+          <BarChart3 className="text-foreground-accent h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {"Rendering Intelligence"}
-            </h1>
-            <p className="text-sm text-foreground-muted">{"Quality trends and check analytics across all QA runs"}</p>
+            <h1 className="text-foreground text-2xl font-semibold">{"Rendering Intelligence"}</h1>
+            <p className="text-foreground-muted text-sm">
+              {"Quality trends and check analytics across all QA runs"}
+            </p>
           </div>
         </div>
         <EmptyState
@@ -96,12 +88,12 @@ export default function IntelligencePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BarChart3 className="h-8 w-8 text-foreground-accent" />
+          <BarChart3 className="text-foreground-accent h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {"Rendering Intelligence"}
-            </h1>
-            <p className="text-sm text-foreground-muted">{"Quality trends and check analytics across all QA runs"}</p>
+            <h1 className="text-foreground text-2xl font-semibold">{"Rendering Intelligence"}</h1>
+            <p className="text-foreground-muted text-sm">
+              {"Quality trends and check analytics across all QA runs"}
+            </p>
           </div>
         </div>
         <ExportReportMenu metrics={metrics} />
@@ -113,14 +105,12 @@ export default function IntelligencePage() {
       {/* Charts row */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Check Performance */}
-        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6">
           <div className="flex items-center gap-2">
-            <ListChecks className="h-5 w-5 text-foreground-muted" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {"Check Performance"}
-            </h2>
+            <ListChecks className="text-foreground-muted h-5 w-5" />
+            <h2 className="text-foreground text-lg font-semibold">{"Check Performance"}</h2>
           </div>
-          <p className="mt-1 text-sm text-foreground-muted">
+          <p className="text-foreground-muted mt-1 text-sm">
             {"Average score per QA check across all runs"}
           </p>
           <div className="mt-4">
@@ -129,14 +119,12 @@ export default function IntelligencePage() {
         </div>
 
         {/* Score Trend */}
-        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6">
           <div className="flex items-center gap-2">
-            <ChartLineUp className="h-5 w-5 text-foreground-muted" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {"Quality Trend"}
-            </h2>
+            <ChartLineUp className="text-foreground-muted h-5 w-5" />
+            <h2 className="text-foreground text-lg font-semibold">{"Quality Trend"}</h2>
           </div>
-          <p className="mt-1 text-sm text-foreground-muted">
+          <p className="text-foreground-muted mt-1 text-sm">
             {"Overall scores from the last 20 QA runs"}
           </p>
           <div className="mt-4">
@@ -146,16 +134,12 @@ export default function IntelligencePage() {
       </div>
 
       {/* Recent Results */}
-      <div className="rounded-lg border border-card-border bg-card-bg p-6">
+      <div className="border-card-border bg-card-bg rounded-lg border p-6">
         <div className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-foreground-muted" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {"Recent Results"}
-          </h2>
+          <Clock className="text-foreground-muted h-5 w-5" />
+          <h2 className="text-foreground text-lg font-semibold">{"Recent Results"}</h2>
         </div>
-        <p className="mt-1 text-sm text-foreground-muted">
-          {"Latest QA run results"}
-        </p>
+        <p className="text-foreground-muted mt-1 text-sm">{"Latest QA run results"}</p>
         <div className="mt-4">
           <RecentResultsTable />
         </div>

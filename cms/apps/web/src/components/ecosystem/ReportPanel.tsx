@@ -76,12 +76,15 @@ export function ReportPanel() {
   const [includeDeliverability, setIncludeDeliverability] = useState(false);
   const [templateVersionId, setTemplateVersionId] = useState("");
   const [includeMobilePreview, setIncludeMobilePreview] = useState(false);
-  const [entityType, setEntityType] = useState<"component_version" | "golden_template">("component_version");
+  const [entityType, setEntityType] = useState<"component_version" | "golden_template">(
+    "component_version",
+  );
   const [entityId, setEntityId] = useState("");
 
   const { trigger: genQA, isMutating: genQALoading } = useGenerateQAReport();
   const { trigger: genApproval, isMutating: genApprovalLoading } = useGenerateApprovalReport();
-  const { trigger: genRegression, isMutating: genRegressionLoading } = useGenerateRegressionReport();
+  const { trigger: genRegression, isMutating: genRegressionLoading } =
+    useGenerateRegressionReport();
   const { trigger: downloadReport } = useReportDownload(previewReportId);
 
   const isGenerating = genQALoading || genApprovalLoading || genRegressionLoading;
@@ -146,12 +149,12 @@ export function ReportPanel() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-foreground-muted">
+        <p className="text-foreground-muted text-sm">
           {reports.length} report{reports.length !== 1 ? "s" : ""} generated this session
         </p>
         <button
           onClick={() => setGenerateOpen(true)}
-          className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse hover:bg-interactive-hover"
+          className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium"
         >
           <Plus className="h-4 w-4" /> Generate Report
         </button>
@@ -159,14 +162,14 @@ export function ReportPanel() {
 
       {/* Report History */}
       {reports.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-card-border bg-card-bg py-12">
-          <FileText className="h-10 w-10 text-foreground-muted" />
+        <div className="border-card-border bg-card-bg flex flex-col items-center gap-3 rounded-lg border py-12">
+          <FileText className="text-foreground-muted h-10 w-10" />
           <p className="text-foreground-muted">No reports yet. Generate your first report above.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-card-border">
+        <div className="border-card-border overflow-hidden rounded-lg border">
           <table className="w-full text-sm">
-            <thead className="bg-card-bg text-left text-foreground-muted">
+            <thead className="bg-card-bg text-foreground-muted text-left">
               <tr>
                 <th className="px-4 py-2 font-medium">Type</th>
                 <th className="px-4 py-2 font-medium">Filename</th>
@@ -175,31 +178,35 @@ export function ReportPanel() {
                 <th className="px-4 py-2 font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-card-border">
+            <tbody className="divide-card-border divide-y">
               {reports.map((r) => (
                 <tr key={r.report_id} className="hover:bg-surface-hover">
                   <td className="px-4 py-2.5">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${TYPE_COLORS[r.report_type]}`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${TYPE_COLORS[r.report_type]}`}
+                    >
                       {r.report_type}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 font-mono text-xs">{r.filename}</td>
-                  <td className="px-4 py-2.5 text-foreground-muted">{formatBytes(r.size_bytes)}</td>
-                  <td className="px-4 py-2.5 text-foreground-muted">{relativeTime(r.generated_at)}</td>
+                  <td className="text-foreground-muted px-4 py-2.5">{formatBytes(r.size_bytes)}</td>
+                  <td className="text-foreground-muted px-4 py-2.5">
+                    {relativeTime(r.generated_at)}
+                  </td>
                   <td className="flex gap-1.5 px-4 py-2.5">
                     <button
                       onClick={() => {
                         setPreviewReportId(r.report_id);
                         setPreviewOpen(true);
                       }}
-                      className="rounded-md border border-card-border p-1.5 text-foreground-muted hover:bg-surface-hover"
+                      className="border-card-border text-foreground-muted hover:bg-surface-hover rounded-md border p-1.5"
                       title="Preview"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDownload(r.report_id, r.filename)}
-                      className="rounded-md border border-card-border p-1.5 text-foreground-muted hover:bg-surface-hover"
+                      className="border-card-border text-foreground-muted hover:bg-surface-hover rounded-md border p-1.5"
                       title="Download"
                     >
                       <Download className="h-4 w-4" />
@@ -221,7 +228,7 @@ export function ReportPanel() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             {/* Type Selector */}
-            <div className="flex gap-1 rounded-lg border border-card-border bg-card-bg p-1">
+            <div className="border-card-border bg-card-bg flex gap-1 rounded-lg border p-1">
               {(["qa", "approval", "regression"] as const).map((t) => (
                 <button
                   key={t}
@@ -247,20 +254,32 @@ export function ReportPanel() {
                     value={qaResultId}
                     onChange={(e) => setQaResultId(e.target.value)}
                     placeholder="e.g. 42"
-                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm"
+                    className="border-input-border bg-input-bg w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={includeScreenshots} onChange={(e) => setIncludeScreenshots(e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      checked={includeScreenshots}
+                      onChange={(e) => setIncludeScreenshots(e.target.checked)}
+                    />
                     Include screenshots
                   </label>
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={includeChaos} onChange={(e) => setIncludeChaos(e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      checked={includeChaos}
+                      onChange={(e) => setIncludeChaos(e.target.checked)}
+                    />
                     Include chaos testing
                   </label>
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={includeDeliverability} onChange={(e) => setIncludeDeliverability(e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      checked={includeDeliverability}
+                      onChange={(e) => setIncludeDeliverability(e.target.checked)}
+                    />
                     Include deliverability
                   </label>
                 </div>
@@ -277,20 +296,26 @@ export function ReportPanel() {
                     value={qaResultId}
                     onChange={(e) => setQaResultId(e.target.value)}
                     placeholder="e.g. 42"
-                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm"
+                    className="border-input-border bg-input-bg w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Template Version ID (optional)</label>
+                  <label className="mb-1 block text-sm font-medium">
+                    Template Version ID (optional)
+                  </label>
                   <input
                     type="number"
                     value={templateVersionId}
                     onChange={(e) => setTemplateVersionId(e.target.value)}
-                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm"
+                    className="border-input-border bg-input-bg w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={includeMobilePreview} onChange={(e) => setIncludeMobilePreview(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={includeMobilePreview}
+                    onChange={(e) => setIncludeMobilePreview(e.target.checked)}
+                  />
                   Include mobile preview
                 </label>
               </>
@@ -303,8 +328,10 @@ export function ReportPanel() {
                   <label className="mb-1 block text-sm font-medium">Entity Type</label>
                   <select
                     value={entityType}
-                    onChange={(e) => setEntityType(e.target.value as "component_version" | "golden_template")}
-                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm"
+                    onChange={(e) =>
+                      setEntityType(e.target.value as "component_version" | "golden_template")
+                    }
+                    className="border-input-border bg-input-bg w-full rounded-md border px-3 py-2 text-sm"
                   >
                     <option value="component_version">Component Version</option>
                     <option value="golden_template">Golden Template</option>
@@ -317,7 +344,7 @@ export function ReportPanel() {
                     value={entityId}
                     onChange={(e) => setEntityId(e.target.value)}
                     placeholder="e.g. 1"
-                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm"
+                    className="border-input-border bg-input-bg w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
               </>
@@ -326,7 +353,7 @@ export function ReportPanel() {
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="w-full rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse hover:bg-interactive-hover disabled:opacity-50"
+              className="bg-interactive text-foreground-inverse hover:bg-interactive-hover w-full rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
             >
               {isGenerating ? "Generating…" : "Generate"}
             </button>
@@ -345,7 +372,7 @@ export function ReportPanel() {
             <iframe
               src={`data:application/pdf;base64,`}
               sandbox=""
-              className="h-[80vh] w-full rounded border border-card-border"
+              className="border-card-border h-[80vh] w-full rounded border"
               title="Report Preview"
             />
           </div>

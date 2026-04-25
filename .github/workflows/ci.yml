@@ -61,16 +61,16 @@ jobs:
         run: cd cms && pnpm install --frozen-lockfile
 
       - name: ESLint
-        run: cd cms && pnpm --filter web lint 2>/dev/null || true
+        run: cd cms && pnpm --filter @email-hub/web lint
 
       - name: Prettier format check
-        run: cd cms && pnpm --filter web format:check 2>/dev/null || true
+        run: cd cms && pnpm --filter @email-hub/web format:check
 
       - name: Type check
-        run: cd cms && pnpm --filter web type-check
+        run: cd cms && pnpm --filter @email-hub/web type-check
 
       - name: Test
-        run: cd cms && pnpm --filter web test
+        run: cd cms && pnpm --filter @email-hub/web test
 
   sdk-check:
     name: SDK drift detection
@@ -88,6 +88,11 @@ jobs:
         run: uv sync --frozen
 
       - name: Export OpenAPI spec
+        # Match the .env feature flags that the committed SDK was generated with.
+        # Conditionally-mounted routers (e.g. credentials/health for the
+        # ecosystem dashboard) must be enabled here so the snapshot is complete.
+        env:
+          CREDENTIALS__ENABLED: "true"
         run: uv run python scripts/export-openapi.py
 
       - uses: actions/setup-node@v6

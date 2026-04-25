@@ -76,13 +76,18 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
           <DialogTitle>{"Import Briefs to Project"}</DialogTitle>
-          <DialogDescription>{"Select brief items and create a new project from them."}</DialogDescription>
+          <DialogDescription>
+            {"Select brief items and create a new project from them."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Project name */}
           <div>
-            <label htmlFor="import-project-name" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="import-project-name"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               {"Project Name"}
             </label>
             <input
@@ -99,12 +104,14 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
 
           {/* Brief items selection */}
           <div>
-            <p className="mb-1.5 text-sm font-medium text-foreground">{"Select briefs to import"}</p>
-            <div className="max-h-48 space-y-1 overflow-y-auto rounded border border-card-border p-2">
+            <p className="text-foreground mb-1.5 text-sm font-medium">
+              {"Select briefs to import"}
+            </p>
+            <div className="border-card-border max-h-48 space-y-1 overflow-y-auto rounded border p-2">
               {items?.map((item) => (
                 <label
                   key={item.id}
-                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-foreground hover:bg-surface-hover"
+                  className="text-foreground hover:bg-surface-hover flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm"
                 >
                   <span
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
@@ -115,10 +122,12 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
                   >
                     {selectedIds.has(item.id) && <Check className="h-3 w-3" />}
                   </span>
-                  <span className="truncate">{item.external_id} — {item.title}</span>
+                  <span className="truncate">
+                    {item.external_id} — {item.title}
+                  </span>
                 </label>
               )) ?? (
-                <p className="py-2 text-center text-xs text-foreground-muted">{"No brief items"}</p>
+                <p className="text-foreground-muted py-2 text-center text-xs">{"No brief items"}</p>
               )}
             </div>
           </div>
@@ -129,7 +138,7 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -137,7 +146,7 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
             type="button"
             onClick={handleImport}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

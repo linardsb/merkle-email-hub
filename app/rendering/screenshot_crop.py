@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import io
 
-from PIL import Image
-
 from app.core.logging import get_logger
+from app.shared.imaging import safe_image_open
 
 logger = get_logger(__name__)
 
@@ -40,7 +39,7 @@ def crop_section(
         return full_screenshot
 
     try:
-        img = Image.open(io.BytesIO(full_screenshot))
+        img = safe_image_open(io.BytesIO(full_screenshot))
         img_width, img_height = img.size
 
         # Clamp bottom edge to image bounds

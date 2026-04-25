@@ -4,8 +4,9 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 // Mock lucide-react icons — explicit exports (Proxy causes vitest to hang)
 vi.mock("lucide-react", () => {
-  const makeIcon = (name: string) =>
-    (props: Record<string, unknown>) => <svg data-testid={`icon-${name}`} {...props} />;
+  const makeIcon = (name: string) => (props: Record<string, unknown>) => (
+    <svg data-testid={`icon-${name}`} {...props} />
+  );
   return {
     AlertTriangle: makeIcon("AlertTriangle"),
     Inbox: makeIcon("Inbox"),
@@ -50,9 +51,7 @@ import { BriefPlatformBadge } from "../briefs/brief-platform-badge";
 // 1. EmptyState
 // ---------------------------------------------------------------------------
 describe("EmptyState", () => {
-  const MockIcon = (props: Record<string, unknown>) => (
-    <svg data-testid="mock-icon" {...props} />
-  );
+  const MockIcon = (props: Record<string, unknown>) => <svg data-testid="mock-icon" {...props} />;
 
   it("renders the title", () => {
     render(<EmptyState icon={MockIcon as never} title="No items" />);
@@ -61,30 +60,20 @@ describe("EmptyState", () => {
 
   it("renders description when provided", () => {
     render(
-      <EmptyState
-        icon={MockIcon as never}
-        title="No items"
-        description="Create your first item"
-      />,
+      <EmptyState icon={MockIcon as never} title="No items" description="Create your first item" />,
     );
     expect(screen.getByText("Create your first item")).toBeInTheDocument();
   });
 
   it("does not render description when omitted", () => {
-    const { container } = render(
-      <EmptyState icon={MockIcon as never} title="No items" />,
-    );
+    const { container } = render(<EmptyState icon={MockIcon as never} title="No items" />);
     const paragraphs = container.querySelectorAll("p");
     expect(paragraphs).toHaveLength(1); // only title
   });
 
   it("renders action when provided", () => {
     render(
-      <EmptyState
-        icon={MockIcon as never}
-        title="No items"
-        action={<button>Add item</button>}
-      />,
+      <EmptyState icon={MockIcon as never} title="No items" action={<button>Add item</button>} />,
     );
     expect(screen.getByText("Add item")).toBeInTheDocument();
   });
@@ -96,11 +85,7 @@ describe("EmptyState", () => {
 
   it("applies custom className", () => {
     const { container } = render(
-      <EmptyState
-        icon={MockIcon as never}
-        title="No items"
-        className="custom-class"
-      />,
+      <EmptyState icon={MockIcon as never} title="No items" className="custom-class" />,
     );
     expect(container.firstChild).toHaveClass("custom-class");
   });
@@ -128,9 +113,7 @@ describe("ErrorState", () => {
   });
 
   it("uses a custom retryLabel", () => {
-    render(
-      <ErrorState message="Error" onRetry={() => {}} retryLabel="Reload" />,
-    );
+    render(<ErrorState message="Error" onRetry={() => {}} retryLabel="Reload" />);
     expect(screen.getByText("Reload")).toBeInTheDocument();
   });
 
@@ -145,9 +128,7 @@ describe("ErrorState", () => {
   });
 
   it("applies custom className", () => {
-    const { container } = render(
-      <ErrorState message="Error" className="my-error" />,
-    );
+    const { container } = render(<ErrorState message="Error" className="my-error" />);
     expect(container.firstChild).toHaveClass("my-error");
   });
 });
@@ -185,9 +166,7 @@ describe("ExportStatusBadge", () => {
   ];
 
   it.each(cases)("renders '%s' as '%s'", (status, label) => {
-    render(
-      <ExportStatusBadge status={status as "success" | "failed" | "exporting"} />,
-    );
+    render(<ExportStatusBadge status={status as "success" | "failed" | "exporting"} />);
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 });
@@ -357,9 +336,7 @@ describe("BriefPlatformBadge", () => {
   });
 
   it("renders a colored dot for the platform", () => {
-    const { container } = render(
-      <BriefPlatformBadge platform={"jira" as never} />,
-    );
+    const { container } = render(<BriefPlatformBadge platform={"jira" as never} />);
     const dot = container.querySelector("[aria-hidden='true']");
     expect(dot).toBeInTheDocument();
     expect(dot).toHaveStyle({ backgroundColor: "#2684FF" });

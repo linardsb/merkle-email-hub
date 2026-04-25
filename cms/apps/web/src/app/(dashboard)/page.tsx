@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, FolderOpen, FileCode, CheckCircle2, ClipboardCheck, Target, Brain, Plus } from "../../components/icons";
+import {
+  LayoutDashboard,
+  FolderOpen,
+  FileCode,
+  CheckCircle2,
+  ClipboardCheck,
+  Target,
+  Brain,
+  Plus,
+} from "../../components/icons";
 import { useProjects } from "@/hooks/use-projects";
 import { ErrorState } from "@/components/ui/error-state";
 import { SkeletonCard } from "@/components/ui/skeletons";
@@ -17,7 +26,12 @@ export default function DashboardPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
   // Data sources
-  const { data: projects, isLoading: projectsLoading, error: projectsError, mutate: mutateProjects } = useProjects();
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    error: projectsError,
+    mutate: mutateProjects,
+  } = useProjects();
   const { data: orgs, isLoading: orgsLoading } = useOrgs();
   const { data: components } = useComponents({ pageSize: 1 });
   const { metrics: qaMetrics } = useQADashboard();
@@ -35,30 +49,28 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <LayoutDashboard className="h-8 w-8 text-foreground-accent" />
-          <h1 className="text-2xl font-semibold text-foreground">
-            {"Dashboard"}
-          </h1>
+          <LayoutDashboard className="text-foreground-accent h-8 w-8" />
+          <h1 className="text-foreground text-2xl font-semibold">{"Dashboard"}</h1>
         </div>
         <div className="flex items-center gap-3">
           {firstProjectId && (
             <Link
               href={`/projects/${firstProjectId}/workspace`}
-              className="rounded-md border border-card-border bg-card-bg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+              className="border-card-border bg-card-bg text-foreground hover:bg-surface-hover rounded-md border px-4 py-2 text-sm font-medium transition-colors"
             >
               {"Open Workspace"}
             </Link>
           )}
           <Link
             href={`/components`}
-            className="rounded-md border border-card-border bg-card-bg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+            className="border-card-border bg-card-bg text-foreground hover:bg-surface-hover rounded-md border px-4 py-2 text-sm font-medium transition-colors"
           >
             {"Browse Components"}
           </Link>
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-2 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
           >
             <Plus className="h-4 w-4" />
             {"New Project"}
@@ -68,36 +80,30 @@ export default function DashboardPage() {
 
       {/* Stats row — 4 cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6">
           <div className="flex items-center gap-2">
-            <FolderOpen className="h-4 w-4 text-foreground-muted" />
-            <p className="text-sm font-medium text-foreground-muted">
-              {"Total Projects"}
-            </p>
+            <FolderOpen className="text-foreground-muted h-4 w-4" />
+            <p className="text-foreground-muted text-sm font-medium">{"Total Projects"}</p>
           </div>
-          <p className="mt-2 text-3xl font-semibold text-foreground">
+          <p className="text-foreground mt-2 text-3xl font-semibold">
             {isLoading ? "\u2014" : (projects?.total ?? 0)}
           </p>
         </div>
 
-        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6">
           <div className="flex items-center gap-2">
-            <FileCode className="h-4 w-4 text-foreground-muted" />
-            <p className="text-sm font-medium text-foreground-muted">
-              {"Components"}
-            </p>
+            <FileCode className="text-foreground-muted h-4 w-4" />
+            <p className="text-foreground-muted text-sm font-medium">{"Components"}</p>
           </div>
-          <p className="mt-2 text-3xl font-semibold text-foreground">
+          <p className="text-foreground mt-2 text-3xl font-semibold">
             {components?.total ?? "\u2014"}
           </p>
         </div>
 
-        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-foreground-muted" />
-            <p className="text-sm font-medium text-foreground-muted">
-              {"QA Pass Rate"}
-            </p>
+            <CheckCircle2 className="text-foreground-muted h-4 w-4" />
+            <p className="text-foreground-muted text-sm font-medium">{"QA Pass Rate"}</p>
           </div>
           <p
             className={`mt-2 text-3xl font-semibold ${
@@ -108,18 +114,14 @@ export default function DashboardPage() {
                   : "text-status-danger"
             }`}
           >
-            {qaMetrics.totalRuns === 0
-              ? "\u2014"
-              : `${Math.round(qaMetrics.passRate * 100)}%`}
+            {qaMetrics.totalRuns === 0 ? "\u2014" : `${Math.round(qaMetrics.passRate * 100)}%`}
           </p>
         </div>
 
-        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6">
           <div className="flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4 text-foreground-muted" />
-            <p className="text-sm font-medium text-foreground-muted">
-              {"Pending Approvals"}
-            </p>
+            <ClipboardCheck className="text-foreground-muted h-4 w-4" />
+            <p className="text-foreground-muted text-sm font-medium">{"Pending Approvals"}</p>
           </div>
           <p
             className={`mt-2 text-3xl font-semibold ${
@@ -134,56 +136,39 @@ export default function DashboardPage() {
       {/* Quality Overview + Recent Activity */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Quality Overview — 2/3 width */}
-        <div className="rounded-lg border border-card-border bg-card-bg p-6 lg:col-span-2">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-foreground-muted" />
-              <h2 className="text-lg font-semibold text-foreground">
-                {"Quality Overview"}
-              </h2>
+              <Target className="text-foreground-muted h-5 w-5" />
+              <h2 className="text-foreground text-lg font-semibold">{"Quality Overview"}</h2>
             </div>
-            <Link
-              href={`/intelligence`}
-              className="text-sm text-interactive hover:underline"
-            >
+            <Link href={`/intelligence`} className="text-interactive text-sm hover:underline">
               {"View Intelligence"}
             </Link>
           </div>
-          <p className="mt-1 text-sm text-foreground-muted">
+          <p className="text-foreground-muted mt-1 text-sm">
             {"QA gate performance across all templates"}
           </p>
 
           {qaMetrics.totalRuns === 0 ? (
-            <p className="mt-4 text-sm text-foreground-muted">
-              {"No recent activity"}
-            </p>
+            <p className="text-foreground-muted mt-4 text-sm">{"No recent activity"}</p>
           ) : (
             <div className="mt-4 space-y-4">
               {/* Inline stats */}
               <div className="flex gap-6">
                 <div>
-                  <p className="text-xs font-medium text-foreground-muted">
-                    {"Avg Score"}
-                  </p>
-                  <p className="text-xl font-semibold text-foreground">
+                  <p className="text-foreground-muted text-xs font-medium">{"Avg Score"}</p>
+                  <p className="text-foreground text-xl font-semibold">
                     {Math.round(qaMetrics.avgScore * 100)}%
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-foreground-muted">
-                    {"Total Runs"}
-                  </p>
-                  <p className="text-xl font-semibold text-foreground">
-                    {qaMetrics.totalRuns}
-                  </p>
+                  <p className="text-foreground-muted text-xs font-medium">{"Total Runs"}</p>
+                  <p className="text-foreground text-xl font-semibold">{qaMetrics.totalRuns}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-foreground-muted">
-                    {"Overrides"}
-                  </p>
-                  <p className="text-xl font-semibold text-foreground">
-                    {qaMetrics.overrideCount}
-                  </p>
+                  <p className="text-foreground-muted text-xs font-medium">{"Overrides"}</p>
+                  <p className="text-foreground text-xl font-semibold">{qaMetrics.overrideCount}</p>
                 </div>
               </div>
 
@@ -204,52 +189,40 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Activity — 1/3 width */}
-        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+        <div className="border-card-border bg-card-bg rounded-lg border p-6">
           <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-foreground-muted" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {"Recent Activity"}
-            </h2>
+            <Brain className="text-foreground-muted h-5 w-5" />
+            <h2 className="text-foreground text-lg font-semibold">{"Recent Activity"}</h2>
           </div>
-          <p className="mt-1 text-sm text-foreground-muted">
+          <p className="text-foreground-muted mt-1 text-sm">
             {"Latest QA runs across your projects"}
           </p>
 
           <div className="mt-4">
             {!recentQA || recentQA.items.length === 0 ? (
-              <p className="py-4 text-center text-sm text-foreground-muted">
+              <p className="text-foreground-muted py-4 text-center text-sm">
                 {"Activity will appear here as you run QA checks on your templates."}
               </p>
             ) : (
-              <div className="divide-y divide-border">
+              <div className="divide-border divide-y">
                 {recentQA.items.map((result) => (
-                  <div
-                    key={result.id}
-                    className="flex items-center justify-between py-2.5"
-                  >
+                  <div key={result.id} className="flex items-center justify-between py-2.5">
                     <div className="flex items-center gap-2">
                       <div
                         className={`h-2 w-2 rounded-full ${
-                          result.passed
-                            ? "bg-status-success"
-                            : "bg-status-danger"
+                          result.passed ? "bg-status-success" : "bg-status-danger"
                         }`}
                       />
-                      <span className="text-sm text-foreground">
-                        {"QA Run"}
-                      </span>
-                      <span className="text-xs text-foreground-muted">
+                      <span className="text-foreground text-sm">{"QA Run"}</span>
+                      <span className="text-foreground-muted text-xs">
                         {`Score: ${Math.round(result.overall_score * 100)}%`}
                       </span>
                     </div>
-                    <span className="text-xs text-foreground-muted">
-                      {new Date(result.created_at).toLocaleDateString(
-                        undefined,
-                        {
-                          month: "short",
-                          day: "numeric",
-                        }
-                      )}
+                    <span className="text-foreground-muted text-xs">
+                      {new Date(result.created_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </span>
                   </div>
                 ))}
@@ -261,7 +234,11 @@ export default function DashboardPage() {
 
       {/* Projects section */}
       {projectsError ? (
-        <ErrorState message={"Failed to load dashboard data"} onRetry={() => mutateProjects()} retryLabel={"Try again"} />
+        <ErrorState
+          message={"Failed to load dashboard data"}
+          onRetry={() => mutateProjects()}
+          retryLabel={"Try again"}
+        />
       ) : isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -271,14 +248,9 @@ export default function DashboardPage() {
       ) : projects?.items && projects.items.length > 0 ? (
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
-              {"Projects"}
-            </h2>
+            <h2 className="text-foreground text-lg font-semibold">{"Projects"}</h2>
             {(projects.total ?? 0) > 3 && (
-              <Link
-                href={`/projects`}
-                className="text-sm text-interactive hover:underline"
-              >
+              <Link href={`/projects`} className="text-interactive text-sm hover:underline">
                 {"View All"}
               </Link>
             )}
@@ -288,17 +260,17 @@ export default function DashboardPage() {
               <Link
                 key={project.id}
                 href={`/projects/${project.id}/workspace`}
-                className="block rounded-lg border border-card-border bg-card-bg p-6 transition-colors hover:bg-surface-hover"
+                className="border-card-border bg-card-bg hover:bg-surface-hover block rounded-lg border p-6 transition-colors"
               >
-                <h3 className="font-medium text-foreground">{project.name}</h3>
-                <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">
+                <h3 className="text-foreground font-medium">{project.name}</h3>
+                <p className="text-foreground-muted mt-1 line-clamp-2 text-sm">
                   {project.description || "\u2014"}
                 </p>
                 <div className="mt-4 flex items-center justify-between">
-                  <span className="rounded-full bg-badge-default-bg px-2 py-0.5 text-xs font-medium text-badge-default-text">
+                  <span className="bg-badge-default-bg text-badge-default-text rounded-full px-2 py-0.5 text-xs font-medium">
                     {project.status}
                   </span>
-                  <span className="text-xs text-foreground-muted">
+                  <span className="text-foreground-muted text-xs">
                     {new Date(project.updated_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -307,12 +279,10 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
-          <FolderOpen className="mx-auto h-12 w-12 text-foreground-muted" />
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-            {"No projects yet"}
-          </h3>
-          <p className="mt-2 text-sm text-foreground-muted">
+        <div className="border-card-border bg-card-bg rounded-lg border p-8 text-center">
+          <FolderOpen className="text-foreground-muted mx-auto h-12 w-12" />
+          <h3 className="text-foreground mt-4 text-lg font-semibold">{"No projects yet"}</h3>
+          <p className="text-foreground-muted mt-2 text-sm">
             {"Create your first project to get started with email development."}
           </p>
         </div>

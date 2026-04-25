@@ -34,23 +34,21 @@ export function BriefItemCard({ item, onSelect }: BriefItemCardProps) {
     <button
       type="button"
       onClick={onSelect}
-      className="w-full rounded-lg border border-card-border bg-card-bg p-3 text-left transition-colors hover:bg-surface-hover"
+      className="border-card-border bg-card-bg hover:bg-surface-hover w-full rounded-lg border p-3 text-left transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-mono text-foreground-muted">{item.external_id}</p>
-          <p className="mt-0.5 text-sm font-medium text-foreground line-clamp-2">
-            {item.title}
-          </p>
+          <p className="text-foreground-muted font-mono text-xs">{item.external_id}</p>
+          <p className="text-foreground mt-0.5 line-clamp-2 text-sm font-medium">{item.title}</p>
         </div>
         <span
-          className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status] ?? ""}`}
+          className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status] ?? ""}`}
         >
           {STATUS_LABELS[item.status] ?? "Open"}
         </span>
       </div>
 
-      <div className="mt-2 flex items-center gap-3 text-xs text-foreground-muted">
+      <div className="text-foreground-muted mt-2 flex items-center gap-3 text-xs">
         {item.assignees.length > 0 && (
           <span className="flex items-center gap-1">
             <Users className="h-3 w-3" />
@@ -71,13 +69,13 @@ export function BriefItemCard({ item, onSelect }: BriefItemCardProps) {
           {item.labels.slice(0, 3).map((label) => (
             <span
               key={label}
-              className="rounded bg-surface-muted px-1.5 py-0.5 text-xs text-foreground-muted"
+              className="bg-surface-muted text-foreground-muted rounded px-1.5 py-0.5 text-xs"
             >
               {label}
             </span>
           ))}
           {item.labels.length > 3 && (
-            <span className="text-xs text-foreground-muted">+{item.labels.length - 3}</span>
+            <span className="text-foreground-muted text-xs">+{item.labels.length - 3}</span>
           )}
         </div>
       )}

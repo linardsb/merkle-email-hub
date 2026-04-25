@@ -1,6 +1,18 @@
 "use client";
 
-import { MessageSquare, Wand2, Moon, PenTool, Wrench, Eye, Users, FileSearch, BookOpen, Lightbulb, ChevronDown } from "../../icons";
+import {
+  MessageSquare,
+  Wand2,
+  Moon,
+  PenTool,
+  Wrench,
+  Eye,
+  Users,
+  FileSearch,
+  BookOpen,
+  Lightbulb,
+  ChevronDown,
+} from "../../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,7 +76,7 @@ export function AgentSelectorDropdown({ agent, onSelect }: AgentSelectorDropdown
         <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs">
           <Icon className="h-3.5 w-3.5" />
           {current.label}
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">

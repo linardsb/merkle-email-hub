@@ -74,13 +74,13 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Color overrides */}
       {defaults?.colors && Object.keys(defaults.colors).length > 0 && (
         <div className="space-y-3">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
             {"Colors"}
           </Label>
           <div className="space-y-2">
             {Object.entries(defaults.colors).map(([role, defaultHex]) => (
               <div key={role} className="flex items-center justify-between">
-                <span className="text-xs text-foreground">{role}</span>
+                <span className="text-foreground text-xs">{role}</span>
                 <PaletteColorPicker
                   value={tokenStr(tokens, `color_${role}`) || defaultHex}
                   palette={palette}
@@ -95,11 +95,11 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Background */}
       {palette.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
             {"Background"}
           </Label>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-foreground">{"Background color"}</span>
+            <span className="text-foreground text-xs">{"Background color"}</span>
             <PaletteColorPicker
               value={tokenStr(tokens, "background") || "#ffffff"}
               palette={palette}
@@ -112,13 +112,10 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Font override */}
       {fontChoices.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
             {"Font"}
           </Label>
-          <Select
-            value={tokenStr(tokens, "font")}
-            onValueChange={(v) => updateToken("font", v)}
-          >
+          <Select value={tokenStr(tokens, "font")} onValueChange={(v) => updateToken("font", v)}>
             <SelectTrigger className="h-8 text-sm">
               <SelectValue placeholder="Default" />
             </SelectTrigger>
@@ -136,7 +133,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Font size */}
       {fontSizes.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
             {"Font Size"}
           </Label>
           <Select
@@ -162,7 +159,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
 
       {/* Text alignment */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
           {"Text Alignment"}
         </Label>
         <AlignmentButtons
@@ -173,7 +170,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
 
       {/* Empty state */}
       {!defaults && palette.length === 0 && fontChoices.length === 0 && (
-        <p className="py-4 text-center text-xs text-muted-foreground">
+        <p className="text-muted-foreground py-4 text-center text-xs">
           {"No design system configured. Add one in project settings."}
         </p>
       )}
@@ -206,7 +203,7 @@ function SpacingEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
           {"Spacing"}
         </Label>
         <button
@@ -221,9 +218,7 @@ function SpacingEditor({
       <div className="grid grid-cols-4 gap-1.5">
         {sides.map((side) => (
           <div key={side} className="space-y-0.5">
-            <span className="text-[10px] text-muted-foreground capitalize">
-              {side}
-            </span>
+            <span className="text-muted-foreground text-[10px] capitalize">{side}</span>
             <Input
               value={readToken(tokens, `spacing_${side}`)}
               onChange={(e) => handleChange(side, e.target.value)}
@@ -239,13 +234,7 @@ function SpacingEditor({
   );
 }
 
-function AlignmentButtons({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function AlignmentButtons({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const options = [
     { value: "left", Icon: AlignLeft },
     { value: "center", Icon: AlignCenter },

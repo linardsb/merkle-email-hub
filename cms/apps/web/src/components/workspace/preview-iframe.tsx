@@ -46,16 +46,10 @@ export function PreviewIframe({
 
     // Inject dark mode meta + style to trigger @media (prefers-color-scheme: dark) in email HTML
     if (safeHtml.includes("</head>")) {
-      return safeHtml.replace(
-        "</head>",
-        `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n</head>`,
-      );
+      return safeHtml.replace("</head>", `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n</head>`);
     }
     if (safeHtml.includes("<head>")) {
-      return safeHtml.replace(
-        "<head>",
-        `<head>\n${DARK_MODE_META}\n${DARK_MODE_STYLE}`,
-      );
+      return safeHtml.replace("<head>", `<head>\n${DARK_MODE_META}\n${DARK_MODE_STYLE}`);
     }
     return `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n${safeHtml}`;
   }, [compiledHtml, darkMode]);
@@ -81,18 +75,16 @@ export function PreviewIframe({
 
   if (!srcdoc) {
     return (
-      <div className="relative flex h-full flex-col items-center justify-center bg-background p-6 text-center">
+      <div className="bg-background relative flex h-full flex-col items-center justify-center p-6 text-center">
         {isCompiling ? (
           <>
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="mt-4 text-sm text-muted-foreground">
-              {"Compiling..."}
-            </p>
+            <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground mt-4 text-sm">{"Compiling..."}</p>
           </>
         ) : (
           <>
-            <Eye className="h-12 w-12 text-muted-foreground" />
-            <p className="mt-4 text-sm text-muted-foreground">
+            <Eye className="text-muted-foreground h-12 w-12" />
+            <p className="text-muted-foreground mt-4 text-sm">
               {`Press ${"Ctrl+S"} to compile your template`}
             </p>
           </>
@@ -107,8 +99,8 @@ export function PreviewIframe({
     <div className={`relative flex h-full min-h-0 flex-col overflow-auto ${bgClass}`}>
       {/* Compiling overlay */}
       {isCompiling && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="bg-background/60 absolute inset-0 z-10 flex items-center justify-center">
+          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
         </div>
       )}
 

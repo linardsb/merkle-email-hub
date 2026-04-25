@@ -8,7 +8,7 @@ import { serializeLiquid } from "@/lib/liquid/serializer";
 export function useLiquidBuilder(initialCode?: string) {
   const blockIdCounter = useRef(1000);
   const [blocks, setBlocks] = useState<BlockTree>(() =>
-    initialCode ? parseLiquid(initialCode) : []
+    initialCode ? parseLiquid(initialCode) : [],
   );
   const syncRef = useRef(false);
 
@@ -34,10 +34,13 @@ export function useLiquidBuilder(initialCode?: string) {
   }, []);
 
   /** Add a new block at the end. */
-  const addBlock = useCallback((type: LiquidBlock["type"]) => {
-    const block = createEmptyBlock(type, blockIdCounter);
-    setBlocks((prev) => [...prev, block]);
-  }, [blockIdCounter]);
+  const addBlock = useCallback(
+    (type: LiquidBlock["type"]) => {
+      const block = createEmptyBlock(type, blockIdCounter);
+      setBlocks((prev) => [...prev, block]);
+    },
+    [blockIdCounter],
+  );
 
   /** Reorder blocks via drag-and-drop. */
   const moveBlock = useCallback((activeId: string, overId: string) => {

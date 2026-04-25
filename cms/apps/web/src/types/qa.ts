@@ -20,7 +20,10 @@ export interface CSSAuditConversion {
 }
 
 export interface CSSAuditDetails {
-  compatibility_matrix: Record<string, Record<string, "supported" | "converted" | "removed" | "partial">>;
+  compatibility_matrix: Record<
+    string,
+    Record<string, "supported" | "converted" | "removed" | "partial">
+  >;
   conversions: CSSAuditConversion[];
   removed_properties: string[];
   client_coverage_score: Record<string, number>;

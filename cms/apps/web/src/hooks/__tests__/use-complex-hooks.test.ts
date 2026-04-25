@@ -157,18 +157,14 @@ describe("useWorkspaceShortcuts", () => {
   }
 
   it("registers a keydown listener on mount", async () => {
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({}));
 
     expect(keydownHandlers.size).toBe(1);
   });
 
   it("removes the keydown listener on unmount", async () => {
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     const { unmount } = renderHook(() => useWorkspaceShortcuts({}));
 
     expect(keydownHandlers.size).toBe(1);
@@ -178,9 +174,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("calls onSave on Cmd+S", async () => {
     const onSave = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onSave }));
 
     const event = fireKey("s");
@@ -190,9 +184,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("calls onGenerate on Cmd+Shift+G", async () => {
     const onGenerate = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onGenerate }));
 
     const event = fireKey("g", { shiftKey: true });
@@ -202,9 +194,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("calls onRunQA on Cmd+Shift+Q", async () => {
     const onRunQA = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onRunQA }));
 
     const event = fireKey("q", { shiftKey: true });
@@ -214,9 +204,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("calls onExport on Cmd+Shift+E", async () => {
     const onExport = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onExport }));
 
     const event = fireKey("e", { shiftKey: true });
@@ -226,9 +214,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("calls onToggleChat on Cmd+B", async () => {
     const onToggleChat = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onToggleChat }));
 
     const event = fireKey("b");
@@ -238,9 +224,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("calls onToggleSidebar on Cmd+J", async () => {
     const onToggleSidebar = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onToggleSidebar }));
 
     const event = fireKey("j");
@@ -250,9 +234,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("calls onToggleView on Cmd+Shift+V", async () => {
     const onToggleView = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onToggleView }));
 
     const event = fireKey("v", { shiftKey: true });
@@ -262,9 +244,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("ignores keys without modifier", async () => {
     const onSave = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onSave }));
 
     fireKey("s", { metaKey: false, ctrlKey: false });
@@ -272,9 +252,7 @@ describe("useWorkspaceShortcuts", () => {
   });
 
   it("does not throw when callback is undefined", async () => {
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({}));
 
     // Should not throw even with no callbacks registered
@@ -284,9 +262,7 @@ describe("useWorkspaceShortcuts", () => {
 
   it("works with ctrlKey instead of metaKey", async () => {
     const onSave = vi.fn();
-    const { useWorkspaceShortcuts } = await import(
-      "@/hooks/use-workspace-shortcuts"
-    );
+    const { useWorkspaceShortcuts } = await import("@/hooks/use-workspace-shortcuts");
     renderHook(() => useWorkspaceShortcuts({ onSave }));
 
     fireKey("s", { metaKey: false, ctrlKey: true });
@@ -313,7 +289,6 @@ describe("useChatHistory", () => {
         delete storage[key];
       }),
     });
-
   });
 
   afterEach(() => {
@@ -517,14 +492,9 @@ describe("useChatHistory", () => {
       );
     });
 
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "chat-history-project-1",
-      expect.any(String),
-    );
+    expect(localStorage.setItem).toHaveBeenCalledWith("chat-history-project-1", expect.any(String));
 
-    const persisted = JSON.parse(
-      storage["chat-history-project-1"]!,
-    );
+    const persisted = JSON.parse(storage["chat-history-project-1"]!);
     expect(persisted).toHaveLength(1);
     expect(persisted[0].preview).toBe("Persisted");
   });
@@ -675,9 +645,7 @@ describe("useChat", () => {
 
     expect(result.current.status).toBe("idle");
     // After stopStreaming, any messages with isStreaming=true should be marked false
-    const streamingMessages = result.current.messages.filter(
-      (m) => m.isStreaming,
-    );
+    const streamingMessages = result.current.messages.filter((m) => m.isStreaming);
     expect(streamingMessages).toHaveLength(0);
   });
 });

@@ -82,7 +82,13 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     logger = get_logger(__name__)
 
     # SECURITY: Fail hard if JWT secret is weak in non-development environments
-    _insecure_defaults = {"CHANGE-ME-IN-PRODUCTION", "", "secret", "changeme"}
+    _insecure_defaults = {
+        "CHANGE-ME-IN-PRODUCTION",
+        "CHANGE-ME-IN-PRODUCTION-this-is-not-a-real-secret",
+        "",
+        "secret",
+        "changeme",
+    }
     if settings.environment != "development" and (
         settings.auth.jwt_secret_key in _insecure_defaults or len(settings.auth.jwt_secret_key) < 32
     ):

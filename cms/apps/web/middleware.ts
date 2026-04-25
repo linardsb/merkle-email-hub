@@ -1,4 +1,3 @@
-
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import type { AppRole } from "@/auth";
@@ -33,20 +32,14 @@ function getRouteKey(pathname: string): string | null {
 }
 
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some(
-    (r) => pathname === r || pathname.startsWith(r + "/")
-  );
+  return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
 }
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip static assets and API routes
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
-  ) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.includes(".")) {
     return NextResponse.next();
   }
 
@@ -72,9 +65,7 @@ export default async function middleware(request: NextRequest) {
       const allowedRoles = ROLE_PERMISSIONS[routeKey];
       const userRole: string = session.user.role || "viewer";
       if (allowedRoles && !allowedRoles.includes(userRole as AppRole)) {
-        return NextResponse.redirect(
-          new URL("/unauthorized", request.url)
-        );
+        return NextResponse.redirect(new URL("/unauthorized", request.url));
       }
     }
   } catch {

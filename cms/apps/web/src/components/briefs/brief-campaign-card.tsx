@@ -1,6 +1,14 @@
 "use client";
 
-import { Calendar, Users, ImageOff, Building2, Puzzle, ArrowRight, Link as LinkIcon } from "../icons";
+import {
+  Calendar,
+  Users,
+  ImageOff,
+  Building2,
+  Puzzle,
+  ArrowRight,
+  Link as LinkIcon,
+} from "../icons";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
 import type { BriefItem, BriefPlatform } from "@/types/briefs";
@@ -51,7 +59,13 @@ interface BriefCampaignCardProps {
   onConnectDesign?: () => void;
 }
 
-export function BriefCampaignCard({ item, onClick, designConnection, onSyncDesign, onConnectDesign }: BriefCampaignCardProps) {
+export function BriefCampaignCard({
+  item,
+  onClick,
+  designConnection,
+  onSyncDesign,
+  onConnectDesign,
+}: BriefCampaignCardProps) {
   const dueDate = item.due_date
     ? new Date(item.due_date).toLocaleDateString("en-US", {
         month: "short",
@@ -66,20 +80,21 @@ export function BriefCampaignCard({ item, onClick, designConnection, onSyncDesig
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
-      className="w-full cursor-pointer overflow-hidden rounded-lg border border-card-border bg-card-bg text-left transition-colors hover:bg-surface-hover"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="border-card-border bg-card-bg hover:bg-surface-hover w-full cursor-pointer overflow-hidden rounded-lg border text-left transition-colors"
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-muted">
+      <div className="bg-surface-muted relative aspect-[16/9] w-full overflow-hidden">
         {item.thumbnail_url ? (
-          <img
-            src={item.thumbnail_url}
-            alt={item.title}
-            className="h-full w-full object-cover"
-          />
+          <img src={item.thumbnail_url} alt={item.title} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <ImageOff className="h-8 w-8 text-foreground-muted opacity-40" />
+            <ImageOff className="text-foreground-muted h-8 w-8 opacity-40" />
           </div>
         )}
         {item.platform && (
@@ -102,7 +117,7 @@ export function BriefCampaignCard({ item, onClick, designConnection, onSyncDesig
       <div className="space-y-2 p-3">
         {/* Client pill + Status row */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
             {item.client_name && clientColor ? (
               <span
                 className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold text-white"
@@ -112,25 +127,27 @@ export function BriefCampaignCard({ item, onClick, designConnection, onSyncDesig
                 {item.client_name}
               </span>
             ) : null}
-            <span className="font-mono text-xs text-foreground-muted truncate">{item.external_id}</span>
+            <span className="text-foreground-muted truncate font-mono text-xs">
+              {item.external_id}
+            </span>
           </div>
           <span
-            className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status] ?? ""}`}
+            className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status] ?? ""}`}
           >
             {STATUS_LABELS[item.status] ?? "Open"}
           </span>
         </div>
 
         {/* Title */}
-        <p className="text-sm font-medium text-foreground line-clamp-2">{item.title}</p>
+        <p className="text-foreground line-clamp-2 text-sm font-medium">{item.title}</p>
 
         {/* Connection name */}
         {item.connection_name && (
-          <p className="text-xs text-foreground-muted">{item.connection_name}</p>
+          <p className="text-foreground-muted text-xs">{item.connection_name}</p>
         )}
 
         {/* Meta row */}
-        <div className="flex items-center gap-3 text-xs text-foreground-muted">
+        <div className="text-foreground-muted flex items-center gap-3 text-xs">
           {item.assignees.length > 0 && (
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />
@@ -150,8 +167,11 @@ export function BriefCampaignCard({ item, onClick, designConnection, onSyncDesig
         {designConnection ? (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onSyncDesign?.(designConnection.id); }}
-            className="flex items-center gap-2 rounded-md border border-interactive/20 bg-interactive/5 px-3 py-2 text-xs font-medium text-interactive transition-colors hover:bg-interactive/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSyncDesign?.(designConnection.id);
+            }}
+            className="border-interactive/20 bg-interactive/5 text-interactive hover:bg-interactive/10 flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition-colors"
           >
             <Puzzle className="h-3.5 w-3.5" />
             Sync & Extract Components
@@ -160,8 +180,11 @@ export function BriefCampaignCard({ item, onClick, designConnection, onSyncDesig
         ) : onConnectDesign ? (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onConnectDesign(); }}
-            className="flex items-center gap-2 rounded-md border border-dashed border-foreground-muted/30 px-3 py-2 text-xs text-foreground-muted transition-colors hover:border-interactive/40 hover:text-interactive"
+            onClick={(e) => {
+              e.stopPropagation();
+              onConnectDesign();
+            }}
+            className="border-foreground-muted/30 text-foreground-muted hover:border-interactive/40 hover:text-interactive flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-xs transition-colors"
           >
             <LinkIcon className="h-3.5 w-3.5" />
             Connect Design File

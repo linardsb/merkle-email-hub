@@ -206,9 +206,10 @@ def _extract_image_sync(file_path: str) -> str:
         OCR-extracted text.
     """
     import pytesseract
-    from PIL import Image
 
-    image = Image.open(file_path)
+    from app.shared.imaging import safe_image_open
+
+    image = safe_image_open(file_path)
     raw = pytesseract.image_to_string(image, lang="eng")
     return str(raw)
 

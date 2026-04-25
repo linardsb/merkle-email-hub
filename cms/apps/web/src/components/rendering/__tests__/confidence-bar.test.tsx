@@ -69,9 +69,7 @@ describe("ConfidenceBar", () => {
       layout_complexity: 0.65,
       known_blind_spots: [],
     };
-    const { container } = render(
-      <ConfidenceBar score={80} breakdown={breakdown} />,
-    );
+    const { container } = render(<ConfidenceBar score={80} breakdown={breakdown} />);
     const wrapper = container.querySelector("[title]");
     expect(wrapper).not.toBeNull();
     const title = (wrapper as HTMLElement).getAttribute("title");

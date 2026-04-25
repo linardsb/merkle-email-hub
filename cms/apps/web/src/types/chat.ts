@@ -53,7 +53,10 @@ export interface UseChatReturn {
   status: ChatStatus;
   error: string | null;
   sendMessage: (content: string, agent: AgentMode) => void;
-  sendBlueprintRun: (brief: string, options?: { includeHtml?: boolean; currentHtml?: string; projectId?: string }) => void;
+  sendBlueprintRun: (
+    brief: string,
+    options?: { includeHtml?: boolean; currentHtml?: string; projectId?: string },
+  ) => void;
   blueprintRunning: boolean;
   stopStreaming: () => void;
   clearMessages: () => void;

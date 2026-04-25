@@ -40,14 +40,14 @@ export function ChatInput({ onSend, onStop, status, placeholder }: ChatInputProp
         if (!isStreaming) handleSend();
       }
     },
-    [isStreaming, handleSend]
+    [isStreaming, handleSend],
   );
 
   return (
-    <div className="flex items-end gap-2 border-t border-border p-3">
+    <div className="border-border flex items-end gap-2 border-t p-3">
       <textarea
         ref={textareaRef}
-        className="flex-1 resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex-1 resize-none rounded-md border bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
         placeholder={placeholder ?? "Ask the AI assistant..."}
         rows={1}
         disabled={isStreaming}
@@ -68,7 +68,7 @@ export function ChatInput({ onSend, onStop, status, placeholder }: ChatInputProp
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground h-9 w-9 shrink-0"
           onClick={handleSend}
           aria-label={"Send message"}
         >

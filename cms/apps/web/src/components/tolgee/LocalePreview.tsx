@@ -27,12 +27,8 @@ export function LocalePreview({
   const nonBaseLanguages = languages.filter((l) => !l.base);
 
   const [sourceLocale, setSourceLocale] = useState(baseLanguage?.tag ?? "en");
-  const [targetLocale, setTargetLocale] = useState(
-    nonBaseLanguages[0]?.tag ?? "",
-  );
-  const [buildResults, setBuildResults] = useState<
-    Map<string, LocaleBuildResult>
-  >(new Map());
+  const [targetLocale, setTargetLocale] = useState(nonBaseLanguages[0]?.tag ?? "");
+  const [buildResults, setBuildResults] = useState<Map<string, LocaleBuildResult>>(new Map());
 
   const sourceResult = buildResults.get(sourceLocale);
   const targetResult = buildResults.get(targetLocale);
@@ -87,7 +83,7 @@ export function LocalePreview({
   return (
     <div className="flex h-full flex-col">
       {/* ── Toolbar ── */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+      <div className="border-border flex items-center gap-2 border-b px-3 py-2">
         {/* Source selector */}
         <select
           value={sourceLocale}
@@ -102,7 +98,7 @@ export function LocalePreview({
           ))}
         </select>
 
-        <ArrowRightLeft className="h-3.5 w-3.5 text-foreground-muted" />
+        <ArrowRightLeft className="text-foreground-muted h-3.5 w-3.5" />
 
         {/* Target selector */}
         <select
@@ -121,17 +117,15 @@ export function LocalePreview({
           )}
         </select>
 
-        <div className="mx-2 h-4 w-px bg-border" />
+        <div className="bg-border mx-2 h-4 w-px" />
 
         <button
           type="button"
           onClick={handleBuildPair}
           disabled={isBuilding || !targetLocale}
-          className="flex items-center gap-1.5 rounded-md bg-interactive px-2.5 py-1.5 text-xs font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+          className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
         >
-          {isBuilding ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : null}
+          {isBuilding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           {"Build Pair"}
         </button>
 
@@ -139,26 +133,23 @@ export function LocalePreview({
           type="button"
           onClick={handleBuildAll}
           disabled={isBuilding}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border text-foreground hover:bg-surface-hover flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {"Build All"}
         </button>
       </div>
 
       {/* ── Preview Split ── */}
-      <div className="grid flex-1 grid-cols-2 divide-x divide-border overflow-hidden">
+      <div className="divide-border grid flex-1 grid-cols-2 divide-x overflow-hidden">
         {/* Source */}
         <div className="flex flex-col overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-border px-3 py-1.5">
-            <span className="text-xs font-medium text-foreground">
-              {sourceLang?.flag_emoji}{" "}
-              {sourceLang?.name ?? sourceLocale}
+          <div className="border-border flex items-center gap-2 border-b px-3 py-1.5">
+            <span className="text-foreground text-xs font-medium">
+              {sourceLang?.flag_emoji} {sourceLang?.name ?? sourceLocale}
             </span>
-            {sourceResult && (
-              <PreviewBadges result={sourceResult} />
-            )}
+            {sourceResult && <PreviewBadges result={sourceResult} />}
           </div>
-          <div className="flex-1 overflow-auto bg-surface-inset">
+          <div className="bg-surface-inset flex-1 overflow-auto">
             {sourceResult ? (
               <iframe
                 srcDoc={sourceResult.html}
@@ -167,8 +158,8 @@ export function LocalePreview({
                 className="h-full w-full border-0 bg-white"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-foreground-muted">
-                {"Click \"Build\" to generate preview"}
+              <div className="text-foreground-muted flex h-full items-center justify-center text-xs">
+                {'Click "Build" to generate preview'}
               </div>
             )}
           </div>
@@ -176,16 +167,13 @@ export function LocalePreview({
 
         {/* Target */}
         <div className="flex flex-col overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-border px-3 py-1.5">
-            <span className="text-xs font-medium text-foreground">
-              {targetLang?.flag_emoji}{" "}
-              {targetLang?.name ?? targetLocale}
+          <div className="border-border flex items-center gap-2 border-b px-3 py-1.5">
+            <span className="text-foreground text-xs font-medium">
+              {targetLang?.flag_emoji} {targetLang?.name ?? targetLocale}
             </span>
-            {targetResult && (
-              <PreviewBadges result={targetResult} />
-            )}
+            {targetResult && <PreviewBadges result={targetResult} />}
           </div>
-          <div className="flex-1 overflow-auto bg-surface-inset">
+          <div className="bg-surface-inset flex-1 overflow-auto">
             {targetResult ? (
               <iframe
                 srcDoc={targetResult.html}
@@ -194,8 +182,8 @@ export function LocalePreview({
                 className="h-full w-full border-0 bg-white"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-foreground-muted">
-                {"Click \"Build\" to generate preview"}
+              <div className="text-foreground-muted flex h-full items-center justify-center text-xs">
+                {'Click "Build" to generate preview'}
               </div>
             )}
           </div>
@@ -209,17 +197,17 @@ function PreviewBadges({ result }: { result: LocaleBuildResult }) {
   return (
     <span className="flex items-center gap-1.5">
       {result.text_direction === "rtl" && (
-        <span className="rounded bg-interactive/15 px-1.5 py-0.5 text-[10px] font-medium text-interactive">
+        <span className="bg-interactive/15 text-interactive rounded px-1.5 py-0.5 text-[10px] font-medium">
           {"RTL"}
         </span>
       )}
       {result.gmail_clipping_warning && (
-        <span className="flex items-center gap-0.5 rounded bg-status-danger/15 px-1.5 py-0.5 text-[10px] font-medium text-status-danger">
+        <span className="bg-status-danger/15 text-status-danger flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium">
           <AlertTriangle className="h-3 w-3" />
           {"Clipping"}
         </span>
       )}
-      <span className="text-[10px] tabular-nums text-foreground-muted">
+      <span className="text-foreground-muted text-[10px] tabular-nums">
         {Math.round(result.build_time_ms)}ms
       </span>
     </span>

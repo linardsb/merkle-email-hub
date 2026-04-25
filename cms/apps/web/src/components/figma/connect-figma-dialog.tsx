@@ -41,7 +41,8 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
     setPrevOpen(open);
   }
 
-  const isValid = name.trim().length >= 1 && fileUrl.trim().length >= 1 && accessToken.trim().length >= 1;
+  const isValid =
+    name.trim().length >= 1 && fileUrl.trim().length >= 1 && accessToken.trim().length >= 1;
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -75,13 +76,18 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
           <DialogTitle>Connect Design File</DialogTitle>
-          <DialogDescription>Link a design file to extract design tokens and sync your design system.</DialogDescription>
+          <DialogDescription>
+            Link a design file to extract design tokens and sync your design system.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Connection Name */}
           <div>
-            <label htmlFor="figma-name" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="figma-name"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               Connection Name
             </label>
             <input
@@ -98,7 +104,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
 
           {/* Figma File URL */}
           <div>
-            <label htmlFor="figma-url" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label htmlFor="figma-url" className="text-foreground mb-1.5 block text-sm font-medium">
               Design File URL
             </label>
             <input
@@ -114,7 +120,10 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
 
           {/* Personal Access Token */}
           <div>
-            <label htmlFor="figma-token" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="figma-token"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               Access Token
             </label>
             <input
@@ -126,12 +135,17 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
               disabled={isMutating}
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-foreground-muted">Generate a token from your design tool&apos;s developer settings.</p>
+            <p className="text-foreground-muted mt-1 text-xs">
+              Generate a token from your design tool&apos;s developer settings.
+            </p>
           </div>
 
           {/* Link to Project */}
           <div>
-            <label htmlFor="figma-project" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="figma-project"
+              className="text-foreground mb-1.5 block text-sm font-medium"
+            >
               Link to Project
             </label>
             <select
@@ -156,7 +170,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             Cancel
           </button>
@@ -164,7 +178,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

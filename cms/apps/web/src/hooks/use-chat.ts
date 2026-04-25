@@ -3,13 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { authFetch, LONG_TIMEOUT_MS } from "@/lib/auth-fetch";
 import type { BlueprintRunResponse } from "@email-hub/sdk";
-import type {
-  AgentMode,
-  ChatMessage,
-  ChatStatus,
-  SSEChunk,
-  UseChatReturn,
-} from "@/types/chat";
+import type { AgentMode, ChatMessage, ChatStatus, SSEChunk, UseChatReturn } from "@/types/chat";
 import { extractConfidence, stripConfidenceComment } from "@/lib/confidence";
 
 /**
@@ -31,9 +25,7 @@ function buildUrl(agent: AgentMode): string {
       : "/api/v1/agents/scaffolder/generate";
   }
   // Backend: POST /v1/chat/completions (OpenAI-compat prefix)
-  return DIRECT_BACKEND
-    ? `${DIRECT_BACKEND}/v1/chat/completions`
-    : "/api/v1/chat/completions";
+  return DIRECT_BACKEND ? `${DIRECT_BACKEND}/v1/chat/completions` : "/api/v1/chat/completions";
 }
 
 function buildBody(
@@ -70,9 +62,7 @@ export function useChat(projectId?: string): UseChatReturn {
     abortRef.current?.abort();
     abortRef.current = null;
     setStatus("idle");
-    setMessages((prev) =>
-      prev.map((m) => (m.isStreaming ? { ...m, isStreaming: false } : m))
-    );
+    setMessages((prev) => prev.map((m) => (m.isStreaming ? { ...m, isStreaming: false } : m)));
   }, []);
 
   const sendMessage = useCallback(
@@ -151,10 +141,8 @@ export function useChat(projectId?: string): UseChatReturn {
                 if (delta) {
                   setMessages((prev) =>
                     prev.map((m) =>
-                      m.id === assistantId
-                        ? { ...m, content: m.content + delta }
-                        : m
-                    )
+                      m.id === assistantId ? { ...m, content: m.content + delta } : m,
+                    ),
                   );
                 }
               } catch {
@@ -173,8 +161,8 @@ export function useChat(projectId?: string): UseChatReturn {
                     confidence: extractConfidence(m.content),
                     content: stripConfidenceComment(m.content),
                   }
-                : m
-            )
+                : m,
+            ),
           );
           setStatus("idle");
         } catch (err) {
@@ -182,12 +170,11 @@ export function useChat(projectId?: string): UseChatReturn {
 
           // Remove empty assistant message on error
           setMessages((prev) =>
-            prev.filter((m) => m.id !== assistantId || m.content.length > 0).map((m) =>
-              m.id === assistantId ? { ...m, isStreaming: false } : m
-            )
+            prev
+              .filter((m) => m.id !== assistantId || m.content.length > 0)
+              .map((m) => (m.id === assistantId ? { ...m, isStreaming: false } : m)),
           );
-          const errMsg =
-            err instanceof Error ? err.message : "Something went wrong";
+          const errMsg = err instanceof Error ? err.message : "Something went wrong";
           setError(errMsg);
           setStatus("error");
         } finally {
@@ -195,14 +182,21 @@ export function useChat(projectId?: string): UseChatReturn {
         }
       })();
     },
-    [status, messages, projectId]
+    [status, messages, projectId],
   );
 
   const sendBlueprintRun = useCallback(
-    async (brief: string, options?: { includeHtml?: boolean; currentHtml?: string; projectId?: string }) => {
+    async (
+      brief: string,
+      options?: { includeHtml?: boolean; currentHtml?: string; projectId?: string },
+    ) => {
       if (!brief.trim() || status === "streaming" || blueprintRunning) return;
 
-      const pid = options?.projectId ? Number(options.projectId) : projectId ? Number(projectId) : undefined;
+      const pid = options?.projectId
+        ? Number(options.projectId)
+        : projectId
+          ? Number(projectId)
+          : undefined;
 
       const userMsg: ChatMessage = {
         id: makeId(),
@@ -228,15 +222,15 @@ export function useChat(projectId?: string): UseChatReturn {
       setError(null);
 
       try {
-        let data: BlueprintRunResponse;
-
         const res = await authFetch("/api/v1/blueprints/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             blueprint_name: "campaign",
             brief: brief.trim(),
-            ...(options?.includeHtml && options.currentHtml ? { initial_html: options.currentHtml } : {}),
+            ...(options?.includeHtml && options.currentHtml
+              ? { initial_html: options.currentHtml }
+              : {}),
             options: pid ? { project_id: pid } : {},
           }),
           timeoutMs: LONG_TIMEOUT_MS,
@@ -247,10 +241,12 @@ export function useChat(projectId?: string): UseChatReturn {
           throw new Error(body?.error ?? "Blueprint run failed");
         }
 
-        data = await res.json();
+        const data: BlueprintRunResponse = await res.json();
 
         const summaryParts: string[] = [];
-        summaryParts.push(`**Pipeline ${data.status === "completed" ? "completed" : data.status?.replace(/_/g, " ") ?? "finished"}**`);
+        summaryParts.push(
+          `**Pipeline ${data.status === "completed" ? "completed" : (data.status?.replace(/_/g, " ") ?? "finished")}**`,
+        );
         if (data.qa_passed === true) summaryParts.push("QA: Passed");
         else if (data.qa_passed === false) summaryParts.push("QA: Failed");
         if (data.progress?.length) summaryParts.push(`${data.progress.length} nodes executed`);
@@ -265,22 +261,24 @@ export function useChat(projectId?: string): UseChatReturn {
                   isStreaming: false,
                   blueprintResult: data,
                 }
-              : m
-          )
+              : m,
+          ),
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : "Blueprint run failed";
         setMessages((prev) =>
-          prev.filter((m) => m.id !== assistantId || m.content.length > 0).map((m) =>
-            m.id === assistantId ? { ...m, isStreaming: false, content: `Error: ${message}` } : m
-          )
+          prev
+            .filter((m) => m.id !== assistantId || m.content.length > 0)
+            .map((m) =>
+              m.id === assistantId ? { ...m, isStreaming: false, content: `Error: ${message}` } : m,
+            ),
         );
         setError(message);
       } finally {
         setBlueprintRunning(false);
       }
     },
-    [status, blueprintRunning, projectId, messages]
+    [status, blueprintRunning, projectId, messages],
   );
 
   const clearMessages = useCallback(() => {
@@ -296,5 +294,15 @@ export function useChat(projectId?: string): UseChatReturn {
     setError(null);
   }, []);
 
-  return { messages, status, error, sendMessage, sendBlueprintRun, blueprintRunning, stopStreaming, clearMessages, replaceMessages };
+  return {
+    messages,
+    status,
+    error,
+    sendMessage,
+    sendBlueprintRun,
+    blueprintRunning,
+    stopStreaming,
+    clearMessages,
+    replaceMessages,
+  };
 }

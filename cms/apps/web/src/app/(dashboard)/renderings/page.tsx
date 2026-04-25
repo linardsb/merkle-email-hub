@@ -2,7 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { MonitorSmartphone, ChevronLeft, ChevronRight, GitCompareArrows, Bug } from "../../../components/icons";
+import {
+  MonitorSmartphone,
+  ChevronLeft,
+  ChevronRight,
+  GitCompareArrows,
+  Bug,
+} from "../../../components/icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -13,10 +19,7 @@ import { RenderingTestList } from "@/components/renderings/rendering-test-list";
 import { RenderingTestDialog } from "@/components/renderings/rendering-test-dialog";
 import { RenderingScreenshotDialog } from "@/components/renderings/rendering-screenshot-dialog";
 import { VisualRegressionDialog } from "@/components/renderings/visual-regression-dialog";
-import {
-  useFailurePatterns,
-  useFailurePatternStats,
-} from "@/hooks/use-failure-patterns";
+import { useFailurePatterns, useFailurePatternStats } from "@/hooks/use-failure-patterns";
 import { FailurePatternStatsCards } from "@/components/failure-patterns/stats-cards";
 import { FailurePatternFilters } from "@/components/failure-patterns/filters";
 import { FailurePatternTable } from "@/components/failure-patterns/pattern-table";
@@ -57,7 +60,7 @@ export default function RenderingsPage() {
 
   const initialTab = searchParams.get("tab");
   const [tab, setTab] = useState<Tab>(
-    initialTab === "patterns" ? "patterns" : initialTab === "dashboard" ? "dashboard" : "tests"
+    initialTab === "patterns" ? "patterns" : initialTab === "dashboard" ? "dashboard" : "tests",
   );
 
   // --- Rendering Tests state ---
@@ -114,10 +117,12 @@ export default function RenderingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <MonitorSmartphone className="h-8 w-8 text-foreground-accent" />
+          <MonitorSmartphone className="text-foreground-accent h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{"Rendering Preview"}</h1>
-            <p className="text-sm text-foreground-muted">{"Cross-client email rendering tests powered by Litmus and Email on Acid"}</p>
+            <h1 className="text-foreground text-2xl font-semibold">{"Rendering Preview"}</h1>
+            <p className="text-foreground-muted text-sm">
+              {"Cross-client email rendering tests powered by Litmus and Email on Acid"}
+            </p>
           </div>
         </div>
         {tab === "tests" && (
@@ -125,7 +130,7 @@ export default function RenderingsPage() {
             {compareIds[0] !== null && compareIds[1] !== null && (
               <button
                 onClick={() => setCompareOpen(true)}
-                className="flex items-center gap-1.5 rounded border border-card-border bg-card-bg px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-muted"
+                className="border-card-border bg-card-bg text-foreground hover:bg-surface-muted flex items-center gap-1.5 rounded border px-3 py-2 text-sm font-medium"
               >
                 <GitCompareArrows className="h-4 w-4" />
                 {"Compare"}
@@ -133,7 +138,7 @@ export default function RenderingsPage() {
             )}
             <button
               onClick={() => setDialogOpen(true)}
-              className="rounded bg-foreground-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              className="bg-foreground-accent rounded px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               {"Request Rendering Test"}
             </button>
@@ -142,7 +147,7 @@ export default function RenderingsPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-lg border border-card-border bg-card-bg p-1">
+      <div className="border-card-border bg-card-bg flex gap-1 rounded-lg border p-1">
         <button
           onClick={() => setTab("tests")}
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -176,9 +181,7 @@ export default function RenderingsPage() {
       </div>
 
       {/* Tab content */}
-      {tab === "dashboard" && (
-        <RenderingDashboard html={null} projectId={null} />
-      )}
+      {tab === "dashboard" && <RenderingDashboard html={null} projectId={null} />}
 
       {tab === "tests" && (
         <>
@@ -186,19 +189,25 @@ export default function RenderingsPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 rounded-lg border border-card-border" />
+                  <Skeleton key={i} className="border-card-border h-24 rounded-lg border" />
                 ))}
               </div>
-              <Skeleton className="h-64 rounded-lg border border-card-border" />
+              <Skeleton className="border-card-border h-64 rounded-lg border" />
             </>
           ) : error ? (
-            <ErrorState message={"Failed to load rendering data"} onRetry={() => mutate()} retryLabel={"Try again"} />
+            <ErrorState
+              message={"Failed to load rendering data"}
+              onRetry={() => mutate()}
+              retryLabel={"Try again"}
+            />
           ) : tests.length === 0 && page === 1 ? (
             <>
               <EmptyState
                 icon={MonitorSmartphone}
                 title={"No rendering tests yet"}
-                description={"Run your first cross-client rendering test to see how your emails look everywhere."}
+                description={
+                  "Run your first cross-client rendering test to see how your emails look everywhere."
+                }
               />
             </>
           ) : (
@@ -216,18 +225,18 @@ export default function RenderingsPage() {
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
-                    className="flex items-center gap-1 rounded border border-card-border px-3 py-1.5 text-sm text-foreground-muted hover:text-foreground disabled:opacity-40"
+                    className="border-card-border text-foreground-muted hover:text-foreground flex items-center gap-1 rounded border px-3 py-1.5 text-sm disabled:opacity-40"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     {"Previous"}
                   </button>
-                  <span className="text-sm text-foreground-muted">
+                  <span className="text-foreground-muted text-sm">
                     {`Page ${page} of ${totalPages}`}
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="flex items-center gap-1 rounded border border-card-border px-3 py-1.5 text-sm text-foreground-muted hover:text-foreground disabled:opacity-40"
+                    className="border-card-border text-foreground-muted hover:text-foreground flex items-center gap-1 rounded border px-3 py-1.5 text-sm disabled:opacity-40"
                   >
                     {"Next"}
                     <ChevronRight className="h-4 w-4" />
@@ -245,11 +254,11 @@ export default function RenderingsPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 rounded-lg border border-card-border" />
+                  <Skeleton key={i} className="border-card-border h-24 rounded-lg border" />
                 ))}
               </div>
-              <Skeleton className="h-12 rounded-lg border border-card-border" />
-              <Skeleton className="h-64 rounded-lg border border-card-border" />
+              <Skeleton className="border-card-border h-12 rounded-lg border" />
+              <Skeleton className="border-card-border h-64 rounded-lg border" />
             </>
           ) : fpError ? (
             <ErrorState
@@ -261,7 +270,9 @@ export default function RenderingsPage() {
             <EmptyState
               icon={Bug}
               title={"No Failure Patterns"}
-              description={"Run blueprint pipelines with QA checks to discover failure patterns across agents."}
+              description={
+                "Run blueprint pipelines with QA checks to discover failure patterns across agents."
+              }
             />
           ) : (
             <>
@@ -283,21 +294,21 @@ export default function RenderingsPage() {
               <FailurePatternTable patterns={fpItems} onSelect={setSelectedPattern} />
               {fpTotalPages > 1 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-foreground-muted">
+                  <span className="text-foreground-muted text-sm">
                     {`Page ${fpPage} of ${fpTotalPages}`}
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setFpPage((p) => Math.max(1, p - 1))}
                       disabled={fpPage <= 1}
-                      className="flex items-center gap-1 rounded border border-card-border px-3 py-1.5 text-sm text-foreground disabled:opacity-50"
+                      className="border-card-border text-foreground flex items-center gap-1 rounded border px-3 py-1.5 text-sm disabled:opacity-50"
                     >
                       <ChevronLeft className="h-4 w-4" /> {"Previous"}
                     </button>
                     <button
                       onClick={() => setFpPage((p) => Math.min(fpTotalPages, p + 1))}
                       disabled={fpPage >= fpTotalPages}
-                      className="flex items-center gap-1 rounded border border-card-border px-3 py-1.5 text-sm text-foreground disabled:opacity-50"
+                      className="border-card-border text-foreground flex items-center gap-1 rounded border px-3 py-1.5 text-sm disabled:opacity-50"
                     >
                       {"Next"} <ChevronRight className="h-4 w-4" />
                     </button>

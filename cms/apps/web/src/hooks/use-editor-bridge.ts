@@ -40,7 +40,10 @@ export function useEditorBridge(): EditorBridge {
   }, []);
 
   const findMatches = useCallback(
-    (editor: monacoEditor.IStandaloneCodeEditor, text: string): Array<{ from: number; to: number }> => {
+    (
+      editor: monacoEditor.IStandaloneCodeEditor,
+      text: string,
+    ): Array<{ from: number; to: number }> => {
       const model = editor.getModel();
       if (!model) return [];
       const docLower = model.getValue().toLowerCase();
@@ -64,13 +67,17 @@ export function useEditorBridge(): EditorBridge {
       if (!editor) return;
       const position = editor.getPosition();
       if (!position) return;
-      editor.executeEdits("editor-bridge", [{
-        range: {
-          startLineNumber: position.lineNumber, startColumn: position.column,
-          endLineNumber: position.lineNumber, endColumn: position.column,
+      editor.executeEdits("editor-bridge", [
+        {
+          range: {
+            startLineNumber: position.lineNumber,
+            startColumn: position.column,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+          },
+          text: cssText,
         },
-        text: cssText,
-      }]);
+      ]);
       editor.focus();
     },
     [getEditor],
@@ -90,8 +97,10 @@ export function useEditorBridge(): EditorBridge {
         const endPos = model.getPositionAt(m.to);
         return {
           range: {
-            startLineNumber: startPos.lineNumber, startColumn: startPos.column,
-            endLineNumber: endPos.lineNumber, endColumn: endPos.column,
+            startLineNumber: startPos.lineNumber,
+            startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber,
+            endColumn: endPos.column,
           },
           options: { className: "monaco-token-highlight" },
         };
@@ -132,13 +141,17 @@ export function useEditorBridge(): EditorBridge {
       const model = editor.getModel();
       if (!model) return;
       const position = model.getPositionAt(offset);
-      editor.executeEdits("editor-bridge", [{
-        range: {
-          startLineNumber: position.lineNumber, startColumn: position.column,
-          endLineNumber: position.lineNumber, endColumn: position.column,
+      editor.executeEdits("editor-bridge", [
+        {
+          range: {
+            startLineNumber: position.lineNumber,
+            startColumn: position.column,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+          },
+          text,
         },
-        text,
-      }]);
+      ]);
       editor.focus();
     },
     [getEditor],
@@ -157,8 +170,10 @@ export function useEditorBridge(): EditorBridge {
         const endPos = model.getPositionAt(m.to);
         return {
           range: {
-            startLineNumber: startPos.lineNumber, startColumn: startPos.column,
-            endLineNumber: endPos.lineNumber, endColumn: endPos.column,
+            startLineNumber: startPos.lineNumber,
+            startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber,
+            endColumn: endPos.column,
           },
           text: newHex,
         };
@@ -179,35 +194,47 @@ export function useEditorBridge(): EditorBridge {
       if (styleMatch && styleMatch.index !== undefined) {
         const insertOffset = styleMatch.index + styleMatch[0].length;
         const pos = model.getPositionAt(insertOffset);
-        editor.executeEdits("editor-bridge", [{
-          range: {
-            startLineNumber: pos.lineNumber, startColumn: pos.column,
-            endLineNumber: pos.lineNumber, endColumn: pos.column,
+        editor.executeEdits("editor-bridge", [
+          {
+            range: {
+              startLineNumber: pos.lineNumber,
+              startColumn: pos.column,
+              endLineNumber: pos.lineNumber,
+              endColumn: pos.column,
+            },
+            text: `\n${block}\n`,
           },
-          text: `\n${block}\n`,
-        }]);
+        ]);
       } else {
         const headMatch = doc.match(/<head[^>]*>/i);
         if (headMatch && headMatch.index !== undefined) {
           const insertOffset = headMatch.index + headMatch[0].length;
           const pos = model.getPositionAt(insertOffset);
-          editor.executeEdits("editor-bridge", [{
-            range: {
-              startLineNumber: pos.lineNumber, startColumn: pos.column,
-              endLineNumber: pos.lineNumber, endColumn: pos.column,
+          editor.executeEdits("editor-bridge", [
+            {
+              range: {
+                startLineNumber: pos.lineNumber,
+                startColumn: pos.column,
+                endLineNumber: pos.lineNumber,
+                endColumn: pos.column,
+              },
+              text: `\n<style>\n${block}\n</style>\n`,
             },
-            text: `\n<style>\n${block}\n</style>\n`,
-          }]);
+          ]);
         } else {
           const position = editor.getPosition();
           if (!position) return;
-          editor.executeEdits("editor-bridge", [{
-            range: {
-              startLineNumber: position.lineNumber, startColumn: position.column,
-              endLineNumber: position.lineNumber, endColumn: position.column,
+          editor.executeEdits("editor-bridge", [
+            {
+              range: {
+                startLineNumber: position.lineNumber,
+                startColumn: position.column,
+                endLineNumber: position.lineNumber,
+                endColumn: position.column,
+              },
+              text: `<style>\n${block}\n</style>\n`,
             },
-            text: `<style>\n${block}\n</style>\n`,
-          }]);
+          ]);
         }
       }
       editor.focus();
@@ -228,8 +255,10 @@ export function useEditorBridge(): EditorBridge {
         const endPos = model.getPositionAt(m.to);
         return {
           range: {
-            startLineNumber: startPos.lineNumber, startColumn: startPos.column,
-            endLineNumber: endPos.lineNumber, endColumn: endPos.column,
+            startLineNumber: startPos.lineNumber,
+            startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber,
+            endColumn: endPos.column,
           },
           options: { className: "monaco-token-spotlight" },
         };

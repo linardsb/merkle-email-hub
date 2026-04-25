@@ -21,9 +21,7 @@ describe("useBuilderSync", () => {
 
   it("returns disabled state when not enabled", async () => {
     const { useBuilderSync } = await import("../use-builder-sync");
-    const { result } = renderHook(() =>
-      useBuilderSync({ enabled: false })
-    );
+    const { result } = renderHook(() => useBuilderSync({ enabled: false }));
     expect(result.current.syncStatus).toBe("synced");
     expect(result.current.parsedSections).toEqual([]);
     expect(result.current.serializedHtml).toBeNull();
@@ -31,9 +29,7 @@ describe("useBuilderSync", () => {
 
   it("parses code changes into sections after 500ms debounce", async () => {
     const { useBuilderSync } = await import("../use-builder-sync");
-    const { result } = renderHook(() =>
-      useBuilderSync({ enabled: true })
-    );
+    const { result } = renderHook(() => useBuilderSync({ enabled: true }));
 
     const html = `<html><body>
       <table><tbody>
@@ -61,15 +57,11 @@ describe("useBuilderSync", () => {
 
   it("serializes builder changes to HTML after 200ms debounce", async () => {
     const { useBuilderSync } = await import("../use-builder-sync");
-    const { result } = renderHook(() =>
-      useBuilderSync({ enabled: true })
-    );
+    const { result } = renderHook(() => useBuilderSync({ enabled: true }));
 
     // Seed with initial HTML so template shell is available
     act(() => {
-      result.current.handleCodeChange(
-        "<html><body><table><tbody></tbody></table></body></html>"
-      );
+      result.current.handleCodeChange("<html><body><table><tbody></tbody></table></body></html>");
       vi.advanceTimersByTime(500);
     });
 
@@ -91,9 +83,7 @@ describe("useBuilderSync", () => {
 
   it("handles parse errors gracefully", async () => {
     const { useBuilderSync } = await import("../use-builder-sync");
-    const { result } = renderHook(() =>
-      useBuilderSync({ enabled: true })
-    );
+    const { result } = renderHook(() => useBuilderSync({ enabled: true }));
 
     act(() => {
       result.current.handleCodeChange("not valid html at all {}[]");
@@ -114,17 +104,16 @@ describe("useBuilderSync", () => {
 
   it("disposes engine when disabled", async () => {
     const { useBuilderSync } = await import("../use-builder-sync");
-    const { result, rerender } = renderHook(
-      ({ enabled }) => useBuilderSync({ enabled }),
-      { initialProps: { enabled: true } }
-    );
+    const { result, rerender } = renderHook(({ enabled }) => useBuilderSync({ enabled }), {
+      initialProps: { enabled: true },
+    });
 
     // Fully complete a sync cycle with parseable email HTML
     act(() => {
       result.current.handleCodeChange(
         `<html><body><table><tbody>
           <tr data-section-id="s1"><td>Hello</td></tr>
-        </tbody></table></body></html>`
+        </tbody></table></body></html>`,
       );
       vi.advanceTimersByTime(500);
     });
@@ -138,22 +127,18 @@ describe("useBuilderSync", () => {
 
   it("builder wins when both change within debounce window", async () => {
     const { useBuilderSync } = await import("../use-builder-sync");
-    const { result } = renderHook(() =>
-      useBuilderSync({ enabled: true })
-    );
+    const { result } = renderHook(() => useBuilderSync({ enabled: true }));
 
     // Seed template shell
     act(() => {
-      result.current.handleCodeChange(
-        "<html><body><table><tbody></tbody></table></body></html>"
-      );
+      result.current.handleCodeChange("<html><body><table><tbody></tbody></table></body></html>");
       vi.advanceTimersByTime(500);
     });
 
     // Code changes (500ms debounce starts)
     act(() => {
       result.current.handleCodeChange(
-        "<html><body><table><tbody><tr><td>from code</td></tr></tbody></table></body></html>"
+        "<html><body><table><tbody><tr><td>from code</td></tr></tbody></table></body></html>",
       );
     });
 

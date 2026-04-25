@@ -52,23 +52,23 @@ export function CalibrationHealthPanel({
   if (!isAdmin) return null;
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg">
+    <div className="border-card-border bg-card-bg rounded-lg border">
       {/* Collapsible header */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-foreground"
+        className="text-foreground flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium"
       >
         {expanded ? (
-          <ChevronDown className="h-4 w-4 text-foreground-muted" />
+          <ChevronDown className="text-foreground-muted h-4 w-4" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-foreground-muted" />
+          <ChevronRight className="text-foreground-muted h-4 w-4" />
         )}
         Calibration Health
       </button>
 
       {expanded && (
-        <div className="border-t border-card-border px-4 py-3">
+        <div className="border-card-border border-t px-4 py-3">
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -76,35 +76,30 @@ export function CalibrationHealthPanel({
               ))}
             </div>
           ) : !summary || summary.items.length === 0 ? (
-            <p className="text-sm text-foreground-muted">
-              No calibration data available yet.
-            </p>
+            <p className="text-foreground-muted text-sm">No calibration data available yet.</p>
           ) : (
             <div className="space-y-1.5">
               {summary.items.map((item) => {
                 const displayName =
-                  CLIENT_DISPLAY_NAMES[item.client_id as ClientProfile] ??
-                  item.client_id;
+                  CLIENT_DISPLAY_NAMES[item.client_id as ClientProfile] ?? item.client_id;
                 return (
                   <div
                     key={item.client_id}
-                    className="flex items-center gap-3 rounded-md border border-card-border px-3 py-2 text-sm"
+                    className="border-card-border flex items-center gap-3 rounded-md border px-3 py-2 text-sm"
                   >
                     {/* Client name */}
-                    <span className="w-36 shrink-0 font-medium text-foreground">
-                      {displayName}
-                    </span>
+                    <span className="text-foreground w-36 shrink-0 font-medium">{displayName}</span>
 
                     {/* Sparkline */}
                     <SparklineSvg values={item.accuracy_trend} />
 
                     {/* Accuracy */}
-                    <span className="w-14 shrink-0 font-mono text-xs text-foreground-muted">
+                    <span className="text-foreground-muted w-14 shrink-0 font-mono text-xs">
                       {item.current_accuracy.toFixed(0)}%
                     </span>
 
                     {/* Last calibrated */}
-                    <span className="flex-1 text-xs text-foreground-muted">
+                    <span className="text-foreground-muted flex-1 text-xs">
                       {item.last_calibrated
                         ? new Date(item.last_calibrated).toLocaleDateString()
                         : "Never"}
@@ -113,7 +108,7 @@ export function CalibrationHealthPanel({
                     {/* Regression alert */}
                     {item.regression_alert && (
                       <span title="Accuracy regression detected">
-                        <AlertTriangle className="h-4 w-4 shrink-0 text-status-warning" />
+                        <AlertTriangle className="text-status-warning h-4 w-4 shrink-0" />
                       </span>
                     )}
 
@@ -121,7 +116,7 @@ export function CalibrationHealthPanel({
                     <button
                       type="button"
                       onClick={() => onRecalibrate(item.client_id)}
-                      className="flex shrink-0 items-center gap-1 rounded border border-card-border px-2 py-1 text-xs text-foreground-muted hover:text-foreground"
+                      className="border-card-border text-foreground-muted hover:text-foreground flex shrink-0 items-center gap-1 rounded border px-2 py-1 text-xs"
                     >
                       <RefreshCw className="h-3 w-3" />
                       Recalibrate

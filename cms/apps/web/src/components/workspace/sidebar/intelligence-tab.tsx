@@ -14,18 +14,14 @@ export function IntelligenceTab() {
     <div className="flex-1 overflow-y-auto">
       <Accordion type="single" collapsible className="px-4">
         <AccordionItem value="ontology">
-          <AccordionTrigger className="py-3 text-sm">
-            {"Ontology Sync"}
-          </AccordionTrigger>
+          <AccordionTrigger className="py-3 text-sm">{"Ontology Sync"}</AccordionTrigger>
           <AccordionContent>
             <OntologySyncPanel />
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="competitive">
-          <AccordionTrigger className="py-3 text-sm">
-            {"Competitive Intelligence"}
-          </AccordionTrigger>
+          <AccordionTrigger className="py-3 text-sm">{"Competitive Intelligence"}</AccordionTrigger>
           <AccordionContent>
             <CompetitiveReportPanel />
           </AccordionContent>

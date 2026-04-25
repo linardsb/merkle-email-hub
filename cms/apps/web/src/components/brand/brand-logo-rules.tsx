@@ -21,50 +21,38 @@ export function BrandLogoRules({ rules, onChange, disabled }: BrandLogoRulesProp
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{"Logo Rules"}</h3>
+      <h3 className="text-foreground text-sm font-medium">{"Logo Rules"}</h3>
 
-      <div className="rounded-md border border-card-border bg-card-bg p-3 space-y-2">
+      <div className="border-card-border bg-card-bg space-y-2 rounded-md border p-3">
         <div className="grid grid-cols-3 gap-2">
           <div>
-            <label className="mb-1 block text-xs text-foreground-muted">
-              {"Min Width (px)"}
-            </label>
+            <label className="text-foreground-muted mb-1 block text-xs">{"Min Width (px)"}</label>
             <input
               type="number"
               value={current.minWidth}
-              onChange={(e) =>
-                onChange({ ...current, minWidth: Number(e.target.value) })
-              }
+              onChange={(e) => onChange({ ...current, minWidth: Number(e.target.value) })}
               disabled={disabled}
               min={0}
               className={inputClass}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-foreground-muted">
-              {"Min Height (px)"}
-            </label>
+            <label className="text-foreground-muted mb-1 block text-xs">{"Min Height (px)"}</label>
             <input
               type="number"
               value={current.minHeight}
-              onChange={(e) =>
-                onChange({ ...current, minHeight: Number(e.target.value) })
-              }
+              onChange={(e) => onChange({ ...current, minHeight: Number(e.target.value) })}
               disabled={disabled}
               min={0}
               className={inputClass}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-foreground-muted">
-              {"Clear Space (px)"}
-            </label>
+            <label className="text-foreground-muted mb-1 block text-xs">{"Clear Space (px)"}</label>
             <input
               type="number"
               value={current.clearSpace}
-              onChange={(e) =>
-                onChange({ ...current, clearSpace: Number(e.target.value) })
-              }
+              onChange={(e) => onChange({ ...current, clearSpace: Number(e.target.value) })}
               disabled={disabled}
               min={0}
               className={inputClass}
@@ -72,9 +60,7 @@ export function BrandLogoRules({ rules, onChange, disabled }: BrandLogoRulesProp
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-foreground-muted">
-            {"Allowed Formats"}
-          </label>
+          <label className="text-foreground-muted mb-1 block text-xs">{"Allowed Formats"}</label>
           <input
             type="text"
             value={current.allowedFormats.join(", ")}

@@ -170,7 +170,7 @@ export function ExportDialog({
         onOpenChange(false);
       }
     },
-    [onOpenChange]
+    [onOpenChange],
   );
 
   const handleRawHtmlDownload = useCallback(() => {
@@ -203,7 +203,12 @@ export function ExportDialog({
   const handleEspExport = useCallback(
     async (cfg: ConnectorConfig) => {
       const state = espStatesRef.current[cfg.id] ?? initialEspState;
-      if (!state.name.trim() || state.dialogState === "building" || state.dialogState === "exporting") return;
+      if (
+        !state.name.trim() ||
+        state.dialogState === "building" ||
+        state.dialogState === "exporting"
+      )
+        return;
 
       const localId = crypto.randomUUID();
       updateEspState(cfg.id, { dialogState: "building", errorMessage: null, externalId: null });
@@ -273,8 +278,16 @@ export function ExportDialog({
         });
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projectId, templateName, sourceHtml, triggerBuild, triggerExport, onExportComplete, updateEspState]
+
+    [
+      projectId,
+      templateName,
+      sourceHtml,
+      triggerBuild,
+      triggerExport,
+      onExportComplete,
+      updateEspState,
+    ],
   );
 
   const handleEspExportClick = useCallback(
@@ -327,23 +340,23 @@ export function ExportDialog({
       ref={dialogRef}
       onClose={handleDialogClose}
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 m-auto max-h-[85vh] w-full max-w-[36rem] rounded-lg border border-card-border bg-card-bg p-0 shadow-lg backdrop:bg-black/50"
+      className="border-card-border bg-card-bg fixed inset-0 z-50 m-auto max-h-[85vh] w-full max-w-[36rem] rounded-lg border p-0 shadow-lg backdrop:bg-black/50"
     >
       <div className="flex flex-col">
         {/* Header */}
-        <div className="border-b border-card-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">{"Export Template"}</h2>
+        <div className="border-card-border border-b px-6 py-4">
+          <h2 className="text-foreground text-lg font-semibold">{"Export Template"}</h2>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-card-border px-6 overflow-x-auto">
+        <div className="border-card-border flex overflow-x-auto border-b px-6">
           <button
             type="button"
             onClick={() => setActiveTab("raw_html")}
             className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
               activeTab === "raw_html"
                 ? "border-interactive text-foreground"
-                : "border-transparent text-foreground-muted hover:text-foreground"
+                : "text-foreground-muted hover:text-foreground border-transparent"
             }`}
           >
             <Download className="h-4 w-4" />
@@ -357,7 +370,7 @@ export function ExportDialog({
               className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === cfg.id
                   ? "border-interactive text-foreground"
-                  : "border-transparent text-foreground-muted hover:text-foreground"
+                  : "text-foreground-muted hover:text-foreground border-transparent"
               }`}
             >
               <cfg.icon className="h-4 w-4" />
@@ -371,14 +384,14 @@ export function ExportDialog({
           {activeTab === "raw_html" ? (
             <div className="space-y-4">
               {!compiledHtml ? (
-                <p className="text-sm text-foreground-muted">
+                <p className="text-foreground-muted text-sm">
                   {"Compile the template first before exporting"}
                 </p>
               ) : (
                 <button
                   type="button"
                   onClick={handleRawHtmlDownload}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-interactive px-4 py-2.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+                  className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors"
                 >
                   <Download className="h-4 w-4" />
                   {"Download HTML"}
@@ -409,18 +422,20 @@ export function ExportDialog({
                 compiledHtml={compiledHtml}
                 onNameChange={(val) => updateEspState(activeConfig.id, { name: val })}
                 onExport={() => handleEspExportClick(activeConfig)}
-                onRetry={() => updateEspState(activeConfig.id, { dialogState: "idle", errorMessage: null })}
+                onRetry={() =>
+                  updateEspState(activeConfig.id, { dialogState: "idle", errorMessage: null })
+                }
               />
             )
           ) : null}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-card-border px-6 py-3">
+        <div className="border-card-border border-t px-6 py-3">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md px-4 py-2 text-sm font-medium text-foreground-muted transition-colors hover:text-foreground"
+            className="text-foreground-muted hover:text-foreground rounded-md px-4 py-2 text-sm font-medium transition-colors"
           >
             {"Close"}
           </button>
@@ -466,7 +481,7 @@ function EspTabContent({
       <div>
         <label
           htmlFor={`${config.id}-name`}
-          className="mb-1.5 block text-sm font-medium text-foreground"
+          className="text-foreground mb-1.5 block text-sm font-medium"
         >
           {config.nameLabel}
         </label>
@@ -478,36 +493,34 @@ function EspTabContent({
           placeholder={config.namePlaceholder}
           maxLength={200}
           disabled={isBusy}
-          className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-interactive focus:outline-none focus:ring-1 focus:ring-interactive disabled:opacity-50"
+          className="border-input-border bg-input-bg text-foreground placeholder:text-foreground-muted focus:border-interactive focus:ring-interactive w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:opacity-50"
         />
-        <p className="mt-1 text-xs text-foreground-muted">
-          {config.nameHint}
-        </p>
+        <p className="text-foreground-muted mt-1 text-xs">{config.nameHint}</p>
       </div>
 
       {/* State-based UI */}
       {state.dialogState === "building" && (
-        <div className="flex items-center gap-2 text-sm text-foreground-muted">
+        <div className="text-foreground-muted flex items-center gap-2 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           {"Building production version…"}
         </div>
       )}
 
       {state.dialogState === "exporting" && (
-        <div className="flex items-center gap-2 text-sm text-foreground-muted">
+        <div className="text-foreground-muted flex items-center gap-2 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           {config.exportingMsg}
         </div>
       )}
 
       {state.dialogState === "success" && (
-        <div className="rounded-md border border-status-success/20 bg-status-success/5 p-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-status-success">
+        <div className="border-status-success/20 bg-status-success/5 rounded-md border p-3">
+          <div className="text-status-success flex items-center gap-2 text-sm font-medium">
             <CheckCircle2 className="h-4 w-4" />
             {config.successMsg}
           </div>
           {state.externalId && (
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="text-foreground-muted mt-1 text-xs">
               {"External ID"}: {state.externalId}
             </p>
           )}
@@ -516,8 +529,8 @@ function EspTabContent({
 
       {state.dialogState === "error" && (
         <div className="space-y-2">
-          <div className="rounded-md border border-status-danger/20 bg-status-danger/5 p-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-status-danger">
+          <div className="border-status-danger/20 bg-status-danger/5 rounded-md border p-3">
+            <div className="text-status-danger flex items-center gap-2 text-sm font-medium">
               <XCircle className="h-4 w-4" />
               {state.errorMessage ?? config.errorMsg}
             </div>
@@ -525,7 +538,7 @@ function EspTabContent({
           <button
             type="button"
             onClick={onRetry}
-            className="text-sm font-medium text-interactive hover:underline"
+            className="text-interactive text-sm font-medium hover:underline"
           >
             {"Retry"}
           </button>
@@ -538,7 +551,7 @@ function EspTabContent({
           type="button"
           onClick={onExport}
           disabled={!isNameValid || !compiledHtml}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-interactive px-4 py-2.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+          className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
         >
           <config.icon className="h-4 w-4" />
           {config.exportButton}
@@ -546,7 +559,7 @@ function EspTabContent({
       )}
 
       {!compiledHtml && state.dialogState === "idle" && (
-        <p className="text-xs text-foreground-muted">
+        <p className="text-foreground-muted text-xs">
           {"Compile the template first before exporting"}
         </p>
       )}

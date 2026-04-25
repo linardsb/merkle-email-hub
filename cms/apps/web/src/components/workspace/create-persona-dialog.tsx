@@ -51,11 +51,7 @@ interface CreatePersonaDialogProps {
   onCreated?: (persona: PersonaResponse) => void;
 }
 
-export function CreatePersonaDialog({
-  open,
-  onOpenChange,
-  onCreated,
-}: CreatePersonaDialogProps) {
+export function CreatePersonaDialog({ open, onOpenChange, onCreated }: CreatePersonaDialogProps) {
   const { trigger, isMutating } = useCreatePersona();
   const { mutate } = useSWRConfig();
 
@@ -127,7 +123,7 @@ export function CreatePersonaDialog({
           <div>
             <label
               htmlFor="persona-name"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Name"}
             </label>
@@ -147,7 +143,7 @@ export function CreatePersonaDialog({
           <div>
             <label
               htmlFor="persona-description"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="text-foreground mb-1.5 block text-sm font-medium"
             >
               {"Description"}
             </label>
@@ -167,7 +163,7 @@ export function CreatePersonaDialog({
             <div>
               <label
                 htmlFor="persona-email-client"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Email client"}
               </label>
@@ -189,7 +185,7 @@ export function CreatePersonaDialog({
             <div>
               <label
                 htmlFor="persona-device-type"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Device type"}
               </label>
@@ -214,7 +210,7 @@ export function CreatePersonaDialog({
             <div>
               <label
                 htmlFor="persona-viewport"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Viewport width"}
               </label>
@@ -225,9 +221,7 @@ export function CreatePersonaDialog({
                 max={2000}
                 value={viewportWidth}
                 onChange={(e) =>
-                  setViewportWidth(
-                    Math.max(200, Math.min(2000, Number(e.target.value) || 600))
-                  )
+                  setViewportWidth(Math.max(200, Math.min(2000, Number(e.target.value) || 600)))
                 }
                 disabled={isMutating}
                 className={inputClass}
@@ -237,7 +231,7 @@ export function CreatePersonaDialog({
             <div>
               <label
                 htmlFor="persona-os"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Operating system"}
               </label>
@@ -266,9 +260,7 @@ export function CreatePersonaDialog({
               disabled={isMutating}
               className="accent-interactive"
             />
-            <span className="text-foreground">
-              {"Dark mode enabled"}
-            </span>
+            <span className="text-foreground">{"Dark mode enabled"}</span>
           </label>
         </div>
 
@@ -277,7 +269,7 @@ export function CreatePersonaDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -285,7 +277,7 @@ export function CreatePersonaDialog({
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

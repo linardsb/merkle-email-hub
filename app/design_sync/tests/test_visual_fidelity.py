@@ -30,6 +30,7 @@ from app.design_sync.visual_scorer import (
     classify_severity,
     score_fidelity,
 )
+from app.shared.imaging import safe_image_open
 
 # ── Helpers ──
 
@@ -167,7 +168,7 @@ class TestScoreFidelity:
         result = score_fidelity(white, black, sections, blur_sigma=0)
         assert result.diff_image is not None
         # Verify it's a valid PNG
-        img = Image.open(io.BytesIO(result.diff_image))
+        img = safe_image_open(io.BytesIO(result.diff_image))
         assert img.format == "PNG"
         assert img.size == (100, 100)
 

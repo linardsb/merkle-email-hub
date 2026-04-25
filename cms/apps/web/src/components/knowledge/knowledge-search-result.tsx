@@ -14,47 +14,42 @@ interface Props {
   onViewDocument: (documentId: number) => void;
 }
 
-export function KnowledgeSearchResultCard({
-  result,
-  onViewDocument,
-}: Props) {
+export function KnowledgeSearchResultCard({ result, onViewDocument }: Props) {
   const scorePercent = Math.round(result.score * 100);
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-4 transition-colors hover:bg-surface-hover">
+    <div className="border-card-border bg-card-bg hover:bg-surface-hover rounded-lg border p-4 transition-colors">
       {/* Header: filename + domain badge */}
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 shrink-0 text-foreground-muted" />
-        <span className="truncate text-sm font-medium text-foreground">
+        <FileText className="text-foreground-muted h-4 w-4 shrink-0" />
+        <span className="text-foreground truncate text-sm font-medium">
           {result.document_filename}
         </span>
-        <span className="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-xs text-foreground-muted">
+        <span className="bg-surface-muted text-foreground-muted shrink-0 rounded-full px-2 py-0.5 text-xs">
           {DOMAIN_LABELS[result.domain] ?? result.domain}
         </span>
       </div>
 
       {/* Chunk content preview */}
-      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-foreground-muted">
+      <p className="text-foreground-muted mt-2 line-clamp-3 text-sm leading-relaxed">
         {result.chunk_content}
       </p>
 
       {/* Footer: relevance score + view button */}
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 rounded-full bg-surface-muted">
+          <div className="bg-surface-muted h-1.5 w-20 rounded-full">
             <div
-              className="h-full rounded-full bg-interactive"
+              className="bg-interactive h-full rounded-full"
               style={{ width: `${scorePercent}%` }}
             />
           </div>
-          <span className="text-xs text-foreground-muted">
-            {`${scorePercent}% match`}
-          </span>
+          <span className="text-foreground-muted text-xs">{`${scorePercent}% match`}</span>
         </div>
         <button
           type="button"
           onClick={() => onViewDocument(result.document_id)}
-          className="text-xs font-medium text-interactive hover:underline"
+          className="text-interactive text-xs font-medium hover:underline"
         >
           {"View Document"}
         </button>

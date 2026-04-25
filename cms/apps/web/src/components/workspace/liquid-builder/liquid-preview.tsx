@@ -23,12 +23,12 @@ export function LiquidPreview({ code }: LiquidPreviewProps) {
   }, [code]);
 
   return (
-    <div className="h-full overflow-auto border-t border-border bg-surface-elevated p-4">
-      <h3 className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="border-border bg-surface-elevated h-full overflow-auto border-t p-4">
+      <h3 className="text-muted-foreground mb-2 text-[10px] uppercase tracking-wider">
         {"Preview"}
       </h3>
       <div
-        className="prose prose-sm max-w-none text-foreground"
+        className="prose prose-sm text-foreground max-w-none"
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rendered) }}
       />
     </div>
@@ -43,11 +43,7 @@ function simpleRender(code: string, data: Record<string, unknown>): string {
     for (const key of path) {
       // hasOwnProperty.call rejects inherited keys like __proto__/constructor,
       // closing the prototype-pollution vector flagged by CodeQL.
-      if (
-        value &&
-        typeof value === "object" &&
-        Object.prototype.hasOwnProperty.call(value, key)
-      ) {
+      if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, key)) {
         value = (value as Record<string, unknown>)[key];
       } else {
         return `{{ ${expr.trim()} }}`;

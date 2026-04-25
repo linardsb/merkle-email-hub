@@ -5,10 +5,7 @@ import { ApiError } from "./api-error";
  * Generic POST mutation fetcher for useSWRMutation.
  * Usage: useSWRMutation("/api/v1/foo", mutationFetcher)
  */
-export async function mutationFetcher<T>(
-  url: string,
-  { arg }: { arg: unknown }
-): Promise<T> {
+export async function mutationFetcher<T>(url: string, { arg }: { arg: unknown }): Promise<T> {
   const res = await authFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -35,10 +32,7 @@ export async function mutationFetcher<T>(
  * POST mutation fetcher with 120s timeout for long-running operations
  * (email builds, AI generation, QA runs).
  */
-export async function longMutationFetcher<T>(
-  url: string,
-  { arg }: { arg: unknown }
-): Promise<T> {
+export async function longMutationFetcher<T>(url: string, { arg }: { arg: unknown }): Promise<T> {
   const res = await authFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

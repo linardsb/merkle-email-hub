@@ -23,10 +23,7 @@ interface UseTemplatesOptions {
   status?: string;
 }
 
-export function useTemplates(
-  projectId: number | null,
-  options: UseTemplatesOptions = {}
-) {
+export function useTemplates(projectId: number | null, options: UseTemplatesOptions = {}) {
   const { page = 1, pageSize = 50, search, status } = options;
 
   let key: string | null = null;
@@ -49,16 +46,11 @@ export function useTemplate(templateId: number | null) {
 }
 
 export function useTemplateVersions(templateId: number | null) {
-  const key = templateId
-    ? `/api/v1/templates/${templateId}/versions`
-    : null;
+  const key = templateId ? `/api/v1/templates/${templateId}/versions` : null;
   return useSWR<VersionResponse[]>(key, fetcher);
 }
 
-export function useTemplateVersion(
-  templateId: number | null,
-  versionNumber: number | null
-) {
+export function useTemplateVersion(templateId: number | null, versionNumber: number | null) {
   const key =
     templateId && versionNumber
       ? `/api/v1/templates/${templateId}/versions/${versionNumber}`
@@ -69,33 +61,22 @@ export function useTemplateVersion(
 // ── Mutation Hooks ──
 
 export function useCreateTemplate(projectId: number | null) {
-  const key = projectId
-    ? `/api/v1/projects/${projectId}/templates`
-    : null;
-  return useSWRMutation<
-    TemplateResponse,
-    ApiError,
-    string | null,
-    TemplateCreate
-  >(key, mutationFetcher);
+  const key = projectId ? `/api/v1/projects/${projectId}/templates` : null;
+  return useSWRMutation<TemplateResponse, ApiError, string | null, TemplateCreate>(
+    key,
+    mutationFetcher,
+  );
 }
 
 export function useSaveVersion(templateId: number | null) {
-  const key = templateId
-    ? `/api/v1/templates/${templateId}/versions`
-    : null;
-  return useSWRMutation<
-    VersionResponse,
-    ApiError,
-    string | null,
-    VersionCreate
-  >(key, mutationFetcher);
+  const key = templateId ? `/api/v1/templates/${templateId}/versions` : null;
+  return useSWRMutation<VersionResponse, ApiError, string | null, VersionCreate>(
+    key,
+    mutationFetcher,
+  );
 }
 
-async function patchFetcher<T>(
-  url: string,
-  { arg }: { arg: unknown }
-): Promise<T> {
+async function patchFetcher<T>(url: string, { arg }: { arg: unknown }): Promise<T> {
   const res = await authFetch(url, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -123,7 +104,7 @@ export function useUpdateTemplate(templateId: number | null) {
 
 async function restoreFetcher<T>(
   url: string,
-  { arg }: { arg: { version_number: number } }
+  { arg }: { arg: { version_number: number } },
 ): Promise<T> {
   const res = await authFetch(`${url}/restore/${arg.version_number}`, {
     method: "POST",
@@ -145,10 +126,8 @@ async function restoreFetcher<T>(
 
 export function useRestoreVersion(templateId: number | null) {
   const key = templateId ? `/api/v1/templates/${templateId}` : null;
-  return useSWRMutation<
-    VersionResponse,
-    ApiError,
-    string | null,
-    { version_number: number }
-  >(key, restoreFetcher);
+  return useSWRMutation<VersionResponse, ApiError, string | null, { version_number: number }>(
+    key,
+    restoreFetcher,
+  );
 }

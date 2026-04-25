@@ -54,28 +54,30 @@ export function VoiceBriefCard({ brief, onSelect }: VoiceBriefCardProps) {
       type="button"
       onClick={() => onSelect(brief.id)}
       disabled={brief.status === "pending"}
-      className="flex w-full items-center gap-3 rounded-lg border border-default bg-card p-3 text-left transition-colors hover:bg-accent disabled:opacity-60 disabled:cursor-wait"
+      className="border-default bg-card hover:bg-accent flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors disabled:cursor-wait disabled:opacity-60"
     >
       {/* Icon */}
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-muted">
+      <div className="bg-surface-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
         {brief.status === "failed" ? (
-          <AlertCircle className="h-4 w-4 text-status-danger" />
+          <AlertCircle className="text-status-danger h-4 w-4" />
         ) : (
-          <Mic className="h-4 w-4 text-interactive" />
+          <Mic className="text-interactive h-4 w-4" />
         )}
       </div>
 
       {/* Content */}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-foreground">
+          <span className="text-foreground truncate text-sm font-medium">
             {brief.brief_topic ?? "Untitled Brief"}
           </span>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${status.className}`}>
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${status.className}`}
+          >
             {status.label}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-3 text-xs">
           <span>{brief.submitted_by}</span>
           {brief.duration_seconds != null && (
             <span className="flex items-center gap-1">
@@ -84,14 +86,12 @@ export function VoiceBriefCard({ brief, onSelect }: VoiceBriefCardProps) {
             </span>
           )}
           <span>{timeAgo(brief.created_at)}</span>
-          {brief.confidence != null && (
-            <span>{Math.round(brief.confidence * 100)}%</span>
-          )}
+          {brief.confidence != null && <span>{Math.round(brief.confidence * 100)}%</span>}
         </div>
       </div>
 
       {/* Chevron */}
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
     </button>
   );
 }

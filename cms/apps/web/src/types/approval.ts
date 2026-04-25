@@ -2,11 +2,7 @@
 
 import type { GateResult } from "./rendering-gate";
 
-export type ApprovalStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "revision_requested";
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "revision_requested";
 
 export interface ApprovalGateResult {
   required: boolean;

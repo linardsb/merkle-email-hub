@@ -61,11 +61,7 @@ describe("useBuilderState", () => {
     act(() => result.current.addSection(makeSection({ id: "s1" })));
     act(() => result.current.addSection(makeSection({ id: "s2" })));
     act(() => result.current.addSection(makeSection({ id: "s3" }), 1));
-    expect(result.current.sections.map((s) => s.id)).toEqual([
-      "s1",
-      "s3",
-      "s2",
-    ]);
+    expect(result.current.sections.map((s) => s.id)).toEqual(["s1", "s3", "s2"]);
   });
 
   it("REMOVE_SECTION removes by id", () => {
@@ -88,11 +84,7 @@ describe("useBuilderState", () => {
 
   it("DUPLICATE_SECTION clones with new id", () => {
     const { result } = renderHook(() => useBuilderState());
-    act(() =>
-      result.current.addSection(
-        makeSection({ id: "s1", componentName: "Header" }),
-      ),
-    );
+    act(() => result.current.addSection(makeSection({ id: "s1", componentName: "Header" })));
     act(() => result.current.duplicateSection("s1"));
     expect(result.current.sections).toHaveLength(2);
     expect(result.current.sections[1]!.id).toBe("mock-uuid-123");
@@ -104,11 +96,7 @@ describe("useBuilderState", () => {
     act(() => result.current.addSection(makeSection({ id: "s1" })));
     act(() => result.current.addSection(makeSection({ id: "s2" })));
     act(() => result.current.duplicateSection("s1"));
-    expect(result.current.sections.map((s) => s.id)).toEqual([
-      "s1",
-      "mock-uuid-123",
-      "s2",
-    ]);
+    expect(result.current.sections.map((s) => s.id)).toEqual(["s1", "mock-uuid-123", "s2"]);
   });
 
   it("MOVE_SECTION reorders correctly", () => {
@@ -117,19 +105,13 @@ describe("useBuilderState", () => {
     act(() => result.current.addSection(makeSection({ id: "s2" })));
     act(() => result.current.addSection(makeSection({ id: "s3" })));
     act(() => result.current.moveSection(0, 2));
-    expect(result.current.sections.map((s) => s.id)).toEqual([
-      "s2",
-      "s3",
-      "s1",
-    ]);
+    expect(result.current.sections.map((s) => s.id)).toEqual(["s2", "s3", "s1"]);
   });
 
   it("UPDATE_SECTION merges partial updates", () => {
     const { result } = renderHook(() => useBuilderState());
     act(() => result.current.addSection(makeSection({ id: "s1" })));
-    act(() =>
-      result.current.updateSection("s1", { componentName: "Updated" }),
-    );
+    act(() => result.current.updateSection("s1", { componentName: "Updated" }));
     expect(result.current.sections[0]!.componentName).toBe("Updated");
   });
 
@@ -150,15 +132,9 @@ describe("useBuilderState", () => {
     const { result } = renderHook(() => useBuilderState());
     act(() => result.current.addSection(makeSection({ id: "old" })));
     act(() =>
-      result.current.setSections([
-        makeSection({ id: "new1" }),
-        makeSection({ id: "new2" }),
-      ]),
+      result.current.setSections([makeSection({ id: "new1" }), makeSection({ id: "new2" })]),
     );
-    expect(result.current.sections.map((s) => s.id)).toEqual([
-      "new1",
-      "new2",
-    ]);
+    expect(result.current.sections.map((s) => s.id)).toEqual(["new1", "new2"]);
   });
 
   it("UNDO reverts last action", () => {

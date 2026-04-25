@@ -14,7 +14,10 @@ export const monarchTokensProvider: languages.IMonarchLanguage = {
       [/<!--\[if\s+(?:mso|gte\s+mso|lte\s+mso|gt\s+mso|lt\s+mso)[^\]]*\]>/, "comment"],
       [/<!\[endif\]-->/, "comment"],
       [/<!--/, { token: "comment", next: "@htmlComment" }],
-      [/<\/?(extends|block|component|slot|fill|stack|push|each|if|elseif|else|switch|case|default|raw|markdown|outlook|not-outlook)(?=[\s/>])/, "tag.maizzle"],
+      [
+        /<\/?(extends|block|component|slot|fill|stack|push|each|if|elseif|else|switch|case|default|raw|markdown|outlook|not-outlook)(?=[\s/>])/,
+        "tag.maizzle",
+      ],
       [/<\/?/, { token: "delimiter.html", next: "@htmlTag" }],
       [/&\w+;/, "string.escape"],
       [/[^<{&]+/, ""],
@@ -44,7 +47,10 @@ export const monarchTokensProvider: languages.IMonarchLanguage = {
       [/"[^"]*"|'[^']*'/, "string"],
       [/[=!<>]=?|!=/, "operator"],
       [/\d+(\.\d+)?/, "number"],
-      [/(?:if|elsif|else|endif|unless|endunless|for|endfor|case|when|endcase|assign|capture|endcapture|comment|endcomment|include|render|raw|endraw|tablerow|endtablerow|break|continue|cycle|increment|decrement)\b/, "keyword"],
+      [
+        /(?:if|elsif|else|endif|unless|endunless|for|endfor|case|when|endcase|assign|capture|endcapture|comment|endcomment|include|render|raw|endraw|tablerow|endtablerow|break|continue|cycle|increment|decrement)\b/,
+        "keyword",
+      ],
       [/(?:true|false|nil|null|blank|empty)\b/, "keyword"],
       [/(?:and|or|not|contains|in)\b/, "keyword"],
       [/[a-zA-Z_]\w*/, "variable"],
@@ -69,29 +75,57 @@ export const monarchTokensProvider: languages.IMonarchLanguage = {
 
 export const languageConfiguration: languages.LanguageConfiguration = {
   comments: { blockComment: ["<!--", "-->"] },
-  brackets: [["<", ">"], ["{", "}"], ["(", ")"], ["[", "]"]],
+  brackets: [
+    ["<", ">"],
+    ["{", "}"],
+    ["(", ")"],
+    ["[", "]"],
+  ],
   autoClosingPairs: [
-    { open: "{", close: "}" }, { open: "[", close: "]" },
-    { open: "(", close: ")" }, { open: '"', close: '"' },
-    { open: "'", close: "'" }, { open: "<!--", close: "-->" },
+    { open: "{", close: "}" },
+    { open: "[", close: "]" },
+    { open: "(", close: ")" },
+    { open: '"', close: '"' },
+    { open: "'", close: "'" },
+    { open: "<!--", close: "-->" },
   ],
   surroundingPairs: [
-    { open: '"', close: '"' }, { open: "'", close: "'" }, { open: "<", close: ">" },
+    { open: '"', close: '"' },
+    { open: "'", close: "'" },
+    { open: "<", close: ">" },
   ],
 };
 
 export const snippetCompletions = [
-  { label: "<extends>", detail: "Maizzle layout extends",
-    insertText: '<extends src="${1:src/layouts/main.html}">\n\t$0\n</extends>' },
-  { label: "<block>", detail: "Maizzle content block",
-    insertText: '<block name="${1:content}">\n\t$0\n</block>' },
-  { label: "<component>", detail: "Maizzle component include",
-    insertText: '<component src="${1:src/components/}">\n\t$0\n</component>' },
+  {
+    label: "<extends>",
+    detail: "Maizzle layout extends",
+    insertText: '<extends src="${1:src/layouts/main.html}">\n\t$0\n</extends>',
+  },
+  {
+    label: "<block>",
+    detail: "Maizzle content block",
+    insertText: '<block name="${1:content}">\n\t$0\n</block>',
+  },
+  {
+    label: "<component>",
+    detail: "Maizzle component include",
+    insertText: '<component src="${1:src/components/}">\n\t$0\n</component>',
+  },
   { label: "{{ }}", detail: "Liquid output tag", insertText: "{{ ${1:variable} }}" },
-  { label: "{% if %}", detail: "Liquid if block",
-    insertText: '{% if ${1:condition} %}\n\t$0\n{% endif %}' },
-  { label: "{% for %}", detail: "Liquid for loop",
-    insertText: '{% for ${1:item} in ${2:collection} %}\n\t$0\n{% endfor %}' },
-  { label: "<!--[if mso]>", detail: "MSO conditional for Outlook",
-    insertText: "<!--[if mso]>\n$0\n<![endif]-->" },
+  {
+    label: "{% if %}",
+    detail: "Liquid if block",
+    insertText: "{% if ${1:condition} %}\n\t$0\n{% endif %}",
+  },
+  {
+    label: "{% for %}",
+    detail: "Liquid for loop",
+    insertText: "{% for ${1:item} in ${2:collection} %}\n\t$0\n{% endfor %}",
+  },
+  {
+    label: "<!--[if mso]>",
+    detail: "MSO conditional for Outlook",
+    insertText: "<!--[if mso]>\n$0\n<![endif]-->",
+  },
 ];

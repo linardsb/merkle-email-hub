@@ -63,9 +63,7 @@ export default function ConnectorsPage() {
   // Filtered export records
   const filteredRecords = useMemo(() => {
     if (activeFilter === "all") return records;
-    return records.filter(
-      (r) => r.platform === (activeFilter as ConnectorPlatform)
-    );
+    return records.filter((r) => r.platform === (activeFilter as ConnectorPlatform));
   }, [records, activeFilter]);
 
   // Filtered ESP connections
@@ -75,55 +73,65 @@ export default function ConnectorsPage() {
     return conns.filter((c) => c.esp_type === espFilter);
   }, [espConnections, espFilter]);
 
-  const selectedConnection = (espConnections ?? []).find((c) => c.id === selectedConnectionId) ?? null;
+  const selectedConnection =
+    (espConnections ?? []).find((c) => c.id === selectedConnectionId) ?? null;
 
   // Import handler
-  const handleImport = useCallback(async (templateId: string) => {
-    if (!selectedConnectionId) return;
-    setImportingTemplateId(templateId);
-    try {
-      await triggerImport({ template_id: templateId });
-      toast.success("Template imported successfully");
-    } catch {
-      toast.error("Failed to import template");
-    } finally {
-      setImportingTemplateId(null);
-    }
-  }, [selectedConnectionId, triggerImport]);
+  const handleImport = useCallback(
+    async (templateId: string) => {
+      if (!selectedConnectionId) return;
+      setImportingTemplateId(templateId);
+      try {
+        await triggerImport({ template_id: templateId });
+        toast.success("Template imported successfully");
+      } catch {
+        toast.error("Failed to import template");
+      } finally {
+        setImportingTemplateId(null);
+      }
+    },
+    [selectedConnectionId, triggerImport],
+  );
 
   // Delete handler — uses authFetch directly to avoid hook URL race condition
-  const handleDelete = useCallback(async (connectionId: number) => {
-    if (!confirm("Delete this connection? This cannot be undone.")) return;
-    try {
-      const res = await authFetch(`/api/v1/connectors/sync/connections/${connectionId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
-      await globalMutate(
-        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/connectors/sync"),
-        undefined,
-        { revalidate: true },
-      );
-      toast.success("Connection deleted");
-      if (selectedConnectionId === connectionId) {
-        setSelectedConnectionId(null);
+  const handleDelete = useCallback(
+    async (connectionId: number) => {
+      // eslint-disable-next-line no-alert -- replace with modal confirm; tracked in eslint-debt.md
+      if (!confirm("Delete this connection? This cannot be undone.")) return;
+      try {
+        const res = await authFetch(`/api/v1/connectors/sync/connections/${connectionId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to delete");
+        await globalMutate(
+          (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/connectors/sync"),
+          undefined,
+          { revalidate: true },
+        );
+        toast.success("Connection deleted");
+        if (selectedConnectionId === connectionId) {
+          setSelectedConnectionId(null);
+        }
+      } catch {
+        toast.error("Failed to delete connection");
       }
-    } catch {
-      toast.error("Failed to delete connection");
-    }
-  }, [globalMutate, selectedConnectionId]);
+    },
+    [globalMutate, selectedConnectionId],
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Plug className="h-6 w-6 text-foreground" />
-          <h1 className="text-2xl font-bold text-foreground">{"Connectors & Exports"}</h1>
+          <Plug className="text-foreground h-6 w-6" />
+          <h1 className="text-foreground text-2xl font-bold">{"Connectors & Exports"}</h1>
         </div>
         {activeTab === "esp-sync" && (
           <button
             type="button"
             onClick={() => setCreateDialogOpen(true)}
-            className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
           >
             <Plus className="h-4 w-4" />
             {"Add Connection"}
@@ -132,7 +140,7 @@ export default function ConnectorsPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-lg border border-card-border bg-card-bg p-1">
+      <div className="border-card-border bg-card-bg flex gap-1 rounded-lg border p-1">
         <button
           type="button"
           onClick={() => setActiveTab("export-history")}
@@ -225,7 +233,7 @@ export default function ConnectorsPage() {
                 <button
                   type="button"
                   onClick={() => setCreateDialogOpen(true)}
-                  className="mt-2 flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+                  className="bg-interactive text-foreground-inverse hover:bg-interactive-hover mt-2 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   {"Add Connection"}
@@ -240,9 +248,7 @@ export default function ConnectorsPage() {
                   connection={conn}
                   selected={selectedConnectionId === conn.id}
                   onSelect={() =>
-                    setSelectedConnectionId(
-                      selectedConnectionId === conn.id ? null : conn.id
-                    )
+                    setSelectedConnectionId(selectedConnectionId === conn.id ? null : conn.id)
                   }
                   onDelete={() => handleDelete(conn.id)}
                 />
@@ -252,7 +258,7 @@ export default function ConnectorsPage() {
 
           {/* Template browser (shown when connection is selected) */}
           {selectedConnection && (
-            <div className="rounded-lg border border-card-border bg-card-bg p-4">
+            <div className="border-card-border bg-card-bg rounded-lg border p-4">
               <ESPTemplateBrowser
                 connectionId={selectedConnection.id}
                 espType={selectedConnection.esp_type}
@@ -266,14 +272,13 @@ export default function ConnectorsPage() {
       )}
 
       {/* Dialogs */}
-      <CreateESPConnectionDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
+      <CreateESPConnectionDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
 
       <ESPTemplatePreviewDialog
         open={previewTemplate !== null}
-        onOpenChange={(open) => { if (!open) setPreviewTemplate(null); }}
+        onOpenChange={(open) => {
+          if (!open) setPreviewTemplate(null);
+        }}
         template={previewTemplate}
         onImport={handleImport}
         importing={importingTemplateId !== null}

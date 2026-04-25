@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-from PIL import Image
 
 from app.core.logging import get_logger
+from app.shared.imaging import safe_image_open
 
 logger = get_logger(__name__)
 
@@ -35,7 +35,7 @@ def sample_edge_color(
         return None
 
     try:
-        img = Image.open(path).convert("RGB")
+        img = safe_image_open(path).convert("RGB")
     except Exception as exc:
         logger.warning(
             "design_sync.edge_sample_open_failed",

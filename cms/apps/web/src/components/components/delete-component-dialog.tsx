@@ -32,10 +32,9 @@ export function DeleteComponentDialog({
     try {
       await trigger(undefined as never);
       await mutate(
-        (key: unknown) =>
-          typeof key === "string" && key.startsWith("/api/v1/components"),
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/components"),
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       );
       toast.success("Component deleted");
       onOpenChange(false);
@@ -58,7 +57,7 @@ export function DeleteComponentDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={isMutating}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
           >
             {"Cancel"}
           </button>
@@ -66,7 +65,7 @@ export function DeleteComponentDialog({
             type="button"
             onClick={handleDelete}
             disabled={isMutating}
-            className="rounded-md bg-status-danger px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-status-danger/90 disabled:opacity-50"
+            className="bg-status-danger text-foreground-inverse hover:bg-status-danger/90 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

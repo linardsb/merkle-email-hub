@@ -81,7 +81,7 @@ export function WorkspaceToolbar({
   commandPalette,
 }: WorkspaceToolbarProps) {
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
+    <header className="border-border bg-card flex h-12 shrink-0 items-center justify-between border-b px-4">
       {/* Left zone: Navigation */}
       <div className="flex items-center gap-3">
         <TooltipProvider delayDuration={300}>
@@ -89,7 +89,7 @@ export function WorkspaceToolbar({
             <TooltipTrigger asChild>
               <Link
                 href="/"
-                className="flex items-center text-muted-foreground transition-colors hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground flex items-center transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Link>
@@ -99,9 +99,7 @@ export function WorkspaceToolbar({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <h1 className="max-w-32 truncate text-sm font-semibold text-foreground">
-          {projectName}
-        </h1>
+        <h1 className="text-foreground max-w-32 truncate text-sm font-semibold">{projectName}</h1>
         <span className="text-muted-foreground">/</span>
         <TemplateSelector
           templates={templates}
@@ -122,7 +120,7 @@ export function WorkspaceToolbar({
                 type="button"
                 onClick={onSave}
                 disabled={saveStatus === "saving" || saveStatus === "idle"}
-                className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
                 {"Save"}
@@ -136,11 +134,11 @@ export function WorkspaceToolbar({
 
         {onRunBlueprint && (
           <>
-            <div className="h-4 w-px bg-border" />
+            <div className="bg-border h-4 w-px" />
             <button
               type="button"
               onClick={onRunBlueprint}
-              className="flex items-center gap-1.5 rounded bg-interactive px-3 py-1 text-xs font-medium text-on-interactive transition-colors hover:opacity-90"
+              className="bg-interactive text-on-interactive flex items-center gap-1.5 rounded px-3 py-1 text-xs font-medium transition-colors hover:opacity-90"
             >
               <Zap className="h-3.5 w-3.5" />
               {"Generate"}
@@ -150,16 +148,14 @@ export function WorkspaceToolbar({
 
         {onRunQA && (
           <>
-            <div className="h-4 w-px bg-border" />
+            <div className="bg-border h-4 w-px" />
             <button
               type="button"
               onClick={onRunQA}
               disabled={isRunningQA || saveStatus === "saving"}
-              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors disabled:opacity-50"
             >
-              <ShieldCheck
-                className={`h-3.5 w-3.5 ${isRunningQA ? "animate-pulse" : ""}`}
-              />
+              <ShieldCheck className={`h-3.5 w-3.5 ${isRunningQA ? "animate-pulse" : ""}`} />
               {isRunningQA ? "Running..." : "Run QA"}
             </button>
           </>
@@ -189,7 +185,7 @@ export function WorkspaceToolbar({
           disabled={saveStatus === "saving"}
         />
 
-        <div className="h-4 w-px bg-border" />
+        <div className="bg-border h-4 w-px" />
 
         <ToolsMenu
           onGenerateImage={onGenerateImage}
@@ -199,12 +195,12 @@ export function WorkspaceToolbar({
           onViewBrief={onViewBrief}
         />
 
-        <div className="h-4 w-px bg-border" />
+        <div className="bg-border h-4 w-px" />
 
         {/* Status cluster */}
         {brandViolations !== undefined && brandViolations > 0 && (
           <span
-            className="flex items-center gap-1 rounded-full bg-badge-warning-bg px-2 py-0.5 text-xs font-medium text-badge-warning-text"
+            className="bg-badge-warning-bg text-badge-warning-text flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
             title={`${brandViolations} brand violations`}
           >
             <Palette className="h-3 w-3" />

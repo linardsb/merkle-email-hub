@@ -27,10 +27,7 @@ interface CreateComponentDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateComponentDialog({
-  open,
-  onOpenChange,
-}: CreateComponentDialogProps) {
+export function CreateComponentDialog({ open, onOpenChange }: CreateComponentDialogProps) {
   const { trigger, isMutating } = useCreateComponent();
   const { mutate } = useSWRConfig();
 
@@ -61,11 +58,12 @@ export function CreateComponentDialog({
       value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
+        .replace(/^-+|-+$/g, ""),
     );
   };
 
-  const isValid = name.trim().length >= 1 && slug.trim().length >= 1 && htmlSource.trim().length >= 1;
+  const isValid =
+    name.trim().length >= 1 && slug.trim().length >= 1 && htmlSource.trim().length >= 1;
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -79,10 +77,9 @@ export function CreateComponentDialog({
         css_source: cssSource.trim() || undefined,
       });
       await mutate(
-        (key: unknown) =>
-          typeof key === "string" && key.startsWith("/api/v1/components"),
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/components"),
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       );
       toast.success("Component created successfully");
       onOpenChange(false);
@@ -99,7 +96,7 @@ export function CreateComponentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[32rem] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-[32rem] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{"Create Component"}</DialogTitle>
           <DialogDescription>
@@ -110,10 +107,7 @@ export function CreateComponentDialog({
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label
-              htmlFor="comp-name"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <label htmlFor="comp-name" className="text-foreground mb-1.5 block text-sm font-medium">
               {"Name"}
             </label>
             <input
@@ -130,10 +124,7 @@ export function CreateComponentDialog({
 
           {/* Slug */}
           <div>
-            <label
-              htmlFor="comp-slug"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <label htmlFor="comp-slug" className="text-foreground mb-1.5 block text-sm font-medium">
               {"Slug"}
             </label>
             <input
@@ -153,7 +144,7 @@ export function CreateComponentDialog({
             <div>
               <label
                 htmlFor="comp-desc"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Description"}
               </label>
@@ -170,7 +161,7 @@ export function CreateComponentDialog({
             <div>
               <label
                 htmlFor="comp-cat"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="text-foreground mb-1.5 block text-sm font-medium"
               >
                 {"Category"}
               </label>
@@ -192,10 +183,7 @@ export function CreateComponentDialog({
 
           {/* HTML Source */}
           <div>
-            <label
-              htmlFor="comp-html"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <label htmlFor="comp-html" className="text-foreground mb-1.5 block text-sm font-medium">
               {"HTML Source"}
             </label>
             <textarea
@@ -211,14 +199,9 @@ export function CreateComponentDialog({
 
           {/* CSS Source (optional) */}
           <div>
-            <label
-              htmlFor="comp-css"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <label htmlFor="comp-css" className="text-foreground mb-1.5 block text-sm font-medium">
               {"CSS Source"}
-              <span className="ml-1 font-normal text-foreground-muted">
-                {"(optional)"}
-              </span>
+              <span className="text-foreground-muted ml-1 font-normal">{"(optional)"}</span>
             </label>
             <textarea
               id="comp-css"
@@ -237,7 +220,7 @@ export function CreateComponentDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -245,7 +228,7 @@ export function CreateComponentDialog({
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

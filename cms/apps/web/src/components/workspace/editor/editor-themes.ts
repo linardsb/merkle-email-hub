@@ -24,7 +24,8 @@ export const EDITOR_THEMES: EditorThemeOption[] = [
 ];
 
 export const monokaiTheme: editor.IStandaloneThemeData = {
-  base: "vs-dark", inherit: true,
+  base: "vs-dark",
+  inherit: true,
   rules: [
     { token: "tag", foreground: "f92672" },
     { token: "attribute.name", foreground: "a6e22e" },
@@ -38,15 +39,19 @@ export const monokaiTheme: editor.IStandaloneThemeData = {
     { token: "operator", foreground: "f92672" },
   ],
   colors: {
-    "editor.background": "#272822", "editor.foreground": "#f8f8f2",
-    "editor.selectionBackground": "#49483e", "editor.lineHighlightBackground": "#3e3d32",
-    "editorLineNumber.foreground": "#90908a", "editorLineNumber.activeForeground": "#c2c2bf",
+    "editor.background": "#272822",
+    "editor.foreground": "#f8f8f2",
+    "editor.selectionBackground": "#49483e",
+    "editor.lineHighlightBackground": "#3e3d32",
+    "editorLineNumber.foreground": "#90908a",
+    "editorLineNumber.activeForeground": "#c2c2bf",
     "editorGutter.background": "#272822",
   },
 };
 
 export const githubDarkTheme: editor.IStandaloneThemeData = {
-  base: "vs-dark", inherit: true,
+  base: "vs-dark",
+  inherit: true,
   rules: [
     { token: "tag", foreground: "7ee787" },
     { token: "attribute.name", foreground: "79c0ff" },
@@ -60,15 +65,19 @@ export const githubDarkTheme: editor.IStandaloneThemeData = {
     { token: "operator", foreground: "ff7b72" },
   ],
   colors: {
-    "editor.background": "#0d1117", "editor.foreground": "#c9d1d9",
-    "editor.selectionBackground": "#264f78", "editor.lineHighlightBackground": "#161b22",
-    "editorLineNumber.foreground": "#6e7681", "editorLineNumber.activeForeground": "#c9d1d9",
+    "editor.background": "#0d1117",
+    "editor.foreground": "#c9d1d9",
+    "editor.selectionBackground": "#264f78",
+    "editor.lineHighlightBackground": "#161b22",
+    "editorLineNumber.foreground": "#6e7681",
+    "editorLineNumber.activeForeground": "#c9d1d9",
     "editorGutter.background": "#0d1117",
   },
 };
 
 export const solarizedDarkTheme: editor.IStandaloneThemeData = {
-  base: "vs-dark", inherit: true,
+  base: "vs-dark",
+  inherit: true,
   rules: [
     { token: "tag", foreground: "268bd2" },
     { token: "attribute.name", foreground: "b58900" },
@@ -82,15 +91,19 @@ export const solarizedDarkTheme: editor.IStandaloneThemeData = {
     { token: "operator", foreground: "859900" },
   ],
   colors: {
-    "editor.background": "#002b36", "editor.foreground": "#839496",
-    "editor.selectionBackground": "#073642", "editor.lineHighlightBackground": "#073642",
-    "editorLineNumber.foreground": "#586e75", "editorLineNumber.activeForeground": "#93a1a1",
+    "editor.background": "#002b36",
+    "editor.foreground": "#839496",
+    "editor.selectionBackground": "#073642",
+    "editor.lineHighlightBackground": "#073642",
+    "editorLineNumber.foreground": "#586e75",
+    "editorLineNumber.activeForeground": "#93a1a1",
     "editorGutter.background": "#002b36",
   },
 };
 
 export const solarizedLightTheme: editor.IStandaloneThemeData = {
-  base: "vs", inherit: true,
+  base: "vs",
+  inherit: true,
   rules: [
     { token: "tag", foreground: "268bd2" },
     { token: "attribute.name", foreground: "b58900" },
@@ -104,15 +117,19 @@ export const solarizedLightTheme: editor.IStandaloneThemeData = {
     { token: "operator", foreground: "859900" },
   ],
   colors: {
-    "editor.background": "#fdf6e3", "editor.foreground": "#657b83",
-    "editor.selectionBackground": "#eee8d5", "editor.lineHighlightBackground": "#eee8d5",
-    "editorLineNumber.foreground": "#93a1a1", "editorLineNumber.activeForeground": "#586e75",
+    "editor.background": "#fdf6e3",
+    "editor.foreground": "#657b83",
+    "editor.selectionBackground": "#eee8d5",
+    "editor.lineHighlightBackground": "#eee8d5",
+    "editorLineNumber.foreground": "#93a1a1",
+    "editorLineNumber.activeForeground": "#586e75",
     "editorGutter.background": "#fdf6e3",
   },
 };
 
 export const nordTheme: editor.IStandaloneThemeData = {
-  base: "vs-dark", inherit: true,
+  base: "vs-dark",
+  inherit: true,
   rules: [
     { token: "tag", foreground: "81a1c1" },
     { token: "attribute.name", foreground: "8fbcbb" },
@@ -126,15 +143,19 @@ export const nordTheme: editor.IStandaloneThemeData = {
     { token: "operator", foreground: "81a1c1" },
   ],
   colors: {
-    "editor.background": "#2e3440", "editor.foreground": "#d8dee9",
-    "editor.selectionBackground": "#434c5e", "editor.lineHighlightBackground": "#3b4252",
-    "editorLineNumber.foreground": "#4c566a", "editorLineNumber.activeForeground": "#d8dee9",
+    "editor.background": "#2e3440",
+    "editor.foreground": "#d8dee9",
+    "editor.selectionBackground": "#434c5e",
+    "editor.lineHighlightBackground": "#3b4252",
+    "editorLineNumber.foreground": "#4c566a",
+    "editorLineNumber.activeForeground": "#d8dee9",
     "editorGutter.background": "#2e3440",
   },
 };
 
 export const draculaTheme: editor.IStandaloneThemeData = {
-  base: "vs-dark", inherit: true,
+  base: "vs-dark",
+  inherit: true,
   rules: [
     { token: "tag", foreground: "ff79c6" },
     { token: "attribute.name", foreground: "50fa7b" },
@@ -148,15 +169,20 @@ export const draculaTheme: editor.IStandaloneThemeData = {
     { token: "operator", foreground: "ff79c6" },
   ],
   colors: {
-    "editor.background": "#282a36", "editor.foreground": "#f8f8f2",
-    "editor.selectionBackground": "#44475a", "editor.lineHighlightBackground": "#44475a",
-    "editorLineNumber.foreground": "#6272a4", "editorLineNumber.activeForeground": "#f8f8f2",
+    "editor.background": "#282a36",
+    "editor.foreground": "#f8f8f2",
+    "editor.selectionBackground": "#44475a",
+    "editor.lineHighlightBackground": "#44475a",
+    "editorLineNumber.foreground": "#6272a4",
+    "editorLineNumber.activeForeground": "#f8f8f2",
     "editorGutter.background": "#282a36",
   },
 };
 
 /** Register all custom themes with Monaco. Call once during editor setup. */
-export function registerAllThemes(monaco: { editor: { defineTheme(name: string, data: editor.IStandaloneThemeData): void } }) {
+export function registerAllThemes(monaco: {
+  editor: { defineTheme(name: string, data: editor.IStandaloneThemeData): void };
+}) {
   monaco.editor.defineTheme("monokai", monokaiTheme);
   monaco.editor.defineTheme("github-dark", githubDarkTheme);
   monaco.editor.defineTheme("solarized-dark", solarizedDarkTheme);

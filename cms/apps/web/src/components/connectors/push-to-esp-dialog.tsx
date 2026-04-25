@@ -93,7 +93,8 @@ export function PushToESPDialog({
     if (!selectedId || !selectedConnection) return;
     try {
       await trigger({ template_id: templateId });
-      const espLabel = ESP_LABELS[selectedConnection.esp_type]?.label ?? selectedConnection.esp_type;
+      const espLabel =
+        ESP_LABELS[selectedConnection.esp_type]?.label ?? selectedConnection.esp_type;
       toast.success(`Template pushed to ${espLabel}`);
       onOpenChange(false);
     } catch {
@@ -130,12 +131,12 @@ export function PushToESPDialog({
         ) : (
           <>
             {projectConnections.length === 0 ? (
-              <p className="py-4 text-center text-sm text-foreground-muted">
+              <p className="text-foreground-muted py-4 text-center text-sm">
                 {"No ESP connections for this project"}
               </p>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">{"Select connection"}</p>
+                <p className="text-foreground text-sm font-medium">{"Select connection"}</p>
                 {projectConnections.map((conn) => {
                   const espInfo = ESP_LABELS[conn.esp_type] ?? {
                     label: conn.esp_type,
@@ -148,14 +149,16 @@ export function PushToESPDialog({
                       onClick={() => setSelectedId(conn.id)}
                       className={`flex w-full items-center gap-3 rounded-md border-2 p-3 text-left transition-colors ${
                         selectedId === conn.id
-                          ? "border-interactive ring-1 ring-interactive"
+                          ? "border-interactive ring-interactive ring-1"
                           : "border-card-border hover:bg-surface-hover"
                       }`}
                     >
-                      <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${espInfo.color}`}>
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-xs font-medium ${espInfo.color}`}
+                      >
                         {espInfo.label}
                       </span>
-                      <span className="text-sm font-medium text-foreground">{conn.name}</span>
+                      <span className="text-foreground text-sm font-medium">{conn.name}</span>
                     </button>
                   );
                 })}
@@ -167,7 +170,7 @@ export function PushToESPDialog({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+                className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
               >
                 {"Cancel"}
               </button>
@@ -175,7 +178,7 @@ export function PushToESPDialog({
                 type="button"
                 onClick={handlePushClick}
                 disabled={!selectedId || isMutating}
-                className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isMutating ? (
                   <span className="flex items-center gap-1.5">

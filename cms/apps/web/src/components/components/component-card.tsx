@@ -45,18 +45,16 @@ export function ComponentCard({ component, onClick }: ComponentCardProps) {
             onClick();
           }
         }}
-        className="cursor-pointer overflow-hidden rounded-lg border border-card-border bg-card-bg transition-colors hover:border-interactive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-interactive"
+        className="border-card-border bg-card-bg hover:border-interactive focus-visible:ring-interactive cursor-pointer overflow-hidden rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2"
       >
         <ComponentPreview html={latestHtml} height={200} />
 
-        <div className="border-t border-card-border p-4">
+        <div className="border-card-border border-t p-4">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-sm font-medium text-foreground">
-                {component.name}
-              </h3>
+              <h3 className="text-foreground truncate text-sm font-medium">{component.name}</h3>
               {component.description && (
-                <p className="mt-0.5 truncate text-xs text-foreground-muted">
+                <p className="text-foreground-muted mt-0.5 truncate text-xs">
                   {component.description}
                 </p>
               )}
@@ -67,7 +65,7 @@ export function ComponentCard({ component, onClick }: ComponentCardProps) {
                   <button
                     type="button"
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded-md p-1 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                    className="text-foreground-muted hover:bg-surface-hover hover:text-foreground rounded-md p-1 transition-colors"
                     aria-label="Component actions"
                   >
                     <MoreVertical className="h-4 w-4" />
@@ -104,25 +102,19 @@ export function ComponentCard({ component, onClick }: ComponentCardProps) {
 
           <div className="mt-3 flex items-center gap-2">
             {component.category && (
-              <span className="rounded-full bg-badge-default-bg px-2 py-0.5 text-xs font-medium text-badge-default-text">
+              <span className="bg-badge-default-bg text-badge-default-text rounded-full px-2 py-0.5 text-xs font-medium">
                 {component.category}
               </span>
             )}
             <CompatibilityBadge badge={component.compatibility_badge} />
-            <span className="text-xs text-foreground-muted">
-              {component.latest_version
-                ? `v${component.latest_version}`
-                : "No versions"}
+            <span className="text-foreground-muted text-xs">
+              {component.latest_version ? `v${component.latest_version}` : "No versions"}
             </span>
           </div>
         </div>
       </div>
 
-      <EditComponentDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        component={component}
-      />
+      <EditComponentDialog open={editOpen} onOpenChange={setEditOpen} component={component} />
       <DeleteComponentDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

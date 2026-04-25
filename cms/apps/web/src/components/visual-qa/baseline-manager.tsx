@@ -5,11 +5,7 @@ import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Upload, Loader2 } from "../icons";
 import { useBaselines, useUpdateBaseline } from "@/hooks/use-visual-qa";
-import type {
-  ClientScreenshot,
-  ClientProfile,
-  VisualQAEntityType,
-} from "@/types/rendering";
+import type { ClientScreenshot, ClientProfile, VisualQAEntityType } from "@/types/rendering";
 import { CLIENT_DISPLAY_NAMES } from "@/types/rendering";
 
 interface BaselineManagerProps {
@@ -27,14 +23,8 @@ export function BaselineManager({
   const userRole = session.data?.user?.role;
   const canEdit = userRole === "admin" || userRole === "developer";
 
-  const { data: baselinesData, mutate: mutateBaselines } = useBaselines(
-    entityType,
-    entityId,
-  );
-  const { trigger: updateBaseline, isMutating } = useUpdateBaseline(
-    entityType,
-    entityId,
-  );
+  const { data: baselinesData, mutate: mutateBaselines } = useBaselines(entityType, entityId);
+  const { trigger: updateBaseline, isMutating } = useUpdateBaseline(entityType, entityId);
 
   const confirmDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -82,7 +72,7 @@ export function BaselineManager({
             type="button"
             onClick={() => confirmDialogRef.current?.showModal()}
             disabled={isMutating}
-            className="inline-flex items-center gap-2 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-on-interactive transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-on-interactive hover:bg-interactive-hover inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isMutating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -98,33 +88,30 @@ export function BaselineManager({
       <div className="space-y-3">
         {currentScreenshots.map((screenshot) => {
           const displayName =
-            CLIENT_DISPLAY_NAMES[screenshot.client_name as ClientProfile] ??
-            screenshot.client_name;
+            CLIENT_DISPLAY_NAMES[screenshot.client_name as ClientProfile] ?? screenshot.client_name;
           const existing = baselineMap.get(screenshot.client_name);
 
           return (
             <div
               key={screenshot.client_name}
-              className="flex items-center justify-between rounded-lg border border-border p-3"
+              className="border-border flex items-center justify-between rounded-lg border p-3"
             >
               <div className="flex items-center gap-3">
                 {existing ? (
-                  <CheckCircle2 className="h-4 w-4 text-status-success" />
+                  <CheckCircle2 className="text-status-success h-4 w-4" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-foreground-muted" />
+                  <XCircle className="text-foreground-muted h-4 w-4" />
                 )}
                 <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {displayName}
-                  </p>
+                  <p className="text-foreground text-sm font-medium">{displayName}</p>
                   {existing ? (
-                    <p className="text-xs text-foreground-muted">
+                    <p className="text-foreground-muted text-xs">
                       {new Date(existing.updated_at).toLocaleDateString()}
                       {" · "}
                       {existing.image_hash.slice(0, 8)}
                     </p>
                   ) : (
-                    <p className="text-xs text-foreground-muted">
+                    <p className="text-foreground-muted text-xs">
                       {"No baseline set for this client"}
                     </p>
                   )}
@@ -136,7 +123,7 @@ export function BaselineManager({
                   type="button"
                   onClick={() => handleSetBaseline(screenshot)}
                   disabled={isMutating}
-                  className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+                  className="border-border text-foreground hover:bg-surface-hover rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   {existing ? "Update Baseline" : "Set as Baseline"}
                 </button>
@@ -147,7 +134,7 @@ export function BaselineManager({
       </div>
 
       {currentScreenshots.length === 0 && (
-        <p className="py-8 text-center text-sm text-foreground-muted">
+        <p className="text-foreground-muted py-8 text-center text-sm">
           {"Capture screenshots to begin visual QA review"}
         </p>
       )}
@@ -155,27 +142,27 @@ export function BaselineManager({
       {/* Confirmation dialog for bulk update */}
       <dialog
         ref={confirmDialogRef}
-        className="rounded-lg border border-border bg-card p-0 shadow-xl backdrop:bg-black/50"
+        className="border-border bg-card rounded-lg border p-0 shadow-xl backdrop:bg-black/50"
       >
         <div className="w-96 p-6">
-          <h3 className="text-base font-semibold text-foreground">
-            {"Update Baselines"}
-          </h3>
-          <p className="mt-2 text-sm text-foreground-muted">
-            {"This will replace the existing baselines with the current screenshots. This action cannot be undone."}
+          <h3 className="text-foreground text-base font-semibold">{"Update Baselines"}</h3>
+          <p className="text-foreground-muted mt-2 text-sm">
+            {
+              "This will replace the existing baselines with the current screenshots. This action cannot be undone."
+            }
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => confirmDialogRef.current?.close()}
-              className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+              className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
             >
               {"Cancel"}
             </button>
             <button
               type="button"
               onClick={handleUpdateAll}
-              className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-on-interactive transition-colors hover:bg-interactive-hover"
+              className="bg-interactive text-on-interactive hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
             >
               {"Update"}
             </button>

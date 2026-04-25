@@ -18,20 +18,14 @@ const DEFECT_SEVERITY_LABELS: Record<string, string> = {
   info: "Info",
 };
 
-const SEVERITY_STYLES: Record<
-  DefectAnnotationData["severity"],
-  string
-> = {
+const SEVERITY_STYLES: Record<DefectAnnotationData["severity"], string> = {
   critical: "border-destructive bg-destructive/10",
   major: "border-status-warning bg-status-warning/10",
   minor: "border-foreground-muted bg-foreground-muted/10",
   info: "border-interactive bg-interactive/10",
 };
 
-const SEVERITY_BADGE_STYLES: Record<
-  DefectAnnotationData["severity"],
-  string
-> = {
+const SEVERITY_BADGE_STYLES: Record<DefectAnnotationData["severity"], string> = {
   critical: "bg-badge-danger-bg text-badge-danger-text",
   major: "bg-badge-warning-bg text-badge-warning-text",
   minor: "bg-surface-muted text-foreground-muted",
@@ -82,7 +76,7 @@ export function DefectAnnotation({
             {/* Tooltip */}
             {isActive && (
               <div
-                className="absolute z-10 w-64 rounded-lg border border-border bg-card p-3 shadow-lg"
+                className="border-border bg-card absolute z-10 w-64 rounded-lg border p-3 shadow-lg"
                 style={{
                   left: left + width + 8,
                   top,
@@ -97,17 +91,11 @@ export function DefectAnnotation({
                     {DEFECT_SEVERITY_LABELS[defect.severity] ?? defect.severity}
                   </span>
                 </div>
-                <p className="text-sm text-foreground">
-                  {defect.description}
-                </p>
+                <p className="text-foreground text-sm">{defect.description}</p>
                 {defect.suggested_fix && (
-                  <div className="mt-2 rounded bg-surface-muted p-2">
-                    <p className="text-xs font-medium text-foreground-muted">
-                      {"Suggested Fix"}
-                    </p>
-                    <p className="mt-0.5 text-xs text-foreground">
-                      {defect.suggested_fix}
-                    </p>
+                  <div className="bg-surface-muted mt-2 rounded p-2">
+                    <p className="text-foreground-muted text-xs font-medium">{"Suggested Fix"}</p>
+                    <p className="text-foreground mt-0.5 text-xs">{defect.suggested_fix}</p>
                   </div>
                 )}
               </div>

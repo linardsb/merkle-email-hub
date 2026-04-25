@@ -23,24 +23,16 @@ export function TestingTab({ html, entityType, entityId }: TestingTabProps) {
       <Accordion type="single" collapsible className="px-4">
         {html && entityType && entityId && (
           <AccordionItem value="visual-qa">
-            <AccordionTrigger className="py-3 text-sm">
-              {"Visual QA"}
-            </AccordionTrigger>
+            <AccordionTrigger className="py-3 text-sm">{"Visual QA"}</AccordionTrigger>
             <AccordionContent>
-              <VisualQAPanelTab
-                html={html}
-                entityType={entityType}
-                entityId={entityId}
-              />
+              <VisualQAPanelTab html={html} entityType={entityType} entityId={entityId} />
             </AccordionContent>
           </AccordionItem>
         )}
 
         {html && (
           <AccordionItem value="chaos">
-            <AccordionTrigger className="py-3 text-sm">
-              {"Chaos Testing"}
-            </AccordionTrigger>
+            <AccordionTrigger className="py-3 text-sm">{"Chaos Testing"}</AccordionTrigger>
             <AccordionContent>
               <ChaosTestPanel html={html} />
             </AccordionContent>
@@ -48,9 +40,7 @@ export function TestingTab({ html, entityType, entityId }: TestingTabProps) {
         )}
 
         <AccordionItem value="property">
-          <AccordionTrigger className="py-3 text-sm">
-            {"Property Testing"}
-          </AccordionTrigger>
+          <AccordionTrigger className="py-3 text-sm">{"Property Testing"}</AccordionTrigger>
           <AccordionContent>
             <PropertyTestPanel />
           </AccordionContent>

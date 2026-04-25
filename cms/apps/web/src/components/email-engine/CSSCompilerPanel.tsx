@@ -18,7 +18,7 @@ function ConversionRow({ conv }: { conv: CSSConversionSchema }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded border border-border bg-card">
+    <div className="border-border bg-card rounded border">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -34,19 +34,17 @@ function ConversionRow({ conv }: { conv: CSSConversionSchema }) {
           </span>
         </div>
         {expanded ? (
-          <ChevronUp className="h-3 w-3 shrink-0 text-foreground-muted" />
+          <ChevronUp className="text-foreground-muted h-3 w-3 shrink-0" />
         ) : (
-          <ChevronDown className="h-3 w-3 shrink-0 text-foreground-muted" />
+          <ChevronDown className="text-foreground-muted h-3 w-3 shrink-0" />
         )}
       </button>
 
       {expanded && (
-        <div className="border-t border-border px-2.5 py-2 space-y-1">
-          <p className="text-[10px] text-foreground-muted">
-            {`Reason: ${conv.reason}`}
-          </p>
+        <div className="border-border space-y-1 border-t px-2.5 py-2">
+          <p className="text-foreground-muted text-[10px]">{`Reason: ${conv.reason}`}</p>
           {conv.affected_clients.length > 0 && (
-            <p className="text-[10px] text-foreground-muted">
+            <p className="text-foreground-muted text-[10px]">
               {`Affects: ${conv.affected_clients.join(", ")}`}
             </p>
           )}
@@ -61,12 +59,12 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
   const [showConversions, setShowConversions] = useState(false);
 
   return (
-    <div className="rounded-lg bg-surface-muted p-3">
+    <div className="bg-surface-muted rounded-lg p-3">
       {/* Header */}
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Paintbrush className="h-4 w-4 text-foreground-muted" />
-          <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
+          <Paintbrush className="text-foreground-muted h-4 w-4" />
+          <h3 className="text-foreground-muted text-xs font-medium uppercase tracking-wider">
             {"CSS Compiler"}
           </h3>
         </div>
@@ -74,7 +72,7 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
           type="button"
           disabled={isMutating}
           onClick={() => trigger({ html })}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border bg-card text-foreground hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
         >
           {isMutating ? (
             <>
@@ -89,7 +87,9 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
 
       {/* Empty state */}
       {!data && !isMutating && (
-        <p className="text-xs text-foreground-muted">{"Compile CSS to optimize for email client compatibility."}</p>
+        <p className="text-foreground-muted text-xs">
+          {"Compile CSS to optimize for email client compatibility."}
+        </p>
       )}
 
       {data && (
@@ -100,24 +100,24 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
               <span className="text-foreground-muted">
                 {`Original: ${formatKB(data.original_size)} KB`}
               </span>
-              <span className="rounded-full bg-badge-success-bg px-2 py-0.5 text-[10px] font-medium text-badge-success-text">
+              <span className="bg-badge-success-bg text-badge-success-text rounded-full px-2 py-0.5 text-[10px] font-medium">
                 {`-${data.reduction_pct.toFixed(1)}%`}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full w-full rounded-full bg-foreground-muted/30" />
+            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+              <div className="bg-foreground-muted/30 h-full w-full rounded-full" />
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-muted">
                 {`Compiled: ${formatKB(data.compiled_size)} KB`}
               </span>
-              <span className="text-[10px] text-foreground-muted">
+              <span className="text-foreground-muted text-[10px]">
                 {`Compiled in ${data.compile_time_ms.toFixed(0)}ms`}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-status-success transition-all"
+                className="bg-status-success h-full rounded-full transition-all"
                 style={{
                   width: `${data.original_size > 0 ? (data.compiled_size / data.original_size) * 100 : 100}%`,
                 }}
@@ -130,7 +130,7 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
             <button
               type="button"
               onClick={() => onHtmlUpdate(data.html)}
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
             >
               {"Apply Compiled CSS"}
             </button>
@@ -138,16 +138,14 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
 
           {/* Warnings */}
           {data.warnings.length > 0 && (
-            <div className="rounded border border-status-warning/30 bg-badge-warning-bg p-2">
+            <div className="border-status-warning/30 bg-badge-warning-bg rounded border p-2">
               <div className="mb-1 flex items-center gap-1.5">
-                <AlertTriangle className="h-3 w-3 text-badge-warning-text" />
-                <h4 className="text-xs font-medium text-badge-warning-text">
-                  {"Warnings"}
-                </h4>
+                <AlertTriangle className="text-badge-warning-text h-3 w-3" />
+                <h4 className="text-badge-warning-text text-xs font-medium">{"Warnings"}</h4>
               </div>
               <ul className="space-y-0.5">
                 {data.warnings.map((w: string, i: number) => (
-                  <li key={i} className="text-[10px] text-foreground-muted">
+                  <li key={i} className="text-foreground-muted text-[10px]">
                     {w}
                   </li>
                 ))}
@@ -157,7 +155,7 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
 
           {/* Removed properties */}
           <div>
-            <h4 className="mb-1 text-xs font-medium text-foreground-muted">
+            <h4 className="text-foreground-muted mb-1 text-xs font-medium">
               {"Removed Properties"}
             </h4>
             {data.removed_properties.length > 0 ? (
@@ -165,16 +163,14 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
                 {data.removed_properties.map((prop: string) => (
                   <span
                     key={prop}
-                    className="rounded-full bg-card px-2 py-0.5 font-mono text-[10px] text-foreground-muted"
+                    className="bg-card text-foreground-muted rounded-full px-2 py-0.5 font-mono text-[10px]"
                   >
                     {prop}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-[10px] text-foreground-muted">
-                {"No properties removed"}
-              </p>
+              <p className="text-foreground-muted text-[10px]">{"No properties removed"}</p>
             )}
           </div>
 
@@ -183,7 +179,7 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
             <button
               type="button"
               onClick={() => setShowConversions((v) => !v)}
-              className="flex w-full items-center justify-between text-xs font-medium text-foreground-muted"
+              className="text-foreground-muted flex w-full items-center justify-between text-xs font-medium"
             >
               <span>
                 {"Conversions"} ({data.conversions.length})
@@ -201,9 +197,7 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
                     <ConversionRow key={`${conv.original_property}-${i}`} conv={conv} />
                   ))
                 ) : (
-                  <p className="text-[10px] text-foreground-muted">
-                    {"No conversions needed"}
-                  </p>
+                  <p className="text-foreground-muted text-[10px]">{"No conversions needed"}</p>
                 )}
               </div>
             )}

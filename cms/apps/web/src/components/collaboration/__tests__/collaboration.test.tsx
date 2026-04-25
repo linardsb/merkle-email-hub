@@ -64,9 +64,7 @@ describe("PresencePanel", () => {
   it("follow button calls onFollow", () => {
     const onFollow = vi.fn();
     const collaborators = [makeCollaborator({ clientId: 5, name: "Carol" })];
-    render(
-      <PresencePanel {...defaultProps} collaborators={collaborators} onFollow={onFollow} />,
-    );
+    render(<PresencePanel {...defaultProps} collaborators={collaborators} onFollow={onFollow} />);
     fireEvent.click(screen.getByText("Follow"));
     expect(onFollow).toHaveBeenCalledWith(5, "Carol");
   });
@@ -119,9 +117,7 @@ describe("CollaborationBanner", () => {
   });
 
   it("shows viewing count when no editors", () => {
-    const collaborators = [
-      makeCollaborator({ activity: "viewing" }),
-    ];
+    const collaborators = [makeCollaborator({ activity: "viewing" })];
     render(<CollaborationBanner {...defaultProps} collaborators={collaborators} />);
     expect(screen.getByText("1 viewing")).toBeInTheDocument();
   });
@@ -133,9 +129,7 @@ describe("CollaborationBanner", () => {
 
   it("click toggles presence panel", () => {
     const onToggle = vi.fn();
-    render(
-      <CollaborationBanner {...defaultProps} onTogglePresencePanel={onToggle} />,
-    );
+    render(<CollaborationBanner {...defaultProps} onTogglePresencePanel={onToggle} />);
     fireEvent.click(screen.getByRole("button"));
     expect(onToggle).toHaveBeenCalled();
   });
@@ -168,29 +162,20 @@ describe("ConflictResolver", () => {
   };
 
   it("renders nothing when no conflict", () => {
-    const { container } = render(
-      <ConflictResolver {...defaultProps} hasConflict={false} />,
-    );
+    const { container } = render(<ConflictResolver {...defaultProps} hasConflict={false} />);
     expect(container.firstChild).toBeNull();
   });
 
   it("renders conflict banner with default description", () => {
     render(<ConflictResolver {...defaultProps} />);
-    expect(
-      screen.getByText(/Merge conflict detected/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Merge conflict detected/)).toBeInTheDocument();
   });
 
   it("renders custom conflict description", () => {
     render(
-      <ConflictResolver
-        {...defaultProps}
-        conflictDescription="Section header was modified"
-      />,
+      <ConflictResolver {...defaultProps} conflictDescription="Section header was modified" />,
     );
-    expect(
-      screen.getByText("Section header was modified"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Section header was modified")).toBeInTheDocument();
   });
 
   it("Accept button calls onAccept", () => {

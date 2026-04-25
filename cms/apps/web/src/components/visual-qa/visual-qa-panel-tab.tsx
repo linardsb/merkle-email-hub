@@ -11,24 +11,20 @@ interface VisualQAPanelTabProps {
   entityId: number;
 }
 
-export function VisualQAPanelTab({
-  html,
-  entityType,
-  entityId,
-}: VisualQAPanelTabProps) {
+export function VisualQAPanelTab({ html, entityType, entityId }: VisualQAPanelTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <>
-      <div className="rounded-lg bg-surface-muted p-3">
+      <div className="bg-surface-muted rounded-lg p-3">
         <div className="mb-2 flex items-center gap-2">
-          <Camera className="h-4 w-4 text-foreground-muted" />
-          <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
+          <Camera className="text-foreground-muted h-4 w-4" />
+          <h3 className="text-foreground-muted text-xs font-medium uppercase tracking-wider">
             {"Visual QA"}
           </h3>
         </div>
 
-        <p className="mb-3 text-xs text-foreground-muted">
+        <p className="text-foreground-muted mb-3 text-xs">
           {"Compare screenshots across email clients"}
         </p>
 
@@ -36,7 +32,7 @@ export function VisualQAPanelTab({
           type="button"
           onClick={() => setDialogOpen(true)}
           disabled={!html}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border bg-card text-foreground hover:bg-surface-hover inline-flex w-full items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
         >
           <Eye className="h-3.5 w-3.5" />
           {"View Visual QA"}

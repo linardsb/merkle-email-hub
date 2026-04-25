@@ -48,7 +48,7 @@ export function ESPTemplatePreviewDialog({
         <iframe
           sandbox=""
           srcDoc={template.html}
-          className="h-[32rem] w-full rounded-md border border-border bg-white"
+          className="border-border h-[32rem] w-full rounded-md border bg-white"
           title={"Template Preview"}
         />
 
@@ -57,7 +57,7 @@ export function ESPTemplatePreviewDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -65,7 +65,7 @@ export function ESPTemplatePreviewDialog({
             type="button"
             onClick={() => onImport(template.id)}
             disabled={importing}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {importing ? (
               <span className="flex items-center gap-1.5">

@@ -58,8 +58,8 @@ export function GatePanel({
   if (isMutating) {
     return (
       <div className="flex flex-col items-center gap-3 py-6">
-        <Loader2 className="h-6 w-6 animate-spin text-foreground-muted" />
-        <p className="text-sm text-foreground-muted">Evaluating rendering confidence...</p>
+        <Loader2 className="text-foreground-muted h-6 w-6 animate-spin" />
+        <p className="text-foreground-muted text-sm">Evaluating rendering confidence...</p>
       </div>
     );
   }
@@ -68,21 +68,21 @@ export function GatePanel({
   if (error) {
     return (
       <div className="space-y-3">
-        <div className="rounded-md bg-status-danger/10 p-3 text-sm text-status-danger">
+        <div className="bg-status-danger/10 text-status-danger rounded-md p-3 text-sm">
           Gate evaluation failed: {error.message}
         </div>
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={runEvaluation}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium"
           >
             Retry
           </button>
@@ -106,11 +106,11 @@ export function GatePanel({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isBlocked ? (
-            <ShieldAlert className="h-5 w-5 text-status-danger" />
+            <ShieldAlert className="text-status-danger h-5 w-5" />
           ) : (
-            <ShieldCheck className="h-5 w-5 text-status-success" />
+            <ShieldCheck className="text-status-success h-5 w-5" />
           )}
-          <span className="text-sm font-medium text-foreground">Rendering Gate</span>
+          <span className="text-foreground text-sm font-medium">Rendering Gate</span>
         </div>
         <GateSummaryBadge
           verdict={gateResult.verdict}
@@ -127,8 +127,8 @@ export function GatePanel({
 
       {/* Global recommendations */}
       {gateResult.recommendations.length > 0 && (
-        <div className="rounded-md bg-status-warning/10 p-3 text-xs text-foreground-muted">
-          <p className="mb-1 font-medium text-foreground">Recommendations</p>
+        <div className="bg-status-warning/10 text-foreground-muted rounded-md p-3 text-xs">
+          <p className="text-foreground mb-1 font-medium">Recommendations</p>
           <ul className="list-inside list-disc space-y-0.5">
             {gateResult.recommendations.map((rec, i) => (
               <li key={i}>{rec}</li>
@@ -138,11 +138,11 @@ export function GatePanel({
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-2 border-t border-card-border pt-3">
+      <div className="border-card-border flex items-center justify-end gap-2 border-t pt-3">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface-hover"
+          className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
         >
           Cancel
         </button>
@@ -152,7 +152,7 @@ export function GatePanel({
           <button
             type="button"
             onClick={onApproved}
-            className="flex items-center gap-1.5 rounded-md border border-status-warning px-3 py-1.5 text-sm font-medium text-status-warning hover:bg-status-warning/10"
+            className="border-status-warning text-status-warning hover:bg-status-warning/10 flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium"
           >
             <SkipForward className="h-4 w-4" />
             Override & Send Anyway
@@ -164,7 +164,7 @@ export function GatePanel({
           <button
             type="button"
             onClick={onApproved}
-            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse hover:bg-interactive-hover"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium"
           >
             {approveLabel}
           </button>
@@ -172,7 +172,7 @@ export function GatePanel({
 
         {/* Blocked non-admin — no proceed button, only cancel */}
         {isBlocked && !isAdmin && (
-          <p className="text-xs text-foreground-muted">
+          <p className="text-foreground-muted text-xs">
             Blocked — ask an admin to override or fix the issues above.
           </p>
         )}

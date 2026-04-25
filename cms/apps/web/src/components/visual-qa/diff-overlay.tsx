@@ -13,9 +13,7 @@ interface DiffOverlayProps {
   onToggleDiff: () => void;
 }
 
-function getDiffBadge(
-  percentage: number,
-): { label: string; className: string } {
+function getDiffBadge(percentage: number): { label: string; className: string } {
   if (percentage < 1) {
     return {
       label: "Identical",
@@ -96,34 +94,25 @@ export function DiffOverlay({
           type="button"
           onClick={onToggleDiff}
           disabled={!diffBase64}
-          className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          className="border-border text-foreground hover:bg-surface-hover inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
         >
-          {showDiff ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
+          {showDiff ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           {showDiff ? "Hide Diff Overlay" : "Show Diff Overlay"}
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-foreground-muted">
+          <span className="text-foreground-muted text-sm">
             {`Diff: ${diffPercentage.toFixed(2)}%`}
           </span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-          >
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
             {badge.label}
           </span>
         </div>
       </div>
 
       {/* Canvas */}
-      <div className="overflow-hidden rounded-lg border border-border bg-surface-muted">
-        <canvas
-          ref={canvasRef}
-          className="h-auto max-h-[32rem] w-full object-contain"
-        />
+      <div className="border-border bg-surface-muted overflow-hidden rounded-lg border">
+        <canvas ref={canvasRef} className="h-auto max-h-[32rem] w-full object-contain" />
       </div>
     </div>
   );

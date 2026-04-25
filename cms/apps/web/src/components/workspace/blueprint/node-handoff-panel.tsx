@@ -24,7 +24,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
     <div className="mt-1">
       {handoff.confidence != null && (
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground">{"Confidence"}</span>
+          <span className="text-muted-foreground text-[10px]">{"Confidence"}</span>
           <ConfidenceBar value={handoff.confidence ?? 0} />
           {(handoff.confidence ?? 0) < 0.5 && (
             <Badge variant="destructive" className="gap-1 px-1.5 py-0 text-[10px]">
@@ -40,27 +40,23 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1 text-[10px] transition-colors"
           >
-            {expanded ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
+            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
             {"Agent Decisions"}
           </button>
 
           {expanded && (
-            <div className="mt-1 space-y-1.5 rounded border border-border bg-muted/30 p-2">
+            <div className="border-border bg-muted/30 mt-1 space-y-1.5 rounded border p-2">
               {handoff.decisions.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
                     {"Decisions"}
                   </p>
                   <ul className="mt-0.5 space-y-0.5">
                     {handoff.decisions.map((d, i) => (
-                      <li key={i} className="flex items-start gap-1 text-[10px] text-foreground">
-                        <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-muted-foreground" />
+                      <li key={i} className="text-foreground flex items-start gap-1 text-[10px]">
+                        <span className="bg-muted-foreground mt-1 h-1 w-1 shrink-0 rounded-full" />
                         {d}
                       </li>
                     ))}
@@ -70,12 +66,12 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
 
               {handoff.warnings.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-medium text-destructive uppercase tracking-wide">
+                  <p className="text-destructive text-[10px] font-medium uppercase tracking-wide">
                     {"Warnings"}
                   </p>
                   <ul className="mt-0.5 space-y-0.5">
                     {handoff.warnings.map((w, i) => (
-                      <li key={i} className="flex items-start gap-1 text-[10px] text-destructive">
+                      <li key={i} className="text-destructive flex items-start gap-1 text-[10px]">
                         <AlertTriangle className="mt-0.5 h-2.5 w-2.5 shrink-0" />
                         {w}
                       </li>
@@ -86,12 +82,12 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
 
               {handoff.component_refs.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
                     {"Components Used"}
                   </p>
                   <div className="mt-0.5 flex flex-wrap gap-1">
                     {handoff.component_refs.map((ref) => (
-                      <Badge key={ref} variant="secondary" className="text-[9px] px-1 py-0">
+                      <Badge key={ref} variant="secondary" className="px-1 py-0 text-[9px]">
                         {ref}
                       </Badge>
                     ))}

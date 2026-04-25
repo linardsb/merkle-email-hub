@@ -22,7 +22,7 @@ export function parseLiquid(source: string): BlockTree {
   while (remaining.length > 0) {
     // Find next Liquid tag or output
     const tagMatch = remaining.match(
-      /\{%-?\s*(if|for|assign|elsif|else|endif|endfor)\b([^%]*?)%\}|\{\{([^}]+)\}\}/
+      /\{%-?\s*(if|for|assign|elsif|else|endif|endfor)\b([^%]*?)%\}|\{\{([^}]+)\}\}/,
     );
 
     if (!tagMatch) {
@@ -94,9 +94,7 @@ function parseIf(condition: string, source: string): { block: LiquidBlock; rest:
   let depth = 0;
 
   while (remaining.length > 0) {
-    const tagMatch = remaining.match(
-      /\{%-?\s*(if|elsif|else|endif)\b([^%]*?)%\}|\{\{([^}]+)\}\}/
-    );
+    const tagMatch = remaining.match(/\{%-?\s*(if|elsif|else|endif)\b([^%]*?)%\}|\{\{([^}]+)\}\}/);
 
     if (!tagMatch) {
       const target = inElse ? elseChildren : children;
@@ -167,9 +165,7 @@ function parseUntilEndFor(source: string): { children: LiquidBlock[]; rest: stri
   let depth = 0;
 
   while (remaining.length > 0) {
-    const tagMatch = remaining.match(
-      /\{%-?\s*(for|endfor)\b([^%]*?)%\}|\{\{([^}]+)\}\}/
-    );
+    const tagMatch = remaining.match(/\{%-?\s*(for|endfor)\b([^%]*?)%\}|\{\{([^}]+)\}\}/);
 
     if (!tagMatch) {
       if (remaining.trim()) {

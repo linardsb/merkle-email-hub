@@ -50,7 +50,7 @@ export function PreviewPanel({
         setDarkMode(persona.dark_mode ?? false);
       }
     },
-    [onPersonaSelect]
+    [onPersonaSelect],
   );
 
   const handleViewportChange = useCallback(
@@ -58,7 +58,7 @@ export function PreviewPanel({
       setViewport(v);
       onPersonaSelect(null);
     },
-    [onPersonaSelect]
+    [onPersonaSelect],
   );
 
   const handleDarkModeToggle = useCallback(() => {
@@ -83,7 +83,7 @@ export function PreviewPanel({
   const handleZoomReset = useCallback(() => setZoom(100), []);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background">
+    <div className="bg-background flex h-full flex-col overflow-hidden">
       <PreviewToolbar
         viewport={viewport}
         onViewportChange={handleViewportChange}

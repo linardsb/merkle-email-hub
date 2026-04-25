@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, KeyRound } from "../icons";
-import {
-  useCredentialHealth,
-  type ServiceHealth,
-} from "@/hooks/use-credentials-health";
+import { useCredentialHealth, type ServiceHealth } from "@/hooks/use-credentials-health";
 
 const STATUS_DOT: Record<string, string> = {
   healthy: "bg-status-success",
@@ -24,15 +21,15 @@ export function CredentialHealthCard() {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-card-border bg-card-bg p-6">
+      <div className="border-card-border bg-card-bg rounded-lg border p-6">
         <div className="mb-4 flex items-center gap-2 font-semibold">
           <KeyRound className="h-5 w-5" />
           Credentials
         </div>
         <div className="space-y-2">
-          <div className="h-4 w-full animate-pulse rounded bg-surface-hover" />
-          <div className="h-4 w-3/4 animate-pulse rounded bg-surface-hover" />
-          <div className="h-4 w-1/2 animate-pulse rounded bg-surface-hover" />
+          <div className="bg-surface-hover h-4 w-full animate-pulse rounded" />
+          <div className="bg-surface-hover h-4 w-3/4 animate-pulse rounded" />
+          <div className="bg-surface-hover h-4 w-1/2 animate-pulse rounded" />
         </div>
       </div>
     );
@@ -41,7 +38,7 @@ export function CredentialHealthCard() {
   if (!data) return null;
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-6">
+    <div className="border-card-border bg-card-bg rounded-lg border p-6">
       <div className="mb-4 flex items-center gap-2 font-semibold">
         <KeyRound className="h-5 w-5" />
         Credentials
@@ -50,24 +47,22 @@ export function CredentialHealthCard() {
         {/* Summary dots */}
         <div className="flex gap-3 text-sm">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-status-success" />
+            <span className="bg-status-success inline-block h-2 w-2 rounded-full" />
             {data.healthy_total ?? 0} healthy
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-status-warning" />
+            <span className="bg-status-warning inline-block h-2 w-2 rounded-full" />
             {data.cooled_down_total ?? 0} cooled down
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-status-error" />
+            <span className="bg-status-error inline-block h-2 w-2 rounded-full" />
             {data.unhealthy_total ?? 0} unhealthy
           </span>
         </div>
 
         {/* Per-service breakdown */}
         {!data.services || data.services.length === 0 ? (
-          <p className="text-sm text-foreground-muted">
-            No credential pools configured.
-          </p>
+          <p className="text-foreground-muted text-sm">No credential pools configured.</p>
         ) : (
           <ul className="space-y-2">
             {data.services.map((svc) => (
@@ -84,23 +79,19 @@ function ServiceRow({ service }: { service: ServiceHealth }) {
   const [expanded, setExpanded] = useState(false);
 
   const overallStatus =
-    service.unhealthy > 0
-      ? "unhealthy"
-      : service.cooled_down > 0
-        ? "cooled_down"
-        : "healthy";
+    service.unhealthy > 0 ? "unhealthy" : service.cooled_down > 0 ? "cooled_down" : "healthy";
 
   return (
     <li>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-surface-hover"
+        className="hover:bg-surface-hover flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm"
       >
         <span className="flex items-center gap-2">
           {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-foreground-muted" />
+            <ChevronDown className="text-foreground-muted h-3.5 w-3.5" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-foreground-muted" />
+            <ChevronRight className="text-foreground-muted h-3.5 w-3.5" />
           )}
           <span
             className={`inline-block h-2 w-2 rounded-full ${STATUS_DOT[overallStatus] ?? "bg-foreground-muted"}`}
@@ -125,11 +116,9 @@ function ServiceRow({ service }: { service: ServiceHealth }) {
                 />
                 <code className="text-foreground-muted">{key.key_hash}</code>
               </span>
-              <span className="flex items-center gap-3 text-foreground-muted">
+              <span className="text-foreground-muted flex items-center gap-3">
                 <span>{STATUS_LABEL[key.status] ?? key.status}</span>
-                {key.failure_count > 0 && (
-                  <span>{key.failure_count} failures</span>
-                )}
+                {key.failure_count > 0 && <span>{key.failure_count} failures</span>}
                 {key.cooldown_remaining_s > 0 && (
                   <span>{Math.round(key.cooldown_remaining_s)}s cooldown</span>
                 )}

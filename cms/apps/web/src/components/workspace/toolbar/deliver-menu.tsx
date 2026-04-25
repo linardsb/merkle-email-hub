@@ -15,14 +15,19 @@ interface DeliverMenuProps {
   disabled?: boolean;
 }
 
-export function DeliverMenu({ onExport, onPushToESP, onSubmitForApproval, disabled }: DeliverMenuProps) {
+export function DeliverMenu({
+  onExport,
+  onPushToESP,
+  onSubmitForApproval,
+  disabled,
+}: DeliverMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
           disabled={disabled}
-          className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" />
           {"Deliver"}

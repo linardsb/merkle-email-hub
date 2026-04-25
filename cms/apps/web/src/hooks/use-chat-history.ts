@@ -30,9 +30,7 @@ function persistSessions(projectId: string, sessions: ChatSession[]): void {
 }
 
 export function useChatHistory(projectId: string) {
-  const [sessions, setSessions] = useState<ChatSession[]>(() =>
-    loadSessions(projectId)
-  );
+  const [sessions, setSessions] = useState<ChatSession[]>(() => loadSessions(projectId));
   // Sync state → localStorage
   useEffect(() => {
     persistSessions(projectId, sessions);
@@ -69,7 +67,7 @@ export function useChatHistory(projectId: string) {
         return updated.slice(0, MAX_SESSIONS);
       });
     },
-    [projectId]
+    [projectId],
   );
 
   const deleteSession = useCallback((sessionId: string) => {

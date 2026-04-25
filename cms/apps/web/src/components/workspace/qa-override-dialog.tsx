@@ -90,19 +90,21 @@ export function QAOverrideDialog({
       <DialogContent className="max-w-[28rem]">
         <DialogHeader>
           <DialogTitle>{"Override QA Checks"}</DialogTitle>
-          <DialogDescription>{"Select which failing checks to override and provide justification. This action is audited."}</DialogDescription>
+          <DialogDescription>
+            {
+              "Select which failing checks to override and provide justification. This action is audited."
+            }
+          </DialogDescription>
         </DialogHeader>
 
         {/* Check selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            {"Checks to override"}
-          </label>
+          <label className="text-foreground text-sm font-medium">{"Checks to override"}</label>
           <div className="space-y-1.5">
             {failedChecks.map((check) => (
               <label
                 key={check.check_name}
-                className="flex cursor-pointer items-center gap-2 rounded border border-border px-3 py-2 text-sm transition-colors hover:bg-surface-hover"
+                className="border-border hover:bg-surface-hover flex cursor-pointer items-center gap-2 rounded border px-3 py-2 text-sm transition-colors"
               >
                 <input
                   type="checkbox"
@@ -111,7 +113,8 @@ export function QAOverrideDialog({
                   className="accent-interactive"
                 />
                 <span className="text-foreground">
-                  {CHECK_LABELS[check.check_name] ?? check.check_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  {CHECK_LABELS[check.check_name] ??
+                    check.check_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                 </span>
               </label>
             ))}
@@ -120,19 +123,15 @@ export function QAOverrideDialog({
 
         {/* Justification */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            {"Justification"}
-          </label>
+          <label className="text-foreground text-sm font-medium">{"Justification"}</label>
           <textarea
             value={justification}
             onChange={(e) => setJustification(e.target.value)}
             placeholder={"Explain why these checks can be safely overridden..."}
             rows={3}
-            className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
+            className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1"
           />
-          <p className="text-xs text-foreground-muted">
-            {`Minimum ${10} characters required`}
-          </p>
+          <p className="text-foreground-muted text-xs">{`Minimum ${10} characters required`}</p>
         </div>
 
         {/* Actions */}
@@ -140,7 +139,7 @@ export function QAOverrideDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+            className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             {"Cancel"}
           </button>
@@ -148,7 +147,7 @@ export function QAOverrideDialog({
             type="button"
             onClick={handleSubmit}
             disabled={!isValid || isMutating}
-            className="rounded-md bg-status-warning px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:opacity-90 disabled:opacity-50"
+            className="bg-status-warning text-foreground-inverse rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
           >
             {isMutating ? (
               <span className="flex items-center gap-1.5">

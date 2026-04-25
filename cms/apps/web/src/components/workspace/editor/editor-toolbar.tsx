@@ -26,10 +26,10 @@ export function EditorToolbar({
   onEditorThemeChange,
 }: EditorToolbarProps) {
   return (
-    <div className="flex h-8 items-center justify-between border-b border-border bg-card px-3 text-xs text-muted-foreground">
+    <div className="border-border bg-card text-muted-foreground flex h-8 items-center justify-between border-b px-3 text-xs">
       <div className="flex items-center gap-3">
         {warningCount > 0 && (
-          <span className="flex items-center gap-1 text-destructive">
+          <span className="text-destructive flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" />
             {`${warningCount} CSS ${warningCount === 1 ? "warning" : "warnings"}`}
           </span>
@@ -46,7 +46,7 @@ export function EditorToolbar({
             <select
               value={editorThemeId}
               onChange={(e) => onEditorThemeChange(e.target.value)}
-              className="h-6 rounded border border-border bg-card px-1 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
+              className="border-border bg-card text-foreground focus:ring-ring h-6 rounded border px-1 text-xs outline-none focus:ring-1"
             >
               {EDITOR_THEMES.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -60,7 +60,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={onToggleWordWrap}
-          className={`rounded p-1 transition-colors hover:bg-accent ${wordWrapEnabled ? "text-foreground" : ""}`}
+          className={`hover:bg-accent rounded p-1 transition-colors ${wordWrapEnabled ? "text-foreground" : ""}`}
           title={"Toggle word wrap"}
         >
           <WrapText className="h-3.5 w-3.5" />

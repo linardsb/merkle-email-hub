@@ -21,7 +21,9 @@ type ClientEntry = { client_id: string; client_name: string; level: string; plat
 function groupByFamily(clients: ClientEntry[]) {
   const groups: Record<string, ClientEntry[]> = {};
   for (const client of clients) {
-    const family = (client.client_name.split(/\s*[(/]/)[0] ?? client.client_name).replace(/\s*\d{4}.*/, "").trim();
+    const family = (client.client_name.split(/\s*[(/]/)[0] ?? client.client_name)
+      .replace(/\s*\d{4}.*/, "")
+      .trim();
     (groups[family] ??= []).push(client);
   }
   return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
@@ -33,7 +35,7 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
+        <Loader2 className="text-foreground-muted h-5 w-5 animate-spin" />
       </div>
     );
   }
@@ -41,7 +43,9 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
   if (error || !data) {
     return (
       <div className="py-8 text-center">
-        <p className="text-sm text-foreground-muted">{"No compatibility data available. Run QA to generate."}</p>
+        <p className="text-foreground-muted text-sm">
+          {"No compatibility data available. Run QA to generate."}
+        </p>
       </div>
     );
   }
@@ -53,25 +57,19 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
       {/* Summary bar */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
-          <CheckCircle2 className="h-4 w-4 text-status-success" />
-          <span className="text-sm text-foreground">
-            {`${data.full_count} full`}
-          </span>
+          <CheckCircle2 className="text-status-success h-4 w-4" />
+          <span className="text-foreground text-sm">{`${data.full_count} full`}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <AlertTriangle className="h-4 w-4 text-status-warning" />
-          <span className="text-sm text-foreground">
-            {`${data.partial_count} partial`}
-          </span>
+          <AlertTriangle className="text-status-warning h-4 w-4" />
+          <span className="text-foreground text-sm">{`${data.partial_count} partial`}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <XCircle className="h-4 w-4 text-status-danger" />
-          <span className="text-sm text-foreground">
-            {`${data.none_count} unsupported`}
-          </span>
+          <XCircle className="text-status-danger h-4 w-4" />
+          <span className="text-foreground text-sm">{`${data.none_count} unsupported`}</span>
         </div>
         {data.qa_score != null && (
-          <span className="ml-auto text-sm text-foreground-muted">
+          <span className="text-foreground-muted ml-auto text-sm">
             {`QA Score: ${Math.round(data.qa_score * 100)}%`}
           </span>
         )}
@@ -82,7 +80,7 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
         <div className="space-y-3">
           {groups.map(([family, clients]) => (
             <div key={family}>
-              <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+              <h4 className="text-foreground-muted mb-1.5 text-xs font-semibold uppercase tracking-wide">
                 {family}
               </h4>
               <div className="space-y-1">
@@ -93,13 +91,13 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
                   return (
                     <div
                       key={client.client_id}
-                      className="flex items-center justify-between rounded-md px-3 py-1.5 hover:bg-surface-hover"
+                      className="hover:bg-surface-hover flex items-center justify-between rounded-md px-3 py-1.5"
                     >
                       <div className="flex items-center gap-2">
                         <Icon className={`h-4 w-4 ${iconStyle}`} />
-                        <span className="text-sm text-foreground">{client.client_name}</span>
+                        <span className="text-foreground text-sm">{client.client_name}</span>
                       </div>
-                      <span className="rounded bg-surface-muted px-1.5 py-0.5 text-xs text-foreground-muted">
+                      <span className="bg-surface-muted text-foreground-muted rounded px-1.5 py-0.5 text-xs">
                         {client.platform}
                       </span>
                     </div>
@@ -112,7 +110,7 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
       </ScrollArea>
 
       {data.last_checked && (
-        <p className="text-xs text-foreground-muted">
+        <p className="text-foreground-muted text-xs">
           {`Last checked: ${new Date(data.last_checked).toLocaleDateString()}`}
         </p>
       )}

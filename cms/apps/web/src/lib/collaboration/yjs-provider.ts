@@ -5,8 +5,7 @@
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 
-const WS_BASE_URL =
-  process.env.NEXT_PUBLIC_COLLAB_WS_URL ?? "ws://localhost:8891";
+const WS_BASE_URL = process.env.NEXT_PUBLIC_COLLAB_WS_URL ?? "ws://localhost:8891";
 
 export interface HubProviderOptions {
   /** JWT access token for authentication */

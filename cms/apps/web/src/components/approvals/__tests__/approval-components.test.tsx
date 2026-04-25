@@ -26,8 +26,9 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("lucide-react", () => {
-  const makeIcon = (name: string) =>
-    (props: Record<string, unknown>) => <svg data-testid={`icon-${name}`} {...props} />;
+  const makeIcon = (name: string) => (props: Record<string, unknown>) => (
+    <svg data-testid={`icon-${name}`} {...props} />
+  );
   return {
     Loader2: makeIcon("Loader2"),
     ShieldCheck: makeIcon("ShieldCheck"),
@@ -43,15 +44,9 @@ vi.mock("@email-hub/ui/components/ui/dialog", () => ({
   DialogContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dialog-content">{children}</div>
   ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DialogTitle: ({ children }: { children: React.ReactNode }) => (
-    <h2>{children}</h2>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => (
-    <p>{children}</p>
-  ),
+  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+  DialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
 }));
 
 vi.mock("../approval-status-badge", () => ({
@@ -100,9 +95,9 @@ describe("ApprovalRequestDialog", () => {
 
   it("calls createApproval with correct payload on submit", async () => {
     render(<ApprovalRequestDialog {...defaultProps} />);
-    const submitBtn = screen.getAllByText("Submit for Approval").find(
-      (el) => el.tagName === "BUTTON",
-    );
+    const submitBtn = screen
+      .getAllByText("Submit for Approval")
+      .find((el) => el.tagName === "BUTTON");
     fireEvent.click(submitBtn!);
     await vi.waitFor(() => {
       expect(mockCreateApproval).toHaveBeenCalledWith({
@@ -114,9 +109,9 @@ describe("ApprovalRequestDialog", () => {
 
   it("shows toast on success and calls onSubmitted", async () => {
     render(<ApprovalRequestDialog {...defaultProps} />);
-    const submitBtn = screen.getAllByText("Submit for Approval").find(
-      (el) => el.tagName === "BUTTON",
-    );
+    const submitBtn = screen
+      .getAllByText("Submit for Approval")
+      .find((el) => el.tagName === "BUTTON");
     fireEvent.click(submitBtn!);
     await vi.waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith("Build submitted for approval");
@@ -127,9 +122,9 @@ describe("ApprovalRequestDialog", () => {
   it("shows toast.error on API failure", async () => {
     mockCreateApproval.mockRejectedValueOnce(new Error("Server error"));
     render(<ApprovalRequestDialog {...defaultProps} />);
-    const submitBtn = screen.getAllByText("Submit for Approval").find(
-      (el) => el.tagName === "BUTTON",
-    );
+    const submitBtn = screen
+      .getAllByText("Submit for Approval")
+      .find((el) => el.tagName === "BUTTON");
     fireEvent.click(submitBtn!);
     await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Server error");
@@ -171,9 +166,7 @@ describe("ApprovalGatePanel", () => {
       approved_by: "admin@test.com",
       approved_at: "2026-03-20T10:00:00Z",
     };
-    render(
-      <ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />,
-    );
+    render(<ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />);
     expect(screen.getByText("Approved")).toBeInTheDocument();
     expect(screen.getByText(/admin@test\.com/)).toBeInTheDocument();
   });
@@ -187,9 +180,7 @@ describe("ApprovalGatePanel", () => {
       approved_by: null,
       approved_at: null,
     };
-    render(
-      <ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />,
-    );
+    render(<ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />);
     expect(screen.getByText("Approval Required")).toBeInTheDocument();
     expect(screen.getByText("Project requires approval before export")).toBeInTheDocument();
   });
@@ -203,9 +194,7 @@ describe("ApprovalGatePanel", () => {
       approved_by: null,
       approved_at: null,
     };
-    render(
-      <ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />,
-    );
+    render(<ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />);
     const link = screen.getByText("Submit for Approval");
     fireEvent.click(link);
     expect(onRequestApproval).toHaveBeenCalled();
@@ -220,9 +209,7 @@ describe("ApprovalGatePanel", () => {
       approved_by: null,
       approved_at: null,
     };
-    render(
-      <ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />,
-    );
+    render(<ApprovalGatePanel approvalResult={result} onRequestApproval={onRequestApproval} />);
     expect(screen.getByText("Pending review")).toBeInTheDocument();
     expect(screen.getByTestId("approval-badge")).toBeInTheDocument();
   });

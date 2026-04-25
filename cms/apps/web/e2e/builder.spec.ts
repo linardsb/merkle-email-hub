@@ -10,23 +10,14 @@ test.describe("Visual Builder", () => {
   });
 
   test("component palette loads @smoke", async ({ authenticatedPage: page }) => {
-    await expect(
-      page.getByPlaceholder(/search components/i)
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByPlaceholder(/search components/i)).toBeVisible({ timeout: 10_000 });
   });
 
-  test("palette has category filters", async ({
-    authenticatedPage: page,
-  }) => {
-    await expect(
-      page.getByRole("button", { name: /^all$/i })
-    ).toBeVisible({ timeout: 10_000 });
+  test("palette has category filters", async ({ authenticatedPage: page }) => {
+    await expect(page.getByRole("button", { name: /^all$/i })).toBeVisible({ timeout: 10_000 });
   });
 
-  test("drag component to canvas", async ({
-    authenticatedPage: page,
-    browserName,
-  }) => {
+  test("drag component to canvas", async ({ authenticatedPage: page, browserName }) => {
     const firstComponent = page.locator("[draggable='true']").first();
     await expect(firstComponent).toBeVisible({ timeout: 10_000 });
 
@@ -48,13 +39,13 @@ test.describe("Visual Builder", () => {
         // Chromium & WebKit: mouse-based drag
         await page.mouse.move(
           sourceBox.x + sourceBox.width / 2,
-          sourceBox.y + sourceBox.height / 2
+          sourceBox.y + sourceBox.height / 2,
         );
         await page.mouse.down();
         await page.mouse.move(
           targetBox.x + targetBox.width / 2,
           targetBox.y + targetBox.height / 2,
-          { steps: 10 }
+          { steps: 10 },
         );
         await page.mouse.up();
       }
@@ -82,17 +73,12 @@ test.describe("Visual Builder", () => {
       }
       await section.click();
       await expect(
-        page
-          .getByRole("tab", { name: /content/i })
-          .or(page.getByLabel(/close property panel/i))
+        page.getByRole("tab", { name: /content/i }).or(page.getByLabel(/close property panel/i)),
       ).toBeVisible({ timeout: 5_000 });
     }
   });
 
-  test("undo/redo keyboard shortcuts", async ({
-    authenticatedPage: page,
-    browserName,
-  }) => {
+  test("undo/redo keyboard shortcuts", async ({ authenticatedPage: page, browserName }) => {
     // WebKit (Safari) uses Meta instead of Control on macOS
     const mod = browserName === "webkit" ? "Meta" : "Control";
     await page.keyboard.press(`${mod}+z`);

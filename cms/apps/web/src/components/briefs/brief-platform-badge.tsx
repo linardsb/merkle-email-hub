@@ -31,7 +31,9 @@ interface BriefPlatformBadgeProps {
 
 export function BriefPlatformBadge({ platform, size = "sm" }: BriefPlatformBadgeProps) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full bg-surface-muted ${size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm"} font-medium text-foreground-muted`}>
+    <span
+      className={`bg-surface-muted inline-flex items-center gap-1.5 rounded-full ${size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm"} text-foreground-muted font-medium`}
+    >
       <span
         className="inline-block h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: PLATFORM_COLORS[platform] }}

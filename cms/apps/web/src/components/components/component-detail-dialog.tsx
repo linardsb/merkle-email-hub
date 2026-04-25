@@ -9,11 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@email-hub/ui/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@email-hub/ui/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@email-hub/ui/components/ui/popover";
 import {
   Command,
   CommandInput,
@@ -84,7 +80,7 @@ export function ComponentDetailDialog({
       setCampaignSearch("");
       router.push(`/projects/${projectId}/workspace?componentId=${componentId}`);
     },
-    [router, componentId]
+    [router, componentId],
   );
 
   const tabs: { key: Tab; label: string }[] = [
@@ -106,7 +102,7 @@ export function ComponentDetailDialog({
               <button
                 type="button"
                 onClick={() => setEditOpen(true)}
-                className="rounded-md p-1.5 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                className="text-foreground-muted hover:bg-surface-hover hover:text-foreground rounded-md p-1.5 transition-colors"
                 aria-label="Edit component"
               >
                 <Pencil className="h-4 w-4" />
@@ -116,7 +112,7 @@ export function ComponentDetailDialog({
               <button
                 type="button"
                 onClick={() => setDeleteOpen(true)}
-                className="rounded-md p-1.5 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-status-danger"
+                className="text-foreground-muted hover:bg-surface-hover hover:text-status-danger rounded-md p-1.5 transition-colors"
                 aria-label="Delete component"
               >
                 <Trash2 className="h-4 w-4" />
@@ -124,14 +120,12 @@ export function ComponentDetailDialog({
             )}
           </DialogTitle>
           {component?.description && (
-            <p className="text-sm text-foreground-muted">
-              {component.description}
-            </p>
+            <p className="text-foreground-muted text-sm">{component.description}</p>
           )}
         </DialogHeader>
 
         {/* Tab bar */}
-        <div className="flex gap-1 border-b border-border" role="tablist">
+        <div className="border-border flex gap-1 border-b" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -141,7 +135,7 @@ export function ComponentDetailDialog({
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.key
-                  ? "border-b-2 border-interactive text-foreground"
+                  ? "border-interactive text-foreground border-b-2"
                   : "text-foreground-muted hover:text-foreground"
               }`}
             >
@@ -158,18 +152,14 @@ export function ComponentDetailDialog({
                 <button
                   type="button"
                   onClick={() => setDarkMode((d) => !d)}
-                  className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-hover"
+                  className="border-border text-foreground hover:bg-surface-hover flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors"
                   aria-label={"Dark mode"}
                 >
-                  {darkMode ? (
-                    <Sun className="h-3.5 w-3.5" />
-                  ) : (
-                    <Moon className="h-3.5 w-3.5" />
-                  )}
+                  {darkMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
                   {"Dark mode"}
                 </button>
               </div>
-              <div className="overflow-hidden rounded-md border border-border">
+              <div className="border-border overflow-hidden rounded-md border">
                 <ComponentPreview
                   html={latestVersion?.html_source ?? null}
                   darkMode={darkMode}
@@ -184,16 +174,12 @@ export function ComponentDetailDialog({
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-foreground">
-                    {"HTML Source"}
-                  </h4>
+                  <h4 className="text-foreground text-sm font-medium">{"HTML Source"}</h4>
                   {latestVersion?.html_source && (
                     <button
                       type="button"
-                      onClick={() =>
-                        copyToClipboard(latestVersion.html_source)
-                      }
-                      className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                      onClick={() => copyToClipboard(latestVersion.html_source)}
+                      className="text-foreground-muted hover:bg-surface-hover hover:text-foreground flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
                     >
                       {copied ? (
                         <>
@@ -209,22 +195,18 @@ export function ComponentDetailDialog({
                     </button>
                   )}
                 </div>
-                <div className="mt-2 max-h-80 overflow-auto rounded-md bg-surface-muted">
-                  <pre className="p-4 text-xs text-foreground">
-                    <code>
-                      {latestVersion?.html_source ?? "No source available"}
-                    </code>
+                <div className="bg-surface-muted mt-2 max-h-80 overflow-auto rounded-md">
+                  <pre className="text-foreground p-4 text-xs">
+                    <code>{latestVersion?.html_source ?? "No source available"}</code>
                   </pre>
                 </div>
               </div>
 
               {latestVersion?.css_source && (
                 <div>
-                  <h4 className="text-sm font-medium text-foreground">
-                    {"CSS Source"}
-                  </h4>
-                  <div className="mt-2 max-h-60 overflow-auto rounded-md bg-surface-muted">
-                    <pre className="p-4 text-xs text-foreground">
+                  <h4 className="text-foreground text-sm font-medium">{"CSS Source"}</h4>
+                  <div className="bg-surface-muted mt-2 max-h-60 overflow-auto rounded-md">
+                    <pre className="text-foreground p-4 text-xs">
                       <code>{latestVersion.css_source}</code>
                     </pre>
                   </div>
@@ -236,15 +218,13 @@ export function ComponentDetailDialog({
           {activeTab === "versions" && (
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-sm font-medium text-foreground">
-                  {"Version History"}
-                </h4>
+                <h4 className="text-foreground text-sm font-medium">{"Version History"}</h4>
                 <div className="flex gap-2">
                   {versions && versions.length >= 2 && (
                     <button
                       type="button"
                       onClick={() => setCompareOpen(true)}
-                      className="rounded-md border border-border px-3 py-1 text-xs text-foreground transition-colors hover:bg-surface-hover"
+                      className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1 text-xs transition-colors"
                     >
                       {"Compare Versions"}
                     </button>
@@ -253,7 +233,7 @@ export function ComponentDetailDialog({
                     <button
                       type="button"
                       onClick={() => setCreateVersionOpen(true)}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1 text-xs font-medium text-on-interactive transition-colors hover:bg-interactive-hover"
+                      className="bg-interactive text-on-interactive hover:bg-interactive-hover inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors"
                     >
                       <Plus className="h-3 w-3" />
                       {"New Version"}
@@ -262,10 +242,7 @@ export function ComponentDetailDialog({
                 </div>
               </div>
               {componentId && (
-                <ComponentVersionTimeline
-                  componentId={componentId}
-                  versions={versions ?? []}
-                />
+                <ComponentVersionTimeline componentId={componentId} versions={versions ?? []} />
               )}
             </div>
           )}
@@ -276,12 +253,12 @@ export function ComponentDetailDialog({
         </div>
 
         {/* Footer actions */}
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
+        <div className="border-border flex justify-end gap-2 border-t pt-4">
           {canVisualQa && latestVersion?.html_source && latestVersion?.id && (
             <button
               type="button"
               onClick={() => setVisualQaOpen(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+              className="border-border text-foreground hover:bg-surface-hover inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors"
             >
               <Camera className="h-4 w-4" />
               {"Visual QA"}
@@ -291,7 +268,7 @@ export function ComponentDetailDialog({
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-on-interactive transition-colors hover:bg-interactive-hover"
+                className="bg-interactive text-on-interactive hover:bg-interactive-hover inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 {"Add to Campaign"}
@@ -314,12 +291,10 @@ export function ComponentDetailDialog({
                         onSelect={() => handleSelectCampaign(project.id)}
                       >
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-foreground">
+                          <span className="text-foreground text-sm font-medium">
                             {project.name}
                           </span>
-                          <span className="text-xs text-foreground-muted">
-                            {project.status}
-                          </span>
+                          <span className="text-foreground-muted text-xs">{project.status}</span>
                         </div>
                       </CommandItem>
                     ))}
@@ -343,11 +318,7 @@ export function ComponentDetailDialog({
 
       {component && (
         <>
-          <EditComponentDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            component={component}
-          />
+          <EditComponentDialog open={editOpen} onOpenChange={setEditOpen} component={component} />
           <DeleteComponentDialog
             open={deleteOpen}
             onOpenChange={(o) => {

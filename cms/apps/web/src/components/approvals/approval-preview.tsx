@@ -29,8 +29,8 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
   if (!compiledHtml) {
     return (
       <div className="flex h-full flex-col items-center justify-center text-center">
-        <Eye className="h-8 w-8 text-foreground-muted" />
-        <p className="mt-2 text-sm text-foreground-muted">
+        <Eye className="text-foreground-muted h-8 w-8" />
+        <p className="text-foreground-muted mt-2 text-sm">
           {"No compiled HTML available for preview"}
         </p>
       </div>
@@ -50,7 +50,7 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+      <div className="border-border flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-1">
           {(["desktop", "tablet", "mobile"] as Viewport[]).map((vp) => {
             const Icon = viewportIcons[vp];
@@ -74,24 +74,17 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
         <button
           type="button"
           onClick={() => setDarkMode(!darkMode)}
-          className="rounded p-1.5 text-foreground-muted transition-colors hover:text-foreground"
+          className="text-foreground-muted hover:text-foreground rounded p-1.5 transition-colors"
           title={"Toggle dark mode"}
           aria-label={"Toggle dark mode"}
         >
-          {darkMode ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
+          {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
       </div>
 
       {/* Preview iframe */}
-      <div className="flex-1 overflow-auto bg-surface-muted p-4">
-        <div
-          className="mx-auto bg-surface"
-          style={{ maxWidth: VIEWPORT_WIDTHS[viewport] }}
-        >
+      <div className="bg-surface-muted flex-1 overflow-auto p-4">
+        <div className="bg-surface mx-auto" style={{ maxWidth: VIEWPORT_WIDTHS[viewport] }}>
           <iframe
             srcDoc={htmlWithDarkMode}
             sandbox="allow-same-origin"

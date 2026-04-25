@@ -34,7 +34,7 @@ export function BriefResourceLinks({ resources, maxVisible = 3 }: BriefResourceL
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 rounded border border-card-border bg-surface-muted px-2 py-1 text-xs text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+            className="border-card-border bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground inline-flex items-center gap-1 rounded border px-2 py-1 text-xs transition-colors"
             title={resource.filename}
           >
             <Icon className="h-3 w-3 shrink-0" />
@@ -43,7 +43,7 @@ export function BriefResourceLinks({ resources, maxVisible = 3 }: BriefResourceL
         );
       })}
       {remaining > 0 && (
-        <span className="inline-flex items-center rounded bg-surface-muted px-2 py-1 text-xs text-foreground-muted">
+        <span className="bg-surface-muted text-foreground-muted inline-flex items-center rounded px-2 py-1 text-xs">
           +{remaining}
         </span>
       )}

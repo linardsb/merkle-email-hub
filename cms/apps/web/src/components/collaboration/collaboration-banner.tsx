@@ -31,7 +31,7 @@ export function CollaborationBanner({
     <button
       type="button"
       onClick={onTogglePresencePanel}
-      className="flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors hover:bg-accent"
+      className="hover:bg-accent flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors"
     >
       {/* Connection dot */}
       <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[status]}`} />
@@ -42,14 +42,14 @@ export function CollaborationBanner({
           {visible.map((c) => (
             <div
               key={c.clientId}
-              className="flex h-5 w-5 items-center justify-center rounded-full border border-card text-[9px] font-medium text-white"
+              className="border-card flex h-5 w-5 items-center justify-center rounded-full border text-[9px] font-medium text-white"
               style={{ backgroundColor: c.color }}
             >
               {c.name.charAt(0).toUpperCase()}
             </div>
           ))}
           {overflow > 0 && (
-            <div className="flex h-5 w-5 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-medium text-foreground">
+            <div className="border-card bg-muted text-foreground flex h-5 w-5 items-center justify-center rounded-full border text-[9px] font-medium">
               +{overflow}
             </div>
           )}
@@ -67,12 +67,12 @@ export function CollaborationBanner({
 
       {/* View-only badge */}
       {isViewOnly && (
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+        <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-medium">
           {"View only"}
         </span>
       )}
 
-      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+      <Users className="text-muted-foreground h-3.5 w-3.5" />
     </button>
   );
 }

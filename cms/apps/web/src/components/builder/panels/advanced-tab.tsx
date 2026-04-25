@@ -37,11 +37,7 @@ interface AdvancedTabProps {
   designSystem: DesignSystemConfig | null;
 }
 
-export function AdvancedTab({
-  section,
-  onUpdate,
-  designSystem,
-}: AdvancedTabProps) {
+export function AdvancedTab({ section, onUpdate, designSystem }: AdvancedTabProps) {
   const [viewSourceOpen, setViewSourceOpen] = useState(false);
   const { advanced } = section;
   const palette = designSystem ? extractPaletteSwatches(designSystem) : [];
@@ -50,12 +46,11 @@ export function AdvancedTab({
     (updates: Partial<AdvancedConfig>) => {
       onUpdate({ advanced: { ...advanced, ...updates } });
     },
-    [advanced, onUpdate]
+    [advanced, onUpdate],
   );
 
   const cssClassValid =
-    advanced.customCssClass === "" ||
-    CSS_CLASS_PATTERN.test(advanced.customCssClass);
+    advanced.customCssClass === "" || CSS_CLASS_PATTERN.test(advanced.customCssClass);
 
   return (
     <div className="space-y-5 p-4">
@@ -64,14 +59,12 @@ export function AdvancedTab({
         <Label className="text-xs font-medium">{"Custom CSS class"}</Label>
         <Input
           value={advanced.customCssClass}
-          onChange={(e) =>
-            updateAdvanced({ customCssClass: e.target.value })
-          }
+          onChange={(e) => updateAdvanced({ customCssClass: e.target.value })}
           placeholder="my-section-class"
           className={`h-8 text-sm ${!cssClassValid ? "border-destructive" : ""}`}
         />
         {!cssClassValid && (
-          <p className="flex items-center gap-1 text-[10px] text-destructive">
+          <p className="text-destructive flex items-center gap-1 text-[10px]">
             <AlertTriangle className="h-3 w-3" />
             {"Class name must start with a letter, underscore, or hyphen"}
           </p>
@@ -83,15 +76,13 @@ export function AdvancedTab({
         <Checkbox
           id="mso-conditional"
           checked={advanced.msoConditional}
-          onCheckedChange={(checked) =>
-            updateAdvanced({ msoConditional: checked === true })
-          }
+          onCheckedChange={(checked) => updateAdvanced({ msoConditional: checked === true })}
         />
         <div className="space-y-0.5">
           <Label htmlFor="mso-conditional" className="text-xs font-medium">
             {"MSO conditional wrapper"}
           </Label>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-muted-foreground text-[10px]">
             {"Wrap in <!--[if mso]> for Outlook compatibility"}
           </p>
         </div>
@@ -104,9 +95,7 @@ export function AdvancedTab({
           description="Override colors for dark mode rendering"
           entries={advanced.darkModeOverrides}
           palette={palette}
-          onChange={(entries) =>
-            updateAdvanced({ darkModeOverrides: entries })
-          }
+          onChange={(entries) => updateAdvanced({ darkModeOverrides: entries })}
         />
       )}
 
@@ -121,7 +110,7 @@ export function AdvancedTab({
         <button
           type="button"
           onClick={() => setViewSourceOpen(true)}
-          className="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1.5 rounded px-3 py-1.5 text-xs transition-colors"
         >
           <Code2 className="h-3.5 w-3.5" />
           {"View Source"}
@@ -133,7 +122,7 @@ export function AdvancedTab({
           <DialogHeader>
             <DialogTitle>{"Section HTML Source"}</DialogTitle>
           </DialogHeader>
-          <pre className="max-h-96 overflow-auto rounded bg-muted p-3 text-xs font-mono text-foreground">
+          <pre className="bg-muted text-foreground max-h-96 overflow-auto rounded p-3 font-mono text-xs">
             {section.html}
           </pre>
         </DialogContent>
@@ -182,10 +171,10 @@ function KeyColorList({
 
   return (
     <div className="space-y-2">
-      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
         {label}
       </Label>
-      <p className="text-[10px] text-muted-foreground">{description}</p>
+      <p className="text-muted-foreground text-[10px]">{description}</p>
       <div className="space-y-1.5">
         {pairs.map(([key, hex]) => (
           <div key={key} className="flex items-center gap-1.5">
@@ -203,7 +192,7 @@ function KeyColorList({
             <button
               type="button"
               onClick={() => removeEntry(key)}
-              className="rounded p-1 text-muted-foreground hover:text-destructive"
+              className="text-muted-foreground hover:text-destructive rounded p-1"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -213,7 +202,7 @@ function KeyColorList({
       <button
         type="button"
         onClick={addEntry}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
       >
         <Plus className="h-3.5 w-3.5" />
         {"Add override"}
@@ -258,10 +247,10 @@ function HtmlAttributeList({
 
   return (
     <div className="space-y-2">
-      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
         {"HTML Attributes"}
       </Label>
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-muted-foreground text-[10px]">
         {"Event handlers (on*), style, and script URIs are blocked."}
       </p>
       <div className="space-y-1.5">
@@ -285,7 +274,7 @@ function HtmlAttributeList({
               <button
                 type="button"
                 onClick={() => removeEntry(key)}
-                className="rounded p-1 text-muted-foreground hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive rounded p-1"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -296,7 +285,7 @@ function HtmlAttributeList({
       <button
         type="button"
         onClick={addEntry}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
       >
         <Plus className="h-3.5 w-3.5" />
         {"Add attribute"}

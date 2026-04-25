@@ -11,26 +11,26 @@ export function BlockFor({ block, onUpdate }: BlockForProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{"Variable"}</span>
+        <span className="text-muted-foreground text-xs font-medium">{"Variable"}</span>
         <input
           type="text"
           value={block.variable}
           onChange={(e) => onUpdate({ variable: e.target.value })}
-          className="w-24 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
+          className="border-default bg-input text-foreground focus:ring-interactive w-24 rounded border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-1"
           placeholder="item"
         />
-        <span className="text-xs text-muted-foreground">{"in"}</span>
+        <span className="text-muted-foreground text-xs">{"in"}</span>
         <input
           type="text"
           value={block.collection}
           onChange={(e) => onUpdate({ collection: e.target.value })}
-          className="flex-1 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
+          className="border-default bg-input text-foreground focus:ring-interactive flex-1 rounded border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-1"
           placeholder="products"
         />
       </div>
       {block.children.length > 0 && (
-        <div className="border-l-2 border-interactive/30 pl-3">
-          <p className="text-xs text-muted-foreground">{`${block.children.length} blocks`}</p>
+        <div className="border-interactive/30 border-l-2 pl-3">
+          <p className="text-muted-foreground text-xs">{`${block.children.length} blocks`}</p>
         </div>
       )}
     </div>

@@ -10,21 +10,17 @@ vi.mock("@/lib/auth-fetch", () => ({
 const { fetcher } = await import("../swr-fetcher");
 
 /** Helper to create a minimal Response-like object. */
-function makeResponse(
-  status: number,
-  body?: Record<string, unknown>,
-): Response {
+function makeResponse(status: number, body?: Record<string, unknown>): Response {
   const ok = status >= 200 && status < 300;
   return {
     status,
     ok,
     statusText: ok ? "OK" : status === 304 ? "Not Modified" : "Error",
     headers: new Headers(),
-    json: body !== undefined
-      ? vi.fn().mockResolvedValue(body)
-      : vi.fn().mockRejectedValue(
-          new SyntaxError("Unexpected end of JSON input"),
-        ),
+    json:
+      body !== undefined
+        ? vi.fn().mockResolvedValue(body)
+        : vi.fn().mockRejectedValue(new SyntaxError("Unexpected end of JSON input")),
   } as unknown as Response;
 }
 

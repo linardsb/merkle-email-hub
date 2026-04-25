@@ -50,16 +50,16 @@ export function PreviewToolbar({
   isLoadingPersonas,
 }: PreviewToolbarProps) {
   return (
-    <div className="flex h-8 items-center justify-between border-b border-border bg-card px-3 text-xs text-muted-foreground">
+    <div className="border-border bg-card text-muted-foreground flex h-8 items-center justify-between border-b px-3 text-xs">
       {/* Left: Viewport + Dark mode */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center rounded border border-border">
+        <div className="border-border flex items-center rounded border">
           {viewportButtons.map(({ value, icon: Icon, label }) => (
             <button
               key={value}
               type="button"
               onClick={() => onViewportChange(value)}
-              className={`rounded p-1 transition-colors hover:bg-accent ${viewport === value ? "bg-accent text-foreground" : ""}`}
+              className={`hover:bg-accent rounded p-1 transition-colors ${viewport === value ? "bg-accent text-foreground" : ""}`}
               title={label}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -70,17 +70,13 @@ export function PreviewToolbar({
         <button
           type="button"
           onClick={onDarkModeToggle}
-          className={`rounded p-1 transition-colors hover:bg-accent ${darkMode ? "text-foreground" : ""}`}
+          className={`hover:bg-accent rounded p-1 transition-colors ${darkMode ? "text-foreground" : ""}`}
           title={"Toggle dark mode"}
         >
-          {darkMode ? (
-            <Sun className="h-3.5 w-3.5" />
-          ) : (
-            <Moon className="h-3.5 w-3.5" />
-          )}
+          {darkMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
         </button>
 
-        <div className="h-4 w-px bg-border" />
+        <div className="bg-border h-4 w-px" />
 
         <PersonaSelector
           personas={personas}
@@ -93,16 +89,14 @@ export function PreviewToolbar({
       {/* Right: Build time, Zoom, Compile */}
       <div className="flex items-center gap-2">
         {buildTimeMs !== null && (
-          <span className="text-muted-foreground">
-            {`Built in ${buildTimeMs}ms`}
-          </span>
+          <span className="text-muted-foreground">{`Built in ${buildTimeMs}ms`}</span>
         )}
 
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={onZoomOut}
-            className="rounded p-1 transition-colors hover:bg-accent"
+            className="hover:bg-accent rounded p-1 transition-colors"
             title={"Zoom out"}
           >
             <ZoomOut className="h-3.5 w-3.5" />
@@ -110,7 +104,7 @@ export function PreviewToolbar({
           <button
             type="button"
             onClick={onZoomReset}
-            className="min-w-[3rem] text-center transition-colors hover:text-foreground"
+            className="hover:text-foreground min-w-[3rem] text-center transition-colors"
             title={"Reset zoom"}
           >
             {`${zoom}%`}
@@ -118,7 +112,7 @@ export function PreviewToolbar({
           <button
             type="button"
             onClick={onZoomIn}
-            className="rounded p-1 transition-colors hover:bg-accent"
+            className="hover:bg-accent rounded p-1 transition-colors"
             title={"Zoom in"}
           >
             <ZoomIn className="h-3.5 w-3.5" />
@@ -129,12 +123,10 @@ export function PreviewToolbar({
           type="button"
           onClick={onCompile}
           disabled={!hasContent || isCompiling}
-          className="flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-accent disabled:opacity-50"
+          className="hover:bg-accent flex items-center gap-1 rounded px-1.5 py-1 transition-colors disabled:opacity-50"
           title={isCompiling ? "Compiling..." : "Compile"}
         >
-          <RefreshCw
-            className={`h-3.5 w-3.5 ${isCompiling ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`h-3.5 w-3.5 ${isCompiling ? "animate-spin" : ""}`} />
           <span>{isCompiling ? "Compiling..." : "Compile"}</span>
         </button>
       </div>

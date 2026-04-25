@@ -1,10 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-  BACKEND_URL,
-  TEST_USER_EMAIL,
-  TEST_USER_PASSWORD,
-} from "./fixtures/constants";
+import { BACKEND_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD } from "./fixtures/constants";
 
 const AUTH_STATE_PATH = path.resolve(process.cwd(), "e2e", ".e2e-auth-state");
 
@@ -40,9 +36,7 @@ async function globalSetup() {
   const loginData = await loginRes.json();
   const access_token = loginData.access_token;
   if (!access_token || typeof access_token !== "string") {
-    throw new Error(
-      `Login response missing access_token: ${JSON.stringify(loginData)}`
-    );
+    throw new Error(`Login response missing access_token: ${JSON.stringify(loginData)}`);
   }
 
   const authHeaders = {
@@ -54,14 +48,11 @@ async function globalSetup() {
   // and the create-project dialog auto-selects the sole org when exactly one
   // is present, which keeps the dashboard "create a new project" smoke test
   // deterministic.
-  const orgsListRes = await fetch(
-    `${BACKEND_URL}/api/v1/orgs?page=1&page_size=1`,
-    { headers: authHeaders }
-  );
+  const orgsListRes = await fetch(`${BACKEND_URL}/api/v1/orgs?page=1&page_size=1`, {
+    headers: authHeaders,
+  });
   if (!orgsListRes.ok) {
-    throw new Error(
-      `List client orgs failed: ${orgsListRes.status} ${await orgsListRes.text()}`
-    );
+    throw new Error(`List client orgs failed: ${orgsListRes.status} ${await orgsListRes.text()}`);
   }
   const orgsList = await orgsListRes.json();
   let clientOrgId: number | null = orgsList.items?.[0]?.id ?? null;
@@ -73,7 +64,7 @@ async function globalSetup() {
     });
     if (!orgCreateRes.ok) {
       throw new Error(
-        `Create client org failed: ${orgCreateRes.status} ${await orgCreateRes.text()}`
+        `Create client org failed: ${orgCreateRes.status} ${await orgCreateRes.text()}`,
       );
     }
     clientOrgId = (await orgCreateRes.json()).id as number;
@@ -89,9 +80,7 @@ async function globalSetup() {
     }),
   });
   if (!projectRes.ok) {
-    throw new Error(
-      `Create project failed: ${projectRes.status} ${await projectRes.text()}`
-    );
+    throw new Error(`Create project failed: ${projectRes.status} ${await projectRes.text()}`);
   }
   const project = await projectRes.json();
   const projectId: number = project.id;

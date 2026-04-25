@@ -30,11 +30,7 @@ export function mergeSections(html: string, sectionIds: string[]): string {
  * Split a section at a given child index: the children before splitIndex stay
  * with the original section, children at and after splitIndex get a new section ID.
  */
-export function splitSection(
-  html: string,
-  sectionId: string,
-  splitIndex: number
-): string {
+export function splitSection(html: string, sectionId: string, splitIndex: number): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
@@ -93,11 +89,7 @@ export function unwrapSection(html: string, sectionId: string): string {
 /**
  * Rename a section's component name.
  */
-export function renameSection(
-  html: string,
-  sectionId: string,
-  newName: string
-): string {
+export function renameSection(html: string, sectionId: string, newName: string): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 

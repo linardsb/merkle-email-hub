@@ -27,30 +27,19 @@ function CodeBlock({ language, code, onApply, showApply }: CodeBlockProps) {
   }, [code]);
 
   return (
-    <div className="my-2 overflow-hidden rounded-md border border-border">
-      <div className="flex items-center justify-between bg-muted px-3 py-1.5">
-        <span className="text-xs text-muted-foreground">
-          {language || "code"}
-        </span>
+    <div className="border-border my-2 overflow-hidden rounded-md border">
+      <div className="bg-muted flex items-center justify-between px-3 py-1.5">
+        <span className="text-muted-foreground text-xs">{language || "code"}</span>
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={handleCopy}
-          >
-            {copied ? (
-              <Check className="mr-1 h-3 w-3" />
-            ) : (
-              <Copy className="mr-1 h-3 w-3" />
-            )}
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleCopy}>
+            {copied ? <Check className="mr-1 h-3 w-3" /> : <Copy className="mr-1 h-3 w-3" />}
             {"Copy"}
           </Button>
           {showApply && onApply && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-xs text-primary"
+              className="text-primary h-6 px-2 text-xs"
               onClick={onApply}
             >
               {"Apply"}
@@ -58,7 +47,7 @@ function CodeBlock({ language, code, onApply, showApply }: CodeBlockProps) {
           )}
         </div>
       </div>
-      <pre className="overflow-x-auto bg-muted/50 p-3 text-xs">
+      <pre className="bg-muted/50 overflow-x-auto p-3 text-xs">
         <code>{code}</code>
       </pre>
     </div>
@@ -110,11 +99,11 @@ export function MessageBubble({ message, onApplyHtml }: MessageBubbleProps) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end gap-2">
-        <div className="max-w-[80%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
+        <div className="bg-primary text-primary-foreground max-w-[80%] rounded-lg px-3 py-2 text-sm">
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-          <User className="h-4 w-4 text-muted-foreground" />
+        <div className="bg-muted flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <User className="text-muted-foreground h-4 w-4" />
         </div>
       </div>
     );
@@ -124,10 +113,10 @@ export function MessageBubble({ message, onApplyHtml }: MessageBubbleProps) {
   if (message.isStreaming && !message.content) {
     return (
       <div className="flex gap-2">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <Bot className="h-4 w-4 text-primary" />
+        <div className="bg-primary/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <Bot className="text-primary h-4 w-4" />
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           {"Thinking..."}
         </div>
@@ -139,8 +128,8 @@ export function MessageBubble({ message, onApplyHtml }: MessageBubbleProps) {
 
   return (
     <div className="flex gap-2">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-        <Bot className="h-4 w-4 text-primary" />
+      <div className="bg-primary/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+        <Bot className="text-primary h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1 text-sm">
         {segments.map((seg, i) =>
@@ -153,20 +142,17 @@ export function MessageBubble({ message, onApplyHtml }: MessageBubbleProps) {
               onApply={() => onApplyHtml(seg.content)}
             />
           ) : (
-            <p key={i} className="whitespace-pre-wrap text-foreground">
+            <p key={i} className="text-foreground whitespace-pre-wrap">
               {seg.content}
             </p>
-          )
+          ),
         )}
         {/* Blueprint pipeline result */}
         {!message.isStreaming && message.blueprintResult && (
-          <BlueprintResultCard
-            result={message.blueprintResult}
-            onApplyHtml={onApplyHtml}
-          />
+          <BlueprintResultCard result={message.blueprintResult} onApplyHtml={onApplyHtml} />
         )}
         {message.isStreaming && message.content && (
-          <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-primary" />
+          <span className="bg-primary ml-0.5 inline-block h-4 w-1.5 animate-pulse" />
         )}
         {!message.isStreaming && message.confidence != null && (
           <ConfidenceIndicator confidence={message.confidence} />

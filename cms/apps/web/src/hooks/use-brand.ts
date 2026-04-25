@@ -7,10 +7,7 @@ import { mutationFetcher } from "@/lib/mutation-fetcher";
 import type { BrandConfig } from "@/types/brand";
 
 export function useBrandConfig(orgId: number | null) {
-  return useSWR<BrandConfig>(
-    orgId ? `/api/v1/orgs/${orgId}/brand` : null,
-    fetcher,
-  );
+  return useSWR<BrandConfig>(orgId ? `/api/v1/orgs/${orgId}/brand` : null, fetcher);
 }
 
 export function useUpdateBrandConfig() {

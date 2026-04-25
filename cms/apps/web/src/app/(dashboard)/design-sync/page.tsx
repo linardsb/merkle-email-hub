@@ -47,24 +47,29 @@ export default function DesignSyncPage() {
 
   const projectOptions = projectsData?.items?.map((p) => ({ id: p.id, name: p.name })) ?? [];
 
-  const handleLinkProject = useCallback(async (connectionId: number, projectId: number | null) => {
-    setLinkingConnId(connectionId);
-    try {
-      // Need a small delay for the hook key to update
-      await new Promise((r) => setTimeout(r, 0));
-      await linkProject({ project_id: projectId });
-      await mutate(
-        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
-        undefined,
-        { revalidate: true },
-      );
-      toast.success(projectId ? "Connection linked to project" : "Connection unlinked from project");
-    } catch {
-      toast.error("Failed to link project");
-    } finally {
-      setLinkingConnId(null);
-    }
-  }, [linkProject, mutate]);
+  const handleLinkProject = useCallback(
+    async (connectionId: number, projectId: number | null) => {
+      setLinkingConnId(connectionId);
+      try {
+        // Need a small delay for the hook key to update
+        await new Promise((r) => setTimeout(r, 0));
+        await linkProject({ project_id: projectId });
+        await mutate(
+          (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
+          undefined,
+          { revalidate: true },
+        );
+        toast.success(
+          projectId ? "Connection linked to project" : "Connection unlinked from project",
+        );
+      } catch {
+        toast.error("Failed to link project");
+      } finally {
+        setLinkingConnId(null);
+      }
+    },
+    [linkProject, mutate],
+  );
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [syncingId, setSyncingId] = useState<number | null>(null);
@@ -81,7 +86,8 @@ export default function DesignSyncPage() {
   const [refreshTokenDialogOpen, setRefreshTokenDialogOpen] = useState(false);
   const [refreshTokenConnId, setRefreshTokenConnId] = useState<number | null>(null);
   const [refreshTokenValue, setRefreshTokenValue] = useState("");
-  const { trigger: refreshToken, isMutating: isRefreshing } = useRefreshConnectionToken(refreshTokenConnId);
+  const { trigger: refreshToken, isMutating: isRefreshing } =
+    useRefreshConnectionToken(refreshTokenConnId);
 
   // File browser selection state
   const [browserNodeIds, setBrowserNodeIds] = useState<string[]>([]);
@@ -99,7 +105,9 @@ export default function DesignSyncPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       const conn = connections?.find((c) => c.id === id);
-      const label = conn?.provider ? conn.provider.charAt(0).toUpperCase() + conn.provider.slice(1) : "Design tool";
+      const label = conn?.provider
+        ? conn.provider.charAt(0).toUpperCase() + conn.provider.slice(1)
+        : "Design tool";
       const status = err instanceof ApiError ? err.status : 0;
       if (status === 429) {
         toast.error("Too many requests. Please wait a moment and try again.", {
@@ -123,26 +131,30 @@ export default function DesignSyncPage() {
   };
 
   // Uses authFetch directly to avoid useSWRMutation trigger issues
-  const handleDelete = useCallback(async (id: number) => {
-    if (!confirm("Remove this connection? This cannot be undone.")) return;
-    try {
-      const res = await authFetch("/api/v1/design-sync/connections/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) throw new Error("Failed to delete");
-      await mutate(
-        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
-        undefined,
-        { revalidate: true },
-      );
-      if (selectedId === id) setSelectedId(null);
-      toast.success("Connection removed");
-    } catch {
-      toast.error("Failed to remove connection");
-    }
-  }, [mutate, selectedId]);
+  const handleDelete = useCallback(
+    async (id: number) => {
+      // eslint-disable-next-line no-alert -- replace with modal confirm; tracked in eslint-debt.md
+      if (!confirm("Remove this connection? This cannot be undone.")) return;
+      try {
+        const res = await authFetch("/api/v1/design-sync/connections/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        if (!res.ok) throw new Error("Failed to delete");
+        await mutate(
+          (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
+          undefined,
+          { revalidate: true },
+        );
+        if (selectedId === id) setSelectedId(null);
+        toast.success("Connection removed");
+      } catch {
+        toast.error("Failed to remove connection");
+      }
+    },
+    [mutate, selectedId],
+  );
 
   const handleRefreshToken = async () => {
     if (!refreshTokenValue.trim() || !refreshTokenConnId) return;
@@ -196,15 +208,15 @@ export default function DesignSyncPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Paintbrush className="h-6 w-6 text-foreground" />
-          <h1 className="text-2xl font-bold text-foreground">{"Design Sync"}</h1>
+          <Paintbrush className="text-foreground h-6 w-6" />
+          <h1 className="text-foreground text-2xl font-bold">{"Design Sync"}</h1>
         </div>
-        <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
-          <p className="text-sm text-foreground-muted">{"Failed to load design connections"}</p>
+        <div className="border-card-border bg-card-bg rounded-lg border px-4 py-12 text-center">
+          <p className="text-foreground-muted text-sm">{"Failed to load design connections"}</p>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="mt-2 text-sm font-medium text-interactive hover:underline"
+            className="text-interactive mt-2 text-sm font-medium hover:underline"
           >
             {"Try again"}
           </button>
@@ -218,23 +230,25 @@ export default function DesignSyncPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Paintbrush className="h-6 w-6 text-foreground" />
+          <Paintbrush className="text-foreground h-6 w-6" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{"Design Sync"}</h1>
-            <p className="text-sm text-foreground-muted">{"Connect design files to extract tokens and sync design systems"}</p>
+            <h1 className="text-foreground text-2xl font-bold">{"Design Sync"}</h1>
+            <p className="text-foreground-muted text-sm">
+              {"Connect design files to extract tokens and sync design systems"}
+            </p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setDialogOpen(true)}
-          className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+          className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
         >
           {"Connect Design File"}
         </button>
       </div>
 
       {/* Provider filter tabs */}
-      <div className="flex gap-1 rounded-lg border border-card-border bg-card-bg p-1">
+      <div className="border-card-border bg-card-bg flex gap-1 rounded-lg border p-1">
         {FILTER_TABS.map((tab) => (
           <button
             key={tab.value}
@@ -256,12 +270,14 @@ export default function DesignSyncPage() {
         <EmptyState
           icon={Paintbrush}
           title={"No design connections"}
-          description={"Connect a design file to extract colors, typography, and spacing tokens for your email templates."}
+          description={
+            "Connect a design file to extract colors, typography, and spacing tokens for your email templates."
+          }
           action={
             <button
               type="button"
               onClick={() => setDialogOpen(true)}
-              className="text-sm font-medium text-interactive hover:underline"
+              className="text-interactive text-sm font-medium hover:underline"
             >
               {"Connect Design File"}
             </button>
@@ -292,18 +308,18 @@ export default function DesignSyncPage() {
       {showTokens && selectedId !== null && selectedConnection && (
         <div className="space-y-6">
           {/* File Browser */}
-          <div className="rounded-lg border border-card-border bg-card-bg p-5">
+          <div className="border-card-border bg-card-bg rounded-lg border p-5">
             <DesignFileBrowser
               connectionId={selectedId}
               selectedNodeIds={browserNodeIds}
               onSelectionChange={setBrowserNodeIds}
             />
             {browserNodeIds.length > 0 && (
-              <div className="mt-3 flex justify-end border-t border-card-border pt-3">
+              <div className="border-card-border mt-3 flex justify-end border-t pt-3">
                 <button
                   type="button"
                   onClick={() => openImportWithSelection(selectedId, selectedConnection.name)}
-                  className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+                  className="bg-interactive text-foreground-inverse hover:bg-interactive-hover flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
                 >
                   <Download className="h-4 w-4" />
                   {"Import Selected Frames"}
@@ -313,10 +329,8 @@ export default function DesignSyncPage() {
           </div>
 
           {/* Design Tokens */}
-          <div className="rounded-lg border border-card-border bg-card-bg p-5">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">
-              {"Design Tokens"}
-            </h2>
+          <div className="border-card-border bg-card-bg rounded-lg border p-5">
+            <h2 className="text-foreground mb-4 text-lg font-semibold">{"Design Tokens"}</h2>
             <DesignTokensView connectionId={selectedId} />
           </div>
         </div>
@@ -336,7 +350,10 @@ export default function DesignSyncPage() {
       )}
 
       {/* Refresh Token Dialog */}
-      <Dialog open={refreshTokenDialogOpen} onOpenChange={isRefreshing ? undefined : setRefreshTokenDialogOpen}>
+      <Dialog
+        open={refreshTokenDialogOpen}
+        onOpenChange={isRefreshing ? undefined : setRefreshTokenDialogOpen}
+      >
         <DialogContent className="max-w-[28rem]">
           <DialogHeader>
             <DialogTitle>{"Refresh Access Token"}</DialogTitle>
@@ -346,7 +363,10 @@ export default function DesignSyncPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label htmlFor="refresh-token" className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="refresh-token"
+                className="text-foreground mb-1.5 block text-sm font-medium"
+              >
                 {"New Access Token"}
               </label>
               <input
@@ -356,9 +376,9 @@ export default function DesignSyncPage() {
                 onChange={(e) => setRefreshTokenValue(e.target.value)}
                 placeholder="figd_..."
                 disabled={isRefreshing}
-                className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus disabled:opacity-50"
+                className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:opacity-50"
               />
-              <p className="mt-1 text-xs text-foreground-muted">
+              <p className="text-foreground-muted mt-1 text-xs">
                 {"Generate a new token from your design tool's developer settings."}
               </p>
             </div>
@@ -367,7 +387,7 @@ export default function DesignSyncPage() {
                 type="button"
                 onClick={() => setRefreshTokenDialogOpen(false)}
                 disabled={isRefreshing}
-                className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+                className="border-border text-foreground hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm transition-colors"
               >
                 {"Cancel"}
               </button>
@@ -375,7 +395,7 @@ export default function DesignSyncPage() {
                 type="button"
                 onClick={handleRefreshToken}
                 disabled={!refreshTokenValue.trim() || isRefreshing}
-                className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+                className="bg-interactive text-foreground-inverse hover:bg-interactive-hover rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isRefreshing ? (
                   <span className="flex items-center gap-1.5">

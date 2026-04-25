@@ -10,11 +10,7 @@ export const metadata: Metadata = {
   description: "Centralised email development platform with AI-powered agents",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const swrConfig = { revalidateOnFocus: false, dedupingInterval: 5000 };
 
   return (

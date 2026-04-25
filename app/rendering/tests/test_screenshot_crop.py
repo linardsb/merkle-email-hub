@@ -7,6 +7,7 @@ import io
 from PIL import Image
 
 from app.rendering.screenshot_crop import crop_section
+from app.shared.imaging import safe_image_open
 
 
 def _make_solid_png(w: int, h: int, rgb: tuple[int, int, int] = (128, 128, 128)) -> bytes:
@@ -17,7 +18,7 @@ def _make_solid_png(w: int, h: int, rgb: tuple[int, int, int] = (128, 128, 128))
 
 
 def _png_dimensions(data: bytes) -> tuple[int, int]:
-    img = Image.open(io.BytesIO(data))
+    img = safe_image_open(io.BytesIO(data))
     return img.size  # (width, height)
 
 

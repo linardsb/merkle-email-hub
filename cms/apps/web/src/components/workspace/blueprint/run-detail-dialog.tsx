@@ -11,12 +11,7 @@ import {
 } from "@email-hub/ui/components/ui/dialog";
 import { Button } from "@email-hub/ui/components/ui/button";
 import { Badge } from "@email-hub/ui/components/ui/badge";
-import {
-  PipelineTimeline,
-  StatusBanner,
-  CollapsibleHandoffs,
-  formatNodeName,
-} from "./shared";
+import { PipelineTimeline, StatusBanner, CollapsibleHandoffs, formatNodeName } from "./shared";
 import { RunCheckpoints } from "./run-checkpoints";
 import type { BlueprintRunRecord } from "@/types/blueprint-runs";
 
@@ -39,24 +34,23 @@ export function RunDetailDialog({
 
   const runData = run.run_data;
   const formattedDate = new Date(run.created_at).toLocaleString();
-  const isResumable = (run.status === "failed" || run.status === "cost_cap_exceeded") && run.checkpoint_count > 0;
+  const isResumable =
+    (run.status === "failed" || run.status === "cost_cap_exceeded") && run.checkpoint_count > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[52rem] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[52rem]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
             {"Blueprint Run Details"}
           </DialogTitle>
-          <DialogDescription>
-            {run.brief_excerpt}
-          </DialogDescription>
+          <DialogDescription>{run.brief_excerpt}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
             <span>{formattedDate}</span>
             <span>·</span>
             <span>{`${(run.duration_ms / 1000).toFixed(1)}s`}</span>
@@ -65,7 +59,10 @@ export function RunDetailDialog({
             {run.resumed_from && (
               <>
                 <span>·</span>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
+                <Badge
+                  variant="outline"
+                  className="border-primary/50 text-primary px-1.5 py-0 text-[10px]"
+                >
                   {`Resumed from ${run.resumed_from.slice(0, 8)}`}
                 </Badge>
               </>
@@ -77,19 +74,22 @@ export function RunDetailDialog({
               <StatusBanner status={runData.status} qaPassed={runData.qa_passed ?? false} />
 
               {runData.audience_summary && (
-                <div className="rounded-lg border border-border bg-muted/50 p-3">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                <div className="border-border bg-muted/50 rounded-lg border p-3">
+                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
                     {"Audience Summary"}
                   </p>
-                  <p className="mt-1 text-xs text-foreground">{runData.audience_summary}</p>
+                  <p className="text-foreground mt-1 text-xs">{runData.audience_summary}</p>
                 </div>
               )}
 
-              <PipelineTimeline progress={runData.progress} handoffHistory={runData.handoff_history} />
+              <PipelineTimeline
+                progress={runData.progress}
+                handoffHistory={runData.handoff_history}
+              />
 
               {(runData.skipped_nodes ?? []).length > 0 && (
-                <div className="rounded-lg border border-border bg-muted/50 p-3">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                <div className="border-border bg-muted/50 rounded-lg border p-3">
+                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
                     {"Skipped Nodes"}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
@@ -105,14 +105,13 @@ export function RunDetailDialog({
               <CollapsibleHandoffs handoffs={runData.handoff_history ?? []} />
 
               {(run.checkpoint_count > 0 || (runData.checkpoint_count ?? 0) > 0) && (
-                <RunCheckpoints
-                  runId={runData.run_id}
-                  resumedFromNode={runData.resumed_from}
-                />
+                <RunCheckpoints runId={runData.run_id} resumedFromNode={runData.resumed_from} />
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">{"Full run data is not available for this run."}</p>
+            <p className="text-muted-foreground text-sm">
+              {"Full run data is not available for this run."}
+            </p>
           )}
         </div>
 
@@ -123,14 +122,22 @@ export function RunDetailDialog({
           {isResumable && onResumeRun && (
             <Button
               variant="outline"
-              onClick={() => { onResumeRun(run); onOpenChange(false); }}
+              onClick={() => {
+                onResumeRun(run);
+                onOpenChange(false);
+              }}
             >
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
               {"Resume Run"}
             </Button>
           )}
           {runData?.html && onApplyResult && (
-            <Button onClick={() => { onApplyResult(runData.html); onOpenChange(false); }}>
+            <Button
+              onClick={() => {
+                onApplyResult(runData.html);
+                onOpenChange(false);
+              }}
+            >
               {"Apply Result"}
             </Button>
           )}

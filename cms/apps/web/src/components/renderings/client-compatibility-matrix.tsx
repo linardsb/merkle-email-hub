@@ -34,7 +34,7 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
   const clients = useMemo(() => {
     const seen = new Map<string, DerivedClient>();
     for (const test of tests) {
-      for (const s of (test.screenshots ?? [])) {
+      for (const s of test.screenshots ?? []) {
         if (!seen.has(s.client_name)) {
           seen.set(s.client_name, { name: s.client_name, category: s.category ?? "" });
         }
@@ -56,17 +56,22 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-card-border bg-card-bg p-6">
-      <h2 className="text-lg font-semibold text-foreground">{"Compatibility Matrix"}</h2>
-      <p className="mt-1 text-sm text-foreground-muted">{"Pass/warn/fail status per email client across recent test runs"}</p>
+    <div className="border-card-border bg-card-bg rounded-lg border p-6">
+      <h2 className="text-foreground text-lg font-semibold">{"Compatibility Matrix"}</h2>
+      <p className="text-foreground-muted mt-1 text-sm">
+        {"Pass/warn/fail status per email client across recent test runs"}
+      </p>
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-card-border">
-              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{"Client"}</th>
+            <tr className="border-card-border border-b">
+              <th className="text-foreground-muted pb-2 pr-4 text-left font-medium">{"Client"}</th>
               {recentTests.map((test) => (
-                <th key={test.id} className="px-2 pb-2 text-center font-medium text-foreground-muted">
+                <th
+                  key={test.id}
+                  className="text-foreground-muted px-2 pb-2 text-center font-medium"
+                >
                   {formatShortDate(test.created_at)}
                 </th>
               ))}
@@ -79,14 +84,14 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
               return [
                 <tr key={`header-${cat.key}`}>
                   <td colSpan={1 + recentTests.length} className="pb-1 pt-4">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                    <span className="text-foreground-muted text-xs font-semibold uppercase tracking-wider">
                       {cat.label}
                     </span>
                   </td>
                 </tr>,
                 ...catClients.map((client) => (
-                  <tr key={client.name} className="border-b border-card-border/50">
-                    <td className="py-2 pr-4 text-foreground">{client.name}</td>
+                  <tr key={client.name} className="border-card-border/50 border-b">
+                    <td className="text-foreground py-2 pr-4">{client.name}</td>
                     {recentTests.map((test) => {
                       const status = getScreenshotStatus(test, client.name);
                       return (
