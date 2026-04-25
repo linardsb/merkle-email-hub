@@ -1,4 +1,4 @@
-.PHONY: bootstrap check-env dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana lint-polling help
+.PHONY: bootstrap check-env ci ci-be ci-fe dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana lint-polling help
 
 # === Local Development ===
 
@@ -146,6 +146,23 @@ converter-data-regression-report: ## Generate per-case regression reports
 check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks (backend + frontend + security)
 
 check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks including migration lint
+
+ci: ci-be ci-fe ## Mirror CI exactly: backend (lint+types+tests+security) + frontend (lint+format+types+tests)
+
+ci-be: ## Backend CI mirror: ruff format/check + mypy + pyright + pytest (+coverage) + bandit
+	uv run ruff format --check .
+	uv run ruff check .
+	uv run mypy app/
+	uv run pyright app/
+	uv run ruff check app/ --select=S --ignore=S311 --no-fix
+	uv run pytest -v -m "not integration" --cov=app --cov-report=term
+
+ci-fe: ## Frontend CI mirror: pnpm install + lint + format:check + type-check + test
+	cd cms && pnpm install --frozen-lockfile
+	cd cms && pnpm --filter @email-hub/web lint
+	cd cms && pnpm --filter @email-hub/web format:check
+	cd cms && pnpm --filter @email-hub/web type-check
+	cd cms && pnpm --filter @email-hub/web test
 
 validate-overlays: ## Validate per-client skill overlay files
 	uv run python scripts/validate-overlays.py

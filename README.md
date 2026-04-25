@@ -1,5 +1,7 @@
 # [REDACTED] Email Innovation Hub
 
+[![CI](https://github.com/linardsb/merkle-email-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/linardsb/merkle-email-hub/actions/workflows/ci.yml)
+
 Centralised email development platform with AI-powered agents. Build, preview, QA, and export HTML emails from a single workspace — CMS-agnostic, security-first, GDPR-compliant.
 
 Built on open-source technologies with zero licence fees: FastAPI + Next.js 16 + PostgreSQL + Redis.
