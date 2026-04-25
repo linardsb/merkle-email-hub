@@ -35,8 +35,9 @@ if echo "$STAGED_FILES" | grep -E '\.env($|\.)' | grep -vq '\.env\.example$'; th
   FOUND_SECRETS=1
 fi
 
-# Check for common credential files (exclude source code — .py/.ts/.tsx/.md are never credential files)
-if echo "$STAGED_FILES" | grep -viE '\.(py|ts|tsx|md|yaml|json)$' | grep -qiE '(credentials|secrets|private.key|\.pem|\.p12|\.pfx|id_rsa|id_ed25519)'; then
+# Check for common credential files (exclude source code — .py/.ts/.tsx/.md are never credential files;
+# .secrets.baseline is the detect-secrets reference file and is meant to be committed)
+if echo "$STAGED_FILES" | grep -vE '(^|/)\.secrets\.baseline$' | grep -viE '\.(py|ts|tsx|md|yaml|json)$' | grep -qiE '(credentials|secrets|private.key|\.pem|\.p12|\.pfx|id_rsa|id_ed25519)'; then
   echo "BLOCKED: Staged file looks like a credential/key file." >&2
   FOUND_SECRETS=1
 fi

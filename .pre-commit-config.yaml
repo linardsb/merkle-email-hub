@@ -45,7 +45,8 @@ repos:
     hooks:
       - id: falsy-numeric-trap
         name: falsy numeric or-default check
-        entry: bash -c 'matches=$(grep -rn "\bor -\?[0-9]" app/design_sync/ --include="*.py" | grep -v "# noqa: falsy-or" | grep -v "/tests/" | grep -v "^\s*#"); if [ -n "$matches" ]; then echo "$matches"; echo "ERROR: Use \"x if x is not None else default\" instead of \"x or <number>\""; exit 1; fi'
+        entry: >-
+          bash -c 'matches=$(grep -rn "\bor -\?[0-9]" app/design_sync/ --include="*.py" | grep -v "# noqa: falsy-or" | grep -v "/tests/" | grep -v "^\s*#"); if [ -n "$matches" ]; then echo "$matches"; echo "ERROR: Use \"x if x is not None else default\" instead of \"x or <number>\""; exit 1; fi'
         language: system
         pass_filenames: false
         files: ^app/design_sync/.*\.py$
