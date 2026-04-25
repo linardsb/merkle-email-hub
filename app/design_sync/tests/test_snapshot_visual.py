@@ -159,8 +159,10 @@ async def _diff_images(
         # Dimension mismatch — resize rendered to match design, retry
         from PIL import Image
 
-        design_img = Image.open(design_path)
-        rendered_img = Image.open(rendered_path)
+        from app.shared.imaging import safe_image_open
+
+        design_img = safe_image_open(design_path)
+        rendered_img = safe_image_open(rendered_path)
         if design_img.size != rendered_img.size:
             resized = rendered_img.resize(design_img.size, Image.Resampling.LANCZOS)
             resized_path = output_dir / "rendered_resized.png"

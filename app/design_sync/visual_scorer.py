@@ -17,6 +17,7 @@ from skimage.metrics import structural_similarity
 
 from app.core.logging import get_logger
 from app.design_sync.figma.layout_analyzer import EmailSection
+from app.shared.imaging import safe_image_open
 
 logger = get_logger(__name__)
 
@@ -50,7 +51,7 @@ class FidelityScore:
 
 def _load_grayscale(image_bytes: bytes) -> np.ndarray:
     """Load PNG bytes as a float64 grayscale numpy array."""
-    img = Image.open(io.BytesIO(image_bytes)).convert("L")
+    img = safe_image_open(io.BytesIO(image_bytes)).convert("L")
     return np.asarray(img, dtype=np.float64)
 
 

@@ -264,9 +264,9 @@ class ImageImporter:
                 logger.debug("template_upload.svg_dimension_parse_failed", mime=mime_type)
             return 0, 0
         try:
-            from PIL import Image
+            from app.shared.imaging import safe_image_open
 
-            img = Image.open(BytesIO(data))
+            img = safe_image_open(BytesIO(data))
             return img.size
         except Exception:
             return 0, 0

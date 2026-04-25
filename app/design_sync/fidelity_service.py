@@ -20,6 +20,7 @@ from app.core.logging import get_logger
 from app.design_sync.exceptions import FidelityScoringError
 from app.design_sync.figma.layout_analyzer import DesignLayoutDescription, EmailSection
 from app.design_sync.visual_scorer import FidelityScore, classify_severity, score_fidelity
+from app.shared.imaging import safe_image_open
 
 if TYPE_CHECKING:
     from app.auth.models import User
@@ -143,7 +144,7 @@ class VisualFidelityService:
         images: list[PILImage.Image] = []
         for section in sorted_sections:
             raw = image_bytes_map[section.node_id]
-            images.append(PILImage.open(io.BytesIO(raw)).convert("RGB"))
+            images.append(safe_image_open(io.BytesIO(raw)).convert("RGB"))
 
         # Vertical concatenation
         total_width = max(img.width for img in images)
