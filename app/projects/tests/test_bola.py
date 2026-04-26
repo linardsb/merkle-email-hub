@@ -1,13 +1,27 @@
-# pyright: reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportCallIssue=false
+# pyright: reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportCallIssue=false, reportFunctionMemberAccess=false, reportUnusedFunction=false
 """BOLA authorization tests for project endpoints."""
 
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from app.core.exceptions import ForbiddenError
+from app.core.rate_limit import limiter
+from app.core.scoped_db import TenantAccess
 from app.projects.exceptions import ProjectAccessDeniedError
+from app.projects.routes import list_projects
 from app.projects.schemas import ProjectUpdate
 from app.projects.service import ProjectService
+from app.shared.schemas import PaginationParams
+
+
+@pytest.fixture
+def _disable_limiter():
+    """Disable slowapi rate limiter so route handlers can be called directly."""
+    prev = limiter.enabled
+    limiter.enabled = False
+    yield
+    limiter.enabled = prev
 
 
 @pytest.fixture
@@ -88,3 +102,93 @@ async def test_delete_project_allowed_for_admin(service):
 
     await service.delete_project(1, _make_admin())
     service.projects.delete.assert_awaited_once()
+
+
+# ── F003: list_projects?client_org_id= cross-tenant guard ──
+
+
+def _service_with_access(access: TenantAccess) -> tuple[ProjectService, AsyncMock]:
+    """Build a ProjectService whose db.session.info carries tenant_access.
+
+    Returns the service plus the `list_projects` AsyncMock so callers can
+    assert call counts without tripping pyright on a method-assigned mock.
+    """
+    mock_db = MagicMock()
+    mock_db.info = {"tenant_access": access}
+    svc = ProjectService(mock_db)
+    list_mock = AsyncMock(return_value=MagicMock())
+    svc.list_projects = list_mock  # type: ignore[method-assign]
+    return svc, list_mock
+
+
+@pytest.mark.tenant_isolation
+async def test_list_projects_rejects_unauthorized_client_org_id_for_non_admin(_disable_limiter):
+    """F003: non-admin asking for client_org_id outside their orgs is rejected."""
+    access = TenantAccess(project_ids=frozenset({1}), org_ids=frozenset({10}), role="developer")
+    svc, list_mock = _service_with_access(access)
+    user = _make_non_member()
+
+    with pytest.raises(ForbiddenError, match="does not have access to client org 99"):
+        await list_projects(
+            request=MagicMock(),
+            pagination=PaginationParams(),
+            client_org_id=99,
+            search=None,
+            service=svc,
+            current_user=user,
+        )
+    list_mock.assert_not_awaited()
+
+
+@pytest.mark.tenant_isolation
+async def test_list_projects_allows_authorized_client_org_id_for_non_admin(_disable_limiter):
+    """Non-admin asking for an org they belong to passes through."""
+    access = TenantAccess(project_ids=frozenset({1}), org_ids=frozenset({10}), role="developer")
+    svc, list_mock = _service_with_access(access)
+    user = _make_non_member()
+
+    await list_projects(
+        request=MagicMock(),
+        pagination=PaginationParams(),
+        client_org_id=10,
+        search=None,
+        service=svc,
+        current_user=user,
+    )
+    list_mock.assert_awaited_once()
+
+
+@pytest.mark.tenant_isolation
+async def test_list_projects_admin_bypasses_client_org_check(_disable_limiter):
+    """Admin requesting any client_org_id skips the membership check (sentinel = None)."""
+    access = TenantAccess(project_ids=None, org_ids=None, role="admin")
+    svc, list_mock = _service_with_access(access)
+    user = _make_admin()
+
+    await list_projects(
+        request=MagicMock(),
+        pagination=PaginationParams(),
+        client_org_id=999,
+        search=None,
+        service=svc,
+        current_user=user,
+    )
+    list_mock.assert_awaited_once()
+
+
+@pytest.mark.tenant_isolation
+async def test_list_projects_no_client_org_id_skips_check(_disable_limiter):
+    """No client_org_id filter → no membership check fires."""
+    access = TenantAccess(project_ids=frozenset({1}), org_ids=frozenset({10}), role="developer")
+    svc, list_mock = _service_with_access(access)
+    user = _make_non_member()
+
+    await list_projects(
+        request=MagicMock(),
+        pagination=PaginationParams(),
+        client_org_id=None,
+        search=None,
+        service=svc,
+        current_user=user,
+    )
+    list_mock.assert_awaited_once()

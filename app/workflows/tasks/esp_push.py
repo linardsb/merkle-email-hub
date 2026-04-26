@@ -27,9 +27,9 @@ class ESPPushTask:
 
         from app.connectors.schemas import ExportRequest
         from app.connectors.service import ConnectorService
-        from app.core.database import get_db_context
+        from app.core.scoped_db import get_system_db_context
 
-        async with get_db_context() as db:
+        async with get_system_db_context() as db:
             service = ConnectorService(db)
 
             logger.info(

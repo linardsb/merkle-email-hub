@@ -9,9 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
-from app.core.database import get_db
-from app.core.exceptions import DomainValidationError
+from app.core.exceptions import DomainValidationError, ForbiddenError
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db, scoped_access
 from app.projects.design_system import DesignSystem
 from app.projects.schemas import (
     ClientOrgCreate,
@@ -32,7 +32,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1", tags=["projects"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ProjectService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> ProjectService:
     return ProjectService(db)
 
 
@@ -76,10 +76,19 @@ async def list_projects(
     client_org_id: int | None = Query(None),
     search: str | None = Query(None, max_length=200),
     service: ProjectService = Depends(get_service),
-    _current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[ProjectResponse]:
-    """List projects with optional client org filter."""
+    """List projects with optional client org filter.
+
+    Closes F003: a non-admin caller asking for `client_org_id=X` is
+    rejected unless X is an org they actually belong to (resolved via
+    `ProjectMember`). Admins may pass any org.
+    """
     _ = request
+    if client_org_id is not None and current_user.role != "admin":
+        access = scoped_access(service.db)
+        if access.org_ids is None or client_org_id not in access.org_ids:
+            raise ForbiddenError(f"User does not have access to client org {client_org_id}")
     return await service.list_projects(pagination, client_org_id=client_org_id, search=search)
 
 

@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.scoped_db import scoped_access
 from app.shared.models import utcnow
 from app.shared.utils import escape_like
 from app.templates.models import Template, TemplateVersion
@@ -20,7 +21,11 @@ class TemplateRepository:
         self.db = db
 
     async def get(self, template_id: int) -> Template | None:
-        result = await self.db.execute(select(Template).where(Template.id == template_id))
+        access = scoped_access(self.db)
+        query = select(Template).where(Template.id == template_id)
+        if access.project_ids is not None:
+            query = query.where(Template.project_id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def list(
@@ -32,10 +37,13 @@ class TemplateRepository:
         search: str | None = None,
         status: str | None = None,
     ) -> Sequence[Template]:
+        access = scoped_access(self.db)
         query = select(Template).where(
             Template.project_id == project_id,
             Template.deleted_at.is_(None),
         )
+        if access.project_ids is not None:
+            query = query.where(Template.project_id.in_(access.project_ids))
         if search:
             pattern = f"%{escape_like(search)}%"
             query = query.where(Template.name.ilike(pattern))
@@ -52,6 +60,7 @@ class TemplateRepository:
         search: str | None = None,
         status: str | None = None,
     ) -> int:
+        access = scoped_access(self.db)
         query = (
             select(func.count())
             .select_from(Template)
@@ -60,6 +69,8 @@ class TemplateRepository:
                 Template.deleted_at.is_(None),
             )
         )
+        if access.project_ids is not None:
+            query = query.where(Template.project_id.in_(access.project_ids))
         if search:
             pattern = f"%{escape_like(search)}%"
             query = query.where(Template.name.ilike(pattern))
@@ -108,11 +119,15 @@ class TemplateRepository:
     # -- Versions --
 
     async def get_latest_version_number(self, template_id: int) -> int:
-        result = await self.db.execute(
-            select(func.max(TemplateVersion.version_number)).where(
-                TemplateVersion.template_id == template_id
-            )
+        access = scoped_access(self.db)
+        query = (
+            select(func.max(TemplateVersion.version_number))
+            .join(Template, Template.id == TemplateVersion.template_id)
+            .where(TemplateVersion.template_id == template_id)
         )
+        if access.project_ids is not None:
+            query = query.where(Template.project_id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return result.scalar_one() or 0
 
     async def create_version(
@@ -133,18 +148,29 @@ class TemplateRepository:
         return version
 
     async def get_versions(self, template_id: int) -> Sequence[TemplateVersion]:
-        result = await self.db.execute(
+        access = scoped_access(self.db)
+        query = (
             select(TemplateVersion)
+            .join(Template, Template.id == TemplateVersion.template_id)
             .where(TemplateVersion.template_id == template_id)
             .order_by(TemplateVersion.version_number.desc())
         )
+        if access.project_ids is not None:
+            query = query.where(Template.project_id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return list(result.scalars().all())
 
     async def get_version(self, template_id: int, version_number: int) -> TemplateVersion | None:
-        result = await self.db.execute(
-            select(TemplateVersion).where(
+        access = scoped_access(self.db)
+        query = (
+            select(TemplateVersion)
+            .join(Template, Template.id == TemplateVersion.template_id)
+            .where(
                 TemplateVersion.template_id == template_id,
                 TemplateVersion.version_number == version_number,
             )
         )
+        if access.project_ids is not None:
+            query = query.where(Template.project_id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()

@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import ColumnElement, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.expression import Select
 
+from app.core.scoped_db import scoped_access
 from app.qa_engine.models import QACheck, QAOverride, QAResult
 
 
@@ -27,6 +30,29 @@ def _build_filters(
     if passed is not None:
         filters.append(QAResult.passed == passed)
     return filters
+
+
+def _apply_project_scope(query: Select[Any], project_ids: frozenset[int]) -> Select[Any]:
+    """Restrict a `QAResult` query to results whose build OR template is in scope.
+
+    Both `build_id` and `template_version_id` are nullable; results with
+    neither set are deliberately excluded for non-admin callers (admin uses
+    the `None` sentinel and skips this entirely).
+    """
+    from app.email_engine.models import EmailBuild
+    from app.templates.models import Template, TemplateVersion
+
+    return (
+        query.outerjoin(EmailBuild, EmailBuild.id == QAResult.build_id)
+        .outerjoin(TemplateVersion, TemplateVersion.id == QAResult.template_version_id)
+        .outerjoin(Template, Template.id == TemplateVersion.template_id)
+        .where(
+            or_(
+                EmailBuild.project_id.in_(project_ids),
+                Template.project_id.in_(project_ids),
+            )
+        )
+    )
 
 
 class QARepository:
@@ -61,16 +87,24 @@ class QARepository:
         return result
 
     async def get_result_by_id(self, result_id: int) -> QAResult | None:
-        result = await self.db.execute(select(QAResult).where(QAResult.id == result_id))
+        access = scoped_access(self.db)
+        query = select(QAResult).where(QAResult.id == result_id)
+        if access.project_ids is not None:
+            query = _apply_project_scope(query, access.project_ids)
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def get_result_with_checks(self, result_id: int) -> QAResult | None:
         """Eagerly load checks and override relationships."""
-        result = await self.db.execute(
+        access = scoped_access(self.db)
+        query = (
             select(QAResult)
             .where(QAResult.id == result_id)
             .options(selectinload(QAResult.checks), selectinload(QAResult.override))
         )
+        if access.project_ids is not None:
+            query = _apply_project_scope(query, access.project_ids)
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def list_results(
@@ -82,6 +116,7 @@ class QARepository:
         offset: int = 0,
         limit: int = 20,
     ) -> Sequence[QAResult]:
+        access = scoped_access(self.db)
         filters = _build_filters(
             build_id=build_id, template_version_id=template_version_id, passed=passed
         )
@@ -93,6 +128,8 @@ class QARepository:
             .offset(offset)
             .limit(limit)
         )
+        if access.project_ids is not None:
+            query = _apply_project_scope(query, access.project_ids)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
@@ -103,10 +140,13 @@ class QARepository:
         template_version_id: int | None = None,
         passed: bool | None = None,
     ) -> int:
+        access = scoped_access(self.db)
         filters = _build_filters(
             build_id=build_id, template_version_id=template_version_id, passed=passed
         )
         query = select(func.count()).select_from(QAResult).where(*filters)
+        if access.project_ids is not None:
+            query = _apply_project_scope(query, access.project_ids)
         result = await self.db.execute(query)
         return result.scalar_one()
 
@@ -116,6 +156,7 @@ class QARepository:
         build_id: int | None = None,
         template_version_id: int | None = None,
     ) -> QAResult | None:
+        access = scoped_access(self.db)
         filters = _build_filters(build_id=build_id, template_version_id=template_version_id)
         query = (
             select(QAResult)
@@ -124,6 +165,8 @@ class QARepository:
             .order_by(QAResult.created_at.desc())
             .limit(1)
         )
+        if access.project_ids is not None:
+            query = _apply_project_scope(query, access.project_ids)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 

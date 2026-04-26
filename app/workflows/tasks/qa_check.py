@@ -23,11 +23,11 @@ class QACheckTask:
     async def execute(self, inputs: dict[str, Any]) -> dict[str, Any]:
         validated = self.validate_inputs(inputs)
 
-        from app.core.database import get_db_context
+        from app.core.scoped_db import get_system_db_context
         from app.qa_engine.schemas import QARunRequest
         from app.qa_engine.service import QAEngineService
 
-        async with get_db_context() as db:
+        async with get_system_db_context() as db:
             service = QAEngineService(db)
             request = QARunRequest(
                 html=validated["html"],

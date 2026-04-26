@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from app.core.config import get_settings
-from app.core.database import get_db_context
 from app.core.logging import get_logger
 from app.core.poller import DataPoller
+from app.core.scoped_db import get_system_db_context
 from app.knowledge.embedding import get_embedding_provider
 from app.memory.service import MemoryService
 
@@ -68,7 +68,7 @@ class MemoryCompactionPoller(DataPoller):
 
     async def fetch(self) -> object:
         """Run compaction cycle."""
-        async with get_db_context() as db:
+        async with get_system_db_context() as db:
             provider = get_embedding_provider(settings)
             service = MemoryService(db, provider)
             stats = await service.run_compaction()

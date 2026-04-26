@@ -1,9 +1,10 @@
 # pyright: reportUnknownMemberType=false
 """Repository for memory entry database operations."""
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.scoped_db import scoped_access
 from app.memory.models import MemoryEntry
 
 
@@ -21,8 +22,21 @@ class MemoryRepository:
         return entry
 
     async def get_by_id(self, memory_id: int) -> MemoryEntry | None:
-        """Get a memory entry by ID."""
-        result = await self.db.execute(select(MemoryEntry).where(MemoryEntry.id == memory_id))
+        """Get a memory entry by ID, scoped to caller's accessible projects.
+
+        Globals (`project_id IS NULL`) are visible to every authenticated
+        caller; system-context callers see everything (admin sentinel).
+        """
+        access = scoped_access(self.db)
+        query = select(MemoryEntry).where(MemoryEntry.id == memory_id)
+        if access.project_ids is not None:
+            query = query.where(
+                or_(
+                    MemoryEntry.project_id.in_(access.project_ids),
+                    MemoryEntry.project_id.is_(None),
+                )
+            )
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def similarity_search(
@@ -39,6 +53,7 @@ class MemoryRepository:
         Returns (entry, similarity_score) tuples sorted by relevance.
         Decay weight is factored into ranking: score = cosine_sim * decay_weight.
         """
+        access = scoped_access(self.db)
         distance = MemoryEntry.embedding.cosine_distance(embedding)
         weighted_score = (1 - distance) * MemoryEntry.decay_weight
 
@@ -46,6 +61,14 @@ class MemoryRepository:
             MemoryEntry.embedding.is_not(None)
         )
 
+        if access.project_ids is not None:
+            # Caller can only ever see memories tied to their projects + globals.
+            query = query.where(
+                or_(
+                    MemoryEntry.project_id.in_(access.project_ids),
+                    MemoryEntry.project_id.is_(None),
+                )
+            )
         if project_id is not None:
             query = query.where(
                 (MemoryEntry.project_id == project_id) | (MemoryEntry.project_id.is_(None))

@@ -20,8 +20,8 @@ from app.connectors.tolgee.schemas import (
     TranslationSyncResponse,
 )
 from app.connectors.tolgee.service import TolgeeService
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 router = APIRouter(prefix="/api/v1/connectors/tolgee", tags=["tolgee"])
 
@@ -36,7 +36,7 @@ async def create_connection(
     request: Request,
     body: TolgeeConnectionRequest,
     user: User = Depends(require_role("developer")),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> TolgeeConnectionResponse:
     """Create a Tolgee TMS connection with encrypted PAT."""
     _ = request
@@ -53,7 +53,7 @@ async def sync_keys(
     request: Request,
     body: TranslationSyncRequest,
     user: User = Depends(require_role("developer")),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> TranslationSyncResponse:
     """Extract translatable keys from a template and push to Tolgee."""
     _ = request
@@ -70,7 +70,7 @@ async def pull_translations(
     request: Request,
     body: TranslationPullRequest,
     user: User = Depends(require_role("developer")),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> list[TranslationPullResponse]:
     """Pull translations from Tolgee for specified locales."""
     _ = request
@@ -87,7 +87,7 @@ async def build_locales(
     request: Request,
     body: LocaleBuildRequest,
     user: User = Depends(require_role("developer")),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> LocaleBuildResponse:
     """Build email template in multiple locales (pull + translate + Maizzle build)."""
     _ = request
@@ -104,7 +104,7 @@ async def get_connection(
     request: Request,
     connection_id: int,
     user: User = Depends(require_role("viewer")),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> TolgeeConnectionResponse:
     """Get a Tolgee connection by ID."""
     _ = request
@@ -121,7 +121,7 @@ async def get_languages(
     request: Request,
     connection_id: int,
     user: User = Depends(require_role("viewer")),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> list[TolgeeLanguage]:
     """List available languages for the connected Tolgee project."""
     _ = request

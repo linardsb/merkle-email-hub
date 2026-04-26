@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from app.core.scoped_db import TenantAccess
 from app.memory.models import MemoryEntry
 from app.memory.repository import MemoryRepository
 
@@ -28,9 +29,15 @@ def make_entry(
 
 @pytest.fixture
 def db() -> AsyncMock:
-    """Mock async database session."""
+    """Mock async database session.
+
+    `info` carries the system `TenantAccess` so repo methods that read
+    `scoped_access(self.db)` see admin-equivalent (no filter) — matches the
+    cross-tenant behaviour of unit tests that don't model a specific user.
+    """
     mock = AsyncMock()
     mock.add = MagicMock()
+    mock.info = {"tenant_access": TenantAccess(project_ids=None, org_ids=None, role="system")}
     return mock
 
 

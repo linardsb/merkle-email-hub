@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.scoped_db import scoped_access
 from app.projects.models import ClientOrg, Project, ProjectMember
 from app.projects.schemas import ClientOrgCreate, ProjectCreate, ProjectUpdate
 from app.shared.models import utcnow
@@ -21,27 +22,41 @@ class ClientOrgRepository:
         self.db = db
 
     async def get(self, org_id: int) -> ClientOrg | None:
-        result = await self.db.execute(select(ClientOrg).where(ClientOrg.id == org_id))
+        access = scoped_access(self.db)
+        query = select(ClientOrg).where(ClientOrg.id == org_id)
+        if access.org_ids is not None:
+            query = query.where(ClientOrg.id.in_(access.org_ids))
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def get_by_slug(self, slug: str) -> ClientOrg | None:
-        result = await self.db.execute(select(ClientOrg).where(ClientOrg.slug == slug))
+        access = scoped_access(self.db)
+        query = select(ClientOrg).where(ClientOrg.slug == slug)
+        if access.org_ids is not None:
+            query = query.where(ClientOrg.id.in_(access.org_ids))
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def list(
         self, *, offset: int = 0, limit: int = 100, active_only: bool = True
     ) -> Sequence[ClientOrg]:
+        access = scoped_access(self.db)
         query = select(ClientOrg)
         if active_only:
             query = query.where(ClientOrg.is_active.is_(True))
+        if access.org_ids is not None:
+            query = query.where(ClientOrg.id.in_(access.org_ids))
         query = query.order_by(ClientOrg.name).offset(offset).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
     async def count(self, *, active_only: bool = True) -> int:
+        access = scoped_access(self.db)
         query = select(func.count()).select_from(ClientOrg)
         if active_only:
             query = query.where(ClientOrg.is_active.is_(True))
+        if access.org_ids is not None:
+            query = query.where(ClientOrg.id.in_(access.org_ids))
         result = await self.db.execute(query)
         return result.scalar_one()
 
@@ -60,7 +75,11 @@ class ProjectRepository:
         self.db = db
 
     async def get(self, project_id: int) -> Project | None:
-        result = await self.db.execute(select(Project).where(Project.id == project_id))
+        access = scoped_access(self.db)
+        query = select(Project).where(Project.id == project_id)
+        if access.project_ids is not None:
+            query = query.where(Project.id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def list(
@@ -72,9 +91,12 @@ class ProjectRepository:
         active_only: bool = True,
         search: str | None = None,
     ) -> Sequence[Project]:
+        access = scoped_access(self.db)
         query = select(Project).where(Project.deleted_at.is_(None))
         if active_only:
             query = query.where(Project.is_active.is_(True))
+        if access.project_ids is not None:
+            query = query.where(Project.id.in_(access.project_ids))
         if client_org_id is not None:
             query = query.where(Project.client_org_id == client_org_id)
         if search:
@@ -91,9 +113,12 @@ class ProjectRepository:
         active_only: bool = True,
         search: str | None = None,
     ) -> int:
+        access = scoped_access(self.db)
         query = select(func.count()).select_from(Project).where(Project.deleted_at.is_(None))
         if active_only:
             query = query.where(Project.is_active.is_(True))
+        if access.project_ids is not None:
+            query = query.where(Project.id.in_(access.project_ids))
         if client_org_id is not None:
             query = query.where(Project.client_org_id == client_org_id)
         if search:

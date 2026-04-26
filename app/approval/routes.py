@@ -16,13 +16,13 @@ from app.approval.schemas import (
 from app.approval.service import ApprovalService
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 router = APIRouter(prefix="/api/v1/approvals", tags=["approvals"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ApprovalService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> ApprovalService:
     return ApprovalService(db)
 
 

@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import require_role
 from app.auth.models import User
 from app.core.config import get_settings
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.knowledge.embedding import get_embedding_provider
 from app.memory.schemas import (
     MemoryCreate,
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/memory", tags=["memory"])
 settings = get_settings()
 
 
-def _get_service(db: AsyncSession = Depends(get_db)) -> MemoryService:
+def _get_service(db: AsyncSession = Depends(get_scoped_db)) -> MemoryService:
     """Build MemoryService with embedding provider from settings."""
     provider = get_embedding_provider(settings)
     return MemoryService(db, provider)

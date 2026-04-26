@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.qa_engine.meta_eval_routes import router as meta_eval_router
 from app.qa_engine.schemas import (
     BIMICheckRequest,
@@ -41,7 +41,7 @@ router = APIRouter(prefix="/api/v1/qa", tags=["qa-engine"])
 router.include_router(meta_eval_router)
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> QAEngineService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> QAEngineService:
     return QAEngineService(db)
 
 

@@ -10,13 +10,13 @@ from app.auth.models import User
 from app.connectors.qa_gate_schemas import ExportPreCheckRequest, ExportPreCheckResponse
 from app.connectors.schemas import ExportRequest, ExportResponse
 from app.connectors.service import ConnectorService
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 router = APIRouter(prefix="/api/v1/connectors", tags=["connectors"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ConnectorService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> ConnectorService:
     return ConnectorService(db)
 
 

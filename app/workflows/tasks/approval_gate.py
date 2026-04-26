@@ -30,9 +30,9 @@ class ApprovalGateTask:
         from app.approval.schemas import ApprovalCreate
         from app.approval.service import ApprovalService
         from app.auth.models import User
-        from app.core.database import get_db_context
+        from app.core.scoped_db import get_system_db_context
 
-        async with get_db_context() as db:
+        async with get_system_db_context() as db:
             service = ApprovalService(db)
 
             logger.info(

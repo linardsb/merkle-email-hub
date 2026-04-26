@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.templates import get_template_registry
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.logging import get_logger
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.shared.schemas import PaginatedResponse, PaginationParams
 from app.templates.schemas import (
     TemplateCreate,
@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["templates"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> TemplateService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> TemplateService:
     return TemplateService(db)
 
 

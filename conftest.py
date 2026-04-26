@@ -1,3 +1,4 @@
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnusedFunction=false
 """Root pytest configuration and shared fixtures.
 
 Provides fixtures available to ALL test modules across the application.
@@ -13,7 +14,52 @@ from fastapi.testclient import TestClient
 
 from app.auth.dependencies import clear_user_cache
 from app.core.config import get_settings
+from app.core.scoped_db import TenantAccess
 from app.main import app
+
+# Modules that import `scoped_access` directly. Unit tests use AsyncMock
+# sessions which can't carry `session.info["tenant_access"]` naturally; the
+# autouse fixture below replaces `scoped_access` with a constant that returns
+# system-equivalent access (no filter), so unrelated tests don't have to
+# stamp every mock. Integration tests that exercise the real scoping path go
+# through `get_scoped_db` and are unaffected.
+_SCOPED_ACCESS_IMPORTERS = (
+    "app.approval.repository",
+    "app.memory.repository",
+    "app.memory.service",
+    "app.projects.repository",
+    "app.qa_engine.repository",
+    "app.templates.repository",
+)
+_SYSTEM_TEST_ACCESS = TenantAccess(project_ids=None, org_ids=None, role="system")
+
+
+@pytest.fixture(autouse=True)
+def _bypass_scoped_access_in_unit_tests(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
+    """Patch `scoped_access` to return system access for unit tests.
+
+    Real scoping is exercised in tests marked ``tenant_isolation`` and
+    in integration tests via `get_scoped_db`. Unit tests with mocked
+    `AsyncSession`s would otherwise `RuntimeError` because the mock has
+    no `info` dict.
+    """
+    if request.node.get_closest_marker("tenant_isolation") is not None:
+        yield
+        return
+    for module_path in _SCOPED_ACCESS_IMPORTERS:
+        monkeypatch.setattr(f"{module_path}.scoped_access", lambda _session: _SYSTEM_TEST_ACCESS)
+    yield
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "tenant_isolation: opt out of the autouse `scoped_access` bypass — "
+        "use for tests that exercise the real scoping logic.",
+    )
 
 
 @pytest.fixture(autouse=True)

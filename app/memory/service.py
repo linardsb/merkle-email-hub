@@ -7,7 +7,9 @@ from typing import Any, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.exceptions import DomainValidationError
 from app.core.logging import get_logger
+from app.core.scoped_db import scoped_access
 from app.knowledge.embedding import EmbeddingProvider
 from app.memory.exceptions import MemoryLimitExceededError, MemoryNotFoundError
 from app.memory.models import MemoryEntry
@@ -32,6 +34,12 @@ class MemoryService:
 
     async def store(self, data: MemoryCreate) -> MemoryEntry:
         """Store a new memory entry with embedding."""
+        if data.project_id is not None:
+            access = scoped_access(self.db)
+            if access.project_ids is not None and data.project_id not in access.project_ids:
+                raise DomainValidationError(
+                    f"User does not have access to project {data.project_id}"
+                )
         count = await self.repo.count_by_project(data.project_id)
         if count >= settings.memory.max_memories_per_project:
             raise MemoryLimitExceededError(

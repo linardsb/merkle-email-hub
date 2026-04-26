@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from app.core.scoped_db import TenantAccess
 from app.memory.exceptions import MemoryLimitExceededError, MemoryNotFoundError
 from app.memory.models import MemoryEntry
 from app.memory.schemas import CompactionStats, MemoryCreate, MemoryPromote
@@ -34,9 +35,14 @@ def make_entry(
 
 @pytest.fixture
 def db() -> AsyncMock:
-    """Mock async database session."""
+    """Mock async database session.
+
+    `info` carries the system `TenantAccess` so service calls to
+    `scoped_access(self.db)` see admin-equivalent (no filter).
+    """
     mock = AsyncMock()
     mock.commit = AsyncMock()
+    mock.info = {"tenant_access": TenantAccess(project_ids=None, org_ids=None, role="system")}
     return mock
 
 

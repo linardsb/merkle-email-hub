@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.approval.models import ApprovalRequest, AuditEntry, Feedback
+from app.core.scoped_db import scoped_access
 
 
 class ApprovalRepository:
@@ -15,29 +16,39 @@ class ApprovalRepository:
         self.db = db
 
     async def get(self, approval_id: int) -> ApprovalRequest | None:
-        result = await self.db.execute(
-            select(ApprovalRequest).where(ApprovalRequest.id == approval_id)
-        )
+        access = scoped_access(self.db)
+        query = select(ApprovalRequest).where(ApprovalRequest.id == approval_id)
+        if access.project_ids is not None:
+            query = query.where(ApprovalRequest.project_id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def get_latest_by_build_id(self, build_id: int) -> ApprovalRequest | None:
         """Get the most recent approval request for a build."""
-        result = await self.db.execute(
+        access = scoped_access(self.db)
+        query = (
             select(ApprovalRequest)
             .where(ApprovalRequest.build_id == build_id)
             .where(ApprovalRequest.deleted_at.is_(None))
             .order_by(ApprovalRequest.created_at.desc())
             .limit(1)
         )
+        if access.project_ids is not None:
+            query = query.where(ApprovalRequest.project_id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def list_by_project(self, project_id: int) -> list[ApprovalRequest]:
-        result = await self.db.execute(
+        access = scoped_access(self.db)
+        query = (
             select(ApprovalRequest)
             .where(ApprovalRequest.project_id == project_id)
             .where(ApprovalRequest.deleted_at.is_(None))
             .order_by(ApprovalRequest.created_at.desc())
         )
+        if access.project_ids is not None:
+            query = query.where(ApprovalRequest.project_id.in_(access.project_ids))
+        result = await self.db.execute(query)
         return list(result.scalars().all())
 
     async def create(self, build_id: int, project_id: int, user_id: int) -> ApprovalRequest:

@@ -22,13 +22,13 @@ from app.connectors.sync_schemas import (
     TokenRewriteResponse,
 )
 from app.connectors.sync_service import ConnectorSyncService
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 router = APIRouter(prefix="/api/v1/connectors/sync", tags=["esp-sync"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ConnectorSyncService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> ConnectorSyncService:  # noqa: B008
     return ConnectorSyncService(db)
 
 
