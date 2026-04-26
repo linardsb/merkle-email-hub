@@ -135,7 +135,7 @@ jobs:
         run: docker build -t merkle-db:ci -f db/Dockerfile db/
 
       - name: Trivy scan — app
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: merkle-email-hub:ci
           exit-code: '1'
@@ -144,7 +144,7 @@ jobs:
           trivyignores: .trivyignore
 
       - name: Trivy scan — db
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: merkle-db:ci
           exit-code: '1'
