@@ -6,6 +6,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.core.logging import get_logger
 from app.mcp import MCPContext
+from app.mcp.auth import require_scope
 from app.mcp.formatting import format_css_compilation, format_simple_result, to_dict, truncate_html
 
 logger = get_logger(__name__)
@@ -17,6 +18,7 @@ def register_email_tools(mcp: FastMCP) -> None:
     """Register email engine tools."""
 
     @mcp.tool()
+    @require_scope("read")
     async def css_optimize(
         html: str,
         ctx: MCPContext,
@@ -46,6 +48,7 @@ Output: Compiled HTML, original to compiled size comparison, conversion details.
             return "CSS optimization failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def inject_schema_markup(
         html: str,
         ctx: MCPContext,

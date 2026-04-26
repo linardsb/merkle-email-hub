@@ -47,6 +47,7 @@ class DarkModeService(BaseAgentService):
     model_tier = "standard"
     stream_prefix = "darkmode"
     _output_mode_supported: bool = True
+    _user_input_fields = ("html",)
 
     def _post_process(self, raw_content: str) -> str:
         """Post-process LLM output: extract HTML, sanitize, then inject missing meta tags."""

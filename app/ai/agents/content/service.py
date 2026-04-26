@@ -115,6 +115,7 @@ class ContentService(BaseAgentService):
     run_qa_default = False
     stream_prefix = "content"
     _output_mode_supported: bool = True
+    _user_input_fields = ("text", "tone", "brand_voice")
 
     def build_system_prompt(
         self,

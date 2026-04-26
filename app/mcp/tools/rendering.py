@@ -6,6 +6,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.core.logging import get_logger
 from app.mcp import MCPContext
+from app.mcp.auth import require_scope
 from app.mcp.formatting import format_simple_result, to_dict
 
 logger = get_logger(__name__)
@@ -17,6 +18,7 @@ def register_rendering_tools(mcp: FastMCP) -> None:
     """Register rendering tools."""
 
     @mcp.tool()
+    @require_scope("read")
     async def email_visual_check(
         html: str,
         ctx: MCPContext,
@@ -69,6 +71,7 @@ Output: Per-client screenshot data with rendering notes."""
             return "Visual check failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def visual_diff(
         current_html: str,
         baseline_html: str,

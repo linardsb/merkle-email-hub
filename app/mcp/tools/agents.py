@@ -13,6 +13,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.core.logging import get_logger
 from app.mcp import MCPContext
+from app.mcp.auth import require_scope
 from app.mcp.formatting import to_dict, truncate_html
 
 logger = get_logger(__name__)
@@ -62,6 +63,7 @@ def register_agent_tools(mcp: FastMCP) -> None:
     # ── Scaffolder ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_scaffold(
         brief: str,
         ctx: MCPContext,
@@ -106,6 +108,7 @@ Output: Generated HTML with confidence score, model used, skills loaded, and opt
     # ── Dark Mode ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_dark_mode(
         html: str,
         ctx: MCPContext,
@@ -141,6 +144,7 @@ and optional QA results."""
     # ── Content ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_content(
         operation: str,
         text: str,
@@ -199,6 +203,7 @@ Output: Generated alternatives list, spam warnings, length warnings, confidence 
     # ── Outlook Fixer ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_outlook_fix(
         html: str,
         ctx: MCPContext,
@@ -234,6 +239,7 @@ Output: Fixed HTML with list of fixes applied, MSO validation warnings, confiden
     # ── Accessibility ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_accessibility(
         html: str,
         ctx: MCPContext,
@@ -269,6 +275,7 @@ Output: Fixed HTML with accessibility improvements, alt text warnings, confidenc
     # ── Code Reviewer ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_code_review(
         html: str,
         ctx: MCPContext,
@@ -317,6 +324,7 @@ responsible agent. Original HTML returned unmodified."""
     # ── Personalisation ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_personalise(
         html: str,
         platform: str,
@@ -376,6 +384,7 @@ confidence score."""
     # ── Innovation ──
 
     @mcp.tool()
+    @require_scope("write")
     async def agent_innovate(
         technique: str,
         ctx: MCPContext,
@@ -419,6 +428,7 @@ risk level, recommendation (ship/test_further/avoid), static fallback HTML."""
     # ── Knowledge ──
 
     @mcp.tool()
+    @require_scope("read")
     async def agent_knowledge(
         question: str,
         ctx: MCPContext,

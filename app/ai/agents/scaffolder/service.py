@@ -56,6 +56,7 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
     model_tier = "complex"
     stream_prefix = "scaffold"
     _output_mode_supported = True
+    _user_input_fields = ("brief", "initial_html")
 
     def build_system_prompt(
         self,

@@ -70,6 +70,7 @@ class PersonalisationService(BaseAgentService):
     model_tier = "standard"
     stream_prefix = "personalise"
     _output_mode_supported: bool = True
+    _user_input_fields = ("html", "requirements")
 
     def build_system_prompt(
         self,

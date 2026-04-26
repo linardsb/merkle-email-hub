@@ -6,6 +6,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.core.logging import get_logger
 from app.mcp import MCPContext
+from app.mcp.auth import require_scope
 from app.mcp.formatting import format_simple_result, to_dict
 
 logger = get_logger(__name__)
@@ -15,6 +16,7 @@ def register_template_tools(mcp: FastMCP) -> None:
     """Register template and component tools."""
 
     @mcp.tool()
+    @require_scope("read")
     async def list_templates(
         ctx: MCPContext,
         category: str | None = None,
@@ -38,6 +40,7 @@ Output: Template list with metadata."""
         )
 
     @mcp.tool()
+    @require_scope("read")
     async def search_components(
         query: str,
         ctx: MCPContext,

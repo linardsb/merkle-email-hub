@@ -66,6 +66,12 @@ class BaseAgentService:
     output_mode_default: str = "html"
     _output_mode_supported: bool = False
     sanitization_profile: str = "default"
+    # Names of request fields carrying user-supplied free text.
+    # Subclasses MUST list every string field that ``_build_user_message``
+    # interpolates so the prompt-injection guard scans (and, in strip mode,
+    # writes back) all attack-reachable inputs — not just the primary one.
+    # Non-string fields (dicts, lists) need bespoke handling and are skipped.
+    _user_input_fields: tuple[str, ...] = ()
 
     # ── Output mode ──
 
@@ -220,24 +226,60 @@ class BaseAgentService:
         """
         raise NotImplementedError(f"{self.agent_name} does not support structured output mode")
 
-    def _secure_user_message(self, raw: str) -> str:
-        """Pre-LLM defense: scan for prompt injection then wrap in delimiter.
+    def _scan_request(self, request: Any) -> Any:
+        """Pre-LLM defense: scan every user-input field for prompt injection.
 
-        - Mode "block" raises ``PromptInjectionError`` (422) before the LLM call.
-        - Mode "strip" returns sanitized text with flagged spans removed.
-        - Mode "warn" logs but passes the original text through.
+        - Mode "block" raises ``PromptInjectionError`` (422) before any work.
+        - Mode "strip" returns a request whose user-input fields have flagged
+          spans removed (via ``_apply_sanitized_input``) so the structured
+          pipeline reads the cleaned values.
+        - Mode "warn" logs but leaves the request untouched.
 
-        The wrapper tag ``<USER_INPUT>`` is the structural boundary that
-        agent system prompts reference: LLMs are told to treat anything
-        inside as untrusted data, never instructions.
+        Runs once per request — covers both ``html`` and ``structured``
+        output modes because it executes upstream of the mode dispatch.
+        Iterates every entry in ``_user_input_fields`` so multi-field agents
+        (e.g. Personalisation: html + requirements) get full coverage.
         """
         settings = get_settings()
-        text = raw
-        if settings.security.prompt_guard_enabled:
-            scan = scan_for_injection(text, mode=settings.security.prompt_guard_mode)
-            if scan.sanitized is not None:
-                text = scan.sanitized
-        return f"<USER_INPUT agent={self.agent_name!r}>\n{text}\n</USER_INPUT>"
+        if not settings.security.prompt_guard_enabled:
+            return request
+        if not self._user_input_fields:
+            return request
+
+        sanitized_updates: dict[str, str] = {}
+        for field in self._user_input_fields:
+            raw = getattr(request, field, "")
+            if not isinstance(raw, str) or not raw:
+                continue
+            scan = scan_for_injection(raw, mode=settings.security.prompt_guard_mode)
+            # block mode: scan_for_injection already raised PromptInjectionError
+            if scan.sanitized is not None and scan.sanitized != raw:
+                sanitized_updates[field] = scan.sanitized
+
+        if sanitized_updates:
+            request = self._apply_sanitized_input(request, sanitized_updates)
+        return request
+
+    def _apply_sanitized_input(self, request: Any, updates: dict[str, str]) -> Any:
+        """Write sanitized values back to the request's user-input fields.
+
+        Uses Pydantic ``model_copy(update=...)`` — no re-validation, so
+        length constraints on the original fields don't reject strip-mode
+        output. Override only when an agent needs custom merge semantics.
+        """
+        if not updates:
+            return request
+        return request.model_copy(update=updates)
+
+    def _wrap_user_message(self, raw: str) -> str:
+        """Wrap the message in the ``<USER_INPUT>`` delimiter.
+
+        The wrapper tag is the structural boundary that agent system
+        prompts reference: LLMs are told to treat anything inside as
+        untrusted data, never instructions. The injection scan is
+        already done upstream in ``_scan_request``.
+        """
+        return f"<USER_INPUT agent={self.agent_name!r}>\n{raw}\n</USER_INPUT>"
 
     def _enforce_token_cap(self, messages: list[Message], model: str) -> int:
         """Return estimated input tokens; raise if input + response exceeds cap.
@@ -348,6 +390,10 @@ class BaseAgentService:
         ``telemetry`` is mutated in-place so the outer ``process`` wrapper can
         emit a single ``ai.agent_decision`` audit line in its finally block.
         """
+        # G1 — injection scan runs before output_mode dispatch so the
+        # structured-output path is also guarded. Block mode raises here;
+        # strip mode returns a request with the user-input field cleaned.
+        request = self._scan_request(request)
         output_mode = self._get_output_mode(request)
         if output_mode == "structured" and self._output_mode_supported:
             return await self._process_structured(request)
@@ -368,10 +414,10 @@ class BaseAgentService:
         )
         system_prompt += CONFIDENCE_INSTRUCTION
 
-        # G1 + G2 — scan for injection, then wrap in <USER_INPUT> delimiter.
+        # G2 — wrap in <USER_INPUT> delimiter. Scan already ran in _scan_request.
         raw_user_message = self._build_user_message(request)
         telemetry["input_hash"] = hash_input(raw_user_message)
-        user_message = self._secure_user_message(raw_user_message)
+        user_message = self._wrap_user_message(raw_user_message)
 
         # Build messages (multimodal-aware)
         messages = self._build_multimodal_messages(
@@ -492,6 +538,9 @@ class BaseAgentService:
             logger.warning("ai.agent_disabled", agent=self.agent_name, mode="stream")
             raise ServiceUnavailableError(f"Agent '{self.agent_name}' is disabled")
 
+        # G1 — injection scan (block raises; strip returns a sanitized request)
+        request = self._scan_request(request)
+
         provider_name = settings.ai.provider
         model = resolve_model(self._get_model_tier(request))
         model_id = f"{provider_name}:{model}"
@@ -505,8 +554,8 @@ class BaseAgentService:
         )
         system_prompt += CONFIDENCE_INSTRUCTION
 
-        # G1 + G2 — scan + wrap user message before LLM
-        user_message = self._secure_user_message(self._build_user_message(request))
+        # G2 — wrap user message before LLM (scan already ran above)
+        user_message = self._wrap_user_message(self._build_user_message(request))
         messages = self._build_multimodal_messages(
             system_prompt=system_prompt,
             user_text=user_message,
