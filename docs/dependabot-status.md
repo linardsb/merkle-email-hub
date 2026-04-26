@@ -13,10 +13,11 @@ Snapshot: 2026-04-25.
 
 | Alert | Package | Severity | Advisory | Disposition |
 |---|---|---|---|---|
+| #103 | litellm | high | [GHSA-v4p8-mg3p-g94g](https://github.com/advisories/GHSA-v4p8-mg3p-g94g) — Authenticated command execution via Proxy MCP stdio test endpoints | Held at 1.83.0 |
 | #102 | litellm | critical | [GHSA-r75f-5x8p-qvmc](https://github.com/advisories/GHSA-r75f-5x8p-qvmc) — SQL injection in Proxy API key verification | Held at 1.83.0 |
 | #98 | litellm | high | [GHSA-xqmj-j6mv-4862](https://github.com/advisories/GHSA-xqmj-j6mv-4862) — SSTI in Proxy `/prompts/test` endpoint | Held at 1.83.0 |
 
-**Why held**: both CVEs target the LiteLLM **Proxy server** — an HTTP gateway
+**Why held**: all three CVEs target the LiteLLM **Proxy server** — an HTTP gateway
 service. We do not run the LiteLLM Proxy. We pull `litellm` transitively
 through `cognee` (the optional `[graph]` extra) and use it only as an SDK
 (model routing). No HTTP endpoints from litellm are exposed.
