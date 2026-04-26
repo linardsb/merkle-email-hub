@@ -8,6 +8,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.core.logging import get_logger
 from app.mcp import MCPContext
+from app.mcp.auth import require_scope
 from app.mcp.formatting import format_qa_result, format_simple_result, to_dict, truncate_html
 
 logger = get_logger(__name__)
@@ -28,6 +29,7 @@ def register_qa_tools(mcp: FastMCP) -> None:
     """Register all QA-domain tools on the MCP server."""
 
     @mcp.tool()
+    @require_scope("read")
     async def qa_check(
         html: str,
         ctx: MCPContext,
@@ -61,6 +63,7 @@ Output: Markdown report with overall score, failed checks with fixes, and recomm
             return "QA check failed due to an internal error. Please try again."
 
     @mcp.tool()
+    @require_scope("read")
     async def email_production_readiness(
         html: str,
         ctx: MCPContext,
@@ -132,6 +135,7 @@ Output: Markdown report with go/no-go verdict, per-dimension scores, and priorit
             return "Production readiness check failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("write")
     async def chaos_test(
         html: str,
         ctx: MCPContext,
@@ -162,6 +166,7 @@ Output: Markdown with overall resilience score and per-profile pass/fail breakdo
             return "Chaos test failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def outlook_analyze(
         html: str,
         ctx: MCPContext,
@@ -202,6 +207,7 @@ cleaned HTML."""
             return "Outlook analysis failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def gmail_predict(
         html: str,
         ctx: MCPContext,

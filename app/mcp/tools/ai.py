@@ -8,6 +8,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.core.logging import get_logger
 from app.mcp import MCPContext
+from app.mcp.auth import require_scope
 from app.mcp.formatting import format_simple_result, to_dict
 
 logger = get_logger(__name__)
@@ -20,6 +21,7 @@ def register_ai_tools(mcp: FastMCP) -> None:
     """Register AI-related tools."""
 
     @mcp.tool()
+    @require_scope("read")
     async def ai_cost_status(ctx: MCPContext) -> str:
         """Check the current month's AI cost budget status. Shows total spend, \
 remaining budget, and per-model/per-agent breakdowns.
@@ -43,6 +45,7 @@ Output: Budget status (OK/WARNING/EXCEEDED), spend breakdown, and remaining budg
             return "Cost status check failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def deliverability_score(
         html: str,
         ctx: MCPContext,
@@ -76,6 +79,7 @@ Output: Total score, per-dimension breakdown, and specific issues with fix recom
             return "Deliverability scoring failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def bimi_check(
         domain: str,
         ctx: MCPContext,

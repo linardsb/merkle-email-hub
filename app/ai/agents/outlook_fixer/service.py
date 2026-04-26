@@ -55,6 +55,7 @@ class OutlookFixerService(CRAGMixin, BaseAgentService):
     model_tier: TaskTier = "standard"
     stream_prefix = "outlook-fix"
     _output_mode_supported: bool = True
+    _user_input_fields = ("html",)
 
     def build_system_prompt(
         self,

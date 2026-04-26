@@ -6,6 +6,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.core.logging import get_logger
 from app.mcp import MCPContext
+from app.mcp.auth import require_scope
 from app.mcp.formatting import format_knowledge_result, to_dict
 
 logger = get_logger(__name__)
@@ -15,6 +16,7 @@ def register_knowledge_tools(mcp: FastMCP) -> None:
     """Register knowledge-domain tools."""
 
     @mcp.tool()
+    @require_scope("read")
     async def knowledge_search(
         query: str,
         ctx: MCPContext,
@@ -53,6 +55,7 @@ Output: Ranked results with relevance scores and source domain."""
             return "Knowledge search failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def css_support_check(
         css_property: str,
         ctx: MCPContext,
@@ -83,6 +86,7 @@ Output: Support matrix table with Yes/No/Partial per client and fallback recomme
             return "CSS support check failed due to an internal error."
 
     @mcp.tool()
+    @require_scope("read")
     async def safe_css_alternatives(
         css_property: str,
         ctx: MCPContext,
