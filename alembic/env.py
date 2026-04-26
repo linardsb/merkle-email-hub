@@ -11,6 +11,39 @@ from alembic import context
 from app.core.config import get_settings
 from app.core.database import Base
 
+# Import every model module so its tables register with Base.metadata before
+# `alembic check` compares schema → models. In normal app runtime these modules
+# load transitively via app.main → routes → services → repositories, but
+# alembic loads only env.py, so without these imports `alembic check` would
+# report 9+ "removed table" findings for any model not used elsewhere here.
+import app.ai.blueprints.checkpoint_models  # noqa: F401
+import app.ai.prompt_store  # noqa: F401  -- defines prompt_templates table
+import app.ai.recovery_outcomes  # noqa: F401
+import app.ai.routing_history  # noqa: F401
+import app.ai.skills.repository  # noqa: F401  -- defines skill_amendments table
+import app.ai.templates.models  # noqa: F401
+import app.approval.models  # noqa: F401
+import app.auth.models  # noqa: F401
+import app.briefs.models  # noqa: F401
+import app.components.models  # noqa: F401
+import app.connectors.models  # noqa: F401
+import app.connectors.sync_models  # noqa: F401
+import app.design_sync.diagnose.models  # noqa: F401
+import app.design_sync.models  # noqa: F401
+import app.email_engine.models  # noqa: F401
+import app.example.models  # noqa: F401
+import app.knowledge.models  # noqa: F401
+import app.memory.models  # noqa: F401
+import app.personas.models  # noqa: F401
+import app.projects.models  # noqa: F401
+import app.qa_engine.models  # noqa: F401
+import app.rendering.calibration.models  # noqa: F401
+import app.rendering.models  # noqa: F401
+import app.shared.models  # noqa: F401
+import app.streaming.crdt.models  # noqa: F401
+import app.templates.models  # noqa: F401
+import app.templates.upload.models  # noqa: F401
+
 config = context.config
 
 settings = get_settings()
