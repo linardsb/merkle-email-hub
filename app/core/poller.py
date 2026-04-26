@@ -89,7 +89,8 @@ class DataPoller(ABC):
         Default implementation logs the error and continues polling.
         """
         logger.error(
-            f"poller.{self.name}.cycle_failed",
+            "poller.cycle_failed",
+            name=self.name,
             error=str(error),
             error_type=type(error).__name__,
             exc_info=True,
@@ -122,7 +123,7 @@ class DataPoller(ABC):
 
     async def _poll_loop(self) -> None:
         """Main polling loop with leader election."""
-        logger.info(f"poller.{self.name}.started", interval=self.interval_seconds)
+        logger.info("poller.started", name=self.name, interval=self.interval_seconds)
 
         while self._running:
             try:
@@ -135,7 +136,7 @@ class DataPoller(ABC):
                 await self.store(enriched)
                 await self._renew_leader_lock()
 
-                logger.debug(f"poller.{self.name}.cycle_completed")
+                logger.debug("poller.cycle_completed", name=self.name)
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -143,7 +144,7 @@ class DataPoller(ABC):
 
             await asyncio.sleep(self.interval_seconds)
 
-        logger.info(f"poller.{self.name}.stopped")
+        logger.info("poller.stopped", name=self.name)
 
     async def start(self) -> None:
         """Start the polling background task."""

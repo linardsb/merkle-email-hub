@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.notifications.channels import Notification
@@ -22,7 +24,15 @@ async def emit_notification(notification: Notification) -> bool:
     from app.core.redis import get_redis
 
     redis = await get_redis()
-    dedup_key = f"notif:dedup:{notification.event}:{notification.project_id or 'global'}"
+    # Include severity+title in the dedup key so distinct events sharing the same
+    # project+event slug (e.g. different failure causes) aren't suppressed by the
+    # first one within the dedup window (F040).
+    payload_hash = hashlib.sha256(
+        f"{notification.severity}:{notification.title}".encode()
+    ).hexdigest()[:8]
+    dedup_key = (
+        f"notif:dedup:{notification.event}:{notification.project_id or 'global'}:{payload_hash}"
+    )
     if await redis.get(dedup_key):
         logger.debug(
             "notification.deduped",

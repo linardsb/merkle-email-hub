@@ -480,8 +480,10 @@ class KnowledgeService:
         vector_results = await self.repository.search_vector(
             query_embedding, search_limit, request.domain, request.language
         )
+        # Clamp to bound Postgres tsquery cost (F054 — DoS via huge plainto_tsquery input).
+        clamped_query = request.query[:1024]
         text_results = await self.repository.search_fulltext(
-            request.query, search_limit, request.domain, request.language
+            clamped_query, search_limit, request.domain, request.language
         )
 
         # RRF fusion

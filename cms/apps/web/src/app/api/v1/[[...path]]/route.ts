@@ -1,7 +1,14 @@
 import { NextRequest } from "next/server";
 import { auth } from "../../../../../auth";
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8891";
+const BACKEND_URL = (() => {
+  const url = process.env.BACKEND_URL;
+  if (url) return url;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("BACKEND_URL is required in production");
+  }
+  return "http://localhost:8891";
+})();
 
 /**
  * Proxy all /api/v1/* requests to the FastAPI backend.
@@ -23,16 +30,17 @@ async function proxy(req: NextRequest) {
     headers.set("X-Real-IP", clientIp);
   }
 
-  // If no Authorization header present, inject JWT from NextAuth session
-  if (!headers.has("Authorization")) {
-    try {
-      const session = await auth();
-      if (session?.accessToken) {
-        headers.set("Authorization", `Bearer ${session.accessToken}`);
-      }
-    } catch {
-      // Auth unavailable — forward without token
+  // Always overwrite Authorization with the session token when a session exists.
+  // Never trust a client-supplied Authorization header on this proxy.
+  try {
+    const session = await auth();
+    if (session?.accessToken) {
+      headers.set("Authorization", `Bearer ${session.accessToken}`);
+    } else {
+      headers.delete("Authorization");
     }
+  } catch {
+    headers.delete("Authorization");
   }
 
   const res = await fetch(target, {

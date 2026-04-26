@@ -47,7 +47,6 @@ from app.core.rate_limit import limiter
 from app.core.redis import close_redis, redis_available
 from app.design_sync.routes import router as design_sync_router
 from app.email_engine.routes import router as email_engine_router
-from app.example.routes import router as example_router
 from app.knowledge.ontology.routes import router as ontology_router
 from app.knowledge.routes import router as knowledge_router
 from app.memory.routes import router as memory_router
@@ -57,8 +56,6 @@ from app.personas.routes import router as personas_router
 from app.projects.routes import router as projects_router
 from app.qa_engine.routes import router as qa_router
 from app.rendering.routes import router as rendering_router
-from app.streaming.routes import close_ws_manager, get_ws_manager, ws_router
-from app.streaming.subscriber import start_ws_subscriber, stop_ws_subscriber
 from app.streaming.websocket.routes import (
     close_collab_manager,
     collab_router,
@@ -107,17 +104,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         environment=settings.environment,
     )
     logger.info("database.connection_initialized")
-
-    # Start WebSocket subscriber (only if Redis is reachable)
-    if settings.ws.enabled and await redis_available():
-        ws_manager = get_ws_manager()
-        await start_ws_subscriber(ws_manager)
-        logger.info("streaming.ws.subscriber_started")
-    elif settings.ws.enabled:
-        logger.warning(
-            "streaming.ws.subscriber_skipped",
-            detail="Redis unavailable, WebSocket streaming disabled",
-        )
 
     # Start collaboration WebSocket manager + Redis bridge (Phase 24.1)
     collab_bridge = None
@@ -347,10 +333,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         close_collab_manager()
         logger.info("collab.ws.manager_stopped")
 
-    await stop_ws_subscriber()
-    close_ws_manager()
-    logger.info("streaming.ws.lifecycle_stopped")
-
     await close_redis()
     await engine.dispose()
     logger.info("database.connection_closed")
@@ -385,7 +367,6 @@ setup_ai_exception_handlers(app)
 # Include routers
 app.include_router(health_router)
 app.include_router(auth_router)
-app.include_router(example_router)
 
 app.include_router(ai_router)
 # Dual-mount so the Next.js /api/v1/* proxy can reach chat completions.
@@ -398,7 +379,6 @@ app.include_router(knowledge_router)
 app.include_router(ontology_router)
 
 
-app.include_router(ws_router)
 app.include_router(collab_router)
 
 # Email Hub routers

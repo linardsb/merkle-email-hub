@@ -36,17 +36,8 @@ class AuthConfig(BaseModel):
     )
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
+    demo_user_email: str = "demo@example.com"
     demo_user_password: str = "admin"  # noqa: S105
-
-
-class RateLimitConfig(BaseModel):
-    """Rate limiting settings (requests per time window per IP)."""
-
-    default: str = "120/minute"
-    auth: str = "10/minute"
-    health: str = "60/minute"
-
-    chat: str = "10/minute"
 
 
 class EvaluatorConfig(BaseModel):
@@ -88,10 +79,6 @@ class AIConfig(BaseModel):
     # Visual QA auto-fix (Phase 17.4)
     visual_qa_autofix_enabled: bool = False  # AI__VISUAL_QA_AUTOFIX_ENABLED
     visual_qa_autofix_max_rounds: int = 1  # AI__VISUAL_QA_AUTOFIX_MAX_ROUNDS
-
-    # AI-specific rate limits
-    rate_limit_chat: str = "20/minute"
-    rate_limit_generation: str = "5/minute"
 
     # Token budget management (Phase 22.3)
     token_budget_enabled: bool = False  # AI__TOKEN_BUDGET_ENABLED
@@ -353,7 +340,6 @@ class DesignSyncConfig(BaseModel):
     penpot_enabled: bool = False
     penpot_base_url: str = "http://localhost:9001"
     penpot_request_timeout: float = 30.0
-    penpot_converter_enabled: bool = False  # DESIGN_SYNC__PENPOT_CONVERTER_ENABLED
     converter_enabled: bool = True  # DESIGN_SYNC__CONVERTER_ENABLED (provider-agnostic)
     figma_variables_enabled: bool = True  # DESIGN_SYNC__FIGMA_VARIABLES_ENABLED
     opacity_composite_bg: str = "#FFFFFF"  # Background hex for alpha compositing
@@ -854,7 +840,6 @@ class Settings(BaseSettings):
     database: DatabaseConfig = DatabaseConfig()
     redis: RedisConfig = RedisConfig()
     auth: AuthConfig = AuthConfig()
-    rate_limit: RateLimitConfig = RateLimitConfig()
 
     ai: AIConfig = AIConfig()
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import httpx
 
 from app.connectors.exceptions import ExportFailedError
@@ -26,11 +28,7 @@ class TaxiConnectorService:
         _settings = settings or get_settings()
         self._base_url = _settings.esp_sync.taxi_base_url
         self._pool: CredentialPool | None = None
-        if (
-            _settings.credentials.enabled
-            and isinstance(_settings.credentials.pools, dict)  # pyright: ignore[reportUnnecessaryIsInstance] — guards against MagicMock in tests
-            and "taxi" in _settings.credentials.pools
-        ):
+        if _settings.credentials.enabled and "taxi" in _settings.credentials.pools:
             self._pool = get_credential_pool("taxi")
 
     async def _lease_credentials(self) -> tuple[dict[str, str], CredentialLease]:
@@ -87,7 +85,7 @@ class TaxiConnectorService:
                     raise ExportFailedError(
                         f"Taxi API returned {exc.response.status_code}"
                     ) from exc
-                except Exception as exc:
+                except (httpx.RequestError, json.JSONDecodeError) as exc:
                     if lease:
                         await lease.report_failure(0)
                     raise ExportFailedError("Taxi export failed") from exc

@@ -27,7 +27,6 @@ import app.connectors.sync_models  # noqa: F401
 import app.design_sync.diagnose.models  # noqa: F401
 import app.design_sync.models  # noqa: F401
 import app.email_engine.models  # noqa: F401
-import app.example.models  # noqa: F401
 import app.knowledge.models  # noqa: F401
 import app.memory.models  # noqa: F401
 import app.personas.models  # noqa: F401

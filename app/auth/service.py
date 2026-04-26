@@ -1,6 +1,7 @@
 """Authentication business logic."""
 
 import datetime
+import hashlib
 
 import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,13 +31,18 @@ LOCKOUT_DURATION = datetime.timedelta(minutes=15)
 _DUMMY_HASH = bcrypt.hashpw(b"timing-normalization-dummy", bcrypt.gensalt()).decode("utf-8")
 
 
+def _email_key(email: str) -> str:
+    """Hash email for use in Redis keys to avoid leaking PII at-rest."""
+    return hashlib.sha256(email.encode("utf-8")).hexdigest()[:32]
+
+
 async def _check_redis_brute_force(email: str) -> bool:
     """Check Redis for brute force lockout. Returns True if locked out."""
     try:
         from app.core.redis import get_redis
 
         redis_client = await get_redis()
-        key = f"auth:lockout:{email}"
+        key = f"auth:lockout:{_email_key(email)}"
         locked = await redis_client.get(key)
         return locked is not None
     except Exception:
@@ -50,14 +56,15 @@ async def _record_failed_attempt_redis(email: str) -> None:
         from app.core.redis import get_redis
 
         redis_client = await get_redis()
-        key = f"auth:failures:{email}"
+        email_hash = _email_key(email)
+        key = f"auth:failures:{email_hash}"
         pipe = redis_client.pipeline()
         pipe.incr(key)
         pipe.expire(key, int(LOCKOUT_DURATION.total_seconds()))
         result = await pipe.execute()
         count = int(result[0]) if result else 0
         if count >= MAX_FAILED_ATTEMPTS:
-            lockout_key = f"auth:lockout:{email}"
+            lockout_key = f"auth:lockout:{email_hash}"
             await redis_client.setex(lockout_key, int(LOCKOUT_DURATION.total_seconds()), "locked")
     except Exception:
         logger.warning("auth.redis_brute_force_unavailable", email=email, exc_info=True)
@@ -69,9 +76,10 @@ async def _clear_redis_brute_force(email: str) -> None:
         from app.core.redis import get_redis
 
         redis_client = await get_redis()
+        email_hash = _email_key(email)
         await redis_client.delete(
-            f"auth:failures:{email}",
-            f"auth:lockout:{email}",
+            f"auth:failures:{email_hash}",
+            f"auth:lockout:{email_hash}",
         )
     except Exception:
         logger.warning("auth.redis_clear_unavailable", email=email, exc_info=True)
@@ -394,7 +402,7 @@ class AuthService:
 
         password = settings.auth.demo_user_password
         demo_users = [
-            ("linardsberzins@gmail.com", password, "Linards Berzins", "admin"),
+            (settings.auth.demo_user_email, password, "Demo Admin", "admin"),
         ]
 
         created: list[User] = []
