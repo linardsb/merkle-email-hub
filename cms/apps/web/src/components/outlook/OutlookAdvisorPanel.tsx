@@ -146,7 +146,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
             </span>
             {(data.byte_savings ?? 0) > 0 && (
               <span className="bg-badge-success-bg text-badge-success-text rounded-full px-2 py-0.5">
-                {`${formatKB((data.byte_savings ?? 0))} KB potential savings`}
+                {`${formatKB(data.byte_savings ?? 0)} KB potential savings`}
               </span>
             )}
           </div>
@@ -202,7 +202,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
               <h4 className="text-foreground-muted mb-1.5 text-xs font-medium">
                 {"Migration Plan"}
               </h4>
-              <MigrationTimeline plan={(data.modernization_plan ?? [])} />
+              <MigrationTimeline plan={data.modernization_plan ?? []} />
             </div>
           )}
 
