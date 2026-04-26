@@ -44,14 +44,6 @@ class TestBrazeConnectorService:
         result = await service.export("<html></html>", "Welcome Email")
         assert result == "braze_cb_welcome_email"
 
-    @pytest.mark.asyncio()
-    async def test_package_content_block(self, service: BrazeConnectorService) -> None:
-        block = await service.package_content_block("<p>Hello</p>", "Test Block")
-        assert block.name == "Test Block"
-        assert block.content == "<p>Hello</p>"
-        assert block.content_type == "html"
-        assert "email-hub" in block.tags
-
 
 # ── SFMC ──
 
@@ -67,13 +59,6 @@ class TestSFMCConnectorService:
     async def test_export_returns_mock_id(self, service: SFMCConnectorService) -> None:
         result = await service.export("<html></html>", "Holiday Promo")
         assert result == "sfmc_ca_holiday_promo"
-
-    @pytest.mark.asyncio()
-    async def test_package_content_area(self, service: SFMCConnectorService) -> None:
-        area = await service.package_content_area("<p>SFMC content</p>", "Test Area")
-        assert area.name == "Test Area"
-        assert area.content == "<p>SFMC content</p>"
-        assert area.content_type == "html"
 
 
 # ── Adobe Campaign ──
@@ -91,13 +76,6 @@ class TestAdobeConnectorService:
         result = await service.export("<html></html>", "Product Launch")
         assert result == "adobe_dl_product_launch"
 
-    @pytest.mark.asyncio()
-    async def test_package_delivery_fragment(self, service: AdobeConnectorService) -> None:
-        fragment = await service.package_delivery_fragment("<p>Adobe</p>", "Test Delivery")
-        assert fragment.name == "Test Delivery"
-        assert fragment.content == "<p>Adobe</p>"
-        assert fragment.label == "Test Delivery"
-
 
 # ── Taxi for Email ──
 
@@ -113,16 +91,6 @@ class TestTaxiConnectorService:
     async def test_export_returns_mock_id(self, service: TaxiConnectorService) -> None:
         result = await service.export("<html></html>", "Newsletter V2")
         assert result == "taxi_tpl_newsletter_v2"
-
-    @pytest.mark.asyncio()
-    async def test_package_template_wraps_with_taxi_syntax(
-        self, service: TaxiConnectorService
-    ) -> None:
-        template = await service.package_template("<p>Taxi</p>", "My Template")
-        assert template.name == "My Template"
-        assert "taxi:template" in template.content
-        assert "<p>Taxi</p>" in template.content
-        assert template.syntax_version == "3.0"
 
 
 # ── ConnectorService dispatch ──

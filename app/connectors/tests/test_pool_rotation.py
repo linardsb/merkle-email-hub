@@ -54,7 +54,7 @@ class TestBrazePoolRotation:
 
         mock_resp = _mock_response(200, {"content_block_id": "cb_pool"})
         with patch(
-            "app.connectors.braze.service.resilient_request",
+            "app.connectors._base.api_key.resilient_request",
             new_callable=AsyncMock,
             return_value=mock_resp,
         ) as mock_req:
@@ -76,7 +76,7 @@ class TestBrazePoolRotation:
         explicit_creds = {"api_key": "explicit-key"}
         mock_resp = _mock_response(200, {"content_block_id": "cb_explicit"})
         with patch(
-            "app.connectors.braze.service.resilient_request",
+            "app.connectors._base.api_key.resilient_request",
             new_callable=AsyncMock,
             return_value=mock_resp,
         ) as mock_req:
@@ -106,7 +106,6 @@ class TestSFMCPoolRotation:
 
         service = SFMCConnectorService()
         service._pool = pool
-        SFMCConnectorService._token_cache.clear()
 
         token_resp = _mock_response(200, {"access_token": "tok_pool", "expires_in": 3600})
         asset_resp = _mock_response(200, {"id": 99, "name": "Pool"})
@@ -116,7 +115,7 @@ class TestSFMCPoolRotation:
                 httpx.AsyncClient, "post", new_callable=AsyncMock, return_value=token_resp
             ),
             patch(
-                "app.connectors.sfmc.service.resilient_request",
+                "app.connectors._base.oauth.resilient_request",
                 new_callable=AsyncMock,
                 return_value=asset_resp,
             ),
@@ -142,7 +141,7 @@ class TestPoolReportsFailure:
         error_resp = _mock_response(429, {"error": "rate limited"})
         with (
             patch(
-                "app.connectors.taxi.service.resilient_request",
+                "app.connectors._base.api_key.resilient_request",
                 new_callable=AsyncMock,
                 return_value=error_resp,
             ),
@@ -164,7 +163,7 @@ class TestPoolReportsFailure:
 
         with (
             patch(
-                "app.connectors.braze.service.resilient_request",
+                "app.connectors._base.api_key.resilient_request",
                 new_callable=AsyncMock,
                 side_effect=httpx.ConnectError("connection refused"),
             ),
