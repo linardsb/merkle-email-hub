@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from app.projects.design_system import DesignSystem
 
 _HEX_COLOR_RE = re.compile(r"#[0-9a-fA-F]{6}\b")
+_STYLE_ATTR_RE = re.compile(r'style="([^"]*)"', re.IGNORECASE)
+_STYLE_TAG_RE = re.compile(r"(<style[^>]*>)([\s\S]*?)(</style>)", re.IGNORECASE)
+_HTML_COLOR_ATTR_RE = re.compile(r'\b(bgcolor|color)="(#[0-9a-fA-F]{6})"', re.IGNORECASE)
 
 
 def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
@@ -119,7 +122,20 @@ class BrandRepair:
                 return nearest
             return color
 
-        result = _HEX_COLOR_RE.sub(_replace_color, html)
+        # Scope replacement to CSS contexts only — hex strings in href anchors,
+        # text content, or comments must be left alone (F056).
+        def _sub_style_attr(m: re.Match[str]) -> str:
+            return f'style="{_HEX_COLOR_RE.sub(_replace_color, m.group(1))}"'
+
+        def _sub_style_tag(m: re.Match[str]) -> str:
+            return m.group(1) + _HEX_COLOR_RE.sub(_replace_color, m.group(2)) + m.group(3)
+
+        def _sub_html_color_attr(m: re.Match[str]) -> str:
+            return f'{m.group(1)}="{_HEX_COLOR_RE.sub(_replace_color, m.group(2))}"'
+
+        result = _STYLE_ATTR_RE.sub(_sub_style_attr, html)
+        result = _STYLE_TAG_RE.sub(_sub_style_tag, result)
+        result = _HTML_COLOR_ATTR_RE.sub(_sub_html_color_attr, result)
         return result, repairs
 
     def _repair_footer(self, html: str) -> tuple[str, list[str]]:
@@ -162,7 +178,11 @@ class BrandRepair:
         actions: list[str] = []
 
         has_logo = bool(
-            re.search(r'<img[^>]*(?:class|alt|id|src)="[^"]*logo[^"]*"', html, re.IGNORECASE)
+            re.search(
+                r'<img[^>]*(?:class|alt|id|src)="[^"]*\blogo\b[^"]*"',
+                html,
+                re.IGNORECASE,
+            )
         )
 
         if has_logo or self._ds.logo is None:

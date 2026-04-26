@@ -33,11 +33,7 @@ class SFMCConnectorService:
         _settings = settings or get_settings()
         self._base_url = _settings.esp_sync.sfmc_base_url
         self._pool: CredentialPool | None = None
-        if (
-            _settings.credentials.enabled
-            and isinstance(_settings.credentials.pools, dict)  # pyright: ignore[reportUnnecessaryIsInstance] — guards against MagicMock in tests
-            and "sfmc" in _settings.credentials.pools
-        ):
+        if _settings.credentials.enabled and "sfmc" in _settings.credentials.pools:
             self._pool = get_credential_pool("sfmc")
 
     async def _lease_credentials(self) -> tuple[dict[str, str], CredentialLease]:
@@ -140,7 +136,7 @@ class SFMCConnectorService:
                     raise ExportFailedError(
                         f"SFMC API returned {exc.response.status_code}"
                     ) from exc
-                except Exception as exc:
+                except (httpx.RequestError, json.JSONDecodeError) as exc:
                     if lease:
                         await lease.report_failure(0)
                     raise ExportFailedError("SFMC export failed") from exc

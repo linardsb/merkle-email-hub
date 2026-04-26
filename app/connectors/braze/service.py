@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import httpx
 
 from app.connectors.braze.schemas import BrazeContentBlock
@@ -22,11 +24,7 @@ class BrazeConnectorService:
         _settings = settings or get_settings()
         self._base_url = _settings.esp_sync.braze_base_url
         self._pool: CredentialPool | None = None
-        if (
-            _settings.credentials.enabled
-            and isinstance(_settings.credentials.pools, dict)  # pyright: ignore[reportUnnecessaryIsInstance] — guards against MagicMock in tests
-            and "braze" in _settings.credentials.pools
-        ):
+        if _settings.credentials.enabled and "braze" in _settings.credentials.pools:
             self._pool = get_credential_pool("braze")
 
     async def _lease_credentials(self) -> tuple[dict[str, str], CredentialLease]:
@@ -81,7 +79,7 @@ class BrazeConnectorService:
                     raise ExportFailedError(
                         f"Braze API returned {exc.response.status_code}"
                     ) from exc
-                except Exception as exc:
+                except (httpx.RequestError, json.JSONDecodeError) as exc:
                     if lease:
                         await lease.report_failure(0)
                     raise ExportFailedError("Braze export failed") from exc

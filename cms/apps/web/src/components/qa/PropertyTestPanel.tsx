@@ -162,8 +162,8 @@ export function PropertyTestPanel() {
               {"Invariants Tested"}
             </h4>
             <div className="flex flex-wrap gap-1">
-              {data.invariants_tested.map((inv: string) => {
-                const hasFail = data.failures.some(
+              {(data.invariants_tested ?? []).map((inv: string) => {
+                const hasFail = (data.failures ?? []).some(
                   (f: PropertyFailureSchema) => f.invariant_name === inv,
                 );
                 return (
@@ -189,7 +189,7 @@ export function PropertyTestPanel() {
           ) : (
             <div className="space-y-1.5">
               <h4 className="text-foreground-muted text-xs font-medium">{"Failures"}</h4>
-              {data.failures.map((f: PropertyFailureSchema, i: number) => (
+              {(data.failures ?? []).map((f: PropertyFailureSchema, i: number) => (
                 <FailureRow key={`${f.invariant_name}-${i}`} failure={f} />
               ))}
             </div>

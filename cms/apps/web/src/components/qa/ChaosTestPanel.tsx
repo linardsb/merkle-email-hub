@@ -89,9 +89,9 @@ function ProfileRow({ result, html }: { result: ChaosProfileResult; html: string
         </div>
       </button>
 
-      {expanded && result.failures.length > 0 && (
+      {expanded && (result.failures ?? []).length > 0 && (
         <div className="border-border space-y-1.5 border-t px-2.5 py-2">
-          {result.failures.map((f, i) => (
+          {(result.failures ?? []).map((f, i) => (
             <div
               key={`${f.check_name}-${i}`}
               className="flex items-start justify-between gap-2 text-xs"
@@ -158,13 +158,13 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
       {data && (
         <div className="space-y-3">
           {/* Critical failures */}
-          {data.critical_failures.length > 0 && (
+          {(data.critical_failures ?? []).length > 0 && (
             <div className="border-destructive/30 bg-badge-danger-bg rounded border p-2">
               <h4 className="text-badge-danger-text mb-1 text-xs font-medium">
                 {"Critical Failures"}
               </h4>
               <ul className="space-y-1">
-                {data.critical_failures.map((f: ChaosFailure, i: number) => (
+                {(data.critical_failures ?? []).map((f: ChaosFailure, i: number) => (
                   <li key={`crit-${f.check_name}-${i}`} className="text-badge-danger-text text-xs">
                     <span className="font-medium">{f.profile}</span>: {f.description}
                   </li>
@@ -197,14 +197,14 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
 
             <p className="text-foreground-muted text-xs">
               {`${
-                data.profile_results.filter((r: ChaosProfileResult) => r.passed).length
+                (data.profile_results ?? []).filter((r: ChaosProfileResult) => r.passed).length
               } of ${data.profiles_tested} profiles passed`}
             </p>
           </div>
 
           {/* Per-profile results */}
           <div className="space-y-1.5">
-            {data.profile_results.map((r: ChaosProfileResult) => (
+            {(data.profile_results ?? []).map((r: ChaosProfileResult) => (
               <ProfileRow key={r.profile} result={r} html={html} />
             ))}
           </div>

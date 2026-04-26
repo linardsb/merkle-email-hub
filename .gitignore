@@ -108,3 +108,17 @@ data/debug/*/diff.png
 data/debug/*/reference_diff.png
 data/debug/*/visual_report.json
 data/debug/*/_visual_test.html
+
+# Stray local debug / build artifacts (F063)
+# NOTE: data/debug/ holds both committed fixtures (expected.html, manifest.yaml,
+# vlm_classifications.json) and per-run regenerable debug output. We ignore the
+# regenerable bits explicitly rather than nuking the whole tree.
+=2.0
+*.zip
+data/debug/*/actual-with-flags.html
+data/debug/*/raw_figma.json
+data/debug/*/structure.json
+data/debug/*/tokens.json
+data/debug/*/report.json
+data/debug/*/assets/
+e2e-screenshots/

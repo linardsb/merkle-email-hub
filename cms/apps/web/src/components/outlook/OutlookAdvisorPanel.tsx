@@ -144,18 +144,18 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
             <span className="bg-card text-foreground-muted rounded-full px-2 py-0.5">
               {`${data.removable_count} removable`}
             </span>
-            {data.byte_savings > 0 && (
+            {(data.byte_savings ?? 0) > 0 && (
               <span className="bg-badge-success-bg text-badge-success-text rounded-full px-2 py-0.5">
-                {`${formatKB(data.byte_savings)} KB potential savings`}
+                {`${formatKB((data.byte_savings ?? 0))} KB potential savings`}
               </span>
             )}
           </div>
 
           {/* Severity breakdown */}
-          {data.dependencies.length > 0 && (
+          {(data.dependencies ?? []).length > 0 && (
             <div className="flex gap-2 text-[10px]">
               {(["high", "medium", "low"] as const).map((sev) => {
-                const count = data.dependencies.filter(
+                const count = (data.dependencies ?? []).filter(
                   (d: OutlookDependencySchema) => d.severity === sev,
                 ).length;
                 if (count === 0) return null;
@@ -172,14 +172,14 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           )}
 
           {/* Dependency list (collapsible) */}
-          {data.dependencies.length > 0 && (
+          {(data.dependencies ?? []).length > 0 && (
             <div>
               <button
                 type="button"
                 onClick={() => setShowDeps((v) => !v)}
                 className="text-foreground-muted flex w-full items-center justify-between text-xs font-medium"
               >
-                <span>{`${data.dependencies.length} dependencies found`}</span>
+                <span>{`${(data.dependencies ?? []).length} dependencies found`}</span>
                 {showDeps ? (
                   <ChevronUp className="h-3.5 w-3.5" />
                 ) : (
@@ -188,7 +188,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
               </button>
               {showDeps && (
                 <div className="mt-1.5 space-y-1.5">
-                  {data.dependencies.map((dep: OutlookDependencySchema, i: number) => (
+                  {(data.dependencies ?? []).map((dep: OutlookDependencySchema, i: number) => (
                     <DependencyRow key={`${dep.type}-${dep.line_number}-${i}`} dep={dep} />
                   ))}
                 </div>
@@ -197,17 +197,17 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           )}
 
           {/* Migration timeline */}
-          {data.modernization_plan.length > 0 && (
+          {(data.modernization_plan ?? []).length > 0 && (
             <div>
               <h4 className="text-foreground-muted mb-1.5 text-xs font-medium">
                 {"Migration Plan"}
               </h4>
-              <MigrationTimeline plan={data.modernization_plan} />
+              <MigrationTimeline plan={(data.modernization_plan ?? [])} />
             </div>
           )}
 
           {/* Modernize action */}
-          {data.removable_count > 0 && (
+          {(data.removable_count ?? 0) > 0 && (
             <div className="border-border bg-card space-y-2 rounded border p-2.5">
               <div className="flex items-center gap-2">
                 <label className="text-foreground-muted text-xs">{"Target Mode"}</label>

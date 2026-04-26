@@ -93,7 +93,7 @@ class CircuitBreaker:
             if exc_type is None:
                 # Success
                 if self._state in (CircuitState.HALF_OPEN, CircuitState.OPEN):
-                    logger.info(f"circuit_breaker.{self.name}.recovered")
+                    logger.info("circuit_breaker.recovered", name=self.name)
                 self._state = CircuitState.CLOSED
                 self._failure_count = 0
                 self._half_open_calls = 0
