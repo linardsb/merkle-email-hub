@@ -143,7 +143,9 @@ class TestBrazeService:
             return_value=_resp(200, {"content_block_id": "cb_explicit"}),
         ) as mock_req:
             result = await service.export(
-                "<h1>x</h1>", "Welcome", credentials={"api_key": "explicit"}
+                "<h1>x</h1>",
+                "Welcome",
+                credentials={"api_key": "explicit"},  # pragma: allowlist secret
             )
         assert result == "cb_explicit"
         pool.get_key.assert_not_awaited()

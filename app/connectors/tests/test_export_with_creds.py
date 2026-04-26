@@ -31,7 +31,7 @@ class TestBrazeExportWithCredentials:
 
     @pytest.mark.asyncio()
     async def test_export_with_credentials_calls_api(self) -> None:
-        creds = {"api_key": "test-braze-key"}
+        creds = {"api_key": "test-braze-key"}  # pragma: allowlist secret
         mock_resp = _mock_response(200, {"content_block_id": "cb_123"})
 
         with patch(
@@ -133,7 +133,7 @@ class TestTaxiExportWithCredentials:
 
     @pytest.mark.asyncio()
     async def test_export_with_credentials_calls_api(self) -> None:
-        creds = {"api_key": "taxi-key-123"}
+        creds = {"api_key": "taxi-key-123"}  # pragma: allowlist secret
         mock_resp = _mock_response(200, {"id": "tpl_789", "name": "Newsletter"})
 
         with patch(

@@ -73,7 +73,7 @@ class TestBrazePoolRotation:
         service = BrazeConnectorService()
         service._pool = pool
 
-        explicit_creds = {"api_key": "explicit-key"}
+        explicit_creds = {"api_key": "explicit-key"}  # pragma: allowlist secret
         mock_resp = _mock_response(200, {"content_block_id": "cb_explicit"})
         with patch(
             "app.connectors._base.api_key.resilient_request",
