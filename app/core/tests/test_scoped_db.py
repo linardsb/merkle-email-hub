@@ -12,10 +12,12 @@ feature's own tests with the autouse bypass disabled (see the
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from app.auth.models import User
 from app.core.scoped_db import (
     _SYSTEM_ACCESS,
     TenantAccess,
@@ -29,8 +31,8 @@ from app.core.scoped_db import (
 pytestmark = pytest.mark.tenant_isolation
 
 
-def _make_user(user_id: int = 1, role: str = "developer") -> SimpleNamespace:
-    return SimpleNamespace(id=user_id, role=role)
+def _make_user(user_id: int = 1, role: str = "developer") -> User:
+    return cast(User, SimpleNamespace(id=user_id, role=role))
 
 
 @pytest.fixture(autouse=True)

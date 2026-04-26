@@ -1900,7 +1900,7 @@
           "projects"
         ],
         "summary": "List Projects",
-        "description": "List projects with optional client org filter.",
+        "description": "List projects with optional client org filter.\n\nCloses F003: a non-admin caller asking for `client_org_id=X` is\nrejected unless X is an org they actually belong to (resolved via\n`ProjectMember`). Admins may pass any org.",
         "operationId": "list_projects_api_v1_projects_get",
         "security": [
           {

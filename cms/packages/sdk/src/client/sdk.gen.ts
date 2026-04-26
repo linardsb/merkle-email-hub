@@ -781,6 +781,10 @@ export const createOrgApiV1OrgsPost = <ThrowOnError extends boolean = false>(opt
 /**
  * List Projects
  * List projects with optional client org filter.
+ *
+ * Closes F003: a non-admin caller asking for `client_org_id=X` is
+ * rejected unless X is an org they actually belong to (resolved via
+ * `ProjectMember`). Admins may pass any org.
  */
 export const listProjectsApiV1ProjectsGet = <ThrowOnError extends boolean = false>(options?: Options<ListProjectsApiV1ProjectsGetData, ThrowOnError>) => {
     return (options?.client ?? _heyApiClient).get<ListProjectsApiV1ProjectsGetResponse, ListProjectsApiV1ProjectsGetError, ThrowOnError>({

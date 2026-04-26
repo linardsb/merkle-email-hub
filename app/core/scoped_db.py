@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, cast
 
 from cachetools import TTLCache  # pyright: ignore[reportMissingTypeStubs]
 from fastapi import Depends
@@ -76,7 +76,7 @@ async def _resolve_access(db: AsyncSession, user: User) -> TenantAccess:
     """
     cached = _membership_cache.get(user.id)
     if cached is not None:
-        return cached
+        return cast(TenantAccess, cached)
 
     if user.role == "admin":
         access = TenantAccess(project_ids=None, org_ids=None, role=user.role)
