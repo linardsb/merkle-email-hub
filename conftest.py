@@ -6,15 +6,15 @@ Feature-specific fixtures should remain in their respective tests/ directories.
 """
 
 import os
-from collections.abc import Generator
-from unittest.mock import patch
+from collections.abc import AsyncGenerator, Generator
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.auth.dependencies import clear_user_cache
 from app.core.config import get_settings
-from app.core.scoped_db import TenantAccess
+from app.core.scoped_db import TenantAccess, get_scoped_db
 from app.main import app
 
 # Modules that import `scoped_access` directly. Unit tests use AsyncMock
@@ -68,6 +68,27 @@ def _clear_auth_cache() -> Generator[None, None, None]:
     clear_user_cache()
     yield
     clear_user_cache()
+
+
+async def _mock_scoped_db() -> AsyncGenerator[AsyncMock, None]:
+    """Override `get_scoped_db` for TestClient-based route tests.
+
+    Real `get_scoped_db` opens `AsyncSessionLocal()` and queries `ProjectMember`,
+    which fails in CI where no Postgres is reachable from the unit-test job.
+    Tests that mock the service layer never touch the session anyway; tests that
+    exercise the real DB path are integration-marked and use a real fixture.
+    """
+    session = AsyncMock()
+    session.info = {"tenant_access": _SYSTEM_TEST_ACCESS}
+    yield session
+
+
+@pytest.fixture(autouse=True)
+def _override_scoped_db() -> Generator[None, None, None]:
+    """Patch the FastAPI dependency override so route tests don't hit Postgres."""
+    app.dependency_overrides[get_scoped_db] = _mock_scoped_db
+    yield
+    app.dependency_overrides.pop(get_scoped_db, None)
 
 
 @pytest.fixture(scope="function")
