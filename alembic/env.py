@@ -7,10 +7,6 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
-from app.core.config import get_settings
-from app.core.database import Base
-
 # Import every model module so its tables register with Base.metadata before
 # `alembic check` compares schema → models. In normal app runtime these modules
 # load transitively via app.main → routes → services → repositories, but
@@ -43,6 +39,9 @@ import app.shared.models  # noqa: F401
 import app.streaming.crdt.models  # noqa: F401
 import app.templates.models  # noqa: F401
 import app.templates.upload.models  # noqa: F401
+from alembic import context
+from app.core.config import get_settings
+from app.core.database import Base
 
 config = context.config
 
