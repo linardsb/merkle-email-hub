@@ -43,7 +43,52 @@ pushes), not a safety gate. The CI job is the safety gate.
 This unblock is Phase 2 (audit §2.4 `alembic check` work) territory — the
 migration-lint job will get hardened alongside the new `alembic check` gate.
 
+## `alembic check` is advisory (Phase 2 §2.4)
+
+The `migrations` job in `.github/workflows/ci.yml` runs `alembic check`
+with `continue-on-error: true`. It reports drift but doesn't fail the build.
+
+### Why it stays advisory
+
+After Phase 2 imported every model module into `alembic/env.py`, the worst
+class of drift (9 "removed table" findings — model files weren't loading
+into `Base.metadata`) is gone. What remains is long-standing cosmetic
+drift between SQLAlchemy model declarations and the migrations that built
+the schema:
+
+- **`TIMESTAMP()` vs `DateTime(timezone=True)`** on `created_at`/`updated_at`
+  across many tables. Equivalent in Postgres; different to alembic's
+  comparator.
+- **`nullable=False` server-side default vs model-side `Mapped[datetime]`**
+  difference for `TimestampMixin` columns.
+- **PK index normalization** — alembic adds `ix_<table>_id` for every
+  primary key column; many migrations didn't create them.
+- **Column comment drift** — comments in the model that aren't in the DB,
+  or vice versa.
+- **`ix_memory_entries_embedding_hnsw`** — HNSW vector index exists on the
+  DB but not declared on the SQLAlchemy `Index(...)` for `memory_entries`.
+- **`qa_overrides_qa_result_id_key`** unique constraint exists on the DB
+  but isn't declared on the model.
+
+None of these change runtime behavior. Fixing them all is a sweep across
+~20 model files plus a "no-op normalization" migration; that's a separate
+piece of work, not Phase 2's scope.
+
+### What unblocks promoting it to a hard gate
+
+1. Sweep models to align column types: replace any plain `TIMESTAMP()` /
+   `DateTime()` with `DateTime(timezone=True)`. Mostly happens via
+   `TimestampMixin` standardization.
+2. Either (a) add the PK indexes via a no-op migration, or (b) suppress
+   `add_index` for primary key columns in `alembic/env.py`'s
+   `target_metadata.naming_convention` / `include_object` filter.
+3. Reconcile column comments and the missing HNSW + unique-constraint
+   declarations.
+4. Run `alembic check` against a fresh DB. If clean, drop
+   `continue-on-error: true` from `.github/workflows/ci.yml :: migrations`.
+
 ## Other migration-related deferrals
 
 None at present. `alembic upgrade head` against a fresh DB is exercised in
-the e2e-smoke job; promoting it to a standalone gate is Phase 2 §2.4.
+the e2e-smoke job (in `ci.yml`) AND in the dedicated `migrations` job
+introduced in Phase 2 §2.4.
