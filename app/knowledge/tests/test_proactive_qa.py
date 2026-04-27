@@ -29,23 +29,6 @@ def _make_settings(
     return settings
 
 
-def _make_memory_entry(
-    *,
-    content: str = "[failure_pattern] Agent 'scaffolder' failed QA check 'html_validation'",
-    source: str = "failure_pattern",
-    qa_check: str = "html_validation",
-    client_ids: list[str] | None = None,
-) -> tuple[MagicMock, float]:
-    memory = MagicMock()
-    memory.content = content
-    memory.metadata_json = {
-        "source": source,
-        "qa_check": qa_check,
-        "client_ids": client_ids or ["outlook_2019"],
-    }
-    return (memory, 0.8)
-
-
 # ── Test 1: Extract from failed QA ──
 
 
