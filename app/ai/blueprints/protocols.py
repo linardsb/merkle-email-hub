@@ -6,6 +6,7 @@ the context and result data structures that flow through the graph.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
@@ -67,6 +68,10 @@ class NodeContext:
     metadata: dict[str, object] = field(default_factory=lambda: dict[str, object]())
     build_plan: EmailBuildPlan | None = None
     multimodal_context: list[ContentBlock] | None = None
+
+    def merge_metadata(self, updates: Mapping[str, object]) -> None:
+        """Merge layer output into metadata; last-write-wins per key."""
+        self.metadata.update(updates)
 
 
 @dataclass

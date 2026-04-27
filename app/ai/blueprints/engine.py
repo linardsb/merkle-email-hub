@@ -3,7 +3,7 @@
 import time
 import uuid
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -25,7 +25,12 @@ from app.ai.agents.context_budget import (
     summarize_trajectory,
 )
 from app.ai.agents.evals.judges.schemas import JudgeVerdict
+from app.ai.blueprints.correction_examples import (
+    format_correction_examples,
+    recall_correction_examples,
+)
 from app.ai.blueprints.exceptions import BlueprintError, BlueprintEscalatedError, BlueprintNodeError
+from app.ai.blueprints.handoff import format_upstream_constraints
 from app.ai.blueprints.protocols import (
     AgentHandoff,
     BlueprintNode,
@@ -38,6 +43,8 @@ from app.ai.blueprints.protocols import (
 )
 from app.ai.blueprints.route_advisor import RoutingDecision, RoutingPlan, build_routing_plan
 from app.ai.blueprints.schemas import BlueprintProgress
+from app.ai.security.prompt_guard import scan_for_injection
+from app.core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -53,6 +60,11 @@ OutcomeCallback = Callable[["BlueprintRun", str, int | None], Coroutine[Any, Any
 MAX_SELF_CORRECTION_ROUNDS = 2
 MAX_TOTAL_STEPS = 25  # safety brake (includes repair node steps between agents and QA gate)
 CONFIDENCE_REVIEW_THRESHOLD = 0.5
+
+# Reserved keys a LAYER may return to update top-level NodeContext fields
+# instead of metadata. Keys are underscore-prefixed in the layer output dict
+# and applied via ``dataclasses.replace`` in ``_build_node_context``.
+RESERVED_FIELD_KEYS: tuple[str, ...] = ("_html", "_brief", "_multimodal_context")
 
 EdgeCondition = Literal["success", "qa_fail", "always", "route_to"]
 
@@ -157,6 +169,44 @@ class BlueprintEngine:
         self._recovery_outcome_repo = recovery_outcome_repo
         self._confidence_calibrations = confidence_calibrations
 
+        # Layer pipeline executed by ``_build_node_context`` in source order.
+        # Each layer is an async (ctx, run, node) -> dict[str, Any] method;
+        # reserved keys (RESERVED_FIELD_KEYS) update top-level NodeContext
+        # fields, all other keys merge into ``ctx.metadata``.
+        self._METADATA_LAYERS: tuple[
+            Callable[
+                [NodeContext, BlueprintRun, BlueprintNode],
+                Coroutine[Any, Any, dict[str, Any]],
+            ],
+            ...,
+        ] = (
+            self._layer_01_agent_budget,
+            self._layer_02_upstream_handoff,
+            self._layer_03_handoff_history,
+            self._layer_04_qa_failure_details,
+            self._layer_05_economy,
+            self._layer_06_progress_anchor,
+            self._layer_07_correction_examples,
+            self._layer_08_prompt_patches,
+            self._layer_09_insights,
+            self._layer_10_recalled_memories,
+            self._layer_11_component_context,
+            self._layer_12_graph_context,
+            self._layer_13_recovery_repo,
+            self._layer_14_audience_profile_ref,
+            self._layer_15_audience_context,
+            self._layer_16_project_subgraph,
+            self._layer_17_failure_patterns,
+            self._layer_18_competitive_context,
+            self._layer_19_client_lookup_tools,
+            self._layer_20_adaptive_tier,
+            self._layer_21_knowledge_prefetch,
+            self._layer_22_multimodal,
+            self._layer_23_visual_override,
+            self._layer_24_design_system,
+            self._layer_25_injection_scan,
+        )
+
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
     ) -> BlueprintRun:
@@ -177,9 +227,7 @@ class BlueprintEngine:
         # Set up cost tracking if user_id provided
         cost_tracker: BlueprintCostTracker | None = None
         if user_id is not None:
-            from app.core.config import get_settings as _get_settings
-
-            _settings = _get_settings()
+            _settings = get_settings()
             cost_tracker = BlueprintCostTracker(daily_cap=_settings.blueprint.daily_token_cap)
 
         logger.info(
@@ -251,9 +299,7 @@ class BlueprintEngine:
 
         cost_tracker: BlueprintCostTracker | None = None
         if user_id is not None:
-            from app.core.config import get_settings as _get_settings
-
-            _settings = _get_settings()
+            _settings = get_settings()
             cost_tracker = BlueprintCostTracker(daily_cap=_settings.blueprint.daily_token_cap)
 
         logger.info(
@@ -277,331 +323,434 @@ class BlueprintEngine:
     ) -> BlueprintRun:
         """Execute the blueprint graph starting from ``start_node``.
 
-        Shared by :meth:`run` (from entry) and :meth:`resume` (from checkpoint).
+        Thin orchestration loop — per-step work is delegated to the helpers
+        ``_run_node`` / ``_record_progress`` / ``_handle_qa_gate_outcome`` /
+        ``_persist_handoff`` etc. Shared by :meth:`run` (from entry) and
+        :meth:`resume` (from checkpoint).
         """
-        current_node_name = start_node
+        current = start_node
         steps = 0
-
-        while current_node_name is not None and steps < MAX_TOTAL_STEPS:
+        while current is not None and steps < MAX_TOTAL_STEPS:
             steps += 1
-            node = self._definition.nodes[current_node_name]
-
-            # Track iteration count for agentic nodes
-            iteration = run.iteration_counts.get(current_node_name, 0)
+            node = self._definition.nodes[current]
+            iteration = run.iteration_counts.get(current, 0)
             if node.node_type == "agentic" and iteration >= MAX_SELF_CORRECTION_ROUNDS:
-                raise BlueprintEscalatedError(current_node_name, iteration)
+                raise BlueprintEscalatedError(current, iteration)
 
-            # Skip irrelevant agentic nodes based on routing plan
-            if (
-                node.node_type == "agentic"
-                and not routing_plan.force_full
-                and current_node_name in routing_plan.skip_nodes
-            ):
-                logger.info(
-                    "blueprint.node_skipped",
-                    node=current_node_name,
-                    run_id=run.run_id,
-                    reason="routing_plan_skip",
-                )
-                run.skipped_nodes.append(current_node_name)
-                run.progress.append(
-                    BlueprintProgress(
-                        node_name=current_node_name,
-                        node_type=node.node_type,
-                        status="skipped",
-                        iteration=iteration,
-                        summary=_skip_summary(current_node_name, routing_plan),
-                        duration_ms=0.0,
-                    )
-                )
-                skip_result = NodeResult(status="skipped", html=run.html)
-                current_node_name = self._resolve_next_node(current_node_name, skip_result)
+            if self._is_skipped_by_routing_plan(node, current, routing_plan):
+                current = self._handle_skipped_node(run, node, current, iteration, routing_plan)
                 continue
 
-            context = await self._build_node_context(node, run, brief, iteration)
-
-            start = time.monotonic()
-            try:
-                result = await node.execute(context)
-            except Exception as exc:
-                logger.error(
-                    "blueprints.node_failed",
-                    node=current_node_name,
-                    error=str(exc),
-                    error_type=type(exc).__name__,
-                )
-                raise BlueprintNodeError(current_node_name, "execution failed") from exc
-            duration_ms = (time.monotonic() - start) * 1000
-
-            # Scope validation: reject out-of-scope fixer changes on retry
-            if node.node_type == "agentic" and iteration > 0 and run.html and result.html:
-                from app.ai.blueprints.nodes.recovery_router_node import AGENT_SCOPES
-                from app.ai.blueprints.scope_validator import validate_scope
-
-                agent_scope = AGENT_SCOPES.get(current_node_name)
-                if agent_scope is not None:
-                    violations = validate_scope(
-                        pre_html=run.html,
-                        post_html=result.html,
-                        scope=agent_scope,
-                        agent_name=current_node_name,
-                    )
-                    if violations:
-                        logger.warning(
-                            "blueprint.scope_violation",
-                            agent=current_node_name,
-                            violations=[v.description for v in violations],
-                            run_id=run.run_id,
-                        )
-                        # Reject the change — keep pre-fix HTML, escalate
-                        result = NodeResult(
-                            status="failed",
-                            html=run.html,
-                            details=f"scope_violation:{current_node_name}",
-                            error=f"Scope violation: {violations[0].description}",
-                        )
-
-            # --- Inline judge on recovery retries ---
-            if (
-                self._judge_on_retry
-                and node.node_type == "agentic"
-                and iteration > 0
-                and result.status == "success"
-                and result.html
-            ):
-                from app.ai.blueprints.inline_judge import run_inline_judge
-
-                agent_name = node.name.removesuffix("_node")
-                verdict = await run_inline_judge(
-                    agent_name=agent_name,
-                    context=context,
-                    html_output=result.html,
-                    run=run,
-                )
-                if verdict is not None:
-                    run.judge_verdict = verdict
-
-                    # Persist verdict for aggregation (fire-and-forget)
-                    from app.core.config import get_settings as _get_settings_ja
-
-                    if _get_settings_ja().blueprint.judge_aggregation_enabled:
-                        try:
-                            from app.ai.blueprints.judge_aggregator import persist_judge_verdict
-
-                            await persist_judge_verdict(verdict, self._project_id, run.run_id)
-                        except Exception:
-                            logger.debug(
-                                "blueprint.judge_verdict_persist_failed",
-                                run_id=run.run_id,
-                                exc_info=True,
-                            )
-
-                    if not verdict.overall_pass:
-                        run.status = "needs_review"
-                        logger.warning(
-                            "blueprint.inline_judge_rejected",
-                            agent=agent_name,
-                            run_id=run.run_id,
-                            failed_criteria=[
-                                cr.criterion for cr in verdict.criteria_results if not cr.passed
-                            ],
-                        )
-                        break
-                    logger.info(
-                        "blueprint.inline_judge_approved",
-                        agent=agent_name,
-                        run_id=run.run_id,
-                    )
-
-            # Record progress
-            run.progress.append(
-                BlueprintProgress(
-                    node_name=current_node_name,
-                    node_type=node.node_type,
-                    status=result.status,
-                    iteration=iteration,
-                    summary=result.details or result.error or f"{result.status}",
-                    duration_ms=round(duration_ms, 1),
-                )
+            context, result, duration_ms, judge_break = await self._run_node(
+                node, run, brief, iteration, current
             )
 
-            # Update run state
-            if result.html:
-                run.html = result.html
-            if result.usage:
-                for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                    run.model_usage[key] += result.usage.get(key, 0)
+            self._record_progress(run, node, current, result, iteration, duration_ms)
+            if await self._enforce_cost_cap(run, result, cost_tracker, user_id):
+                break
 
-            # Check token cost cap per node completion
-            if cost_tracker is not None and user_id is not None and result.usage:
-                node_tokens = result.usage.get("total_tokens", 0)
-                if node_tokens > 0:
-                    await cost_tracker.record_usage(user_id, node_tokens)
-                    remaining = await cost_tracker.check_budget(user_id)
-                    if remaining <= 0:
-                        run.status = "cost_cap_exceeded"
-                        logger.warning(
-                            "blueprint.cost_cap_reached",
-                            run_id=run.run_id,
-                            user_id=user_id,
-                            total_tokens=run.model_usage["total_tokens"],
-                        )
-                        break
+            if current == "qa_gate":
+                await self._handle_qa_gate_outcome(run, result)
 
-            # Track QA results
-            if current_node_name == "qa_gate":
-                if result.status == "success":
-                    run.qa_passed = True
-                    run.qa_failures = []
-                    run.qa_failure_details = []
-                else:
-                    run.qa_passed = False
-                    run.qa_failures = [
-                        line.strip() for line in result.details.split("\n") if line.strip()
-                    ]
-                    # Save previous failures for cycle detection before updating
-                    run.previous_qa_failure_details = list(run.qa_failure_details)
-                    run.qa_failure_details = list(result.structured_failures)
-
-                # Record recovery outcomes (fire-and-forget)
-                if self._recovery_outcome_repo is not None:
-                    try:
-                        await self._record_recovery_outcomes(run)
-                    except Exception:
-                        logger.debug(
-                            "blueprint.recovery_outcome_record_failed",
-                            run_id=run.run_id,
-                            exc_info=True,
-                        )
-
-                # Store correction example on successful recovery (fire-and-forget)
-                if result.status == "success" and run._handoff_history:
-                    from app.core.config import get_settings as _get_settings_ce
-
-                    if _get_settings_ce().blueprint.correction_examples_enabled:
-                        try:
-                            await self._store_correction_example(run)
-                        except Exception:
-                            logger.debug(
-                                "blueprint.correction_example_store_failed",
-                                run_id=run.run_id,
-                                exc_info=True,
-                            )
-
-            # Increment iteration for agentic nodes
             if node.node_type == "agentic":
-                run.iteration_counts[current_node_name] = iteration + 1
-
+                run.iteration_counts[current] = iteration + 1
             run._last_result = result
 
-            # Store handoff from agentic nodes
-            if result.handoff is not None:
-                run._last_handoff = result.handoff
-                run._handoff_history.append(result.handoff)
+            await self._persist_handoff(run, current, result)
+            await self._track_correction_pattern(run, context, current, node, result)
 
-                # Persist handoff as episodic memory (fire-and-forget)
-                if self._on_handoff is not None:
-                    try:
-                        await self._on_handoff(result.handoff, run.run_id, self._project_id)
-                    except Exception:
-                        logger.warning(
-                            "blueprint.handoff_memory_failed",
-                            node=current_node_name,
-                            run_id=run.run_id,
-                            exc_info=True,
-                        )
-
-            # LAYER 18: Correction pattern tracking (fire-and-forget)
-            if (
-                node.node_type == "agentic"
-                and context.html
-                and result.html
-                and context.html != result.html
-                and result.handoff is not None
-            ):
-                from app.core.config import get_settings as _get_settings_ct
-
-                if _get_settings_ct().correction_tracker.enabled:
-                    try:
-                        from app.design_sync.correction_tracker import CorrectionTracker
-
-                        tracker = CorrectionTracker(data_dir=Path("data"))
-                        await tracker.record_correction(
-                            agent=result.handoff.agent_name,
-                            original_html=context.html,
-                            corrected_html=result.html,
-                        )
-                    except Exception:
-                        logger.debug(
-                            "blueprint.correction_tracker_failed",
-                            node=current_node_name,
-                            run_id=run.run_id,
-                            exc_info=True,
-                        )
-
-            # Low confidence → route to human review instead of retrying
-            if (
-                node.node_type == "agentic"
-                and result.handoff is not None
-                and result.handoff.confidence is not None
-            ):
-                effective_threshold = CONFIDENCE_REVIEW_THRESHOLD
-                if self._confidence_calibrations is not None:
-                    cal = self._confidence_calibrations.get(current_node_name)
-                    if cal is not None:
-                        effective_threshold = cal.effective_threshold
-
-                if result.handoff.confidence < effective_threshold:
-                    run.status = "needs_review"
-                    logger.warning(
-                        "blueprint.low_confidence",
-                        node=current_node_name,
-                        confidence=result.handoff.confidence,
-                        threshold=effective_threshold,
-                        calibrated=self._confidence_calibrations is not None
-                        and current_node_name in (self._confidence_calibrations or {}),
-                        run_id=run.run_id,
-                    )
-                    break
+            if judge_break or self._is_low_confidence_break(run, current, result):
+                break
 
             logger.info(
                 "blueprint.node_completed",
-                node=current_node_name,
+                node=current,
                 node_type=node.node_type,
                 status=result.status,
                 iteration=iteration,
                 duration_ms=round(duration_ms, 1),
             )
 
-            # Resolve next node BEFORE checkpoint so checkpoint records where to resume
-            next_node = self._resolve_next_node(current_node_name, result)
-
-            # Fire-and-forget checkpoint after successful node
+            next_node = self._resolve_next_node(current, result)
             await self._save_checkpoint(
-                run, current_node_name, len(run.progress) - 1, next_node_name=next_node
+                run, current, len(run.progress) - 1, next_node_name=next_node
+            )
+            await self._record_routing_history(node, current, result)
+            current = next_node
+
+        self._finalize_run_status(run, steps)
+        await self._emit_terminal_notification(run)
+        return run
+
+    # ── ``_execute_from`` helpers ──
+
+    def _is_skipped_by_routing_plan(
+        self, node: BlueprintNode, current: str, routing_plan: RoutingPlan
+    ) -> bool:
+        """Routing-plan-skip predicate for agentic nodes."""
+        return (
+            node.node_type == "agentic"
+            and not routing_plan.force_full
+            and current in routing_plan.skip_nodes
+        )
+
+    def _handle_skipped_node(
+        self,
+        run: BlueprintRun,
+        node: BlueprintNode,
+        current: str,
+        iteration: int,
+        routing_plan: RoutingPlan,
+    ) -> str | None:
+        """Record a routing-plan-skipped node and return the next graph hop."""
+        logger.info(
+            "blueprint.node_skipped",
+            node=current,
+            run_id=run.run_id,
+            reason="routing_plan_skip",
+        )
+        run.skipped_nodes.append(current)
+        run.progress.append(
+            BlueprintProgress(
+                node_name=current,
+                node_type=node.node_type,
+                status="skipped",
+                iteration=iteration,
+                summary=_skip_summary(current, routing_plan),
+                duration_ms=0.0,
+            )
+        )
+        skip_result = NodeResult(status="skipped", html=run.html)
+        return self._resolve_next_node(current, skip_result)
+
+    async def _run_node(
+        self,
+        node: BlueprintNode,
+        run: BlueprintRun,
+        brief: str,
+        iteration: int,
+        current: str,
+    ) -> tuple[NodeContext, NodeResult, float, bool]:
+        """Build context, execute the node, scope-validate, and inline-judge.
+
+        Returns ``(context, result, duration_ms, judge_break)`` where
+        ``judge_break`` is True when the inline judge has set
+        ``run.status = "needs_review"`` and the loop must exit.
+        """
+        context = await self._build_node_context(node, run, brief, iteration)
+        start = time.monotonic()
+        try:
+            result = await node.execute(context)
+        except Exception as exc:
+            # Translation boundary: any node failure becomes BlueprintNodeError.
+            logger.error(
+                "blueprints.node_failed",
+                node=current,
+                error=str(exc),
+                error_type=type(exc).__name__,
+            )
+            raise BlueprintNodeError(current, "execution failed") from exc
+        duration_ms = (time.monotonic() - start) * 1000
+
+        result = self._validate_scope_or_reject(result, node, current, iteration, run)
+        judge_break = await self._run_inline_judge_if_needed(
+            node, current, iteration, context, result, run
+        )
+        return context, result, duration_ms, judge_break
+
+    def _validate_scope_or_reject(
+        self,
+        result: NodeResult,
+        node: BlueprintNode,
+        current: str,
+        iteration: int,
+        run: BlueprintRun,
+    ) -> NodeResult:
+        """Reject out-of-scope fixer changes on retry by replacing the result."""
+        if not (node.node_type == "agentic" and iteration > 0 and run.html and result.html):
+            return result
+        from app.ai.blueprints.nodes.recovery_router_node import AGENT_SCOPES
+        from app.ai.blueprints.scope_validator import validate_scope
+
+        agent_scope = AGENT_SCOPES.get(current)
+        if agent_scope is None:
+            return result
+        violations = validate_scope(
+            pre_html=run.html,
+            post_html=result.html,
+            scope=agent_scope,
+            agent_name=current,
+        )
+        if not violations:
+            return result
+        logger.warning(
+            "blueprint.scope_violation",
+            agent=current,
+            violations=[v.description for v in violations],
+            run_id=run.run_id,
+        )
+        # Reject the change — keep pre-fix HTML, mark failed
+        return NodeResult(
+            status="failed",
+            html=run.html,
+            details=f"scope_violation:{current}",
+            error=f"Scope violation: {violations[0].description}",
+        )
+
+    async def _run_inline_judge_if_needed(
+        self,
+        node: BlueprintNode,
+        _current: str,
+        iteration: int,
+        context: NodeContext,
+        result: NodeResult,
+        run: BlueprintRun,
+    ) -> bool:
+        """Run inline judge on recovery retries; return True to break the loop."""
+        if not (
+            self._judge_on_retry
+            and node.node_type == "agentic"
+            and iteration > 0
+            and result.status == "success"
+            and result.html
+        ):
+            return False
+        from app.ai.blueprints.inline_judge import run_inline_judge
+
+        agent_name = node.name.removesuffix("_node")
+        verdict = await run_inline_judge(
+            agent_name=agent_name,
+            context=context,
+            html_output=result.html,
+            run=run,
+        )
+        if verdict is None:
+            return False
+        run.judge_verdict = verdict
+
+        # Persist verdict for aggregation
+        if get_settings().blueprint.judge_aggregation_enabled:
+            try:
+                from app.ai.blueprints.judge_aggregator import persist_judge_verdict
+
+                await persist_judge_verdict(verdict, self._project_id, run.run_id)
+            except Exception:
+                # Fire-and-forget: aggregator persistence failures must not crash the pipeline.
+                logger.debug(
+                    "blueprint.judge_verdict_persist_failed",
+                    run_id=run.run_id,
+                    exc_info=True,
+                )
+
+        if not verdict.overall_pass:
+            run.status = "needs_review"
+            logger.warning(
+                "blueprint.inline_judge_rejected",
+                agent=agent_name,
+                run_id=run.run_id,
+                failed_criteria=[cr.criterion for cr in verdict.criteria_results if not cr.passed],
+            )
+            return True
+        logger.info(
+            "blueprint.inline_judge_approved",
+            agent=agent_name,
+            run_id=run.run_id,
+        )
+        return False
+
+    def _record_progress(
+        self,
+        run: BlueprintRun,
+        node: BlueprintNode,
+        current: str,
+        result: NodeResult,
+        iteration: int,
+        duration_ms: float,
+    ) -> None:
+        """Append a BlueprintProgress entry and merge result html/usage into run."""
+        run.progress.append(
+            BlueprintProgress(
+                node_name=current,
+                node_type=node.node_type,
+                status=result.status,
+                iteration=iteration,
+                summary=result.details or result.error or f"{result.status}",
+                duration_ms=round(duration_ms, 1),
+            )
+        )
+        if result.html:
+            run.html = result.html
+        if result.usage:
+            for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                run.model_usage[key] += result.usage.get(key, 0)
+
+    async def _enforce_cost_cap(
+        self,
+        run: BlueprintRun,
+        result: NodeResult,
+        cost_tracker: "BlueprintCostTracker | None",
+        user_id: int | None,
+    ) -> bool:
+        """Record this node's token spend and break the loop when the cap is hit."""
+        if cost_tracker is None or user_id is None or not result.usage:
+            return False
+        node_tokens = result.usage.get("total_tokens", 0)
+        if node_tokens <= 0:
+            return False
+        await cost_tracker.record_usage(user_id, node_tokens)
+        remaining = await cost_tracker.check_budget(user_id)
+        if remaining > 0:
+            return False
+        run.status = "cost_cap_exceeded"
+        logger.warning(
+            "blueprint.cost_cap_reached",
+            run_id=run.run_id,
+            user_id=user_id,
+            total_tokens=run.model_usage["total_tokens"],
+        )
+        return True
+
+    async def _handle_qa_gate_outcome(self, run: BlueprintRun, result: NodeResult) -> None:
+        """QA gate-specific bookkeeping: pass/fail, recovery outcomes, corrections."""
+        if result.status == "success":
+            run.qa_passed = True
+            run.qa_failures = []
+            run.qa_failure_details = []
+        else:
+            run.qa_passed = False
+            run.qa_failures = [line.strip() for line in result.details.split("\n") if line.strip()]
+            # Save previous failures for cycle detection before updating.
+            run.previous_qa_failure_details = list(run.qa_failure_details)
+            run.qa_failure_details = list(result.structured_failures)
+
+        if self._recovery_outcome_repo is not None:
+            try:
+                await self._record_recovery_outcomes(run)
+            except Exception:
+                # Fire-and-forget: outcome recording failures must not crash the pipeline.
+                logger.debug(
+                    "blueprint.recovery_outcome_record_failed",
+                    run_id=run.run_id,
+                    exc_info=True,
+                )
+
+        if (
+            result.status == "success"
+            and run._handoff_history
+            and get_settings().blueprint.correction_examples_enabled
+        ):
+            try:
+                await self._store_correction_example(run)
+            except Exception:
+                # Fire-and-forget: correction-example storage failures are non-fatal.
+                logger.debug(
+                    "blueprint.correction_example_store_failed",
+                    run_id=run.run_id,
+                    exc_info=True,
+                )
+
+    async def _persist_handoff(self, run: BlueprintRun, current: str, result: NodeResult) -> None:
+        """Record handoff state on the run and dispatch the memory callback."""
+        if result.handoff is None:
+            return
+        run._last_handoff = result.handoff
+        run._handoff_history.append(result.handoff)
+        if self._on_handoff is None:
+            return
+        try:
+            await self._on_handoff(result.handoff, run.run_id, self._project_id)
+        except Exception:
+            # Fire-and-forget: memory persistence failures must not crash the pipeline.
+            logger.warning(
+                "blueprint.handoff_memory_failed",
+                node=current,
+                run_id=run.run_id,
+                exc_info=True,
             )
 
-            # Fire-and-forget routing history entry
-            if self._routing_history_repo is not None and node.node_type == "agentic":
-                try:
-                    accepted = result.status == "success"
-                    agent_tier: TaskTier = getattr(node, "model_tier", "standard")
-                    await self._routing_history_repo.record(
-                        agent_name=current_node_name,
-                        project_id=self._project_id,
-                        tier_used=agent_tier,
-                        accepted=accepted,
-                    )
-                except Exception:
-                    logger.debug(
-                        "blueprint.routing_history_record_failed",
-                        node=current_node_name,
-                        run_id=run.run_id,
-                        exc_info=True,
-                    )
+    async def _track_correction_pattern(
+        self,
+        run: BlueprintRun,
+        context: NodeContext,
+        current: str,
+        node: BlueprintNode,
+        result: NodeResult,
+    ) -> None:
+        """Record a (pre, post) HTML correction pair when the agent changed HTML."""
+        if not (
+            node.node_type == "agentic"
+            and context.html
+            and result.html
+            and context.html != result.html
+            and result.handoff is not None
+            and get_settings().correction_tracker.enabled
+        ):
+            return
+        try:
+            from app.design_sync.correction_tracker import CorrectionTracker
 
-            current_node_name = next_node
+            tracker = CorrectionTracker(data_dir=Path("data"))
+            await tracker.record_correction(
+                agent=result.handoff.agent_name,
+                original_html=context.html,
+                corrected_html=result.html,
+            )
+        except Exception:
+            # Fire-and-forget: correction-tracker failures must not crash the pipeline.
+            logger.debug(
+                "blueprint.correction_tracker_failed",
+                node=current,
+                run_id=run.run_id,
+                exc_info=True,
+            )
 
+    def _is_low_confidence_break(self, run: BlueprintRun, current: str, result: NodeResult) -> bool:
+        """Set ``needs_review`` and return True when the agent's confidence is too low."""
+        if result.handoff is None or result.handoff.confidence is None:
+            return False
+        effective_threshold = CONFIDENCE_REVIEW_THRESHOLD
+        if self._confidence_calibrations is not None:
+            cal = self._confidence_calibrations.get(current)
+            if cal is not None:
+                effective_threshold = cal.effective_threshold
+        if result.handoff.confidence >= effective_threshold:
+            return False
+        run.status = "needs_review"
+        logger.warning(
+            "blueprint.low_confidence",
+            node=current,
+            confidence=result.handoff.confidence,
+            threshold=effective_threshold,
+            calibrated=self._confidence_calibrations is not None
+            and current in (self._confidence_calibrations or {}),
+            run_id=run.run_id,
+        )
+        return True
+
+    async def _record_routing_history(
+        self, node: BlueprintNode, current: str, result: NodeResult
+    ) -> None:
+        """Persist routing-history entry for adaptive-tier learning."""
+        if self._routing_history_repo is None or node.node_type != "agentic":
+            return
+        try:
+            agent_tier: TaskTier = getattr(node, "model_tier", "standard")
+            await self._routing_history_repo.record(
+                agent_name=current,
+                project_id=self._project_id,
+                tier_used=agent_tier,
+                accepted=result.status == "success",
+            )
+        except Exception:
+            # Fire-and-forget: routing-history failures must not crash the pipeline.
+            logger.debug(
+                "blueprint.routing_history_record_failed",
+                node=current,
+                exc_info=True,
+            )
+
+    def _finalize_run_status(self, run: BlueprintRun, steps: int) -> None:
+        """Apply terminal status when the loop exits without one already set."""
         if run.status == "running":
             run.status = "completed" if run.qa_passed is not False else "completed_with_warnings"
         logger.info(
@@ -612,7 +761,8 @@ class BlueprintEngine:
             qa_passed=run.qa_passed,
         )
 
-        # Notify on terminal status
+    async def _emit_terminal_notification(self, run: BlueprintRun) -> None:
+        """Dispatch a completed/failed notification on terminal status."""
         from app.notifications.channels import Notification
         from app.notifications.emitter import emit_notification
 
@@ -638,8 +788,6 @@ class BlueprintEngine:
                     metadata={"run_id": run.run_id, "status": run.status},
                 )
             )
-
-        return run
 
     async def _save_checkpoint(
         self,
@@ -708,436 +856,636 @@ class BlueprintEngine:
         brief: str,
         iteration: int,
     ) -> NodeContext:
-        """Build progressively-hydrated context for a node."""
-        context = NodeContext(
+        """Build progressively-hydrated context by running the layer pipeline.
+
+        The seed context is constructed from ``run`` once; each layer in
+        ``self._METADATA_LAYERS`` then returns a dict that either updates
+        a top-level ``NodeContext`` field (via reserved keys, applied with
+        ``dataclasses.replace``) or merges into ``ctx.metadata``.
+        """
+        ctx = NodeContext(
             html=run.html,
             brief=brief,
             iteration=iteration,
             qa_failures=list(run.qa_failures),
         )
+        for layer in self._METADATA_LAYERS:
+            out = await layer(ctx, run, node)
+            if not out:
+                continue
+            field_updates: dict[str, Any] = {
+                k.lstrip("_"): out.pop(k) for k in list(out) if k in RESERVED_FIELD_KEYS
+            }
+            if field_updates:
+                ctx = replace(ctx, **field_updates)
+            if out:
+                ctx.merge_metadata(out)
+        return ctx
 
-        # Context budget: determine economy mode + per-agent budget
-        economy = run.remaining_budget < ECONOMY_MODE_THRESHOLD
+    # ── LAYERs (executed in source order by ``_build_node_context``) ──
+    #
+    # Contract: each layer is a pure ``async (ctx, run, node) -> dict[str, Any]``.
+    # Returned dict keys merge into ``ctx.metadata`` (last-write-wins) except
+    # for ``RESERVED_FIELD_KEYS`` (``_html``, ``_brief``, ``_multimodal_context``)
+    # which update top-level NodeContext fields. Layers must not mutate ``ctx``
+    # except where explicitly documented (visual override consumes a one-shot).
+
+    async def _layer_01_agent_budget(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Per-agent name + token budget; optional client_id pin."""
         agent_name = node.name.removesuffix("_node")
-        agent_budget = get_budget(agent_name)
-        context.metadata["agent_name"] = agent_name
-        context.metadata["agent_budget"] = agent_budget
+        out: dict[str, Any] = {
+            "agent_name": agent_name,
+            "agent_budget": get_budget(agent_name),
+        }
         if self._client_id:
-            context.metadata["client_id"] = self._client_id
+            out["client_id"] = self._client_id
+        return out
 
-        # Inject upstream handoff for agentic nodes (compact in economy mode)
-        if run._last_handoff is not None:
-            context.metadata["upstream_handoff"] = (
-                run._last_handoff.compact() if economy else run._last_handoff
-            )
+    async def _layer_02_upstream_handoff(
+        self,
+        _ctx: NodeContext,
+        run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Inject upstream handoff (compact in economy mode) for agentic nodes."""
+        if run._last_handoff is None:
+            return {}
+        economy = run.remaining_budget < ECONOMY_MODE_THRESHOLD
+        out: dict[str, Any] = {
+            "upstream_handoff": run._last_handoff.compact() if economy else run._last_handoff,
+        }
+        if node.node_type == "agentic":
+            upstream_constraints = format_upstream_constraints(run._last_handoff)
+            if upstream_constraints:
+                out["upstream_constraints"] = upstream_constraints
+            if run._last_handoff.learnings:
+                out["upstream_learnings"] = run._last_handoff.learnings
+        return out
 
-            # Inject formatted upstream constraints for agentic nodes
-            if node.node_type == "agentic":
-                from app.ai.blueprints.handoff import format_upstream_constraints
-
-                upstream_constraints = format_upstream_constraints(run._last_handoff)
-                if upstream_constraints:
-                    context.metadata["upstream_constraints"] = upstream_constraints
-
-                # Inject learnings from upstream agent (within-run propagation)
-                if run._last_handoff.learnings:
-                    context.metadata["upstream_learnings"] = run._last_handoff.learnings
-
-        if run._handoff_history:
-            # Enable decay tiers when history is long enough (Phase 3)
-            use_decay = len(run._handoff_history) >= 4
-            context.metadata["handoff_history"] = compact_handoff_history(
+    async def _layer_03_handoff_history(
+        self,
+        _ctx: NodeContext,
+        run: BlueprintRun,
+        _node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Compacted handoff history with decay tiers when ≥4 entries."""
+        if not run._handoff_history:
+            return {}
+        economy = run.remaining_budget < ECONOMY_MODE_THRESHOLD
+        use_decay = len(run._handoff_history) >= 4
+        return {
+            "handoff_history": compact_handoff_history(
                 run._handoff_history, economy=economy, decay_tiers=use_decay
-            )
+            ),
+        }
 
-        # Inject structured QA failure details (compact in economy mode)
+    async def _layer_04_qa_failure_details(
+        self,
+        _ctx: NodeContext,
+        run: BlueprintRun,
+        _node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Structured QA failure lists (compact in economy mode)."""
+        out: dict[str, Any] = {}
         if run.qa_failure_details:
-            context.metadata["qa_failure_details"] = (
+            economy = run.remaining_budget < ECONOMY_MODE_THRESHOLD
+            out["qa_failure_details"] = (
                 [f.compact() for f in run.qa_failure_details]
                 if economy
                 else list(run.qa_failure_details)
             )
         if run.previous_qa_failure_details:
-            context.metadata["previous_qa_failure_details"] = list(run.previous_qa_failure_details)
+            out["previous_qa_failure_details"] = list(run.previous_qa_failure_details)
+        return out
 
-        # Economy mode: inject trajectory summary and flag
-        if economy:
-            context.metadata["trajectory_summary"] = summarize_trajectory(run)
-            context.metadata["economy_mode"] = True
+    async def _layer_05_economy(
+        self,
+        _ctx: NodeContext,
+        run: BlueprintRun,
+        _node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Trajectory summary + economy_mode flag when budget is tight."""
+        if run.remaining_budget >= ECONOMY_MODE_THRESHOLD:
+            return {}
+        return {
+            "trajectory_summary": summarize_trajectory(run),
+            "economy_mode": True,
+        }
 
-        # Inject progress anchor on retries for agentic nodes
-        if node.node_type == "agentic" and iteration > 0:
-            context.metadata["progress_anchor"] = self._build_progress_anchor(run)
+    async def _layer_06_progress_anchor(
+        self,
+        ctx: NodeContext,
+        run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Compact progress summary for agentic retries."""
+        if node.node_type != "agentic" or ctx.iteration <= 0:
+            return {}
+        return {"progress_anchor": self._build_progress_anchor(run)}
 
-        # LAYER 15: Correction examples (agentic + retry + feature enabled)
-        if node.node_type == "agentic" and iteration > 0:
-            from app.core.config import get_settings as _get_settings_ce2
-
-            if _get_settings_ce2().blueprint.correction_examples_enabled:
-                from app.ai.blueprints.correction_examples import (
-                    format_correction_examples,
-                    recall_correction_examples,
-                )
-
-                try:
-                    examples = await recall_correction_examples(
-                        agent_name=agent_name,
-                        qa_failures=run.qa_failures,
-                        project_id=self._project_id,
-                    )
-                    if examples:
-                        context.metadata["correction_examples"] = format_correction_examples(
-                            examples
-                        )
-                except Exception:
-                    logger.debug(
-                        "blueprint.correction_recall_failed",
-                        node=node.name,
-                        exc_info=True,
-                    )
-
-        # LAYER 16: Judge-derived prompt patches (agentic + aggregation enabled)
-        if node.node_type == "agentic":
-            from app.core.config import get_settings as _get_settings_ja2
-
-            if _get_settings_ja2().blueprint.judge_aggregation_enabled:
-                from app.ai.blueprints.judge_aggregator import (
-                    aggregate_verdicts,
-                    format_prompt_patches,
-                )
-
-                try:
-                    patches = await aggregate_verdicts(agent_name, self._project_id)
-                    if patches:
-                        context.metadata["prompt_patches"] = format_prompt_patches(patches)
-                except Exception:
-                    logger.debug(
-                        "blueprint.judge_aggregation_inject_failed",
-                        node=node.name,
-                        exc_info=True,
-                    )
-
-        # LAYER 17: Cross-agent insight propagation (agentic + enabled + audience)
-        if node.node_type == "agentic" and self._audience_profile is not None:
-            from app.core.config import get_settings as _get_settings_ip
-
-            if _get_settings_ip().blueprint.insight_propagation_enabled:
-                from app.ai.blueprints.insight_bus import (
-                    format_insight_context,
-                    recall_insights,
-                )
-
-                try:
-                    audience_client_ids = tuple(self._audience_profile.client_ids)
-                    insights = await recall_insights(
-                        agent_name=agent_name,
-                        client_ids=audience_client_ids,
-                        project_id=self._project_id,
-                    )
-                    if insights:
-                        context.metadata["cross_agent_insights"] = format_insight_context(insights)
-                        logger.info(
-                            "blueprint.insights_injected",
-                            agent=agent_name,
-                            count=len(insights),
-                        )
-                except Exception:
-                    logger.debug(
-                        "blueprint.insight_recall_failed",
-                        node=node.name,
-                        exc_info=True,
-                    )
-
-        # Inject recalled memories for agentic nodes (lazy — only if brief is present)
-        if node.node_type == "agentic" and brief and self._project_id is not None:
-            recalled = await self._recall_memories(brief)
-            if recalled:
-                context.metadata["recalled_memories"] = recalled
-
-        # Inject component context for agentic nodes (lazy — only if HTML has refs)
-        if node.node_type == "agentic" and run.html and self._component_resolver is not None:
-            from app.ai.blueprints.component_context import (
-                detect_component_refs,
-                format_component_context,
-            )
-
-            slugs = detect_component_refs(run.html)
-            if slugs:
-                components = await self._component_resolver.resolve(slugs)
-                if components:
-                    context.metadata["component_context"] = format_component_context(components)
-
-        # Inject graph knowledge context for agentic nodes (lazy — only if triggered)
-        if node.node_type == "agentic" and self._graph_provider is not None:
-            from app.ai.blueprints.graph_context import (
-                format_graph_context,
-                should_fetch_graph_context,
-            )
-
-            if should_fetch_graph_context(
-                brief=brief,
-                html=run.html,
-                qa_failures=run.qa_failures,
-                iteration=iteration,
-            ):
-                graph_results = await self._search_graph(brief)
-                if graph_results:
-                    context.metadata["graph_context"] = format_graph_context(graph_results)
-
-        # Inject recovery outcome repo for adaptive routing in recovery router
-        if self._recovery_outcome_repo is not None:
-            context.metadata["recovery_outcome_repo"] = self._recovery_outcome_repo
-            context.metadata["project_id"] = self._project_id
-
-        # Inject audience profile reference for recovery router filtering
-        if self._audience_profile is not None:
-            context.metadata["audience_profile"] = self._audience_profile
-
-        # LAYER 7: Audience constraints (agentic + audience profile available)
-        if node.node_type == "agentic" and self._audience_profile is not None:
-            from app.ai.blueprints.audience_context import format_audience_context
-
-            context.metadata["audience_context"] = format_audience_context(self._audience_profile)
-            context.metadata["audience_client_ids"] = tuple(self._audience_profile.client_ids)
-
-        # LAYER 8: Project-specific subgraph context (agentic + project_id set + graph available)
+    async def _layer_07_correction_examples(
+        self,
+        ctx: NodeContext,
+        run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Few-shot correction examples on retry (LAYER 15 in legacy comments)."""
         if (
-            node.node_type == "agentic"
-            and self._project_id is not None
-            and self._graph_provider is not None
+            node.node_type != "agentic"
+            or ctx.iteration <= 0
+            or not get_settings().blueprint.correction_examples_enabled
         ):
-            project_subgraph = await self._search_project_subgraph(brief)
-            if project_subgraph:
-                context.metadata["project_subgraph"] = project_subgraph
-
-        # LAYER 9: Cross-agent failure patterns (agentic + audience profile available)
-        if node.node_type == "agentic" and self._audience_profile is not None:
-            from app.ai.blueprints.failure_patterns import recall_failure_patterns
-
-            agent_for_node = node.name.removesuffix("_node")
-            failure_context = await recall_failure_patterns(
-                agent_name=agent_for_node,
-                client_ids=self._audience_profile.client_ids,
+            return {}
+        try:
+            examples = await recall_correction_examples(
+                agent_name=node.name.removesuffix("_node"),
+                qa_failures=run.qa_failures,
                 project_id=self._project_id,
             )
-            if failure_context:
-                context.metadata["failure_patterns"] = failure_context
+        except Exception:
+            logger.debug("blueprint.correction_recall_failed", node=node.name, exc_info=True)
+            return {}
+        if not examples:
+            return {}
+        return {"correction_examples": format_correction_examples(examples)}
 
-        # LAYER 10: Competitive context (innovation node + keyword triggered)
-        if node.node_type == "agentic" and node.name == "innovation":
-            from app.ai.blueprints.competitor_context import (
-                build_competitive_context,
-                should_fetch_competitive_context,
-            )
+    async def _layer_08_prompt_patches(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Judge-aggregator-derived prompt patches (LAYER 16 in legacy comments)."""
+        if node.node_type != "agentic" or not get_settings().blueprint.judge_aggregation_enabled:
+            return {}
+        from app.ai.blueprints.judge_aggregator import aggregate_verdicts, format_prompt_patches
 
-            if should_fetch_competitive_context(brief):
-                # Use audience-aware feasibility when audience profile available
-                _audience_client_ids: tuple[str, ...] = tuple(  # pyright: ignore[reportUnknownVariableType]
-                    context.metadata.get("audience_client_ids", ())  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
-                )
-                if _audience_client_ids:
-                    from app.knowledge.ontology.competitive_feasibility import (
-                        format_feasibility_context,
-                    )
+        try:
+            patches = await aggregate_verdicts(node.name.removesuffix("_node"), self._project_id)
+        except Exception:
+            logger.debug("blueprint.judge_aggregation_inject_failed", node=node.name, exc_info=True)
+            return {}
+        if not patches:
+            return {}
+        return {"prompt_patches": format_prompt_patches(patches)}
 
-                    competitive_ctx = format_feasibility_context(
-                        client_ids=_audience_client_ids,
-                        technique=brief,
-                    )
-                else:
-                    competitive_ctx = build_competitive_context(brief)
-
-                if competitive_ctx:
-                    context.metadata["competitive_context"] = competitive_ctx
-
-        # LAYER 11.5: Client lookup tools (agentic — deterministic matrix queries)
-        if node.node_type == "agentic":
-            from app.ai.agents.tools.client_lookup import (
-                _CLIENT_LOOKUP_TOOL,
-                _MULTI_CLIENT_LOOKUP_TOOL,
-            )
-
-            context.metadata["client_lookup_tool"] = _CLIENT_LOOKUP_TOOL
-            context.metadata["client_lookup_batch_tool"] = _MULTI_CLIENT_LOOKUP_TOOL
-
-        # LAYER 12: Adaptive model tier (agentic only — inject effective tier for model selection)
-        if self._routing_history_repo is not None and node.node_type == "agentic":
-            from app.ai.routing_history import resolve_adaptive_tier
-
-            try:
-                default_tier: TaskTier = getattr(node, "model_tier", "standard")
-                effective_tier = await resolve_adaptive_tier(
-                    default_tier,
-                    node.name,
-                    self._project_id,
-                    self._routing_history_repo,
-                )
-                context.metadata["effective_tier"] = effective_tier
-                context.metadata["default_tier"] = default_tier
-            except Exception:
-                logger.debug("blueprint.adaptive_tier_failed", node=node.name, exc_info=True)
-
-        # LAYER 13: Knowledge prefetch (agentic + graph available + prefetch enabled)
+    async def _layer_09_insights(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Cross-agent insight propagation (LAYER 17 in legacy comments)."""
         if (
-            node.node_type == "agentic"
-            and self._graph_provider is not None
-            and self._project_id is not None
+            node.node_type != "agentic"
+            or self._audience_profile is None
+            or not get_settings().blueprint.insight_propagation_enabled
         ):
-            from app.core.config import get_settings as _get_settings
+            return {}
+        from app.ai.blueprints.insight_bus import format_insight_context, recall_insights
 
-            _settings = _get_settings()
-            if _settings.cognee.prefetch_enabled:
-                from app.ai.agents.knowledge_prefetch import (
-                    format_prefetch_context,
-                    prefetch_prior_outcomes,
-                )
+        agent_name = node.name.removesuffix("_node")
+        try:
+            insights = await recall_insights(
+                agent_name=agent_name,
+                client_ids=tuple(self._audience_profile.client_ids),
+                project_id=self._project_id,
+            )
+        except Exception:
+            logger.debug("blueprint.insight_recall_failed", node=node.name, exc_info=True)
+            return {}
+        if not insights:
+            return {}
+        logger.info("blueprint.insights_injected", agent=agent_name, count=len(insights))
+        return {"cross_agent_insights": format_insight_context(insights)}
 
-                try:
-                    prefetch_results = await prefetch_prior_outcomes(
-                        agent_name=agent_name,
-                        brief=brief,
-                        project_id=self._project_id,
-                        graph_provider=self._graph_provider,
-                        top_k=_settings.cognee.prefetch_top_k,
-                        min_score=_settings.cognee.prefetch_min_score,
-                        cache_ttl=_settings.cognee.prefetch_ttl_seconds,
+    async def _layer_10_recalled_memories(
+        self,
+        ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Episodic memory recall keyed on the brief."""
+        if node.node_type != "agentic" or not ctx.brief or self._project_id is None:
+            return {}
+        recalled = await self._recall_memories(ctx.brief)
+        if not recalled:
+            return {}
+        return {"recalled_memories": recalled}
+
+    async def _layer_11_component_context(
+        self,
+        _ctx: NodeContext,
+        run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Resolve referenced components in the live HTML."""
+        if node.node_type != "agentic" or not run.html or self._component_resolver is None:
+            return {}
+        from app.ai.blueprints.component_context import (
+            detect_component_refs,
+            format_component_context,
+        )
+
+        slugs = detect_component_refs(run.html)
+        if not slugs:
+            return {}
+        components = await self._component_resolver.resolve(slugs)
+        if not components:
+            return {}
+        return {"component_context": format_component_context(components)}
+
+    async def _layer_12_graph_context(
+        self,
+        ctx: NodeContext,
+        run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Knowledge graph context (lazy — only when triggers say so)."""
+        if node.node_type != "agentic" or self._graph_provider is None:
+            return {}
+        from app.ai.blueprints.graph_context import (
+            format_graph_context,
+            should_fetch_graph_context,
+        )
+
+        if not should_fetch_graph_context(
+            brief=ctx.brief,
+            html=run.html,
+            qa_failures=run.qa_failures,
+            iteration=ctx.iteration,
+        ):
+            return {}
+        graph_results = await self._search_graph(ctx.brief)
+        if not graph_results:
+            return {}
+        return {"graph_context": format_graph_context(graph_results)}
+
+    async def _layer_13_recovery_repo(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        _node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Adaptive-routing repo handle for the recovery router node."""
+        if self._recovery_outcome_repo is None:
+            return {}
+        return {
+            "recovery_outcome_repo": self._recovery_outcome_repo,
+            "project_id": self._project_id,
+        }
+
+    async def _layer_14_audience_profile_ref(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        _node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Raw audience-profile object for downstream filters."""
+        if self._audience_profile is None:
+            return {}
+        return {"audience_profile": self._audience_profile}
+
+    async def _layer_15_audience_context(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Formatted audience constraints (LAYER 7 in legacy comments)."""
+        if node.node_type != "agentic" or self._audience_profile is None:
+            return {}
+        from app.ai.blueprints.audience_context import format_audience_context
+
+        return {
+            "audience_context": format_audience_context(self._audience_profile),
+            "audience_client_ids": tuple(self._audience_profile.client_ids),
+        }
+
+    async def _layer_16_project_subgraph(
+        self,
+        ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Project-specific compatibility subgraph (LAYER 8 in legacy comments)."""
+        if node.node_type != "agentic" or self._project_id is None or self._graph_provider is None:
+            return {}
+        project_subgraph = await self._search_project_subgraph(ctx.brief)
+        if not project_subgraph:
+            return {}
+        return {"project_subgraph": project_subgraph}
+
+    async def _layer_17_failure_patterns(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Cross-agent failure patterns (LAYER 9 in legacy comments)."""
+        if node.node_type != "agentic" or self._audience_profile is None:
+            return {}
+        from app.ai.blueprints.failure_patterns import recall_failure_patterns
+
+        failure_context = await recall_failure_patterns(
+            agent_name=node.name.removesuffix("_node"),
+            client_ids=self._audience_profile.client_ids,
+            project_id=self._project_id,
+        )
+        if not failure_context:
+            return {}
+        return {"failure_patterns": failure_context}
+
+    async def _layer_18_competitive_context(
+        self,
+        ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Competitive context for the innovation node (LAYER 10 in legacy comments).
+
+        Reads ``self._audience_profile.client_ids`` directly (not metadata) so
+        the layer is independent of execution order.
+        """
+        if node.node_type != "agentic" or node.name != "innovation":
+            return {}
+        from app.ai.blueprints.competitor_context import (
+            build_competitive_context,
+            should_fetch_competitive_context,
+        )
+
+        if not should_fetch_competitive_context(ctx.brief):
+            return {}
+        audience_client_ids: tuple[str, ...] = (
+            tuple(self._audience_profile.client_ids) if self._audience_profile else ()
+        )
+        if audience_client_ids:
+            from app.knowledge.ontology.competitive_feasibility import format_feasibility_context
+
+            competitive_ctx = format_feasibility_context(
+                client_ids=audience_client_ids,
+                technique=ctx.brief,
+            )
+        else:
+            competitive_ctx = build_competitive_context(ctx.brief)
+        if not competitive_ctx:
+            return {}
+        return {"competitive_context": competitive_ctx}
+
+    async def _layer_19_client_lookup_tools(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Deterministic client-matrix lookup tools (LAYER 11.5 in legacy comments)."""
+        if node.node_type != "agentic":
+            return {}
+        from app.ai.agents.tools.client_lookup import (
+            _CLIENT_LOOKUP_TOOL,
+            _MULTI_CLIENT_LOOKUP_TOOL,
+        )
+
+        return {
+            "client_lookup_tool": _CLIENT_LOOKUP_TOOL,
+            "client_lookup_batch_tool": _MULTI_CLIENT_LOOKUP_TOOL,
+        }
+
+    async def _layer_20_adaptive_tier(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Effective + default model tier for adaptive routing (LAYER 12)."""
+        if self._routing_history_repo is None or node.node_type != "agentic":
+            return {}
+        from app.ai.routing_history import resolve_adaptive_tier
+
+        try:
+            default_tier: TaskTier = getattr(node, "model_tier", "standard")
+            effective_tier = await resolve_adaptive_tier(
+                default_tier,
+                node.name,
+                self._project_id,
+                self._routing_history_repo,
+            )
+        except Exception:
+            logger.debug("blueprint.adaptive_tier_failed", node=node.name, exc_info=True)
+            return {}
+        return {
+            "effective_tier": effective_tier,
+            "default_tier": default_tier,
+        }
+
+    async def _layer_21_knowledge_prefetch(
+        self,
+        ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Cognee prior-outcome prefetch (LAYER 13 in legacy comments)."""
+        if node.node_type != "agentic" or self._graph_provider is None or self._project_id is None:
+            return {}
+        settings = get_settings()
+        if not settings.cognee.prefetch_enabled:
+            return {}
+        from app.ai.agents.knowledge_prefetch import (
+            format_prefetch_context,
+            prefetch_prior_outcomes,
+        )
+
+        try:
+            prefetch_results = await prefetch_prior_outcomes(
+                agent_name=node.name.removesuffix("_node"),
+                brief=ctx.brief,
+                project_id=self._project_id,
+                graph_provider=self._graph_provider,
+                top_k=settings.cognee.prefetch_top_k,
+                min_score=settings.cognee.prefetch_min_score,
+                cache_ttl=settings.cognee.prefetch_ttl_seconds,
+            )
+        except Exception:
+            logger.debug(
+                "blueprint.knowledge_prefetch_failed",
+                node=node.name,
+                project_id=self._project_id,
+                exc_info=True,
+            )
+            return {}
+        if not prefetch_results:
+            return {}
+        return {"knowledge_prefetch": format_prefetch_context(prefetch_results)}
+
+    async def _layer_22_multimodal(
+        self,
+        ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Feature-gated multimodal context for agentic nodes (LAYER 14).
+
+        Reads ``ctx.metadata['design_import_assets']`` and
+        ``ctx.metadata['screenshots']`` — both are external pre-fills, not
+        outputs of an earlier layer, so the layer is order-independent.
+        """
+        if node.node_type != "agentic" or not get_settings().ai.multimodal_context_enabled:
+            return {}
+        from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
+
+        multimodal_blocks: list[ContentBlock] = []
+
+        if node.name == "scaffolder":
+            design_import_assets: list[dict[str, object]] = ctx.metadata.get(  # type: ignore[assignment]
+                "design_import_assets", []
+            )
+            for asset in design_import_assets:
+                raw_image = asset.get("image_bytes")
+                if isinstance(raw_image, bytes):
+                    multimodal_blocks.append(
+                        ImageBlock(
+                            data=raw_image,
+                            media_type=str(asset.get("media_type", "image/png")),
+                            source="base64",
+                        )
                     )
-                    if prefetch_results:
-                        context.metadata["knowledge_prefetch"] = format_prefetch_context(
-                            prefetch_results
-                        )
-                except Exception:
-                    logger.debug(
-                        "blueprint.knowledge_prefetch_failed",
-                        node=node.name,
-                        project_id=self._project_id,
-                        exc_info=True,
-                    )
 
-        # LAYER 14: Multimodal context (feature-gated, agentic nodes only)
-        from app.core.config import get_settings as _get_settings_l14
+        if node.name == "visual_qa":
+            import base64 as _b64
 
-        _settings_l14 = _get_settings_l14()
-        if _settings_l14.ai.multimodal_context_enabled and node.node_type == "agentic":
-            from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
-
-            multimodal_blocks: list[ContentBlock] = []
-
-            # Scaffolder: inject design import screenshots (Phase 12 assets)
-            if node.name == "scaffolder":
-                design_import_assets: list[dict[str, object]] = context.metadata.get(  # type: ignore[assignment]
-                    "design_import_assets", []
-                )
-                for asset in design_import_assets:
-                    raw_image = asset.get("image_bytes")
-                    if isinstance(raw_image, bytes):
-                        multimodal_blocks.append(
-                            ImageBlock(
-                                data=raw_image,
-                                media_type=str(asset.get("media_type", "image/png")),
-                                source="base64",
-                            )
-                        )
-
-            # Visual QA: convert metadata screenshots to ImageBlocks
-            if node.name == "visual_qa":
-                import base64 as _b64
-
-                screenshots_dict: dict[str, str] = context.metadata.get("screenshots", {})  # type: ignore[assignment]
-                for client_name, b64_data in screenshots_dict.items():
-                    try:
-                        image_bytes = _b64.b64decode(b64_data)
-                        multimodal_blocks.append(
-                            ImageBlock(data=image_bytes, media_type="image/png", source="base64")
-                        )
-                        multimodal_blocks.append(TextBlock(text=f"[Screenshot: {client_name}]"))
-                    except Exception:
-                        logger.warning(
-                            "blueprint.multimodal_context.invalid_screenshot",
-                            client=client_name,
-                            exc_info=True,
-                        )
-
-            if multimodal_blocks:
-                from app.ai.multimodal import validate_content_blocks
-
+            screenshots_dict: dict[str, str] = ctx.metadata.get("screenshots", {})  # type: ignore[assignment]
+            for client_name, b64_data in screenshots_dict.items():
                 try:
-                    validate_content_blocks(multimodal_blocks)
-                    context.multimodal_context = multimodal_blocks
+                    image_bytes = _b64.b64decode(b64_data)
+                    multimodal_blocks.append(
+                        ImageBlock(data=image_bytes, media_type="image/png", source="base64")
+                    )
+                    multimodal_blocks.append(TextBlock(text=f"[Screenshot: {client_name}]"))
                 except Exception:
                     logger.warning(
-                        "blueprint.multimodal_context.validation_failed",
-                        node=node.name,
-                        block_count=len(multimodal_blocks),
+                        "blueprint.multimodal_context.invalid_screenshot",
+                        client=client_name,
                         exc_info=True,
                     )
 
-        # LAYER 14.5: Visual defect multimodal override (recovery router injects screenshots for fixers)
-        override_raw = context.metadata.get("multimodal_context_override")
-        if isinstance(override_raw, list) and override_raw and node.node_type == "agentic":
-            from app.ai.multimodal import ContentBlock
+        if not multimodal_blocks:
+            return {}
+        from app.ai.multimodal import validate_content_blocks
 
-            typed_blocks: list[ContentBlock] = [
-                b
-                for b in cast(list[Any], override_raw)  # type: ignore[redundant-cast]
-                if isinstance(b, ContentBlock)
-            ]
-            if typed_blocks:
-                existing = context.multimodal_context or []
-                context.multimodal_context = [*existing, *typed_blocks]
-            # Clear override after injection (one-shot)
-            context.metadata.pop("multimodal_context_override", None)
-
-        # LAYER 11: Design system (ALL nodes — agentic for prompt context, deterministic for brand repair)
-        if self._design_system is not None:
-            from app.projects.design_system import (
-                design_system_to_brand_rules,
-                resolve_color_map,
-                resolve_font_map,
+        try:
+            validate_content_blocks(multimodal_blocks)
+        except Exception:
+            logger.warning(
+                "blueprint.multimodal_context.validation_failed",
+                node=node.name,
+                block_count=len(multimodal_blocks),
+                exc_info=True,
             )
+            return {}
+        return {"_multimodal_context": multimodal_blocks}
 
-            context.metadata["design_system"] = self._design_system
-            context.metadata["design_system_brand_rules"] = design_system_to_brand_rules(
-                self._design_system
+    async def _layer_23_visual_override(
+        self,
+        ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Recovery-router-injected screenshot override for fixers (LAYER 14.5).
+
+        One-shot consumer: pops ``multimodal_context_override`` from metadata
+        after applying — the only documented metadata-mutation in the layer
+        pipeline, modelled on the original code's pop-after-injection.
+        """
+        override_raw = ctx.metadata.get("multimodal_context_override")
+        if not (isinstance(override_raw, list) and override_raw and node.node_type == "agentic"):
+            return {}
+        from app.ai.multimodal import ContentBlock
+
+        typed_blocks: list[ContentBlock] = [
+            b
+            for b in cast(list[Any], override_raw)  # type: ignore[redundant-cast]
+            if isinstance(b, ContentBlock)
+        ]
+        # Clear override after injection (one-shot, intentional metadata pop)
+        ctx.metadata.pop("multimodal_context_override", None)
+        if not typed_blocks:
+            return {}
+        existing = ctx.multimodal_context or []
+        return {"_multimodal_context": [*existing, *typed_blocks]}
+
+    async def _layer_24_design_system(
+        self,
+        _ctx: NodeContext,
+        _run: BlueprintRun,
+        _node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Design-system tokens for prompt context + brand repair."""
+        if self._design_system is None:
+            return {}
+        from app.projects.design_system import (
+            design_system_to_brand_rules,
+            resolve_color_map,
+            resolve_font_map,
+        )
+
+        return {
+            "design_system": self._design_system,
+            "design_system_brand_rules": design_system_to_brand_rules(self._design_system),
+            "ds_color_map": resolve_color_map(self._design_system),
+            "ds_font_map": resolve_font_map(self._design_system),
+        }
+
+    async def _layer_25_injection_scan(
+        self,
+        ctx: NodeContext,
+        _run: BlueprintRun,
+        node: BlueprintNode,
+    ) -> dict[str, Any]:
+        """Prompt-injection scan over user-supplied fields (LAYER 18).
+
+        May return ``_brief``/``_html`` reserved keys to replace top-level
+        fields with sanitised values, plus sanitised ``qa_failure_details``
+        and ``graph_context`` metadata overrides. Always runs last so its
+        sanitised values take effect over earlier layers' outputs.
+        """
+        settings_pg = get_settings()
+        if not settings_pg.security.prompt_guard_enabled:
+            return {}
+        pg_mode = settings_pg.security.prompt_guard_mode
+        agent_name = node.name.removesuffix("_node")
+        out: dict[str, Any] = {}
+
+        for field_name, field_val, reserved_key in (
+            ("brief", ctx.brief, "_brief"),
+            ("html", ctx.html, "_html"),
+        ):
+            if not field_val:
+                continue
+            scan = scan_for_injection(field_val, mode=pg_mode)
+            if scan.clean:
+                continue
+            logger.warning(
+                "security.prompt_injection_detected",
+                field=field_name,
+                flags=scan.flags,
+                agent=agent_name,
             )
-            context.metadata["ds_color_map"] = resolve_color_map(self._design_system)
-            context.metadata["ds_font_map"] = resolve_font_map(self._design_system)
+            if pg_mode == "strip" and scan.sanitized is not None:
+                out[reserved_key] = scan.sanitized
 
-        # LAYER 18: Prompt injection scan on user-supplied fields
-        from app.core.config import get_settings as _get_settings_pg
-
-        _settings_pg = _get_settings_pg()
-        if _settings_pg.security.prompt_guard_enabled:
-            from app.ai.security.prompt_guard import scan_for_injection
-
-            _pg_mode = _settings_pg.security.prompt_guard_mode
-            for _field_name, _field_val in [
-                ("brief", brief),
-                ("html", context.html),
-            ]:
-                if _field_val:
-                    _scan = scan_for_injection(_field_val, mode=_pg_mode)
-                    if not _scan.clean:
-                        logger.warning(
-                            "security.prompt_injection_detected",
-                            field=_field_name,
-                            flags=_scan.flags,
-                            agent=agent_name,
-                        )
-                        if _pg_mode == "strip" and _scan.sanitized is not None:
-                            if _field_name == "brief":
-                                context.brief = _scan.sanitized
-                            elif _field_name == "html":
-                                context.html = _scan.sanitized
-
-            for _meta_key in ("qa_failure_details", "graph_context"):
-                _meta_val = context.metadata.get(_meta_key)
-                if isinstance(_meta_val, str):
-                    _scan = scan_for_injection(_meta_val, mode=_pg_mode)
-                    if not _scan.clean and _pg_mode == "strip" and _scan.sanitized is not None:
-                        context.metadata[_meta_key] = _scan.sanitized
-
-        return context
+        for meta_key in ("qa_failure_details", "graph_context"):
+            meta_val = ctx.metadata.get(meta_key)
+            if not isinstance(meta_val, str):
+                continue
+            scan = scan_for_injection(meta_val, mode=pg_mode)
+            if not scan.clean and pg_mode == "strip" and scan.sanitized is not None:
+                out[meta_key] = scan.sanitized
+        return out
 
     async def _recall_memories(self, brief: str) -> list[dict[str, str]]:
         """Recall relevant memories from prior blueprint runs.
@@ -1146,7 +1494,6 @@ class BlueprintEngine:
         into agentic node context. Failure-safe: returns empty list on errors.
         """
         try:
-            from app.core.config import get_settings
             from app.core.database import get_db_context
             from app.knowledge.embedding import get_embedding_provider
             from app.memory.service import MemoryService
