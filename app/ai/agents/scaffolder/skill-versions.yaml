@@ -50,7 +50,7 @@ skills:
     versions:
       1.1.0:
         hash: pending
-        date: '2026-04-06'
+        date: '2026-04-27'
         source: eval-driven
         eval_pass_rate: 0.5
   table_layouts:
