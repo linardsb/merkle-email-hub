@@ -2,95 +2,43 @@
 
 from __future__ import annotations
 
-import json
+from typing import Any, ClassVar
 
-import httpx
-
-from app.connectors.braze.schemas import BrazeContentBlock
-from app.connectors.exceptions import ExportFailedError
-from app.connectors.http_resilience import resilient_request
+from app.connectors._base import ApiKeyConnectorService
 from app.core.config import Settings, get_settings
-from app.core.credentials import CredentialLease, CredentialPool, get_credential_pool
-from app.core.exceptions import AppError
-from app.core.logging import get_logger
+from app.core.credentials import CredentialPool
 
-logger = get_logger(__name__)
+__all__ = ["BrazeConnectorService"]
 
 
-class BrazeConnectorService:
+class BrazeConnectorService(ApiKeyConnectorService):
     """Exports compiled email HTML to Braze as Content Blocks with Liquid."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
-        _settings = settings or get_settings()
-        self._base_url = _settings.esp_sync.braze_base_url
-        self._pool: CredentialPool | None = None
-        if _settings.credentials.enabled and "braze" in _settings.credentials.pools:
-            self._pool = get_credential_pool("braze")
+    service_name: ClassVar[str] = "braze"
+    label: ClassVar[str] = "Braze"
 
-    async def _lease_credentials(self) -> tuple[dict[str, str], CredentialLease]:
-        """Get credentials from pool. Raises NoHealthyCredentialsError if exhausted."""
-        if self._pool is None:
-            raise AppError("_lease_credentials called without pool")
-        lease = await self._pool.get_key()
-        return {"api_key": lease.key}, lease
+    def __init__(
+        self,
+        *,
+        settings: Settings | None = None,
+        pool: CredentialPool | None = None,
+    ) -> None:
+        super().__init__(settings=settings or get_settings(), pool=pool)
 
-    async def package_content_block(self, html: str, name: str) -> BrazeContentBlock:
-        """Package compiled HTML as a Braze Content Block.
+    def _resolve_base_url(self, settings: Settings) -> str:
+        return settings.esp_sync.braze_base_url
 
-        Wraps the HTML with Liquid-compatible syntax for Braze ingestion.
-        """
-        logger.info("braze.package_started", block_name=name)
-        return BrazeContentBlock(
-            name=name,
-            content_type="html",
-            content=html,
-            tags=["email-hub", "auto-generated"],
-        )
+    def _endpoint(self) -> str:
+        return f"{self._base_url}/content_blocks/create"
 
-    async def export(self, html: str, name: str, credentials: dict[str, str] | None = None) -> str:
-        """Export to Braze API.
+    def _auth_header(self, api_key: str) -> dict[str, str]:
+        return {"Authorization": f"Bearer {api_key}"}
 
-        When credentials are provided, makes a real API call to create a
-        Content Block. Otherwise returns a mock ID for backward compatibility.
-        Pool credentials are used when no explicit credentials are passed.
-        """
-        logger.info("braze.export_started", block_name=name)
+    def _build_payload(self, *, html: str, name: str) -> dict[str, Any]:
+        return {"name": name, "content": html, "tags": ["email-hub"]}
 
-        lease: CredentialLease | None = None
-        if credentials is None and self._pool is not None:
-            credentials, lease = await self._lease_credentials()
+    def _external_id_from_response(self, body: dict[str, Any]) -> str:
+        return str(body["content_block_id"])
 
-        if credentials is not None:
-            headers = {"Authorization": f"Bearer {credentials['api_key']}"}
-            async with httpx.AsyncClient(timeout=15) as client:
-                try:
-                    resp = await resilient_request(
-                        client,
-                        "POST",
-                        f"{self._base_url}/content_blocks/create",
-                        json={"name": name, "content": html, "tags": ["email-hub"]},
-                        headers=headers,
-                    )
-                    resp.raise_for_status()
-                    external_id = str(resp.json()["content_block_id"])
-                except httpx.HTTPStatusError as exc:
-                    if lease:
-                        await lease.report_failure(exc.response.status_code)
-                    raise ExportFailedError(
-                        f"Braze API returned {exc.response.status_code}"
-                    ) from exc
-                except (httpx.RequestError, json.JSONDecodeError) as exc:
-                    if lease:
-                        await lease.report_failure(0)
-                    raise ExportFailedError("Braze export failed") from exc
-            if lease:
-                await lease.report_success()
-            logger.info("braze.export_completed", external_id=external_id)
-            return external_id
-
-        # Mock fallback (no credentials, no pool)
-        block = await self.package_content_block(html, name)
-        _ = block
-        mock_id = f"braze_cb_{name.lower().replace(' ', '_')}"
-        logger.info("braze.export_completed", external_id=mock_id)
-        return mock_id
+    def _mock_external_id(self, name: str) -> str:
+        return f"braze_cb_{name.lower().replace(' ', '_')}"

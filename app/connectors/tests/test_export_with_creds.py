@@ -31,11 +31,11 @@ class TestBrazeExportWithCredentials:
 
     @pytest.mark.asyncio()
     async def test_export_with_credentials_calls_api(self) -> None:
-        creds = {"api_key": "test-braze-key"}
+        creds = {"api_key": "test-braze-key"}  # pragma: allowlist secret
         mock_resp = _mock_response(200, {"content_block_id": "cb_123"})
 
         with patch(
-            "app.connectors.braze.service.resilient_request",
+            "app.connectors._base.api_key.resilient_request",
             new_callable=AsyncMock,
             return_value=mock_resp,
         ) as mock_req:
@@ -67,15 +67,12 @@ class TestSFMCExportWithCredentials:
         token_resp = _mock_response(200, {"access_token": "tok_sfmc", "expires_in": 3600})
         asset_resp = _mock_response(200, {"id": 42, "name": "Welcome"})
 
-        # Clear token cache before test
-        SFMCConnectorService._token_cache.clear()
-
         with (
             patch.object(
                 httpx.AsyncClient, "post", new_callable=AsyncMock, return_value=token_resp
             ),
             patch(
-                "app.connectors.sfmc.service.resilient_request",
+                "app.connectors._base.oauth.resilient_request",
                 new_callable=AsyncMock,
                 return_value=asset_resp,
             ) as mock_req,
@@ -105,14 +102,12 @@ class TestAdobeExportWithCredentials:
         token_resp = _mock_response(200, {"access_token": "tok_adobe", "expires_in": 86399})
         delivery_resp = _mock_response(200, {"PKey": "PK_abc"})
 
-        AdobeConnectorService._token_cache.clear()
-
         with (
             patch.object(
                 httpx.AsyncClient, "post", new_callable=AsyncMock, return_value=token_resp
             ),
             patch(
-                "app.connectors.adobe.service.resilient_request",
+                "app.connectors._base.oauth.resilient_request",
                 new_callable=AsyncMock,
                 return_value=delivery_resp,
             ) as mock_req,
@@ -138,11 +133,11 @@ class TestTaxiExportWithCredentials:
 
     @pytest.mark.asyncio()
     async def test_export_with_credentials_calls_api(self) -> None:
-        creds = {"api_key": "taxi-key-123"}
+        creds = {"api_key": "taxi-key-123"}  # pragma: allowlist secret
         mock_resp = _mock_response(200, {"id": "tpl_789", "name": "Newsletter"})
 
         with patch(
-            "app.connectors.taxi.service.resilient_request",
+            "app.connectors._base.api_key.resilient_request",
             new_callable=AsyncMock,
             return_value=mock_resp,
         ) as mock_req:
