@@ -26,6 +26,7 @@ from app.qa_engine.schemas import QACheckResult
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from app.qa_engine.checks import QACheckProtocol
     from app.qa_engine.rule_engine import Rule
 
 
@@ -184,7 +185,7 @@ class RuleEngineCheck:
         )
 
 
-def get_check(name: str) -> object:
+def get_check(name: str) -> QACheckProtocol:
     """Look up a registered check from `ALL_CHECKS` by `name`.
 
     Replaces direct class imports for the 10 boilerplate check classes that

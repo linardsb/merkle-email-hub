@@ -89,7 +89,7 @@ class DarkModeService(BaseAgentService):
 
         # Dark mode check first (primary signal)
         dm_check = get_check("dark_mode")
-        dm_result = await dm_check.run(html)  # type: ignore[attr-defined]
+        dm_result = await dm_check.run(html)
         qa_results.append(dm_result)
 
         # Remaining checks (skip duplicate dark mode check)
