@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="143.858" height="124.015" viewBox="0 0 143.858 124.015">
+  <g id="Group_1938" data-name="Group 1938" transform="translate(-1775 -128.666)">
+    <g id="Group_1927" data-name="Group 1927" transform="translate(1782.666 133.712)">
+      <g id="shopping_cart_trolley_caddy_ecommerce" transform="translate(0 0)">
+        <line id="Line_429" data-name="Line 429" x2="93.704" transform="translate(30.399 41.911)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+        <line id="Line_430" data-name="Line 430" y2="49.345" transform="translate(77.592 18.159)" fill="none" stroke="#05051e" stroke-miterlimit="10" stroke-width="4.5"/>
+        <line id="Line_431" data-name="Line 431" x1="6.488" y2="45.824" transform="translate(99.155 18.159)" fill="none" stroke="#05051e" stroke-miterlimit="10" stroke-width="4.5"/>
+        <line id="Line_432" data-name="Line 432" x2="7.695" y2="52.536" transform="translate(49.594 18.02)" fill="none" stroke="#05051e" stroke-miterlimit="10" stroke-width="4.5"/>
+        <path id="Path_1920" data-name="Path 1920" d="M121.626,94.405H37.757c-5.523,0-6.377-12.244,2.218-14.137L117.069,67.6l16.309-43.9H22.177" transform="translate(0.563 -6.248)" fill="none" stroke="#05051e" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+        <path id="Path_1921" data-name="Path 1921" d="M47.156,78.176,27.626,15.684h-15.9" transform="translate(-11.728 -15.684)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+        <g id="Group_1678" data-name="Group 1678" transform="translate(37.857 99.862)">
+          <ellipse id="Ellipse_513" data-name="Ellipse 513" cx="8.429" cy="8.429" rx="8.429" ry="8.429" transform="translate(0)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+          <ellipse id="Ellipse_514" data-name="Ellipse 514" cx="8.429" cy="8.429" rx="8.429" ry="8.429" transform="translate(62.069)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+        </g>
+      </g>
+    </g>
+    <circle id="Ellipse_593" data-name="Ellipse 593" cx="5" cy="5" r="5" transform="translate(1775 128.666)" fill="#05051e"/>
+    <circle id="Ellipse_594" data-name="Ellipse 594" cx="5" cy="5" r="5" transform="translate(1812.4 189.168)" fill="#05051e"/>
+    <circle id="Ellipse_595" data-name="Ellipse 595" cx="5" cy="5" r="5" transform="translate(1894.48 189.167)" fill="#05051e"/>
+  </g>
+</svg>

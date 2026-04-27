@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="143.885" height="123.7" viewBox="0 0 143.885 123.7">
+  <g id="Group_1951" data-name="Group 1951" transform="translate(-1938.75 -453.05)">
+    <g id="computer_monitor_tv_television" transform="translate(1941 457.974)">
+      <line id="Line_271" data-name="Line 271" x2="56.69" transform="translate(41.348 113.766)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+      <g id="Group_1548" data-name="Group 1548" transform="translate(59.846 95.69)">
+        <line id="Line_272" data-name="Line 272" y2="17.583" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+        <line id="Line_273" data-name="Line 273" y2="17.583" transform="translate(19.691)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+      </g>
+      <path id="Path_1723" data-name="Path 1723" d="M12.778,29.965A11.758,11.758,0,0,1,24.5,18.241H140.439a11.758,11.758,0,0,1,11.724,11.724v71.591a11.758,11.758,0,0,1-11.724,11.724H24.5a11.758,11.758,0,0,1-11.724-11.724Z" transform="translate(-12.778 -18.241)" fill="none" stroke="#05051e" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+      <line id="Line_274" data-name="Line 274" x2="121.15" transform="translate(9.116 78.271)" fill="none" stroke="#05051e" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+    </g>
+    <circle id="Ellipse_627" data-name="Ellipse 627" cx="5" cy="5" r="5" transform="translate(2063.408 531.25)" fill="#05051e"/>
+    <circle id="Ellipse_628" data-name="Ellipse 628" cx="5" cy="5" r="5" transform="translate(1948.06 453.05)" fill="#05051e"/>
+    <circle id="Ellipse_629" data-name="Ellipse 629" cx="5" cy="5" r="5" transform="translate(1974.909 566.75)" fill="#05051e"/>
+  </g>
+</svg>

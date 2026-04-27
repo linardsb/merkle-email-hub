@@ -122,3 +122,33 @@ data/debug/*/tokens.json
 data/debug/*/report.json
 data/debug/*/assets/
 e2e-screenshots/
+
+# Claude Code session state + MCP caches (machine-local, never commit)
+.claude-merkle/
+.claude/projects/
+.claude/worktrees/
+
+# Hypothesis property-based testing cache (auto-generated, OS-specific)
+.hypothesis/
+
+# Oversized debug/review artefacts (regenerable; do not commit)
+docs/*.png
+docs/eval-review-data.json
+
+# Eval verdict baselines from prior phase comparisons (historical, do not
+# expect to evolve; commit baseline.json explicitly when needed)
+traces/pre_*/
+
+# Rendered template preview screenshots (regenerable from Figma; large
+# binaries do not belong in git history). Specific paths only — small
+# template assets (icons, hero, social) under reframe-assets/ stay tracked.
+email-templates/reframe.png
+email-templates/reframe-assets/email-full.png
+email-templates/game_recap/game_recap.png
+email-templates/training_HTML/**/*.png
+
+# Icons/ source library (~305 MB / 10,416 files). Only the 309 SVGs
+# referenced by cms/apps/web/scripts/generate-icons.mjs are committed
+# (force-added). Everything else stays out — pull from the design library
+# when needed and force-add specific files: git add -f email-templates/Icons/...
+email-templates/Icons/
