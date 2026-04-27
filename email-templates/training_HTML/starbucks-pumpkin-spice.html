@@ -1,0 +1,471 @@
+<!-- Email Shell — Complete HTML document wrapper with all email client compatibility -->
+<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <!--[if mso]>
+    <noscript>
+      <xml>
+        <o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+      </xml>
+    </noscript>
+    <style>
+      td, th, div, p, a, h1, h2, h3, h4, h5, h6 {
+        font-family: "Segoe UI", sans-serif;
+        mso-line-height-rule: exactly;
+      }
+    </style>
+    <![endif]-->
+    <title data-slot="email_title">Starbucks — Pumpkin Now, Peppermint On The Way</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        supported-color-schemes: light dark;
+      }
+      /* Base resets */
+      body { margin: 0; padding: 0; width: 100%; -webkit-text-size-adjust: 100%; }
+      img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+      table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      /* Responsive utility classes */
+      @media only screen and (max-width: 599px) {
+        .column { display: block !important; max-width: 100% !important; width: 100% !important; }
+        .column-half { display: inline-block !important; max-width: 50% !important; width: 50% !important; }
+        .bannerimg { width: 100% !important; height: auto !important; }
+        .wf, .resptab { width: 100% !important; }
+        .respimg { width: 100% !important; height: auto !important; }
+        .lfloat { float: left !important; }
+        .hide { display: none !important; max-height: 0 !important; overflow: hidden !important; mso-hide: all !important; }
+        .db { display: block !important; }
+        .show { display: block !important; margin: 0 !important; overflow: visible !important; width: auto !important; max-height: inherit !important; font-size: inherit !important; line-height: inherit !important; }
+        /* Reverse table ordering */
+        .rup { display: table-header-group !important; width: 100% !important; }
+        .ldown { display: table-footer-group !important; width: 100% !important; }
+        /* Mobile padding utilities */
+        .nopad { padding: 0 !important; }
+        .padtop0 { padding-top: 0 !important; }
+        .padtop10 { padding-top: 10px !important; }
+        .padtop20 { padding-top: 20px !important; }
+        .padtop30 { padding-top: 30px !important; }
+        .padtop40 { padding-top: 40px !important; }
+        .padbot20 { padding-bottom: 20px !important; }
+        .padbot40 { padding-bottom: 40px !important; }
+        .padl20 { padding-left: 20px !important; }
+        .padr20 { padding-right: 20px !important; }
+        .padlr20 { padding-left: 20px !important; padding-right: 20px !important; }
+        .padlr30 { padding-left: 30px !important; padding-right: 30px !important; }
+        /* Mobile text alignment */
+        .textCenter { text-align: center !important; }
+        .textLeft { text-align: left !important; }
+        /* Mobile font sizes */
+        .mobfs14 { font-size: 14px !important; line-height: 21px !important; }
+        .mobfs16 { font-size: 16px !important; line-height: 24px !important; }
+        /* Center helpers */
+        .logocenter, .ctacenter { margin: 0 auto !important; display: table !important; }
+      }
+      /* Gmail centering fix */
+      @media only screen and (max-width: 480px) {
+        u ~ .resptab { min-width: 100vw; }
+        div > u ~ .resptab { min-width: 100%; }
+      }
+      /* Dark mode — base classes */
+      @media (prefers-color-scheme: dark) {
+        .dark-bg { background-color: #1a1a2e !important; }
+        .dark-text { color: #e0e0e0 !important; }
+      }
+      [data-ogsc] .dark-bg { background-color: #1a1a2e !important; }
+      [data-ogsb] .dark-text { color: #e0e0e0 !important; }
+
+      /* ── Component dark mode overrides ── */
+      @media (prefers-color-scheme: dark) {
+        /* Structure backgrounds */
+        .header-bg, .footer-bg, .navbar-bg, .logoheader-bg, .preheader-bg,
+        .col2-bg, .col3-bg, .col4-bg, .revcol-bg, .social-bg,
+        .textblock-bg, .artcard-bg { background-color: #1a1a2e !important; }
+        .product-card { background-color: #2d2d44 !important; }
+        /* Text — links */
+        .header-link, .navbar-link, .preheader-link, .footer-link { color: #8ecae6 !important; }
+        /* Text — muted */
+        .footer-text, .social-label, .imgblock-caption { color: #b0b0b0 !important; }
+        .product-desc { color: #b0b0b0 !important; }
+        /* Text — headings */
+        .textblock-heading, .artcard-heading, .product-title, .hero-title { color: #e0e0e0 !important; }
+        /* Text — body */
+        .textblock-body, .artcard-body, .hero-subtitle { color: #cccccc !important; }
+        .product-price { color: #8ecae6 !important; }
+        /* Interactive */
+        .cta-btn { background-color: #4895ef !important; }
+        .cta-btn a { color: #ffffff !important; }
+        .cta-ghost { border-color: #8ecae6 !important; }
+        .cta-ghost a { color: #8ecae6 !important; }
+        /* Hero */
+        .hero-overlay { background-color: rgba(0, 0, 0, 0.7) !important; }
+        /* Divider */
+        .divider-line { border-top-color: #444466 !important; }
+      }
+
+      /* Outlook dark mode — backgrounds */
+      [data-ogsc] .header-bg, [data-ogsc] .footer-bg, [data-ogsc] .navbar-bg,
+      [data-ogsc] .logoheader-bg, [data-ogsc] .preheader-bg,
+      [data-ogsc] .col2-bg, [data-ogsc] .col3-bg, [data-ogsc] .col4-bg,
+      [data-ogsc] .revcol-bg, [data-ogsc] .social-bg,
+      [data-ogsc] .textblock-bg, [data-ogsc] .artcard-bg { background-color: #1a1a2e !important; }
+      [data-ogsc] .product-card { background-color: #2d2d44 !important; }
+
+      /* Outlook dark mode — text */
+      [data-ogsc] .header-link, [data-ogsc] .navbar-link,
+      [data-ogsc] .preheader-link, [data-ogsc] .footer-link { color: #8ecae6 !important; }
+      [data-ogsc] .footer-text, [data-ogsc] .social-label,
+      [data-ogsc] .imgblock-caption { color: #b0b0b0 !important; }
+      [data-ogsc] .textblock-heading, [data-ogsc] .artcard-heading,
+      [data-ogsc] .product-title, [data-ogsc] .hero-title { color: #e0e0e0 !important; }
+      [data-ogsb] .textblock-body, [data-ogsb] .artcard-body,
+      [data-ogsc] .hero-subtitle { color: #cccccc !important; }
+      [data-ogsc] .product-price { color: #8ecae6 !important; }
+
+      /* Outlook dark mode — interactive & decorative */
+      [data-ogsc] .cta-btn { background-color: #4895ef !important; }
+      [data-ogsc] .cta-ghost { border-color: #8ecae6 !important; }
+      [data-ogsc] .divider-line { border-top-color: #444466 !important; }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; width: 100%; -webkit-text-size-adjust: 100%;">
+    <div role="article" aria-roledescription="email" aria-label="Starbucks — Pumpkin Now, Peppermint On The Way" lang="en" style="font-size: 16px; font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <!-- Preheader (hidden inbox preview text) -->
+      <div data-slot="preheader" style="display: none; max-height: 0; overflow: hidden; mso-hide: all;">
+        Pumpkin now, peppermint on the way. Order your fall favorite before the holiday menu arrives November 6.
+      </div>
+      <!--[if mso]>
+      <table role="presentation" cellpadding="0" cellspacing="0" width="600" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+      <![endif]-->
+      <div class="dark-bg" data-slot="email_body" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+
+        <!-- ============================================
+             Component: full-width-image (hero — Starbucks latte on orange)
+             Source: 2833_1425.png
+             ============================================ -->
+        <!--[if mso]>
+        <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+        <![endif]-->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; max-width: 600px; margin: 0 auto;">
+          <tr>
+            <td style="padding: 0; text-align: center; font-size: 0; line-height: 0;">
+              <a data-slot="link_url" href="#" style="text-decoration: none;">
+                <img data-slot="image_url" class="bannerimg" src="../../data/debug/6/assets/2833_1425.png" alt="Starbucks — Pumpkin Spice Latte with whipped cream" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+              </a>
+            </td>
+          </tr>
+        </table>
+        <!--[if mso]>
+        </td></tr></table>
+        <![endif]-->
+
+        <!-- ============================================
+             Component: heading (PUMPKIN NOW, PEPPERMINT ON THE WAY)
+             ============================================ -->
+        <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width: 600px;" bgcolor="#F2F0EB">
+          <tr align="center">
+            <td align="center" class="padlr20" style="padding-top: 40px; padding-bottom: 0;">
+              <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width: 520px;">
+                <tr align="center">
+                  <td align="center" class="dm_fontc" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 40px; line-height: 44px; color: #1e3932; mso-line-height-rule: exactly; text-align: center; font-weight: 900; letter-spacing: -0.5px;">
+                    PUMPKIN NOW, PEPPERMINT ON THE WAY
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============================================
+             Component: paragraph (body text — italic)
+             ============================================ -->
+        <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width: 600px;" bgcolor="#F2F0EB">
+          <tr align="center">
+            <td align="center" class="padlr20" style="padding-top: 20px; padding-bottom: 0;">
+              <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width: 520px;">
+                <tr align="center">
+                  <td align="center" class="dm_fontc" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 26px; color: #1e3932; mso-line-height-rule: exactly; text-align: center; font-style: italic;">
+                    It&rsquo;s almost time to trade crunchy leaves and fall flourishes for twinkling lights and holiday cheer&mdash;but not before soaking up the rest of pumpkin spice season.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============================================
+             Component: button-filled (Order your fall favorite)
+             ============================================ -->
+        <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width: 600px;" bgcolor="#F2F0EB">
+          <tr align="center">
+            <td align="center" class="padlr20" style="padding-top: 28px; padding-bottom: 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width: 520px;">
+                <tr align="center">
+                  <td align="center">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="#" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="50%" strokecolor="#1E3932" fillcolor="#1E3932">
+                      <w:anchorlock/>
+                      <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Order your fall favorite</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="#" style="display: inline-block; background-color: #1e3932; color: #ffffff; font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 600; line-height: 48px; text-align: center; text-decoration: none; width: 240px; border-radius: 25px; -webkit-text-size-adjust: none;">
+                      Order your fall favorite
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============================================
+             Component: column-layout-2 (Holiday Countdown — image left, text right)
+             Layout: image (264px) | text (292px) on desktop
+             Mobile: image on top (source order), text centers below
+             Background: #AA1733
+             ============================================ -->
+        <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width: 600px;" bgcolor="#AA1733">
+          <tr>
+            <td style="font-size: 0; text-align: center; padding: 30px 20px; mso-line-height-rule: exactly;">
+              <!--[if mso]>
+              <table role="presentation" width="560" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="264" valign="middle">
+              <![endif]-->
+              <!-- Image column — first in source = on top on mobile -->
+              <div class="column" style="display: inline-block; max-width: 264px; width: 100%; vertical-align: middle;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+                  <tr>
+                    <td style="padding: 10px; text-align: center;">
+                      <img src="../../data/debug/6/assets/6N_nov.png" alt="November 6 calendar — Holiday menu countdown" width="244" style="display: block; width: 100%; max-width: 244px; height: auto; border: 0; margin: 0 auto;" />
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <!--[if mso]>
+              </td><td width="292" valign="middle">
+              <![endif]-->
+              <!-- Text column — left on desktop, centered on mobile -->
+              <div class="column" style="display: inline-block; max-width: 292px; width: 100%; vertical-align: middle;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+                  <tr>
+                    <td class="textCenter padlr20" style="padding: 0 16px 12px 16px; font-family: 'Lander Grande', Georgia, 'Times New Roman', serif; font-size: 28px; line-height: 32px; color: #ffffff; font-weight: 700; mso-line-height-rule: exactly; text-align: left;">
+                      The Holiday Countdown
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="textCenter padlr20" style="padding: 0 16px 16px 16px; font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 20px; color: #ffffff; mso-line-height-rule: exactly; text-align: left;">
+                      Only three sleeps left! Our holiday menu returns on November 6 with seasonal classics and festive new favorites to add to your wish list.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="textCenter padlr20" style="padding: 0 16px 10px 16px; text-align: left;">
+                      <!-- CTA: "Peek at what's coming" — ghost pill button 221x40 -->
+                      <!--[if mso]>
+                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="#" style="height:40px;v-text-anchor:middle;width:221px;" arcsize="50%" strokecolor="#ffffff" strokeweight="2px" fillcolor="#AA1733">
+                        <w:anchorlock/>
+                        <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:600;">Peek at what&rsquo;s coming</center>
+                      </v:roundrect>
+                      <![endif]-->
+                      <!--[if !mso]><!-->
+                      <a href="#" style="display: inline-block; background-color: transparent; border: 2px solid #ffffff; color: #ffffff; font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 600; line-height: 36px; text-align: center; text-decoration: none; width: 221px; border-radius: 25px; -webkit-text-size-adjust: none;">
+                        Peek at what&rsquo;s coming
+                      </a>
+                      <!--<![endif]-->
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <!--[if mso]>
+              </td></tr></table>
+              <![endif]-->
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============================================
+             Component: column-layout-4 (navigation bar — APP | ORDER | OFFERS | REWARDS)
+             Pure table approach — 4 icons + 3 dividers as <td> cells
+             Desktop: 4-across with vertical dividers
+             Mobile: 2x2 grid, dividers hidden
+             Icons cropped from: 2833_1453.png
+             ============================================ -->
+        <!-- Desktop: single row with dividers (hidden on mobile) -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="hide" style="width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;" bgcolor="#296042">
+          <tr>
+            <td align="center" valign="middle" width="149" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-app.png" alt="App" width="149" style="display: block; width: 149px; height: auto; border: 0;" />
+              </a>
+            </td>
+            <td width="1" valign="middle" style="width: 1px; padding: 20px 0; font-size: 0; line-height: 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="1" style="border-collapse: collapse;">
+                <tr><td style="width: 1px; height: 60px; background-color: #5a8a6a; font-size: 0; line-height: 0;" bgcolor="#5a8a6a"></td></tr>
+              </table>
+            </td>
+            <td align="center" valign="middle" width="149" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-order.png" alt="Order" width="149" style="display: block; width: 149px; height: auto; border: 0;" />
+              </a>
+            </td>
+            <td width="1" valign="middle" style="width: 1px; padding: 20px 0; font-size: 0; line-height: 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="1" style="border-collapse: collapse;">
+                <tr><td style="width: 1px; height: 60px; background-color: #5a8a6a; font-size: 0; line-height: 0;" bgcolor="#5a8a6a"></td></tr>
+              </table>
+            </td>
+            <td align="center" valign="middle" width="149" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-offers.png" alt="Offers" width="149" style="display: block; width: 149px; height: auto; border: 0;" />
+              </a>
+            </td>
+            <td width="1" valign="middle" style="width: 1px; padding: 20px 0; font-size: 0; line-height: 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="1" style="border-collapse: collapse;">
+                <tr><td style="width: 1px; height: 60px; background-color: #5a8a6a; font-size: 0; line-height: 0;" bgcolor="#5a8a6a"></td></tr>
+              </table>
+            </td>
+            <td align="center" valign="middle" width="149" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-rewards.png" alt="Rewards" width="149" style="display: block; width: 149px; height: auto; border: 0;" />
+              </a>
+            </td>
+          </tr>
+        </table>
+        <!-- Mobile: 2x2 grid, no dividers (shown on mobile only) -->
+        <!--[if !mso]><!-->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="show" style="display: none; max-height: 0; overflow: hidden; mso-hide: all; border-collapse: collapse;" bgcolor="#296042">
+          <tr>
+            <td align="center" valign="middle" width="50%" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-app.png" alt="App" width="300" style="display: block; width: 100%; height: auto; border: 0;" />
+              </a>
+            </td>
+            <td align="center" valign="middle" width="50%" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-order.png" alt="Order" width="300" style="display: block; width: 100%; height: auto; border: 0;" />
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" valign="middle" width="50%" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-offers.png" alt="Offers" width="300" style="display: block; width: 100%; height: auto; border: 0;" />
+              </a>
+            </td>
+            <td align="center" valign="middle" width="50%" style="padding: 0;">
+              <a href="#" style="text-decoration: none;">
+                <img src="../../data/debug/6/assets/nav-rewards.png" alt="Rewards" width="300" style="display: block; width: 100%; height: auto; border: 0;" />
+              </a>
+            </td>
+          </tr>
+        </table>
+        <!--<![endif]-->
+
+        <!-- ============================================
+             Component: footer-social (social icons row)
+             ============================================ -->
+        <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width: 600px;" bgcolor="#ffffff">
+          <tr align="center">
+            <td align="center" style="padding-top: 30px; padding-bottom: 16px;" class="padlr20">
+              <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr align="center">
+                  <td align="center" width="26">
+                    <a href="#" style="text-decoration: none;">
+                      <img src="../../data/debug/6/assets/IG.png" alt="Instagram" width="26" height="26" style="display: block; border: 0;" />
+                    </a>
+                  </td>
+                  <td width="16"></td>
+                  <td align="center" width="26">
+                    <a href="#" style="text-decoration: none;">
+                      <img src="../../data/debug/6/assets/FB.png" alt="Facebook" width="26" height="26" style="display: block; border: 0;" />
+                    </a>
+                  </td>
+                  <td width="16"></td>
+                  <td align="center" width="26">
+                    <a href="#" style="text-decoration: none;">
+                      <img src="../../data/debug/6/assets/TT.png" alt="TikTok" width="26" height="26" style="display: block; border: 0;" />
+                    </a>
+                  </td>
+                  <td width="16"></td>
+                  <td align="center" width="26">
+                    <a href="#" style="text-decoration: none;">
+                      <img src="../../data/debug/6/assets/x.png" alt="X" width="26" height="26" style="display: block; border: 0;" />
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============================================
+             Component: footer (legal text)
+             ============================================ -->
+        <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width: 600px;" bgcolor="#ffffff">
+          <tr align="center">
+            <td align="center" class="padlr20" style="padding-top: 8px; padding-bottom: 8px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="480" class="resptab" role="presentation" style="width: 480px;">
+                <tr>
+                  <td align="center" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 18px; color: #707070; mso-line-height-rule: exactly; text-align: center; padding: 0 0 6px 0;">
+                    Ref: 26-6-NWSL-3-0-0-EM-SR-NA-US
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 18px; color: #707070; mso-line-height-rule: exactly; text-align: center; padding: 0 0 6px 0;">
+                    This email was sent to <a href="mailto:email@brand.emaillove.com" style="color: #707070; text-decoration: underline;">email@brand.emaillove.com</a>. <a href="#" style="color: #707070; text-decoration: underline;">Unsubscribe</a>.
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 18px; color: #707070; mso-line-height-rule: exactly; text-align: center; padding: 0 0 6px 0;">
+                    Questions? <a href="#" style="color: #707070; text-decoration: underline;">Contact us here</a>.
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 18px; color: #707070; mso-line-height-rule: exactly; text-align: center; padding: 0 0 6px 0;">
+                    <a href="#" style="color: #707070; text-decoration: underline;">P.O. Box 549, Fort Smith, AR 72902</a>.<br />&copy; 2025 Starbucks Coffee Company.
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 18px; color: #707070; mso-line-height-rule: exactly; text-align: center; padding: 0 0 6px 0;">
+                    <a href="#" style="color: #707070; text-decoration: underline;">Starbucks Card Terms of Use</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 18px; color: #707070; mso-line-height-rule: exactly; text-align: center; padding: 0 0 6px 0;">
+                    <a href="#" style="color: #707070; text-decoration: underline;">Starbucks&reg; Rewards Terms of Use</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="font-family: 'SoDo Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 18px; color: #707070; mso-line-height-rule: exactly; text-align: center;">
+                    <a href="#" style="color: #707070; text-decoration: underline;">Privacy Statement</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============================================
+             Component: image (Starbucks Rewards logo — 146x136)
+             ============================================ -->
+        <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width: 600px;" bgcolor="#ffffff">
+          <tr align="center">
+            <td align="center" style="padding-top: 20px; padding-bottom: 30px;">
+              <img src="../../data/debug/6/assets/logo.png" alt="Starbucks Rewards" width="146" style="display: block; border: 0; width: 146px; height: auto;" />
+            </td>
+          </tr>
+        </table>
+
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </div>
+  </body>
+</html>

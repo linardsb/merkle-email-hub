@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Converter Training Guide — Merkle Email Hub</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #242833;
+    --border: #2e3340;
+    --text: #e1e4eb;
+    --text-muted: #8b8fa3;
+    --accent: #6c8cff;
+    --accent-hover: #8ba3ff;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --orange: #fb923c;
+    --radius: 8px;
+    --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* Header */
+  header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 32px; }
+  header h1 { font-size: 24px; font-weight: 600; margin-bottom: 6px; }
+  header p { color: var(--text-muted); font-size: 14px; }
+
+  /* Auth bar */
+  .auth-bar {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px; margin-bottom: 24px;
+  }
+  .auth-bar label { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+  .auth-bar input {
+    flex: 1; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px;
+    font-family: var(--mono);
+  }
+  .auth-bar input:focus { outline: none; border-color: var(--accent); }
+  .auth-bar .status-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--red);
+    flex-shrink: 0;
+  }
+  .auth-bar .status-dot.ok { background: var(--green); }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 2px; background: var(--surface);
+    border-radius: var(--radius); padding: 4px; margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1; padding: 10px 16px; border: none; background: transparent;
+    color: var(--text-muted); font-size: 13px; font-weight: 500;
+    border-radius: 6px; cursor: pointer; transition: all 0.15s;
+    text-align: center;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--surface-2); }
+  .tab-btn.active { color: var(--text); background: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .card .subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+
+  /* Steps */
+  .step {
+    display: flex; gap: 14px; margin-bottom: 20px;
+    padding-bottom: 20px; border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-num.done { background: var(--green); }
+  .step-content { flex: 1; min-width: 0; }
+  .step-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .step-content p { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+
+  /* Forms */
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  input[type="text"], input[type="url"], input[type="number"], textarea, select {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 9px 12px; color: var(--text); font-size: 13px;
+    font-family: inherit;
+  }
+  textarea { font-family: var(--mono); resize: vertical; min-height: 80px; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  select { cursor: pointer; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary {
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--text-muted); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* Log output */
+  .log-box {
+    background: #0d0f14; border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px; font-family: var(--mono);
+    font-size: 12px; line-height: 1.7; max-height: 360px;
+    overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+    color: var(--text-muted);
+  }
+  .log-box .info { color: var(--accent); }
+  .log-box .ok { color: var(--green); }
+  .log-box .warn { color: var(--yellow); }
+  .log-box .err { color: var(--red); }
+  .log-box .dim { color: #555; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+
+  /* Badge */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  /* File drop */
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 40px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; color: var(--text-muted); font-size: 14px;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent); background: rgba(108,140,255,0.05);
+    color: var(--text);
+  }
+  .drop-zone input[type="file"] { display: none; }
+
+  /* Progress */
+  .progress-bar {
+    height: 4px; background: var(--surface-2); border-radius: 2px;
+    overflow: hidden; margin-top: 8px;
+  }
+  .progress-bar .fill {
+    height: 100%; background: var(--accent); border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Flow diagram */
+  .flow-diagram {
+    background: var(--surface-2); border-radius: var(--radius);
+    padding: 20px; font-family: var(--mono); font-size: 12px;
+    line-height: 1.8; color: var(--text-muted); overflow-x: auto;
+  }
+  .flow-diagram .highlight { color: var(--accent); font-weight: 600; }
+  .flow-diagram .arrow { color: var(--green); }
+
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-8 { margin-bottom: 8px; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Converter Training Guide</h1>
+  <p>Feed Figma designs, HTML emails, and screenshots into the learning loop to improve conversion quality over time.</p>
+</header>
+
+<!-- Auth Bar -->
+<div class="auth-bar">
+  <div class="status-dot" id="authDot"></div>
+  <label>API</label>
+  <input type="url" id="baseUrl" value="http://localhost:8891" placeholder="Backend URL" style="max-width:240px">
+  <label>Email</label>
+  <input type="text" id="authEmail" value="admin@email-hub.dev" placeholder="Email" style="max-width:180px">
+  <label>Password</label>
+  <input type="text" id="authPass" value="admin" placeholder="Password" style="max-width:140px">
+  <button class="btn btn-primary btn-sm" onclick="doLogin()">Connect</button>
+  <span id="authStatus" style="font-size:12px; color:var(--text-muted)">Not connected</span>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('figma')">Figma Conversion</button>
+  <button class="tab-btn" onclick="switchTab('html')">HTML + Screenshot</button>
+  <button class="tab-btn" onclick="switchTab('monitor')">Monitor</button>
+  <button class="tab-btn" onclick="switchTab('how')">How It Works</button>
+</div>
+
+<!-- ============ TAB 1: FIGMA ============ -->
+<div id="tab-figma" class="tab-panel active">
+  <div class="card">
+    <h3>Train from Figma Design URL</h3>
+    <p class="subtitle">Every conversion automatically feeds the learning loop — memory, insights, and traces.</p>
+
+    <!-- Step 1: Connection -->
+    <div class="step">
+      <div class="step-num" id="figmaStep1Num">1</div>
+      <div class="step-content">
+        <h4>Create or select a Figma connection</h4>
+        <p>Link a Figma file by providing its URL and your Personal Access Token.</p>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Figma File URL</label>
+            <input type="url" id="figmaUrl" placeholder="https://www.figma.com/design/FILE_KEY/...">
+          </div>
+          <div class="form-group">
+            <label>Figma Access Token</label>
+            <input type="text" id="figmaToken" placeholder="figd_xxxxxxxxxxxxx">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Connection Name</label>
+          <input type="text" id="connName" placeholder="My Email Designs">
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="createConnection()" id="btnCreateConn">Create Connection</button>
+          <button class="btn btn-secondary btn-sm" onclick="listConnections()">List Existing</button>
+        </div>
+        <div id="connResult" class="log-box mt-12" style="display:none; max-height:150px"></div>
+      </div>
+    </div>
+
+    <!-- Step 2: Browse frames -->
+    <div class="step">
+      <div class="step-num" id="figmaStep2Num">2</div>
+      <div class="step-content">
+        <h4>Browse frames &amp; select a node</h4>
+        <p>Pick the email frame from the Figma file to convert.</p>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Connection ID</label>
+            <input type="number" id="connId" placeholder="e.g. 8">
+          </div>
+          <div class="form-group">
+            <label>Selected Node ID</label>
+            <input type="text" id="nodeId" placeholder="e.g. 2833:1424">
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="browseFrames()">Browse Frames</button>
+        <div id="framesResult" class="log-box mt-12" style="display:none; max-height:200px"></div>
+      </div>
+    </div>
+
+    <!-- Step 3: Brief + Convert -->
+    <div class="step">
+      <div class="step-num" id="figmaStep3Num">3</div>
+      <div class="step-content">
+        <h4>Write a brief &amp; start conversion</h4>
+        <p>Describe the email campaign. The Scaffolder uses this to pick templates and fill content.</p>
+        <div class="form-group">
+          <label>Campaign Brief</label>
+          <textarea id="brief" rows="3" placeholder="Create a promotional campaign email with hero image, product showcase, CTA buttons, and branded footer. Target audience: existing customers. Tone: energetic and bold."></textarea>
+        </div>
+        <div class="grid-2 mb-8">
+          <div class="form-group">
+            <label>Output Mode</label>
+            <select id="outputMode">
+              <option value="structured">Structured (recommended)</option>
+              <option value="html">Raw HTML</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Run QA Gate</label>
+            <select id="runQa">
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="startConversion()" id="btnConvert">Start Conversion</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Result -->
+    <div class="step">
+      <div class="step-num" id="figmaStep4Num">4</div>
+      <div class="step-content">
+        <h4>Conversion result &amp; learning status</h4>
+        <p>Watch the conversion progress. Learning data is persisted automatically when it completes.</p>
+        <div id="conversionStatus" style="display:none">
+          <div class="flex-between mb-8">
+            <span id="convStatusText" style="font-size:13px; font-weight:600"></span>
+            <span id="convStatusBadge"></span>
+          </div>
+          <div class="progress-bar"><div class="fill" id="convProgress" style="width:0%"></div></div>
+        </div>
+        <div id="conversionLog" class="log-box mt-12" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 2: HTML + SCREENSHOT UPLOAD ============ -->
+<div id="tab-html" class="tab-panel">
+  <div class="card">
+    <h3>Train from HTML + Screenshot + Figma URL</h3>
+    <p class="subtitle">Upload all three together: the reference HTML, a screenshot of the original design, and the Figma URL. This creates a complete training case.</p>
+
+    <!-- Step 1: All three inputs -->
+    <div class="step">
+      <div class="step-num" id="htmlStep1Num">1</div>
+      <div class="step-content">
+        <h4>Provide the training materials</h4>
+        <p>All three inputs are shown together. Fill in whichever you have — at minimum the HTML file.</p>
+
+        <!-- HTML File -->
+        <div style="background:var(--surface-2); border-radius:var(--radius); padding:16px; margin-bottom:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px">HTML Email File</div>
+          <div class="drop-zone" id="dropZone" onclick="document.getElementById('htmlFile').click()" style="padding:24px">
+            Drop an HTML email file here or click to browse
+            <input type="file" id="htmlFile" accept=".html,.htm" onchange="handleFileSelect(event)">
+          </div>
+          <div class="mt-12">
+            <label style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px">Or paste HTML source</label>
+            <textarea id="htmlSource" rows="5" placeholder="<!DOCTYPE html><html>...</html>"></textarea>
+          </div>
+        </div>
+
+        <!-- Screenshot -->
+        <div style="background:var(--surface-2); border-radius:var(--radius); padding:16px; margin-bottom:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--orange); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px">Design Screenshot (optional)</div>
+          <div class="drop-zone" id="screenshotDropZone" onclick="document.getElementById('screenshotFile').click()" style="padding:24px">
+            Drop a screenshot of the original design (PNG/JPG)
+            <input type="file" id="screenshotFile" accept="image/*" onchange="handleScreenshot(event)">
+          </div>
+          <div id="screenshotPreview" style="display:none; margin-top:10px; text-align:center">
+            <img id="screenshotImg" style="max-width:100%; max-height:300px; border-radius:6px; border:1px solid var(--border)">
+            <p id="screenshotMeta" style="font-size:11px; color:var(--text-muted); margin-top:4px"></p>
+          </div>
+        </div>
+
+        <!-- Figma URL -->
+        <div style="background:var(--surface-2); border-radius:var(--radius); padding:16px; margin-bottom:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px">Figma Design URL (optional)</div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Figma File URL</label>
+              <input type="url" id="htmlFigmaUrl" placeholder="https://www.figma.com/design/FILE_KEY/...">
+            </div>
+            <div class="form-group">
+              <label>Frame Node ID</label>
+              <input type="text" id="htmlFigmaNode" placeholder="e.g. 2833:1424">
+            </div>
+          </div>
+          <p style="font-size:11px; color:var(--text-muted)">Linking the Figma source lets the system extract design tokens and compare converter output against the original.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Metadata -->
+    <div class="step">
+      <div class="step-num" id="htmlStep2Num">2</div>
+      <div class="step-content">
+        <h4>Name the training case</h4>
+        <p>Give this case an ID and description. Used for regression testing and memory storage.</p>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Case ID (slug)</label>
+            <input type="text" id="snapshotCaseId" placeholder="e.g. starbucks-q4">
+          </div>
+          <div class="form-group">
+            <label>Case Name</label>
+            <input type="text" id="snapshotCaseName" placeholder="e.g. Starbucks Q4 Promo — hero, products, CTA, footer">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Source Name</label>
+            <input type="text" id="htmlSourceName" placeholder="e.g. email-gallery, competitor, production">
+          </div>
+          <div class="form-group">
+            <label>Use AI Classification</label>
+            <select id="htmlUseAi">
+              <option value="true">Yes (recommended)</option>
+              <option value="false">No (rules only)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Analyze -->
+    <div class="step">
+      <div class="step-num" id="htmlStep3Num">3</div>
+      <div class="step-content">
+        <h4>Analyze &amp; register</h4>
+        <p>The system parses the HTML, classifies sections, extracts tokens, and shows quality signals.</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px">
+          <button class="btn btn-primary" onclick="analyzeHtml()" id="btnAnalyze">Analyze HTML (API)</button>
+          <button class="btn btn-primary" onclick="saveTrainingCase()" id="btnSaveCase" style="background:var(--green)">Save Training Case (API)</button>
+          <button class="btn btn-primary" onclick="runBackfill()" id="btnBackfill" style="background:var(--orange)">Backfill Learning Loop (API)</button>
+          <button class="btn btn-secondary" onclick="runRegression()" id="btnRegression">Check Regression</button>
+          <button class="btn btn-secondary" onclick="runDataRegression()" id="btnDataRegression">Data Regression</button>
+        </div>
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px">
+          "Analyze" parses HTML structure. "Save" creates the case on disk via API. "Backfill" feeds the learning loop via API. "Regression" commands are copied to clipboard.
+        </p>
+        <div id="htmlAnalysisResult" class="log-box" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Step 4: CLI commands -->
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Complete setup (terminal)</h4>
+        <p>After saving, run these commands to wire the case into the learning loop.</p>
+        <div class="log-box" style="max-height:200px" id="cliInstructions">
+<span class="dim"># 1. If you have the Figma URL, extract design data</span>
+<span class="info">python -m app.design_sync.diagnose.extract \</span>
+<span class="info">  --connection-id CONNECTION_ID \</span>
+<span class="info">  --node-id NODE_ID \</span>
+<span class="info">  --output-dir data/debug/CASE_ID</span>
+
+<span class="dim"># 2. Add the case to the manifest</span>
+<span class="info">vim data/debug/manifest.yaml</span>
+<span class="dim"># Add:</span>
+<span class="dim">#   - id: "CASE_ID"</span>
+<span class="dim">#     name: "Case Name"</span>
+<span class="dim">#     source: "Source"</span>
+<span class="dim">#     figma_node: "NODE_ID"</span>
+<span class="dim">#     status: active</span>
+
+<span class="dim"># 3. Backfill learning data</span>
+<span class="info">python scripts/backfill-conversion-memories.py --traces-only</span>
+
+<span class="dim"># 4. Run regression tests</span>
+<span class="info">make snapshot-test</span>
+
+<span class="dim"># 5. Check quality baseline</span>
+<span class="info">make converter-regression</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 3: MONITOR ============ -->
+<div id="tab-monitor" class="tab-panel">
+  <div class="card">
+    <h3>Training Progress</h3>
+    <p class="subtitle">View conversion traces, quality trends, and regression status.</p>
+
+    <div class="flex-between mb-8">
+      <h4 style="font-size:14px">CLI Commands</h4>
+    </div>
+    <div class="log-box" style="max-height:200px">
+<span class="dim"># View all traces with quality scores</span>
+<span class="info">uv run python -c "</span>
+<span class="info">import json</span>
+<span class="info">with open('traces/converter_traces.jsonl') as f:</span>
+<span class="info">    for line in f:</span>
+<span class="info">        t = json.loads(line)</span>
+<span class="info">        print(f'{t[\"trace_id\"]:40s}  score={t[\"quality_score\"]:.3f}  conf={t[\"avg_confidence\"]:.2f}  warnings={len(t[\"warnings\"]):2d}  sections={t[\"sections_count\"]}')</span>
+<span class="info">"</span>
+
+<span class="dim"># Check regression against baseline</span>
+<span class="info">make converter-regression</span>
+
+<span class="dim"># Update baseline after improvements</span>
+<span class="info">python -m app.design_sync.converter_regression --update-baseline</span>
+
+<span class="dim"># Backfill all snapshot cases into learning loop</span>
+<span class="info">python scripts/backfill-conversion-memories.py --dry-run</span>
+<span class="info">python scripts/backfill-conversion-memories.py --traces-only</span>
+
+<span class="dim"># Query what the Scaffolder remembers</span>
+<span class="info">curl -s -X POST http://localhost:8891/memory/search \</span>
+<span class="info">  -H "Authorization: Bearer $TOKEN" \</span>
+<span class="info">  -H "Content-Type: application/json" \</span>
+<span class="info">  -d '{"query":"conversion quality","agent_type":"design_sync","limit":10}' | jq</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between mb-8">
+      <h3>Stored Memories</h3>
+      <button class="btn btn-secondary btn-sm" onclick="fetchMemories()">Refresh</button>
+    </div>
+    <p class="subtitle">What the Scaffolder sees when selecting templates for new conversions.</p>
+    <div id="memoriesTable">
+      <p style="font-size:13px; color:var(--text-muted); text-align:center; padding:20px">Click Refresh to load memories (requires connection)</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between mb-8">
+      <h3>Regression Baseline</h3>
+    </div>
+    <p class="subtitle">Current quality metrics vs baseline. Regression fires if quality drops &gt; 5%.</p>
+    <div class="log-box" style="max-height:100px">
+<span class="dim"># Run from terminal:</span>
+<span class="info">make converter-regression</span>
+
+<span class="dim"># Or check the baseline file:</span>
+<span class="info">cat traces/converter_baseline.json | jq</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 4: HOW IT WORKS ============ -->
+<div id="tab-how" class="tab-panel">
+  <div class="card">
+    <h3>Learning Loop Architecture</h3>
+    <p class="subtitle">Every conversion makes the next one smarter.</p>
+
+    <div class="flow-diagram">
+<span class="highlight">Input</span>                          <span class="highlight">Converter</span>                      <span class="highlight">Learning</span>
+
+  Figma URL   <span class="arrow">----></span>  Layout Analysis  <span class="arrow">----></span>  <span class="ok">Memory (PostgreSQL)</span>
+       or             Component Match         Scaffolder reads this on every
+  HTML File           HTML Generation         future conversion to avoid
+                            |                 repeating bad template choices.
+                            |
+                            +<span class="arrow">----------></span>  <span class="ok">Insight Bus</span>
+                            |                 Low-confidence sections (&lt;0.6)
+                            |                 become insights targeting the
+                            |                 Scaffolder agent directly.
+                            |
+                            +<span class="arrow">----------></span>  <span class="ok">JSONL Traces</span>
+                                              Append-only audit trail in
+                                              traces/converter_traces.jsonl
+                                              Used for regression detection.
+    </div>
+
+    <div class="mt-16">
+      <h4 style="font-size:14px; margin-bottom:8px">What gets stored per conversion</h4>
+      <table>
+        <tr><th>Storage</th><th>What</th><th>Used By</th></tr>
+        <tr>
+          <td><span class="badge badge-green">Memory</span></td>
+          <td>Quality warnings, match confidences, design tokens</td>
+          <td>Scaffolder (template selection), Knowledge agent (Q&A)</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-yellow">Insights</span></td>
+          <td>Low-confidence section matches grouped by type</td>
+          <td>Scaffolder (avoids bad template picks)</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">Traces</span></td>
+          <td>Full quality snapshot: score, confidences, warnings</td>
+          <td>Regression detection (make converter-regression)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="mt-16">
+      <h4 style="font-size:14px; margin-bottom:8px">Config gates</h4>
+      <table>
+        <tr><th>Setting</th><th>Default</th><th>Controls</th></tr>
+        <tr><td style="font-family:var(--mono); font-size:12px">DESIGN_SYNC__CONVERSION_MEMORY_ENABLED</td><td>true</td><td>Memory + Insights persistence</td></tr>
+        <tr><td style="font-family:var(--mono); font-size:12px">DESIGN_SYNC__CONVERSION_TRACES_ENABLED</td><td>true</td><td>JSONL trace writing</td></tr>
+        <tr><td style="font-family:var(--mono); font-size:12px">DESIGN_SYNC__LOW_MATCH_CONFIDENCE_THRESHOLD</td><td>0.6</td><td>Insight generation threshold</td></tr>
+        <tr><td style="font-family:var(--mono); font-size:12px">DESIGN_SYNC__CONVERSION_TRACES_PATH</td><td>traces/converter_traces.jsonl</td><td>Trace file location</td></tr>
+      </table>
+    </div>
+
+    <div class="mt-16">
+      <h4 style="font-size:14px; margin-bottom:8px">Training methods at a glance</h4>
+      <table>
+        <tr><th>Method</th><th>Input</th><th>Auto-learns?</th><th>Best for</th></tr>
+        <tr>
+          <td>Figma conversion (API)</td>
+          <td>Figma URL + brief</td>
+          <td><span class="badge badge-green">Yes</span></td>
+          <td>Primary training — real designs</td>
+        </tr>
+        <tr>
+          <td>Snapshot backfill (CLI)</td>
+          <td>structure.json + tokens.json</td>
+          <td><span class="badge badge-yellow">Manual</span></td>
+          <td>Seeding from existing test data</td>
+        </tr>
+        <tr>
+          <td>HTML analysis (API)</td>
+          <td>Raw HTML</td>
+          <td><span class="badge badge-red">No</span></td>
+          <td>Quick analysis, reference targets</td>
+        </tr>
+        <tr>
+          <td>Template upload (API)</td>
+          <td>HTML file</td>
+          <td><span class="badge badge-red">No</span></td>
+          <td>Store for reuse by Scaffolder</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+let token = null;
+const $ = id => document.getElementById(id);
+const base = () => $('baseUrl').value.replace(/\/+$/, '');
+
+function log(boxId, msg, cls = '') {
+  const box = $(boxId);
+  box.style.display = 'block';
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = msg + '\n';
+  box.appendChild(span);
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearLog(boxId) {
+  const box = $(boxId);
+  box.innerHTML = '';
+  box.style.display = 'none';
+}
+
+async function api(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(base() + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+  return data;
+}
+
+// Auth
+async function doLogin() {
+  try {
+    const data = await api('POST', '/api/v1/auth/login', {
+      email: $('authEmail').value,
+      password: $('authPass').value
+    });
+    token = data.access_token;
+    $('authDot').classList.add('ok');
+    $('authStatus').textContent = `Connected as ${data.user?.email || 'user'}`;
+    $('authStatus').style.color = 'var(--green)';
+  } catch (e) {
+    $('authDot').classList.remove('ok');
+    $('authStatus').textContent = `Failed: ${e.message}`;
+    $('authStatus').style.color = 'var(--red)';
+  }
+}
+
+// Tabs
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  $(`tab-${name}`).classList.add('active');
+}
+
+// Figma: Create Connection
+async function createConnection() {
+  clearLog('connResult');
+  try {
+    log('connResult', 'Creating connection...', 'info');
+    const data = await api('POST', '/api/v1/design-sync/connections', {
+      name: $('connName').value || 'Training Import',
+      provider: 'figma',
+      file_url: $('figmaUrl').value,
+      access_token: $('figmaToken').value
+    });
+    log('connResult', `Connection created: ID ${data.id}`, 'ok');
+    log('connResult', `File key: ${data.file_key || 'n/a'}`, 'dim');
+    $('connId').value = data.id;
+    $('figmaStep1Num').classList.add('done');
+  } catch (e) {
+    log('connResult', `Error: ${e.message}`, 'err');
+  }
+}
+
+async function listConnections() {
+  clearLog('connResult');
+  try {
+    const data = await api('GET', '/api/v1/design-sync/connections');
+    const conns = data.items || data;
+    if (!conns.length) { log('connResult', 'No connections found.', 'warn'); return; }
+    log('connResult', `Found ${conns.length} connection(s):`, 'info');
+    conns.forEach(c => {
+      log('connResult', `  ID ${c.id}: ${c.name} (${c.provider}, status: ${c.status})`, '');
+    });
+  } catch (e) {
+    log('connResult', `Error: ${e.message}`, 'err');
+  }
+}
+
+// Figma: Browse Frames
+async function browseFrames() {
+  clearLog('framesResult');
+  const cid = $('connId').value;
+  if (!cid) { log('framesResult', 'Enter a Connection ID first.', 'warn'); return; }
+  try {
+    log('framesResult', `Fetching file structure for connection ${cid}...`, 'info');
+    const data = await api('GET', `/api/v1/design-sync/connections/${cid}/file-structure?depth=2`);
+    const pages = data.pages || [];
+    if (!pages.length) { log('framesResult', 'No pages found in file.', 'warn'); return; }
+    pages.forEach(page => {
+      log('framesResult', `Page: ${page.name}`, 'info');
+      (page.frames || page.children || []).forEach(f => {
+        const nodeId = f.id || f.node_id;
+        log('framesResult', `  ${nodeId}  ${f.name}`, '');
+      });
+    });
+    log('framesResult', '\nClick a node ID above, then paste it into the "Selected Node ID" field.', 'dim');
+    $('figmaStep2Num').classList.add('done');
+  } catch (e) {
+    log('framesResult', `Error: ${e.message}`, 'err');
+  }
+}
+
+// Figma: Start Conversion
+async function startConversion() {
+  clearLog('conversionLog');
+  const cid = $('connId').value;
+  const node = $('nodeId').value;
+  const brief = $('brief').value;
+  if (!cid || !brief) {
+    log('conversionLog', 'Fill in Connection ID and Brief before converting.', 'warn');
+    return;
+  }
+
+  $('conversionStatus').style.display = 'block';
+  $('convStatusText').textContent = 'Creating import...';
+  $('convStatusBadge').innerHTML = '<span class="badge badge-yellow">pending</span>';
+  $('convProgress').style.width = '10%';
+  $('btnConvert').disabled = true;
+
+  try {
+    // Create import
+    log('conversionLog', 'Creating import...', 'info');
+    const nodeIds = node ? [node] : [];
+    const imp = await api('POST', '/api/v1/design-sync/imports', {
+      connection_id: parseInt(cid),
+      brief: brief,
+      selected_node_ids: nodeIds
+    });
+    const importId = imp.id;
+    log('conversionLog', `Import created: ID ${importId}`, 'ok');
+    $('convProgress').style.width = '25%';
+
+    // Start conversion
+    log('conversionLog', 'Starting conversion...', 'info');
+    $('convStatusText').textContent = 'Converting...';
+    $('convStatusBadge').innerHTML = '<span class="badge badge-yellow"><span class="spinner"></span> converting</span>';
+    await api('POST', `/api/v1/design-sync/imports/${importId}/convert`, {
+      run_qa: $('runQa').value === 'true',
+      output_mode: $('outputMode').value,
+      output_format: 'html'
+    });
+    $('convProgress').style.width = '40%';
+
+    // Poll
+    let status = 'converting';
+    let polls = 0;
+    while (status === 'converting' || status === 'pending') {
+      await new Promise(r => setTimeout(r, 3000));
+      const res = await api('GET', `/api/v1/design-sync/imports/${importId}`);
+      status = res.status;
+      polls++;
+      const pct = Math.min(40 + polls * 8, 90);
+      $('convProgress').style.width = pct + '%';
+      log('conversionLog', `[${new Date().toLocaleTimeString()}] Status: ${status}`, 'dim');
+    }
+
+    // Final result
+    $('convProgress').style.width = '100%';
+    if (status === 'completed') {
+      $('convStatusText').textContent = 'Conversion complete';
+      $('convStatusBadge').innerHTML = '<span class="badge badge-green">completed</span>';
+      $('figmaStep3Num').classList.add('done');
+      $('figmaStep4Num').classList.add('done');
+      log('conversionLog', '', '');
+      log('conversionLog', 'Conversion completed successfully.', 'ok');
+      log('conversionLog', 'Phase 48 learning fired automatically:', 'ok');
+      log('conversionLog', '  - Quality data stored in memory (PostgreSQL)', 'ok');
+      log('conversionLog', '  - Insights sent to Scaffolder agent', 'ok');
+      log('conversionLog', '  - Trace appended to traces/converter_traces.jsonl', 'ok');
+      log('conversionLog', '', '');
+      log('conversionLog', 'The Scaffolder will use this data on the next conversion.', 'info');
+    } else {
+      $('convStatusText').textContent = `Conversion ${status}`;
+      $('convStatusBadge').innerHTML = '<span class="badge badge-red">' + status + '</span>';
+      const res = await api('GET', `/api/v1/design-sync/imports/${importId}`);
+      log('conversionLog', `Conversion ${status}: ${res.error_message || 'unknown error'}`, 'err');
+      log('conversionLog', '', '');
+      log('conversionLog', 'Note: Even failed conversions teach the system (if they got far enough to produce quality data).', 'warn');
+    }
+  } catch (e) {
+    log('conversionLog', `Error: ${e.message}`, 'err');
+    $('convStatusText').textContent = 'Error';
+    $('convStatusBadge').innerHTML = '<span class="badge badge-red">error</span>';
+  } finally {
+    $('btnConvert').disabled = false;
+  }
+}
+
+// HTML Upload
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    $('htmlSource').value = e.target.result;
+    $('dropZone').innerHTML = `<strong>${file.name}</strong> (${(file.size/1024).toFixed(1)} KB) loaded`;
+    if (!$('htmlSourceName').value) {
+      $('htmlSourceName').value = file.name.replace(/\.html?$/i, '');
+    }
+    if (!$('snapshotCaseId').value) {
+      $('snapshotCaseId').value = file.name.replace(/\.html?$/i, '').replace(/\s+/g, '-').toLowerCase();
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Drag & drop — HTML
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  if (e.dataTransfer.files.length) {
+    $('htmlFile').files = e.dataTransfer.files;
+    handleFileSelect({ target: { files: e.dataTransfer.files } });
+  }
+});
+
+// Drag & drop — Screenshot
+let screenshotData = null;
+const sdz = document.getElementById('screenshotDropZone');
+sdz.addEventListener('dragover', e => { e.preventDefault(); sdz.classList.add('dragover'); });
+sdz.addEventListener('dragleave', () => sdz.classList.remove('dragover'));
+sdz.addEventListener('drop', e => {
+  e.preventDefault();
+  sdz.classList.remove('dragover');
+  if (e.dataTransfer.files.length) {
+    $('screenshotFile').files = e.dataTransfer.files;
+    handleScreenshot({ target: { files: e.dataTransfer.files } });
+  }
+});
+
+function handleScreenshot(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    screenshotData = { name: file.name, size: file.size, dataUrl: e.target.result };
+    $('screenshotImg').src = e.target.result;
+    $('screenshotMeta').textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    $('screenshotPreview').style.display = 'block';
+    sdz.innerHTML = `<strong>${file.name}</strong> loaded <input type="file" id="screenshotFile" accept="image/*" onchange="handleScreenshot(event)" style="display:none">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Save training case — calls API to persist on disk + register in manifest
+async function saveTrainingCase() {
+  const caseId = $('snapshotCaseId').value;
+  const caseName = $('snapshotCaseName').value;
+  const html = $('htmlSource').value;
+  const figmaUrl = $('htmlFigmaUrl').value;
+  const figmaNode = $('htmlFigmaNode').value;
+
+  if (!caseId) { alert('Enter a Case ID first.'); return; }
+  if (!html) { alert('Upload or paste HTML first.'); return; }
+
+  clearLog('htmlAnalysisResult');
+  $('btnSaveCase').disabled = true;
+
+  try {
+    log('htmlAnalysisResult', 'Saving training case via API...', 'info');
+    log('htmlAnalysisResult', `  Case ID:     ${caseId}`, 'ok');
+    log('htmlAnalysisResult', `  Name:        ${caseName || '(unnamed)'}`, 'ok');
+    log('htmlAnalysisResult', `  HTML:        ${html.length} chars`, 'ok');
+    log('htmlAnalysisResult', `  Screenshot:  ${screenshotData ? screenshotData.name : 'none'}`, screenshotData ? 'ok' : 'warn');
+
+    const body = {
+      case_id: caseId,
+      case_name: caseName || caseId,
+      html_content: html,
+      source_name: $('htmlSourceName').value || 'training',
+      figma_url: figmaUrl || null,
+      figma_node: figmaNode || null,
+      screenshot_b64: screenshotData ? screenshotData.dataUrl : null,
+    };
+
+    const data = await api('POST', '/api/v1/design-sync/training-cases', body);
+
+    log('htmlAnalysisResult', '', '');
+    log('htmlAnalysisResult', 'Training case saved successfully!', 'ok');
+    log('htmlAnalysisResult', `  Directory: ${data.case_dir}`, 'ok');
+    log('htmlAnalysisResult', `  Files written: ${data.files_written.join(', ')}`, 'ok');
+    log('htmlAnalysisResult', `  Manifest updated: ${data.manifest_updated}`, 'ok');
+    log('htmlAnalysisResult', '', '');
+    log('htmlAnalysisResult', 'Next: click "Run Backfill" to feed this case into the learning loop.', 'info');
+
+    $('htmlStep2Num').classList.add('done');
+  } catch (e) {
+    log('htmlAnalysisResult', `Error: ${e.message}`, 'err');
+    if (e.message.includes('already exists')) {
+      log('htmlAnalysisResult', 'Tip: Choose a different Case ID or delete the existing case directory.', 'warn');
+    }
+  } finally {
+    $('btnSaveCase').disabled = false;
+  }
+}
+
+// Run backfill via API — feeds learning loop directly
+async function runBackfill() {
+  const caseId = $('snapshotCaseId').value;
+  if (!caseId) { alert('Enter a Case ID first.'); return; }
+
+  clearLog('htmlAnalysisResult');
+  $('btnBackfill').disabled = true;
+
+  try {
+    log('htmlAnalysisResult', `Backfilling case "${caseId}" into learning loop...`, 'info');
+
+    const data = await api('POST', `/api/v1/design-sync/training-cases/${caseId}/backfill?traces_only=false`);
+
+    log('htmlAnalysisResult', '', '');
+    log('htmlAnalysisResult', 'Backfill completed!', 'ok');
+    log('htmlAnalysisResult', `  Sections analyzed: ${data.sections_count}`, 'ok');
+    log('htmlAnalysisResult', `  Traces written: ${data.traces_written}`, 'ok');
+    log('htmlAnalysisResult', `  Memory stored: ${data.memory_stored}`, 'ok');
+    log('htmlAnalysisResult', `  Insights generated: ${data.insights_count}`, 'ok');
+    log('htmlAnalysisResult', `  Source type: ${data.source}`, 'ok');
+    log('htmlAnalysisResult', '', '');
+    log('htmlAnalysisResult', 'The Scaffolder will use this data on future conversions.', 'info');
+
+    $('htmlStep3Num').classList.add('done');
+  } catch (e) {
+    log('htmlAnalysisResult', `Error: ${e.message}`, 'err');
+    if (e.message.includes('not found')) {
+      log('htmlAnalysisResult', 'Tip: Click "Save as Training Case" first to create the case on disk.', 'warn');
+    }
+  } finally {
+    $('btnBackfill').disabled = false;
+  }
+}
+
+// Run regression check
+function runRegression() {
+  clearLog('htmlAnalysisResult');
+  log('htmlAnalysisResult', 'Run this in your terminal:', 'info');
+  log('htmlAnalysisResult', '', '');
+  log('htmlAnalysisResult', '# Check regression against baseline', 'dim');
+  log('htmlAnalysisResult', 'make converter-regression', 'ok');
+  log('htmlAnalysisResult', '', '');
+  log('htmlAnalysisResult', '# Update baseline after improvements', 'dim');
+  log('htmlAnalysisResult', 'python -m app.design_sync.converter_regression --update-baseline', 'ok');
+  log('htmlAnalysisResult', '', '');
+  log('htmlAnalysisResult', '# View current baseline', 'dim');
+  log('htmlAnalysisResult', 'cat traces/converter_baseline.json | jq', 'ok');
+
+  navigator.clipboard.writeText('make converter-regression').then(() => {
+    log('htmlAnalysisResult', '', '');
+    log('htmlAnalysisResult', 'Copied command to clipboard.', 'info');
+  }).catch(() => {});
+}
+
+// Run data regression (manifest-driven parametrized tests)
+function runDataRegression() {
+  clearLog('htmlAnalysisResult');
+  log('htmlAnalysisResult', 'Run this in your terminal:', 'info');
+  log('htmlAnalysisResult', '', '');
+  log('htmlAnalysisResult', '# Run manifest-driven data regression (62 parametrized tests)', 'dim');
+  log('htmlAnalysisResult', 'make converter-data-regression', 'ok');
+  log('htmlAnalysisResult', '', '');
+  log('htmlAnalysisResult', '# View detailed report', 'dim');
+  log('htmlAnalysisResult', 'make converter-data-regression-report', 'ok');
+  log('htmlAnalysisResult', '', '');
+  log('htmlAnalysisResult', '# Run a single case', 'dim');
+  log('htmlAnalysisResult', 'pytest app/design_sync/tests/test_converter_data_regression.py -k "CASE_ID" -v', 'ok');
+
+  navigator.clipboard.writeText('make converter-data-regression').then(() => {
+    log('htmlAnalysisResult', '', '');
+    log('htmlAnalysisResult', 'Copied command to clipboard.', 'info');
+  }).catch(() => {});
+}
+
+async function analyzeHtml() {
+  clearLog('htmlAnalysisResult');
+  const html = $('htmlSource').value;
+  if (!html) { log('htmlAnalysisResult', 'Paste or upload HTML first.', 'warn'); return; }
+
+  $('btnAnalyze').disabled = true;
+  try {
+    log('htmlAnalysisResult', 'Analyzing HTML structure...', 'info');
+    const data = await api('POST', '/api/v1/design-sync/import/html', {
+      html: html,
+      use_ai: $('htmlUseAi').value === 'true',
+      source_name: $('htmlSourceName').value || null
+    });
+    log('htmlAnalysisResult', `Sections found: ${data.section_count}`, 'ok');
+    log('htmlAnalysisResult', `AI-classified: ${data.ai_sections_classified}`, 'ok');
+    if (data.warnings && data.warnings.length) {
+      data.warnings.forEach(w => log('htmlAnalysisResult', `Warning: ${w}`, 'warn'));
+    }
+    log('htmlAnalysisResult', '', '');
+    log('htmlAnalysisResult', JSON.stringify(data.document || data, null, 2), 'dim');
+  } catch (e) {
+    log('htmlAnalysisResult', `Error: ${e.message}`, 'err');
+  } finally {
+    $('btnAnalyze').disabled = false;
+  }
+}
+
+// Monitor: Fetch memories
+async function fetchMemories() {
+  const box = $('memoriesTable');
+  try {
+    const data = await api('POST', '/memory/search', {
+      query: 'conversion quality',
+      agent_type: 'design_sync',
+      limit: 10
+    });
+    const memories = Array.isArray(data) ? data : (data.items || []);
+    if (!memories.length) {
+      box.innerHTML = '<p style="font-size:13px; color:var(--text-muted); text-align:center; padding:20px">No conversion memories found. Run some conversions first.</p>';
+      return;
+    }
+    let html = '<table><tr><th>Created</th><th>Content</th><th>Warnings</th><th>Confidence</th></tr>';
+    memories.forEach(m => {
+      const meta = m.metadata || m.metadata_json || {};
+      const created = (m.created_at || '').substring(0, 19);
+      const content = (m.content || '').substring(0, 80) + '...';
+      const warnCount = meta.warning_count || '?';
+      const conf = meta.avg_match_confidence != null ? meta.avg_match_confidence.toFixed(2) : '?';
+      html += `<tr><td style="white-space:nowrap; font-size:12px">${created}</td><td style="font-size:12px">${content}</td><td>${warnCount}</td><td>${conf}</td></tr>`;
+    });
+    html += '</table>';
+    box.innerHTML = html;
+  } catch (e) {
+    box.innerHTML = `<p style="font-size:13px; color:var(--red); padding:10px">Error: ${e.message}</p>`;
+  }
+}
+</script>
+</body>
+</html>

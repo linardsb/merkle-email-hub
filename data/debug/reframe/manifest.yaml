@@ -1,0 +1,85 @@
+name: reframe-2025
+figma_file: VUlWjZGAEVZr3mK1EawsYR
+figma_node: "2833:1491"
+description: >
+  Vimeo REFRAME 2025 event invitation. 12 sections exercising repeating-group
+  (5 reasons), multiple distinct CTAs, event-card detection, per-email tokens.
+
+reference_only: true  # No structure.json/tokens.json yet — assertions run against expected.html
+
+sections:
+  count: 12
+  tolerance: 1
+  components:
+    - match_by: index
+      index: 0
+      expected_component: full-width-image
+    - content_hint: "REFRAME 2025"
+      expected_component: text-block
+    - content_hint: "Register now"
+      expected_component: button-filled
+    - content_hint: "Reason 1"
+      expected_component: col-icon
+      repeat_count: 5
+      container_bgcolor: "#f1f4f9"
+    - content_hint: "Grab your spot"
+      expected_component: button-filled
+    - content_hint: "Tabitha Brown"
+      match_by: type
+      expected_component: full-width-image
+    - content_hint: "October 23, 2025"
+      expected_component: event-card
+    - match_by: index
+      index: 7
+      expected_component: full-width-image
+    - content_hint: "Can't make it"
+      expected_component: text-block
+    - content_hint: "Register for livestream"
+      expected_component: button-filled
+    - match_by: index
+      index: 10
+      expected_component: full-width-image
+    - match_by: type
+      expected_component: email-footer
+
+tokens:
+  primary_font: "Helvetica, Arial, sans-serif"
+  banned_fonts: ["Inter", "-apple-system", "BlinkMacSystemFont"]
+  text_color: "#000000"
+  banned_colors: ["#333333", "#555555", "#444444"]
+
+ctas:
+  - text: "Register now"
+    bg_color: "#c6fc6a"
+    has_vml: true
+  - text: "Grab your spot"
+    bg_color: "#ffbaf3"
+    has_vml: true
+  - text: "Register for livestream"
+    bg_color: "#06d5ff"
+    has_vml: true
+
+required_content:
+  - "REFRAME 2025"
+  - "Reason 1"
+  - "Reason 2"
+  - "Reason 3"
+  - "Reason 4"
+  - "Reason 5"
+  - "Register now"
+  - "Grab your spot"
+  - "Register for livestream"
+  - "Can't make it live?"
+  - "October 23, 2025"
+
+forbidden_content:
+  - "Section Heading"
+  - "Image caption"
+  - "Editorial heading"
+  - "Lorem ipsum"
+
+patterns:
+  - repeating-group
+  - multiple-ctas
+  - event-card
+  - per-email-token-scoping

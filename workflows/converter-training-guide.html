@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Converter Training Pipeline — Step-by-Step Guide</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #242833;
+    --border: #2e3340;
+    --text: #e1e4eb;
+    --text-muted: #8b8fa3;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --orange: #fb923c;
+    --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7; min-height: 100vh;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 32px; }
+  header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  header p { color: var(--text-muted); font-size: 14px; }
+
+  h2 {
+    font-size: 20px; font-weight: 700; margin: 40px 0 16px 0;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px 0; }
+  h4 { font-size: 14px; font-weight: 600; margin: 16px 0 8px 0; }
+
+  p, li { font-size: 14px; color: var(--text); margin-bottom: 8px; }
+  ul, ol { padding-left: 24px; margin-bottom: 16px; }
+  li { margin-bottom: 6px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; margin-bottom: 16px;
+  }
+  .card-accent {
+    border-left: 3px solid var(--accent);
+  }
+  .card-green { border-left: 3px solid var(--green); }
+  .card-yellow { border-left: 3px solid var(--yellow); }
+  .card-orange { border-left: 3px solid var(--orange); }
+
+  code {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--surface-2); padding: 2px 6px; border-radius: 4px;
+    color: var(--accent);
+  }
+  pre {
+    background: #0d0f14; border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px; font-family: var(--mono); font-size: 12px;
+    line-height: 1.8; overflow-x: auto; margin: 12px 0 16px 0;
+    color: var(--text-muted); white-space: pre-wrap;
+  }
+  pre .cmd { color: var(--green); }
+  pre .comment { color: #555; }
+  pre .highlight { color: var(--accent); font-weight: 600; }
+  pre .arrow { color: var(--green); }
+  pre .warn { color: var(--yellow); }
+
+  table {
+    width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0 16px 0;
+  }
+  th {
+    text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px;
+    border-bottom: 1px solid var(--border); background: var(--surface-2);
+  }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .badge-blue { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+  .step-grid {
+    display: grid; gap: 12px; margin: 16px 0;
+  }
+  .step-item {
+    display: flex; gap: 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+  }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--accent);
+    color: #fff; font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-content { flex: 1; min-width: 0; }
+  .step-content h4 { margin-top: 2px; margin-bottom: 6px; }
+  .step-content p { margin-bottom: 4px; }
+
+  .toc {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; margin-bottom: 32px;
+  }
+  .toc h3 { margin-top: 0; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 14px; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ul { list-style: none; padding-left: 0; }
+  .toc li { margin-bottom: 6px; padding-left: 16px; position: relative; }
+  .toc li::before { content: ""; position: absolute; left: 0; top: 10px; width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+
+  .flow-diagram {
+    background: var(--surface-2); border-radius: 8px; padding: 20px;
+    font-family: var(--mono); font-size: 12px; line-height: 1.8;
+    color: var(--text-muted); overflow-x: auto; margin: 16px 0;
+  }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  .file-tree {
+    background: #0d0f14; border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px; font-family: var(--mono); font-size: 12px;
+    line-height: 1.7; color: var(--text-muted); margin: 12px 0 16px 0;
+  }
+  .file-tree .dir { color: var(--accent); }
+  .file-tree .note { color: #555; }
+
+  @media (max-width: 700px) {
+    .container { padding: 16px 12px; }
+    table { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Converter Training Pipeline</h1>
+  <p>Step-by-step guide for feeding Figma designs and HTML emails into the learning loop to improve design-to-HTML conversion quality.</p>
+</header>
+
+<!-- Table of Contents -->
+<div class="toc">
+  <h3>Contents</h3>
+  <ul>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#overview">How It Works (Architecture Overview)</a></li>
+    <li><a href="#phase1">Phase 1: Figma Conversion (Primary Training)</a></li>
+    <li><a href="#phase2">Phase 2: HTML + Screenshot Upload (Reference Training)</a></li>
+    <li><a href="#components">How Components Are Matched &amp; Rendered</a></li>
+    <li><a href="#learning">The Learning Effect</a></li>
+    <li><a href="#api">Training API Reference</a></li>
+    <li><a href="#regression">Running Regression Checks</a></li>
+    <li><a href="#tips">Tips for Maximum Training Value</a></li>
+    <li><a href="#config">Configuration Reference</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="prerequisites">Prerequisites</h2>
+
+<div class="card card-accent">
+  <h4>Before you start</h4>
+  <ol>
+    <li>Start the backend and frontend:
+      <pre><span class="cmd">make dev</span>   <span class="comment"># Backend :8891 + Frontend :3000</span></pre>
+    </li>
+    <li>Open the Training Guide UI:
+      <pre><span class="comment"># Serve locally to avoid CORS issues (don't open as file://)</span>
+<span class="cmd">cd email-templates/training_HTML</span>
+<span class="cmd">python3 -m http.server 8899 --bind 127.0.0.1</span>
+
+<span class="comment"># Then open:</span>
+<span class="cmd">http://localhost:8899/Converter_TRAINING-GUIDE.html</span></pre>
+    </li>
+    <li>Connect with credentials:
+      <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>API URL</td><td><code>http://localhost:8891</code></td></tr>
+        <tr><td>Email</td><td><code>admin@email-hub.dev</code></td></tr>
+        <tr><td>Password</td><td><code>admin</code> (or <code>AUTH__DEMO_USER_PASSWORD</code> from <code>.env</code>)</td></tr>
+      </table>
+    </li>
+    <li>The status dot should turn <span class="badge badge-green">green</span> when connected.</li>
+  </ol>
+</div>
+
+<div class="card card-yellow">
+  <h4>CORS Note</h4>
+  <p>The training guide must be served via HTTP (e.g. <code>localhost:8899</code>), not opened as a <code>file:///</code> URL.
+    The backend CORS policy only allows <code>localhost:3000</code>, <code>localhost:8891</code>, and <code>localhost:8899</code>.
+    If you use a different port, add it to <code>allowed_origins</code> in <code>app/core/config.py:832</code>.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="overview">How It Works (Architecture Overview)</h2>
+
+<div class="flow-diagram">
+<span class="highlight">Input</span>                          <span class="highlight">Converter Pipeline</span>                 <span class="highlight">Learning Outputs</span>
+
+  Figma URL   <span class="arrow">----&gt;</span>  1. Layout Analysis          <span class="arrow">----&gt;</span>  <span style="color:var(--green)">Memory (PostgreSQL)</span>
+       or             (classify sections)                  Scaffolder reads this on every
+  HTML File          2. Component Matching                 future conversion to avoid
+                      (score against 151 templates)        repeating bad template choices.
+                     3. Slot Filling &amp; Rendering            |
+                      (fill data-slots with content)       |
+                     4. HTML Assembly                      +<span class="arrow">----&gt;</span>  <span style="color:var(--green)">Insight Bus</span>
+                      (email shell, dark mode, MSO)        |      Low-confidence sections (&lt;0.6)
+                            |                              |      become insights targeting the
+                            |                              |      Scaffolder agent directly.
+                            +<span class="arrow">--------------------------&gt;</span>  <span style="color:var(--green)">JSONL Traces</span>
+                                                                  Append-only audit trail.
+                                                                  Used for regression detection.
+</div>
+
+<div class="card">
+  <h4>What gets stored per conversion</h4>
+  <table>
+    <tr><th>Storage</th><th>What</th><th>Used By</th></tr>
+    <tr>
+      <td><span class="badge badge-green">Memory</span></td>
+      <td>Quality warnings, match confidences, design tokens</td>
+      <td>Scaffolder (template selection), Knowledge agent (Q&amp;A)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-yellow">Insights</span></td>
+      <td>Low-confidence section matches grouped by type</td>
+      <td>Scaffolder (avoids bad template picks)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">Traces</span></td>
+      <td>Full quality snapshot: score, confidences, warnings, cache hits</td>
+      <td>Regression detection (<code>make converter-regression</code>)</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="phase1">Phase 1: Figma Conversion (Primary Training)</h2>
+
+<p>This is the <strong>main training method</strong>. Every conversion automatically feeds the learning loop &mdash; no manual steps needed after the conversion completes.</p>
+
+<div class="step-grid">
+  <div class="step-item">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>Create a Figma Connection</h4>
+      <p>In the <strong>Figma Conversion</strong> tab, enter:</p>
+      <ul>
+        <li><strong>Figma File URL</strong> &mdash; the full URL from your browser (e.g. <code>https://www.figma.com/design/ABC123/My-Email</code>)</li>
+        <li><strong>Figma Access Token</strong> &mdash; your Personal Access Token from Figma settings (starts with <code>figd_</code>)</li>
+        <li><strong>Connection Name</strong> &mdash; a human-readable label (e.g. "Q4 Campaign Designs")</li>
+      </ul>
+      <p>Click <strong>Create Connection</strong>. The system calls <code>POST /api/v1/design-sync/connections</code> and returns a <strong>Connection ID</strong>.</p>
+      <p>Alternatively, click <strong>List Existing</strong> to reuse a previously created connection.</p>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>Browse Frames &amp; Select a Node</h4>
+      <p>Enter the Connection ID and click <strong>Browse Frames</strong>. This fetches the Figma file structure and lists all pages and frames.</p>
+      <p>Each frame shows a <strong>Node ID</strong> like <code>2833:1424</code>. Copy the Node ID of the email frame you want to convert and paste it into the "Selected Node ID" field.</p>
+      <p><em>Tip: Pick the top-level frame that contains the full email layout, not individual sections.</em></p>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>Write a Campaign Brief</h4>
+      <p>Describe the email campaign. The Scaffolder agent uses this to make better template selection and content decisions.</p>
+      <p>Example: <em>"Create a promotional campaign email with hero image, product showcase, CTA buttons, and branded footer. Target audience: existing customers. Tone: energetic and bold."</em></p>
+
+      <h4>Choose Output Mode</h4>
+      <table>
+        <tr><th>Mode</th><th>What Happens</th><th>When to Use</th></tr>
+        <tr>
+          <td><span class="badge badge-green">Structured</span></td>
+          <td>Converter renders HTML <strong>directly</strong> from matched components, preserving Figma structure (centering, fonts, dark mode CSS, image placement). Bypasses the Scaffolder. Confidence = 0.85.</td>
+          <td>Always (recommended)</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-yellow">Raw HTML</span></td>
+          <td>Falls back to the Scaffolder agent which generates from scratch using the brief + layout context. May rewrite structure and lose converter optimizations.</td>
+          <td>Only if converter path fails</td>
+        </tr>
+      </table>
+
+      <h4>Run QA Gate</h4>
+      <p><strong>Yes</strong> (default) runs 14 quality checks on the output: html_validation, css_support, css_audit, dark_mode, accessibility, fallback (MSO), image_optimization, brand_compliance, and more.</p>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>Start Conversion &amp; Watch Progress</h4>
+      <p>Click <strong>Start Conversion</strong>. Here's what fires in sequence:</p>
+      <pre><span class="highlight">POST /api/v1/design-sync/imports</span>          <span class="comment"># Create import record</span>
+  <span class="arrow">&darr;</span>
+<span class="highlight">POST /api/v1/design-sync/imports/{id}/convert</span> <span class="comment"># Trigger background task</span>
+  <span class="arrow">&darr;</span>
+<span class="comment">Background task runs:</span>
+
+  <span class="highlight">1. Layout Analysis</span> (layout_analyzer.py)
+     &bull; Finds top-level frames in the Figma node tree
+     &bull; Classifies each as HEADER, HERO, CONTENT, FOOTER, etc.
+     &bull; Detects column layouts (1/2/3/4-col)
+     &bull; Extracts text blocks, images, buttons
+     &bull; VLM hybrid: if heuristic confidence &lt; 0.9,
+       merges VLM classification prediction
+     <span class="arrow">&rarr;</span> Returns list of EmailSection objects
+
+  <span class="highlight">2. Component Matching</span> (component_matcher.py)
+     &bull; Scores each EmailSection against 151 component
+       HTML templates from email-templates/components/
+     &bull; Uses section type + content signals to pick best match
+     &bull; Extended scorer handles: countdown, testimonial,
+       pricing, video, event, FAQ, zigzag layouts
+     <span class="arrow">&rarr;</span> Returns ComponentMatch per section with slug + confidence
+
+  <span class="highlight">3. Repeating Group Detection</span> (sibling_detector.py)
+     &bull; Groups consecutive similar sections (e.g. 3 product cards)
+     &bull; Renders them as a single container table
+
+  <span class="highlight">4. Rendering</span> (component_renderer.py)
+     &bull; Loads matched .html component template
+     &bull; Fills data-slot attributes with actual content
+       (headings, body text, image URLs, CTA text)
+     &bull; Applies token overrides (colors, fonts, sizes)
+       extracted from Figma design tokens
+     &bull; Applies background colors, dark mode classes
+     <span class="arrow">&rarr;</span> Returns rendered HTML per section
+
+  <span class="highlight">5. Assembly</span>
+     &bull; Wraps all sections in email shell (DOCTYPE, head,
+       MSO conditionals, dark mode CSS)
+     &bull; Generates style block from design tokens
+     &bull; format_email_html() final cleanup
+
+  <span class="highlight">6. Learning</span> (automatic, fire-and-forget)
+     <span style="color:var(--green)">&bull; converter_traces.py &rarr; JSONL trace file</span>
+     <span style="color:var(--green)">&bull; converter_memory.py &rarr; PostgreSQL semantic memory</span>
+     <span style="color:var(--green)">&bull; converter_insights.py &rarr; Insight bus</span>
+
+  <span class="highlight">7. QA Gate</span> (if enabled)
+     &bull; 14 checks run on the final HTML</pre>
+      <p>The UI polls <code>GET /api/v1/design-sync/imports/{id}</code> every 3 seconds until status is <code>completed</code> or <code>failed</code>.</p>
+      <p><strong>Even failed conversions teach the system</strong> if they got far enough to produce quality data.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="phase2">Phase 2: HTML + Screenshot Upload (Reference Training)</h2>
+
+<p>Use this when you already have a <strong>finished HTML email</strong> and want to teach the system what "good output" looks like. This creates reference cases for regression testing.</p>
+
+<div class="step-grid">
+  <div class="step-item">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>Upload Training Materials</h4>
+      <p>Switch to the <strong>HTML + Screenshot</strong> tab and provide:</p>
+      <ul>
+        <li><strong>HTML Email File</strong> (required) &mdash; drop or paste the production HTML email</li>
+        <li><strong>Design Screenshot</strong> (optional) &mdash; PNG/JPG of the original design. Enables visual fidelity comparison.</li>
+        <li><strong>Figma URL + Node ID</strong> (optional) &mdash; links to the source design for token extraction</li>
+      </ul>
+      <p><em>At minimum you need the HTML file. The more inputs you provide, the richer the training case.</em></p>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>Name the Training Case</h4>
+      <ul>
+        <li><strong>Case ID (slug)</strong> &mdash; e.g. <code>starbucks-q4</code>. Becomes the directory name in <code>data/debug/</code></li>
+        <li><strong>Case Name</strong> &mdash; e.g. "Starbucks Q4 Promo &mdash; hero, products, CTA, footer"</li>
+        <li><strong>Source Name</strong> &mdash; where this came from: <code>email-gallery</code>, <code>competitor</code>, <code>production</code></li>
+        <li><strong>AI Classification</strong> &mdash; Yes (recommended) uses VLM for section classification; No uses rules only</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>Analyze, Save &amp; Backfill</h4>
+      <p>Use the action buttons in order. <strong>Save and Backfill now work end-to-end via the API</strong> &mdash; no terminal commands needed.</p>
+      <table>
+        <tr><th>Button</th><th>What It Does</th><th>Persists to Learning Loop?</th></tr>
+        <tr>
+          <td><span class="badge badge-blue">Analyze HTML (API)</span></td>
+          <td>Calls <code>POST /api/v1/design-sync/import/html</code>. Parses DOM, classifies sections (HEADER/HERO/CONTENT/FOOTER/etc.), extracts design tokens (colors, typography, spacing). Shows section count + warnings.</td>
+          <td><span class="badge badge-yellow">No (read-only)</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">Save Training Case (API)</span></td>
+          <td>Calls <code>POST /api/v1/design-sync/training-cases</code>. Creates <code>data/debug/{case-id}/</code> directory with <code>expected.html</code> + optional <code>design.png</code>, registers in global <code>manifest.yaml</code>. All server-side.</td>
+          <td><span class="badge badge-yellow">Saves files, not yet in loop</span></td>
+        </tr>
+        <tr>
+          <td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(251,146,60,0.15);color:var(--orange)">Backfill Learning Loop (API)</span></td>
+          <td>Calls <code>POST /api/v1/design-sync/training-cases/{id}/backfill</code>. Parses <code>expected.html</code>, builds a ConversionResult, persists traces + memory + insights. For Figma-sourced cases (with <code>structure.json</code>), runs the full converter instead.</td>
+          <td><span class="badge badge-green">Yes &mdash; full learning loop</span></td>
+        </tr>
+        <tr>
+          <td><strong>Check Regression</strong></td>
+          <td>Shows and copies: <code>make converter-regression</code>. Compares quality metrics against baseline, flags &gt;5% drops.</td>
+          <td><span class="badge badge-yellow">CLI (clipboard)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Data Regression</strong></td>
+          <td>Shows and copies: <code>make converter-data-regression</code>. Runs 62 parametrized tests against all manifest-driven cases.</td>
+          <td><span class="badge badge-yellow">CLI (clipboard)</span></td>
+        </tr>
+      </table>
+
+      <div class="card card-green" style="margin-top:16px">
+        <h4>End-to-End Workflow (no terminal needed)</h4>
+        <ol>
+          <li>Upload HTML + optional screenshot + optional Figma URL</li>
+          <li>Fill in Case ID and Case Name</li>
+          <li>Click <strong>Analyze HTML</strong> to verify section detection</li>
+          <li>Click <strong>Save Training Case</strong> to persist on disk</li>
+          <li>Click <strong>Backfill Learning Loop</strong> to feed into memory/insights/traces</li>
+        </ol>
+        <p>That's it. The Scaffolder will use this data on future conversions automatically.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>Optional: Terminal Commands for Advanced Use</h4>
+      <p>The API handles everything above, but you can also use CLI commands for batch operations or Figma data extraction:</p>
+      <pre><span class="comment"># Extract Figma design data (if you have the URL + node)</span>
+<span class="cmd">python -m app.design_sync.diagnose.extract \
+  --figma-url "https://www.figma.com/design/..." \
+  --node-id 2833:1424 \
+  --output-dir data/debug/starbucks-q4</span>
+
+<span class="comment"># Batch backfill ALL active cases (not just one):</span>
+<span class="cmd">python scripts/backfill-conversion-memories.py --traces-only</span>
+
+<span class="comment"># Verify quality:</span>
+<span class="cmd">make snapshot-test</span>
+<span class="cmd">make converter-data-regression</span></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="components">How Components Are Matched &amp; Rendered</h2>
+
+<p>The converter uses <strong>151 HTML component templates</strong> stored in <code>email-templates/components/</code>. Here's the loading chain:</p>
+
+<div class="file-tree">
+<span class="dir">email-templates/components/</span>                    <span class="note">&larr; 151 .html files</span>
+  hero-block.html                                  <span class="note">matched when: HERO + has image</span>
+  hero-text.html                                   <span class="note">matched when: HERO without image</span>
+  editorial-2.html                                 <span class="note">matched when: 2-col text + image</span>
+  article-card.html                                <span class="note">matched when: content card with image</span>
+  product-grid.html                                <span class="note">matched when: product showcase</span>
+  logo-header.html                                 <span class="note">matched when: header with logo</span>
+  footer-full.html                                 <span class="note">matched when: footer with links</span>
+  button-filled.html / button-ghost.html           <span class="note">matched when: CTA buttons</span>
+  countdown-timer-*.html (4 variants)              <span class="note">matched when: time patterns detected</span>
+  testimonial-*.html (3 variants)                  <span class="note">matched when: quote chars + avatar</span>
+  pricing-table-*.html (3 variants)                <span class="note">matched when: currency + columns + buttons</span>
+  zigzag-*.html (3 variants)                       <span class="note">matched when: 3+ mixed col groups</span>
+  ... and 130+ more
+</div>
+
+<h4>Loading Chain</h4>
+<pre><span class="highlight">app/components/data/component_manifest.yaml</span>   <span class="comment"># Declares all 151 components</span>
+  <span class="arrow">&darr;</span>                                               <span class="comment"># slug, type, slot_definitions</span>
+<span class="highlight">app/components/data/file_loader.py</span>             <span class="comment"># Reads manifest + loads .html files</span>
+  <span class="arrow">&darr;</span>
+<span class="highlight">app/components/data/seeds.py</span>                   <span class="comment"># COMPONENT_SEEDS list (151 + 1 shell)</span>
+  <span class="arrow">&darr;</span>
+<span class="highlight">ComponentRenderer.load()</span>                       <span class="comment"># Caches in memory at startup</span>
+  <span class="arrow">&darr;</span>
+<span class="highlight">component_matcher.py &rarr; match_all(sections)</span>   <span class="comment"># Scores each section vs all components</span>
+  <span class="arrow">&darr;</span>
+<span class="highlight">component_renderer.py &rarr; render_section()</span>     <span class="comment"># Fills data-slot attrs with real content</span></pre>
+
+<h4>Matching Confidence Scores</h4>
+<p>The matcher assigns confidence scores based on content signals:</p>
+<table>
+  <tr><th>Component Type</th><th>Detection Signals</th><th>Confidence</th></tr>
+  <tr><td>hero-block</td><td>HERO section type + has images</td><td>0.92</td></tr>
+  <tr><td>editorial-2</td><td>2-column layout + text + image</td><td>0.88</td></tr>
+  <tr><td>pricing-table</td><td>Currency patterns + 2+ col groups + buttons</td><td>0.93</td></tr>
+  <tr><td>countdown-timer</td><td>Time patterns + heading text</td><td>0.92</td></tr>
+  <tr><td>testimonial</td><td>Quote characters + avatar image &le;100px</td><td>0.90</td></tr>
+  <tr><td>zigzag</td><td>3+ mixed column groups</td><td>0.90</td></tr>
+  <tr><td>video-placeholder</td><td>16:9 aspect ratio + play button</td><td>0.88</td></tr>
+  <tr><td>event-card</td><td>Date patterns + images</td><td>0.85</td></tr>
+  <tr><td>faq-accordion</td><td>Alternating Q?/A text blocks</td><td>0.88</td></tr>
+</table>
+<p>Sections below <code>0.6</code> confidence trigger the <strong>Insight Bus</strong> &mdash; the Scaffolder gets direct feedback to avoid that template for that pattern.</p>
+
+<!-- ============================================================ -->
+<h2 id="learning">The Learning Effect</h2>
+
+<div class="card card-green">
+  <h4>Each conversion makes future conversions smarter</h4>
+  <p>The more diverse HTML builds you feed through the system, the richer the Scaffolder's memory becomes.</p>
+  <table>
+    <tr><th>What's Stored</th><th>Where</th><th>Who Reads It</th><th>Effect</th></tr>
+    <tr>
+      <td>Quality warnings + match confidences</td>
+      <td>PostgreSQL (semantic memory)</td>
+      <td>Scaffolder agent</td>
+      <td>Avoids bad template picks on similar designs</td>
+    </tr>
+    <tr>
+      <td>Low-confidence sections (&lt;0.6)</td>
+      <td>Insight bus</td>
+      <td>Scaffolder agent</td>
+      <td>Gets "don't use template X for pattern Y" feedback</td>
+    </tr>
+    <tr>
+      <td>Full quality snapshot</td>
+      <td><code>traces/converter_traces.jsonl</code></td>
+      <td>Regression detection</td>
+      <td><code>make converter-regression</code> catches quality drops</td>
+    </tr>
+    <tr>
+      <td>Design tokens</td>
+      <td>Conversion context</td>
+      <td>Token override pipeline</td>
+      <td>Better color/font/spacing accuracy on future conversions</td>
+    </tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>Fidelity Progress (by Phase)</h4>
+  <table>
+    <tr><th>Phase</th><th>Fidelity</th><th>Key Improvement</th></tr>
+    <tr><td>Phase 40 (Snapshot Regression)</td><td>~85%</td><td>Baseline infrastructure</td></tr>
+    <tr><td>Phase 41 (Bgcolor + VLM)</td><td>~93%</td><td>Background color continuity, VLM classification</td></tr>
+    <tr><td>Phase 47 (Verify Loop)</td><td>~97%</td><td>VLM visual verification with iterative correction</td></tr>
+    <tr><td>Phase 47 (Component Expansion)</td><td>~99%</td><td>89 &rarr; 151 components, custom generation fallback</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="api">Training API Reference</h2>
+
+<p>These two endpoints power the end-to-end HTML training flow. Both require <code>developer</code> role authentication.</p>
+
+<div class="card card-accent">
+  <h4><code>POST /api/v1/design-sync/training-cases</code></h4>
+  <p>Save an HTML email + optional screenshot as a training case on disk and register in manifest.</p>
+  <table>
+    <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+    <tr><td><code>case_id</code></td><td>string</td><td>Yes</td><td>Slug (alphanumeric, hyphens, underscores, max 64 chars)</td></tr>
+    <tr><td><code>case_name</code></td><td>string</td><td>Yes</td><td>Human-readable name</td></tr>
+    <tr><td><code>html_content</code></td><td>string</td><td>Yes</td><td>Full HTML email source</td></tr>
+    <tr><td><code>source_name</code></td><td>string</td><td>No</td><td>Source label (default: "training")</td></tr>
+    <tr><td><code>figma_url</code></td><td>string</td><td>No</td><td>Figma design URL</td></tr>
+    <tr><td><code>figma_node</code></td><td>string</td><td>No</td><td>Figma frame node ID</td></tr>
+    <tr><td><code>screenshot_b64</code></td><td>string</td><td>No</td><td>Base64-encoded screenshot (data URL or raw)</td></tr>
+  </table>
+  <p><strong>Creates:</strong> <code>data/debug/{case_id}/expected.html</code>, optional <code>design.png</code>, updates <code>manifest.yaml</code></p>
+  <p><strong>Returns:</strong> <code>{"case_id", "case_dir", "files_written", "manifest_updated"}</code></p>
+</div>
+
+<div class="card card-accent" style="margin-top:12px">
+  <h4><code>POST /api/v1/design-sync/training-cases/{case_id}/backfill</code></h4>
+  <p>Trigger learning loop backfill for a single training case. Persists traces + memory + insights.</p>
+  <table>
+    <tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr>
+    <tr><td><code>traces_only</code></td><td>bool (query)</td><td>false</td><td>If true, write JSONL traces only (skip DB memory + insights)</td></tr>
+  </table>
+  <p><strong>For HTML-only cases</strong> (no <code>structure.json</code>): parses <code>expected.html</code> via the HTML import adapter, builds a synthetic ConversionResult with all match confidences = 1.0.</p>
+  <p><strong>For Figma-sourced cases</strong> (has <code>structure.json</code>): runs the full converter pipeline.</p>
+  <p><strong>Returns:</strong> <code>{"case_id", "sections_count", "traces_written", "memory_stored", "insights_count", "source"}</code></p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="regression">Running Regression Checks</h2>
+
+<p>After feeding a batch of training data, run regression checks to verify quality hasn't dropped.</p>
+
+<div class="card">
+  <h4>Available Commands</h4>
+  <pre><span class="comment"># 1. Quick quality regression (trace-based, compares against baseline)</span>
+<span class="cmd">make converter-regression</span>
+<span class="comment">#    Flags if quality drops &gt; 5% vs traces/converter_baseline.json</span>
+
+<span class="comment"># 2. Data regression (manifest-driven, 62 parametrized tests)</span>
+<span class="cmd">make converter-data-regression</span>
+<span class="comment">#    Tests structural checks + manifest assertions across all cases</span>
+
+<span class="comment"># 3. Detailed data regression report</span>
+<span class="cmd">make converter-data-regression-report</span>
+
+<span class="comment"># 4. Snapshot tests (expected.html comparison)</span>
+<span class="cmd">make snapshot-test</span>
+
+<span class="comment"># 5. Visual regression (Playwright pixel diff vs design.png)</span>
+<span class="cmd">make rendering-regression</span>
+
+<span class="comment"># 6. Update the baseline after confirmed improvements</span>
+<span class="cmd">python -m app.design_sync.converter_regression --update-baseline</span>
+
+<span class="comment"># 7. View current baseline</span>
+<span class="cmd">cat traces/converter_baseline.json | jq</span>
+
+<span class="comment"># 8. View all traces with quality scores</span>
+<span class="cmd">uv run python -c "
+import json
+with open('traces/converter_traces.jsonl') as f:
+    for line in f:
+        t = json.loads(line)
+        print(f'{t[\"trace_id\"]:40s}  score={t[\"quality_score\"]:.3f}  conf={t[\"avg_confidence\"]:.2f}  warnings={len(t[\"warnings\"]):2d}  sections={t[\"sections_count\"]}')
+"</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="tips">Tips for Maximum Training Value</h2>
+
+<div class="card card-accent">
+  <h4>Recommended Workflow</h4>
+  <ol>
+    <li><strong>Start with Figma tab</strong> &mdash; run 5&ndash;10 real conversions from different email designs. Prioritize variety over quantity.</li>
+    <li><strong>Switch to HTML tab</strong> &mdash; upload any production HTML emails you have as reference cases</li>
+    <li><strong>Run regression</strong> &mdash; <code>make converter-data-regression</code> to verify quality baseline</li>
+    <li><strong>Repeat</strong> &mdash; each batch teaches the system new patterns</li>
+  </ol>
+</div>
+
+<div class="card card-orange">
+  <h4>What to Feed</h4>
+  <ul>
+    <li><strong>Prioritize variety</strong> &mdash; feed emails that cover different component types (hero variants, product grids, CTAs, footers) rather than many similar layouts</li>
+    <li><strong>Always include the Figma URL</strong> when available &mdash; enables token extraction and visual verification</li>
+    <li><strong>Include screenshots</strong> &mdash; enables visual fidelity comparison (ODiff pixel diff + VLM section comparison)</li>
+    <li><strong>Real production emails work best</strong> &mdash; they expose edge cases that synthetic data misses</li>
+    <li><strong>Component types with lowest coverage</strong> improve quality most &mdash; check which section types have low match confidence in the Monitor tab</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h4>Existing Training Cases</h4>
+  <p>The system ships with these cases in <code>data/debug/</code>:</p>
+  <table>
+    <tr><th>Case</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>MAAP Kask</td><td><span class="badge badge-green">active</span></td><td>9 sections, product-focused</td></tr>
+    <tr><td>Starbucks Pumpkin Spice</td><td><span class="badge badge-green">active</span></td><td>5 sections, hero + CTA heavy</td></tr>
+    <tr><td>Mammut Duvet Day</td><td><span class="badge badge-green">active</span></td><td>12 sections, editorial layout</td></tr>
+    <tr><td>REFRAME 2025</td><td><span class="badge badge-yellow">reference_only</span></td><td>expected.html only, no Figma source</td></tr>
+  </table>
+  <p>Training HTML files also exist in <code>email-templates/training_HTML/</code> with corresponding screenshots in <code>for_converter_engine/</code>.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="config">Configuration Reference</h2>
+
+<div class="card">
+  <table>
+    <tr><th>Setting</th><th>Default</th><th>Controls</th></tr>
+    <tr><td><code>DESIGN_SYNC__CONVERSION_MEMORY_ENABLED</code></td><td>true</td><td>Memory + Insights persistence after conversion</td></tr>
+    <tr><td><code>DESIGN_SYNC__CONVERSION_TRACES_ENABLED</code></td><td>true</td><td>JSONL trace writing</td></tr>
+    <tr><td><code>DESIGN_SYNC__CONVERSION_TRACES_PATH</code></td><td>traces/converter_traces.jsonl</td><td>Trace file location</td></tr>
+    <tr><td><code>DESIGN_SYNC__LOW_MATCH_CONFIDENCE_THRESHOLD</code></td><td>0.6</td><td>Insight generation threshold</td></tr>
+    <tr><td><code>DESIGN_SYNC__VLM_FALLBACK_ENABLED</code></td><td>false</td><td>VLM fallback for low-confidence matches</td></tr>
+    <tr><td><code>DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED</code></td><td>false</td><td>VLM section type classification</td></tr>
+    <tr><td><code>DESIGN_SYNC__VLM_VERIFY_ENABLED</code></td><td>false</td><td>Visual verification loop (render &rarr; compare &rarr; correct)</td></tr>
+    <tr><td><code>DESIGN_SYNC__CUSTOM_COMPONENT_ENABLED</code></td><td>false</td><td>AI custom component generation for unmatched sections</td></tr>
+    <tr><td><code>DESIGN_SYNC__SIBLING_DETECTION_ENABLED</code></td><td>true</td><td>Repeating group detection</td></tr>
+    <tr><td><code>DESIGN_SYNC__TOKEN_SCOPING_ENABLED</code></td><td>true</td><td>Scope design tokens to selected Figma frame</td></tr>
+    <tr><td><code>DESIGN_SYNC__TREE_BRIDGE_ENABLED</code></td><td>false</td><td>EmailTree intermediate representation</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<div class="card card-yellow">
+  <h4>Common Issues</h4>
+  <table>
+    <tr><th>Problem</th><th>Cause</th><th>Fix</th></tr>
+    <tr>
+      <td>"Failed to fetch" on Connect</td>
+      <td>Backend not running or CORS blocking <code>file://</code> origin</td>
+      <td>Run <code>make dev</code>, serve the guide via <code>python3 -m http.server 8899</code>, open at <code>http://localhost:8899/</code></td>
+    </tr>
+    <tr>
+      <td>"Invalid email or password"</td>
+      <td>Wrong credentials</td>
+      <td>Use <code>admin@email-hub.dev</code> / <code>admin</code> (or check <code>AUTH__DEMO_USER_PASSWORD</code> in <code>.env</code>)</td>
+    </tr>
+    <tr>
+      <td>Conversion stuck on "converting"</td>
+      <td>Background task blocked or Figma API rate limit</td>
+      <td>Check backend logs. Figma allows ~30 req/min. Wait and retry.</td>
+    </tr>
+    <tr>
+      <td>Low confidence scores (&lt;0.6)</td>
+      <td>Section type not matching any component template well</td>
+      <td>Normal &mdash; this feeds the Insight Bus. Consider adding a custom component for that pattern.</td>
+    </tr>
+    <tr>
+      <td>"No conversion memories found" in Monitor</td>
+      <td>No conversions run yet, or memory persistence disabled</td>
+      <td>Run a Figma conversion first. Check <code>DESIGN_SYNC__CONVERSION_MEMORY_ENABLED=true</code>.</td>
+    </tr>
+    <tr>
+      <td>Regression test failures after adding cases</td>
+      <td>New cases may expose existing weaknesses</td>
+      <td>Review failures. If quality improved overall, update baseline: <code>python -m app.design_sync.converter_regression --update-baseline</code></td>
+    </tr>
+  </table>
+</div>
+
+<hr class="divider">
+
+<footer style="text-align:center; padding:20px 0; color:var(--text-muted); font-size:12px">
+  <p>Merkle Email Hub &mdash; Converter Training Pipeline Guide</p>
+  <p>Training UI: <code>email-templates/training_HTML/Converter_TRAINING-GUIDE.html</code></p>
+  <p>Component templates: <code>email-templates/components/</code> (151 files)</p>
+  <p>Training cases: <code>data/debug/</code> &bull; Traces: <code>traces/converter_traces.jsonl</code></p>
+</footer>
+
+</div><!-- /container -->
+</body>
+</html>
