@@ -4,7 +4,7 @@
 **Scope:** Close the cross-tenant data leak across 8 repositories. **Largest single piece of remediation work in the audit.**
 **Goal:** Every list/get/update/delete query is scoped by `client_org_id`, enforced uniformly, with a regression test that proves no cross-org leakage.
 **Estimated effort:** 1–2 full sessions. Don't bundle with refactors.
-**Prerequisite:** Plans 01–02 landed (they reduce surface area; F006/F007 deletions remove repo-shaped code that would otherwise need the filter).
+**Prerequisite:** ✅ Plan 01 landed (`eddcd1ac` / PR #40 — `app/example/` and `/ws/stream` deleted, F054 query clamp in `knowledge` already done). ⏳ Plan 02 not strictly required but ideal — its agent/MCP scope work is in different files, so safe to run in parallel with this plan.
 
 ## Findings addressed
 
@@ -136,7 +136,7 @@ Tracker:
 | `app/components/repository.py` | `components`, `component_versions` | All list/get/update/delete. Cross-version queries: ensure `JOIN component ON …` is org-filtered. |
 | `app/templates/repository.py` | `templates`, `template_versions`, `golden_templates` | All. Note: `golden_templates` may be global (not tenant) — verify and exempt. |
 | `app/qa_engine/repository.py` | `qa_results`, `qa_runs` | All. |
-| `app/knowledge/repository.py` | `knowledge_chunks`, `knowledge_documents` | All. **Caution:** `search_fulltext` and pgvector search queries — add `WHERE client_org_id = :org` to every vector search. |
+| `app/knowledge/repository.py` | `knowledge_chunks`, `knowledge_documents` | All. **Caution:** `search_fulltext` and pgvector search queries — add `WHERE client_org_id = :org` to every vector search. (Note: F054 query-text clamp already landed in `eddcd1ac`; this plan only adds the org filter.) |
 | `app/memory/repository.py` | `agent_memory_*` | All. Memory is project-scoped → filter via `Project.client_org_id`. |
 | `app/briefs/repository.py` | `briefs`, `brief_connections` | All. Decrypted creds in `brief_connections` — already encrypted but cross-org access still leaks metadata. |
 | `app/approval/repository.py` | `approvals`, `approval_requests`, `approval_decisions` | All. |
