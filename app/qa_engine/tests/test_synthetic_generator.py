@@ -135,10 +135,10 @@ class TestIntegration:
         self, small_generator: SyntheticEmailGenerator
     ) -> None:
         """Run actual QA check on injected email and verify it detects the defect."""
-        from app.qa_engine.checks.dark_mode import DarkModeCheck
+        from app.qa_engine.checks._factory import get_check
 
         emails = small_generator.generate_for_check("dark_mode", count=1)
-        check = DarkModeCheck()
+        check = get_check("dark_mode")
         result = await check.run(emails[0].html)
         # easy difficulty removes @media (prefers-color-scheme: dark) block
         assert result.score < 1.0 or not result.passed

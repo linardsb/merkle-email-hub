@@ -9,7 +9,7 @@ from app.projects.design_system import (
     LogoConfig,
 )
 from app.qa_engine.check_config import QACheckConfig
-from app.qa_engine.checks.brand_compliance import BrandComplianceCheck
+from app.qa_engine.checks._factory import get_check
 from app.qa_engine.repair import RepairPipeline
 
 
@@ -63,7 +63,7 @@ class TestE2EBrandEnforcement:
         assert "logo.png" in repaired.html
 
         # Brand compliance check should pass on repaired HTML
-        check = BrandComplianceCheck()
+        check = get_check("brand_compliance")
         config = QACheckConfig(
             enabled=True,
             params={"_design_system": ds.model_dump()},
