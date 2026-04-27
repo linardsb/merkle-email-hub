@@ -24,7 +24,7 @@ from app.ai.agents.dark_mode.schemas import DarkModeRequest, DarkModeResponse
 from app.ai.agents.schemas.dark_mode_decisions import DarkColorOverride, DarkModeDecisions
 from app.core.logging import get_logger
 from app.qa_engine.checks import ALL_CHECKS
-from app.qa_engine.checks.dark_mode import DarkModeCheck
+from app.qa_engine.checks._factory import get_check
 from app.qa_engine.schemas import QACheckResult
 
 # Per-request storage for injected tag names (avoids race on singleton instance)
@@ -88,13 +88,13 @@ class DarkModeService(BaseAgentService):
         qa_results: list[QACheckResult] = []
 
         # Dark mode check first (primary signal)
-        dm_check = DarkModeCheck()
+        dm_check = get_check("dark_mode")
         dm_result = await dm_check.run(html)
         qa_results.append(dm_result)
 
         # Remaining checks (skip duplicate dark mode check)
         for check in ALL_CHECKS:
-            if isinstance(check, DarkModeCheck):
+            if getattr(check, "name", None) == "dark_mode":
                 continue
             check_result = await check.run(html)
             qa_results.append(check_result)

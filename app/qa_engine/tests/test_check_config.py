@@ -89,9 +89,9 @@ class TestCheckWithConfig:
 
     @pytest.mark.anyio
     async def test_file_size_custom_threshold(self) -> None:
-        from app.qa_engine.checks.file_size import FileSizeCheck
+        from app.qa_engine.checks._factory import get_check
 
-        check = FileSizeCheck()
+        check = get_check("file_size")
         html = "x" * (80 * 1024)  # 80KB — exceeds Yahoo 75KB by default
 
         # Default: fails (over Yahoo 75KB threshold)
@@ -105,9 +105,9 @@ class TestCheckWithConfig:
 
     @pytest.mark.anyio
     async def test_spam_custom_config(self) -> None:
-        from app.qa_engine.checks.spam_score import SpamScoreCheck
+        from app.qa_engine.checks._factory import get_check
 
-        check = SpamScoreCheck()
+        check = get_check("spam_score")
         # HTML with excessive punctuation
         html = "<html><body><p>Amazing offer!!!! Act now!!!</p></body></html>"
 
@@ -122,9 +122,9 @@ class TestCheckWithConfig:
 
     @pytest.mark.anyio
     async def test_dark_mode_custom_deduction(self) -> None:
-        from app.qa_engine.checks.dark_mode import DarkModeCheck
+        from app.qa_engine.checks._factory import get_check
 
-        check = DarkModeCheck()
+        check = get_check("dark_mode")
         html = "<html><body>Hello</body></html>"  # Missing all dark mode features
 
         # Default: many rules trigger with standard deductions, score very low

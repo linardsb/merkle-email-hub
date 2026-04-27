@@ -33,8 +33,8 @@ from app.ai.sanitize import sanitize_prompt, validate_output
 from app.ai.shared import extract_confidence
 from app.core.config import get_settings
 from app.core.logging import get_logger
-from app.qa_engine.checks.spam_score import SPAM_TRIGGERS
 from app.qa_engine.schemas import QACheckResult
+from app.qa_engine.spam_triggers import SPAM_TRIGGERS
 
 logger = get_logger(__name__)
 

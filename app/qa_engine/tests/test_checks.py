@@ -2,17 +2,8 @@
 """Unit tests for all 11 QA check implementations."""
 
 from app.qa_engine.check_config import QACheckConfig
-from app.qa_engine.checks.accessibility import AccessibilityCheck
-from app.qa_engine.checks.brand_compliance import BrandComplianceCheck
+from app.qa_engine.checks._factory import get_check
 from app.qa_engine.checks.css_support import CssSupportCheck
-from app.qa_engine.checks.dark_mode import DarkModeCheck
-from app.qa_engine.checks.fallback import FallbackCheck
-from app.qa_engine.checks.file_size import FileSizeCheck
-from app.qa_engine.checks.html_validation import HtmlValidationCheck
-from app.qa_engine.checks.image_optimization import ImageOptimizationCheck
-from app.qa_engine.checks.link_validation import LinkValidationCheck
-from app.qa_engine.checks.personalisation_syntax import PersonalisationSyntaxCheck
-from app.qa_engine.checks.spam_score import SpamScoreCheck
 
 # ── 1. HTML Validation (20 DOM checks) ──
 
@@ -46,7 +37,7 @@ def _valid_html(
 
 
 class TestHtmlValidation:
-    check = HtmlValidationCheck()
+    check = get_check("html_validation")
 
     # --- Group A: Document Skeleton ---
 
@@ -550,7 +541,7 @@ class TestCssSupportSyntax:
 class TestFileSize:
     """Tests for FileSizeCheck with multi-client thresholds."""
 
-    check = FileSizeCheck()
+    check = get_check("file_size")
 
     async def test_small_html_passes(self, sample_html_valid):
         result = await self.check.run(sample_html_valid)
@@ -654,7 +645,7 @@ class TestFileSize:
 
 
 class TestLinkValidation:
-    check = LinkValidationCheck()
+    check = get_check("link_validation")
 
     async def test_https_links_pass(self, sample_html_valid):
         result = await self.check.run(sample_html_valid)
@@ -697,7 +688,7 @@ class TestLinkValidation:
 
 
 class TestSpamScore:
-    check = SpamScoreCheck()
+    check = get_check("spam_score")
 
     async def test_clean_content_passes(self, sample_html_valid):
         result = await self.check.run(sample_html_valid)
@@ -779,7 +770,7 @@ class TestSpamScore:
 
     async def test_spam_triggers_export_backwards_compatible(self):
         """SPAM_TRIGGERS should still be importable as a list of strings."""
-        from app.qa_engine.checks.spam_score import SPAM_TRIGGERS
+        from app.qa_engine.spam_triggers import SPAM_TRIGGERS
 
         assert isinstance(SPAM_TRIGGERS, list)
         assert len(SPAM_TRIGGERS) >= 50
@@ -791,7 +782,7 @@ class TestSpamScore:
 
 
 class TestDarkMode:
-    check = DarkModeCheck()
+    check = get_check("dark_mode")
 
     @staticmethod
     def _html(
@@ -1010,7 +1001,7 @@ class TestDarkMode:
 
 
 class TestAccessibility:
-    check = AccessibilityCheck()
+    check = get_check("accessibility")
 
     @staticmethod
     def _html(
@@ -1325,7 +1316,7 @@ class TestAccessibility:
 
 
 class TestFallback:
-    check = FallbackCheck()
+    check = get_check("fallback")
 
     async def test_valid_mso_html_scores_perfect(self, sample_html_valid):
         """Full valid MSO HTML with balanced conditionals, namespaces, DPI → 1.0"""
@@ -1481,7 +1472,7 @@ class TestFallback:
 
 
 class TestImageOptimization:
-    check = ImageOptimizationCheck()
+    check = get_check("image_optimization")
 
     # --- Core attribute checks ---
 
@@ -1654,7 +1645,7 @@ class TestImageOptimization:
 
 
 class TestBrandCompliance:
-    check = BrandComplianceCheck()
+    check = get_check("brand_compliance")
 
     def _config(self, **params: object) -> QACheckConfig:
         return QACheckConfig(params=params)
@@ -1775,7 +1766,7 @@ class TestBrandCompliance:
 
 
 class TestLinkValidationCheck:
-    check = LinkValidationCheck()
+    check = get_check("link_validation")
 
     async def test_valid_https_links(self):
         html = '<html><body><a href="https://example.com">Link</a></body></html>'
@@ -1836,7 +1827,7 @@ class TestLinkValidationCheck:
 
 
 class TestPersonalisationSyntax:
-    check = PersonalisationSyntaxCheck()
+    check = get_check("personalisation_syntax")
 
     async def test_clean_braze_template(self):
         html = '<html><body><p>Hi {{ ${first_name} | default: "Friend" }}</p></body></html>'
