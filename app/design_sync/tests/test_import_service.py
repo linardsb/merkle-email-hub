@@ -255,7 +255,7 @@ class TestDesignSyncServiceImport:
         service._repo.update_import_status = AsyncMock(side_effect=_update_status)
         service._verify_access = AsyncMock()  # type: ignore[method-assign]
 
-        with patch("app.design_sync.service.asyncio.create_task"):
+        with patch("app.design_sync.services.import_service.asyncio.create_task"):
             result = await service.start_conversion(1, user)
 
         assert result.status == "converting"
@@ -285,7 +285,7 @@ class TestDesignSyncServiceImport:
         service._repo.update_import_status = AsyncMock()
         service._verify_access = AsyncMock()  # type: ignore[method-assign]
 
-        with patch("app.design_sync.service.asyncio.create_task"):
+        with patch("app.design_sync.services.import_service.asyncio.create_task"):
             result = await service.start_conversion(1, user)
 
         # Should succeed (not raise ImportStateError)

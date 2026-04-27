@@ -856,7 +856,7 @@ class TestTokenDecryptionFailure:
             ),
             patch.object(service._repo, "update_status", mock_update_status),
             patch(
-                "app.design_sync.service.decrypt_token",
+                "app.design_sync.services.connection_service.decrypt_token",
                 side_effect=Exception("Invalid token"),
             ),
         ):
@@ -920,8 +920,11 @@ class TestTokenRefresh:
                 new_callable=AsyncMock,
                 return_value=None,
             ),
-            patch.object(service, "_get_provider", return_value=mock_provider),
-            patch("app.design_sync.service.encrypt_token", return_value="new_encrypted"),
+            patch.object(service._ctx, "get_provider", return_value=mock_provider),
+            patch(
+                "app.design_sync.services.connection_service.encrypt_token",
+                return_value="new_encrypted",
+            ),
             patch("app.design_sync.schemas.isinstance", return_value=True),
         ):
             result = await service.refresh_token(1, "figd_new_token_1234", MagicMock(id=1))
