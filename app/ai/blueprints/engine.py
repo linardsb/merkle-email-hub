@@ -323,328 +323,434 @@ class BlueprintEngine:
     ) -> BlueprintRun:
         """Execute the blueprint graph starting from ``start_node``.
 
-        Shared by :meth:`run` (from entry) and :meth:`resume` (from checkpoint).
+        Thin orchestration loop — per-step work is delegated to the helpers
+        ``_run_node`` / ``_record_progress`` / ``_handle_qa_gate_outcome`` /
+        ``_persist_handoff`` etc. Shared by :meth:`run` (from entry) and
+        :meth:`resume` (from checkpoint).
         """
-        current_node_name = start_node
+        current = start_node
         steps = 0
-
-        while current_node_name is not None and steps < MAX_TOTAL_STEPS:
+        while current is not None and steps < MAX_TOTAL_STEPS:
             steps += 1
-            node = self._definition.nodes[current_node_name]
-
-            # Track iteration count for agentic nodes
-            iteration = run.iteration_counts.get(current_node_name, 0)
+            node = self._definition.nodes[current]
+            iteration = run.iteration_counts.get(current, 0)
             if node.node_type == "agentic" and iteration >= MAX_SELF_CORRECTION_ROUNDS:
-                raise BlueprintEscalatedError(current_node_name, iteration)
+                raise BlueprintEscalatedError(current, iteration)
 
-            # Skip irrelevant agentic nodes based on routing plan
-            if (
-                node.node_type == "agentic"
-                and not routing_plan.force_full
-                and current_node_name in routing_plan.skip_nodes
-            ):
-                logger.info(
-                    "blueprint.node_skipped",
-                    node=current_node_name,
-                    run_id=run.run_id,
-                    reason="routing_plan_skip",
-                )
-                run.skipped_nodes.append(current_node_name)
-                run.progress.append(
-                    BlueprintProgress(
-                        node_name=current_node_name,
-                        node_type=node.node_type,
-                        status="skipped",
-                        iteration=iteration,
-                        summary=_skip_summary(current_node_name, routing_plan),
-                        duration_ms=0.0,
-                    )
-                )
-                skip_result = NodeResult(status="skipped", html=run.html)
-                current_node_name = self._resolve_next_node(current_node_name, skip_result)
+            if self._is_skipped_by_routing_plan(node, current, routing_plan):
+                current = self._handle_skipped_node(run, node, current, iteration, routing_plan)
                 continue
 
-            context = await self._build_node_context(node, run, brief, iteration)
-
-            start = time.monotonic()
-            try:
-                result = await node.execute(context)
-            except Exception as exc:
-                logger.error(
-                    "blueprints.node_failed",
-                    node=current_node_name,
-                    error=str(exc),
-                    error_type=type(exc).__name__,
-                )
-                raise BlueprintNodeError(current_node_name, "execution failed") from exc
-            duration_ms = (time.monotonic() - start) * 1000
-
-            # Scope validation: reject out-of-scope fixer changes on retry
-            if node.node_type == "agentic" and iteration > 0 and run.html and result.html:
-                from app.ai.blueprints.nodes.recovery_router_node import AGENT_SCOPES
-                from app.ai.blueprints.scope_validator import validate_scope
-
-                agent_scope = AGENT_SCOPES.get(current_node_name)
-                if agent_scope is not None:
-                    violations = validate_scope(
-                        pre_html=run.html,
-                        post_html=result.html,
-                        scope=agent_scope,
-                        agent_name=current_node_name,
-                    )
-                    if violations:
-                        logger.warning(
-                            "blueprint.scope_violation",
-                            agent=current_node_name,
-                            violations=[v.description for v in violations],
-                            run_id=run.run_id,
-                        )
-                        # Reject the change — keep pre-fix HTML, escalate
-                        result = NodeResult(
-                            status="failed",
-                            html=run.html,
-                            details=f"scope_violation:{current_node_name}",
-                            error=f"Scope violation: {violations[0].description}",
-                        )
-
-            # --- Inline judge on recovery retries ---
-            if (
-                self._judge_on_retry
-                and node.node_type == "agentic"
-                and iteration > 0
-                and result.status == "success"
-                and result.html
-            ):
-                from app.ai.blueprints.inline_judge import run_inline_judge
-
-                agent_name = node.name.removesuffix("_node")
-                verdict = await run_inline_judge(
-                    agent_name=agent_name,
-                    context=context,
-                    html_output=result.html,
-                    run=run,
-                )
-                if verdict is not None:
-                    run.judge_verdict = verdict
-
-                    # Persist verdict for aggregation (fire-and-forget)
-                    if get_settings().blueprint.judge_aggregation_enabled:
-                        try:
-                            from app.ai.blueprints.judge_aggregator import persist_judge_verdict
-
-                            await persist_judge_verdict(verdict, self._project_id, run.run_id)
-                        except Exception:
-                            logger.debug(
-                                "blueprint.judge_verdict_persist_failed",
-                                run_id=run.run_id,
-                                exc_info=True,
-                            )
-
-                    if not verdict.overall_pass:
-                        run.status = "needs_review"
-                        logger.warning(
-                            "blueprint.inline_judge_rejected",
-                            agent=agent_name,
-                            run_id=run.run_id,
-                            failed_criteria=[
-                                cr.criterion for cr in verdict.criteria_results if not cr.passed
-                            ],
-                        )
-                        break
-                    logger.info(
-                        "blueprint.inline_judge_approved",
-                        agent=agent_name,
-                        run_id=run.run_id,
-                    )
-
-            # Record progress
-            run.progress.append(
-                BlueprintProgress(
-                    node_name=current_node_name,
-                    node_type=node.node_type,
-                    status=result.status,
-                    iteration=iteration,
-                    summary=result.details or result.error or f"{result.status}",
-                    duration_ms=round(duration_ms, 1),
-                )
+            context, result, duration_ms, judge_break = await self._run_node(
+                node, run, brief, iteration, current
             )
 
-            # Update run state
-            if result.html:
-                run.html = result.html
-            if result.usage:
-                for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                    run.model_usage[key] += result.usage.get(key, 0)
+            self._record_progress(run, node, current, result, iteration, duration_ms)
+            if await self._enforce_cost_cap(run, result, cost_tracker, user_id):
+                break
 
-            # Check token cost cap per node completion
-            if cost_tracker is not None and user_id is not None and result.usage:
-                node_tokens = result.usage.get("total_tokens", 0)
-                if node_tokens > 0:
-                    await cost_tracker.record_usage(user_id, node_tokens)
-                    remaining = await cost_tracker.check_budget(user_id)
-                    if remaining <= 0:
-                        run.status = "cost_cap_exceeded"
-                        logger.warning(
-                            "blueprint.cost_cap_reached",
-                            run_id=run.run_id,
-                            user_id=user_id,
-                            total_tokens=run.model_usage["total_tokens"],
-                        )
-                        break
+            if current == "qa_gate":
+                await self._handle_qa_gate_outcome(run, result)
 
-            # Track QA results
-            if current_node_name == "qa_gate":
-                if result.status == "success":
-                    run.qa_passed = True
-                    run.qa_failures = []
-                    run.qa_failure_details = []
-                else:
-                    run.qa_passed = False
-                    run.qa_failures = [
-                        line.strip() for line in result.details.split("\n") if line.strip()
-                    ]
-                    # Save previous failures for cycle detection before updating
-                    run.previous_qa_failure_details = list(run.qa_failure_details)
-                    run.qa_failure_details = list(result.structured_failures)
-
-                # Record recovery outcomes (fire-and-forget)
-                if self._recovery_outcome_repo is not None:
-                    try:
-                        await self._record_recovery_outcomes(run)
-                    except Exception:
-                        logger.debug(
-                            "blueprint.recovery_outcome_record_failed",
-                            run_id=run.run_id,
-                            exc_info=True,
-                        )
-
-                # Store correction example on successful recovery (fire-and-forget)
-                if (
-                    result.status == "success"
-                    and run._handoff_history
-                    and get_settings().blueprint.correction_examples_enabled
-                ):
-                    try:
-                        await self._store_correction_example(run)
-                    except Exception:
-                        logger.debug(
-                            "blueprint.correction_example_store_failed",
-                            run_id=run.run_id,
-                            exc_info=True,
-                        )
-
-            # Increment iteration for agentic nodes
             if node.node_type == "agentic":
-                run.iteration_counts[current_node_name] = iteration + 1
-
+                run.iteration_counts[current] = iteration + 1
             run._last_result = result
 
-            # Store handoff from agentic nodes
-            if result.handoff is not None:
-                run._last_handoff = result.handoff
-                run._handoff_history.append(result.handoff)
+            await self._persist_handoff(run, current, result)
+            await self._track_correction_pattern(run, context, current, node, result)
 
-                # Persist handoff as episodic memory (fire-and-forget)
-                if self._on_handoff is not None:
-                    try:
-                        await self._on_handoff(result.handoff, run.run_id, self._project_id)
-                    except Exception:
-                        logger.warning(
-                            "blueprint.handoff_memory_failed",
-                            node=current_node_name,
-                            run_id=run.run_id,
-                            exc_info=True,
-                        )
-
-            # LAYER 18: Correction pattern tracking (fire-and-forget)
-            if (
-                node.node_type == "agentic"
-                and context.html
-                and result.html
-                and context.html != result.html
-                and result.handoff is not None
-                and get_settings().correction_tracker.enabled
-            ):
-                try:
-                    from app.design_sync.correction_tracker import CorrectionTracker
-
-                    tracker = CorrectionTracker(data_dir=Path("data"))
-                    await tracker.record_correction(
-                        agent=result.handoff.agent_name,
-                        original_html=context.html,
-                        corrected_html=result.html,
-                    )
-                except Exception:
-                    logger.debug(
-                        "blueprint.correction_tracker_failed",
-                        node=current_node_name,
-                        run_id=run.run_id,
-                        exc_info=True,
-                    )
-
-            # Low confidence → route to human review instead of retrying
-            if (
-                node.node_type == "agentic"
-                and result.handoff is not None
-                and result.handoff.confidence is not None
-            ):
-                effective_threshold = CONFIDENCE_REVIEW_THRESHOLD
-                if self._confidence_calibrations is not None:
-                    cal = self._confidence_calibrations.get(current_node_name)
-                    if cal is not None:
-                        effective_threshold = cal.effective_threshold
-
-                if result.handoff.confidence < effective_threshold:
-                    run.status = "needs_review"
-                    logger.warning(
-                        "blueprint.low_confidence",
-                        node=current_node_name,
-                        confidence=result.handoff.confidence,
-                        threshold=effective_threshold,
-                        calibrated=self._confidence_calibrations is not None
-                        and current_node_name in (self._confidence_calibrations or {}),
-                        run_id=run.run_id,
-                    )
-                    break
+            if judge_break or self._is_low_confidence_break(run, current, result):
+                break
 
             logger.info(
                 "blueprint.node_completed",
-                node=current_node_name,
+                node=current,
                 node_type=node.node_type,
                 status=result.status,
                 iteration=iteration,
                 duration_ms=round(duration_ms, 1),
             )
 
-            # Resolve next node BEFORE checkpoint so checkpoint records where to resume
-            next_node = self._resolve_next_node(current_node_name, result)
-
-            # Fire-and-forget checkpoint after successful node
+            next_node = self._resolve_next_node(current, result)
             await self._save_checkpoint(
-                run, current_node_name, len(run.progress) - 1, next_node_name=next_node
+                run, current, len(run.progress) - 1, next_node_name=next_node
+            )
+            await self._record_routing_history(node, current, result)
+            current = next_node
+
+        self._finalize_run_status(run, steps)
+        await self._emit_terminal_notification(run)
+        return run
+
+    # ── ``_execute_from`` helpers ──
+
+    def _is_skipped_by_routing_plan(
+        self, node: BlueprintNode, current: str, routing_plan: RoutingPlan
+    ) -> bool:
+        """Routing-plan-skip predicate for agentic nodes."""
+        return (
+            node.node_type == "agentic"
+            and not routing_plan.force_full
+            and current in routing_plan.skip_nodes
+        )
+
+    def _handle_skipped_node(
+        self,
+        run: BlueprintRun,
+        node: BlueprintNode,
+        current: str,
+        iteration: int,
+        routing_plan: RoutingPlan,
+    ) -> str | None:
+        """Record a routing-plan-skipped node and return the next graph hop."""
+        logger.info(
+            "blueprint.node_skipped",
+            node=current,
+            run_id=run.run_id,
+            reason="routing_plan_skip",
+        )
+        run.skipped_nodes.append(current)
+        run.progress.append(
+            BlueprintProgress(
+                node_name=current,
+                node_type=node.node_type,
+                status="skipped",
+                iteration=iteration,
+                summary=_skip_summary(current, routing_plan),
+                duration_ms=0.0,
+            )
+        )
+        skip_result = NodeResult(status="skipped", html=run.html)
+        return self._resolve_next_node(current, skip_result)
+
+    async def _run_node(
+        self,
+        node: BlueprintNode,
+        run: BlueprintRun,
+        brief: str,
+        iteration: int,
+        current: str,
+    ) -> tuple[NodeContext, NodeResult, float, bool]:
+        """Build context, execute the node, scope-validate, and inline-judge.
+
+        Returns ``(context, result, duration_ms, judge_break)`` where
+        ``judge_break`` is True when the inline judge has set
+        ``run.status = "needs_review"`` and the loop must exit.
+        """
+        context = await self._build_node_context(node, run, brief, iteration)
+        start = time.monotonic()
+        try:
+            result = await node.execute(context)
+        except Exception as exc:
+            # Translation boundary: any node failure becomes BlueprintNodeError.
+            logger.error(
+                "blueprints.node_failed",
+                node=current,
+                error=str(exc),
+                error_type=type(exc).__name__,
+            )
+            raise BlueprintNodeError(current, "execution failed") from exc
+        duration_ms = (time.monotonic() - start) * 1000
+
+        result = self._validate_scope_or_reject(result, node, current, iteration, run)
+        judge_break = await self._run_inline_judge_if_needed(
+            node, current, iteration, context, result, run
+        )
+        return context, result, duration_ms, judge_break
+
+    def _validate_scope_or_reject(
+        self,
+        result: NodeResult,
+        node: BlueprintNode,
+        current: str,
+        iteration: int,
+        run: BlueprintRun,
+    ) -> NodeResult:
+        """Reject out-of-scope fixer changes on retry by replacing the result."""
+        if not (node.node_type == "agentic" and iteration > 0 and run.html and result.html):
+            return result
+        from app.ai.blueprints.nodes.recovery_router_node import AGENT_SCOPES
+        from app.ai.blueprints.scope_validator import validate_scope
+
+        agent_scope = AGENT_SCOPES.get(current)
+        if agent_scope is None:
+            return result
+        violations = validate_scope(
+            pre_html=run.html,
+            post_html=result.html,
+            scope=agent_scope,
+            agent_name=current,
+        )
+        if not violations:
+            return result
+        logger.warning(
+            "blueprint.scope_violation",
+            agent=current,
+            violations=[v.description for v in violations],
+            run_id=run.run_id,
+        )
+        # Reject the change — keep pre-fix HTML, mark failed
+        return NodeResult(
+            status="failed",
+            html=run.html,
+            details=f"scope_violation:{current}",
+            error=f"Scope violation: {violations[0].description}",
+        )
+
+    async def _run_inline_judge_if_needed(
+        self,
+        node: BlueprintNode,
+        _current: str,
+        iteration: int,
+        context: NodeContext,
+        result: NodeResult,
+        run: BlueprintRun,
+    ) -> bool:
+        """Run inline judge on recovery retries; return True to break the loop."""
+        if not (
+            self._judge_on_retry
+            and node.node_type == "agentic"
+            and iteration > 0
+            and result.status == "success"
+            and result.html
+        ):
+            return False
+        from app.ai.blueprints.inline_judge import run_inline_judge
+
+        agent_name = node.name.removesuffix("_node")
+        verdict = await run_inline_judge(
+            agent_name=agent_name,
+            context=context,
+            html_output=result.html,
+            run=run,
+        )
+        if verdict is None:
+            return False
+        run.judge_verdict = verdict
+
+        # Persist verdict for aggregation
+        if get_settings().blueprint.judge_aggregation_enabled:
+            try:
+                from app.ai.blueprints.judge_aggregator import persist_judge_verdict
+
+                await persist_judge_verdict(verdict, self._project_id, run.run_id)
+            except Exception:
+                # Fire-and-forget: aggregator persistence failures must not crash the pipeline.
+                logger.debug(
+                    "blueprint.judge_verdict_persist_failed",
+                    run_id=run.run_id,
+                    exc_info=True,
+                )
+
+        if not verdict.overall_pass:
+            run.status = "needs_review"
+            logger.warning(
+                "blueprint.inline_judge_rejected",
+                agent=agent_name,
+                run_id=run.run_id,
+                failed_criteria=[cr.criterion for cr in verdict.criteria_results if not cr.passed],
+            )
+            return True
+        logger.info(
+            "blueprint.inline_judge_approved",
+            agent=agent_name,
+            run_id=run.run_id,
+        )
+        return False
+
+    def _record_progress(
+        self,
+        run: BlueprintRun,
+        node: BlueprintNode,
+        current: str,
+        result: NodeResult,
+        iteration: int,
+        duration_ms: float,
+    ) -> None:
+        """Append a BlueprintProgress entry and merge result html/usage into run."""
+        run.progress.append(
+            BlueprintProgress(
+                node_name=current,
+                node_type=node.node_type,
+                status=result.status,
+                iteration=iteration,
+                summary=result.details or result.error or f"{result.status}",
+                duration_ms=round(duration_ms, 1),
+            )
+        )
+        if result.html:
+            run.html = result.html
+        if result.usage:
+            for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                run.model_usage[key] += result.usage.get(key, 0)
+
+    async def _enforce_cost_cap(
+        self,
+        run: BlueprintRun,
+        result: NodeResult,
+        cost_tracker: "BlueprintCostTracker | None",
+        user_id: int | None,
+    ) -> bool:
+        """Record this node's token spend and break the loop when the cap is hit."""
+        if cost_tracker is None or user_id is None or not result.usage:
+            return False
+        node_tokens = result.usage.get("total_tokens", 0)
+        if node_tokens <= 0:
+            return False
+        await cost_tracker.record_usage(user_id, node_tokens)
+        remaining = await cost_tracker.check_budget(user_id)
+        if remaining > 0:
+            return False
+        run.status = "cost_cap_exceeded"
+        logger.warning(
+            "blueprint.cost_cap_reached",
+            run_id=run.run_id,
+            user_id=user_id,
+            total_tokens=run.model_usage["total_tokens"],
+        )
+        return True
+
+    async def _handle_qa_gate_outcome(self, run: BlueprintRun, result: NodeResult) -> None:
+        """QA gate-specific bookkeeping: pass/fail, recovery outcomes, corrections."""
+        if result.status == "success":
+            run.qa_passed = True
+            run.qa_failures = []
+            run.qa_failure_details = []
+        else:
+            run.qa_passed = False
+            run.qa_failures = [line.strip() for line in result.details.split("\n") if line.strip()]
+            # Save previous failures for cycle detection before updating.
+            run.previous_qa_failure_details = list(run.qa_failure_details)
+            run.qa_failure_details = list(result.structured_failures)
+
+        if self._recovery_outcome_repo is not None:
+            try:
+                await self._record_recovery_outcomes(run)
+            except Exception:
+                # Fire-and-forget: outcome recording failures must not crash the pipeline.
+                logger.debug(
+                    "blueprint.recovery_outcome_record_failed",
+                    run_id=run.run_id,
+                    exc_info=True,
+                )
+
+        if (
+            result.status == "success"
+            and run._handoff_history
+            and get_settings().blueprint.correction_examples_enabled
+        ):
+            try:
+                await self._store_correction_example(run)
+            except Exception:
+                # Fire-and-forget: correction-example storage failures are non-fatal.
+                logger.debug(
+                    "blueprint.correction_example_store_failed",
+                    run_id=run.run_id,
+                    exc_info=True,
+                )
+
+    async def _persist_handoff(self, run: BlueprintRun, current: str, result: NodeResult) -> None:
+        """Record handoff state on the run and dispatch the memory callback."""
+        if result.handoff is None:
+            return
+        run._last_handoff = result.handoff
+        run._handoff_history.append(result.handoff)
+        if self._on_handoff is None:
+            return
+        try:
+            await self._on_handoff(result.handoff, run.run_id, self._project_id)
+        except Exception:
+            # Fire-and-forget: memory persistence failures must not crash the pipeline.
+            logger.warning(
+                "blueprint.handoff_memory_failed",
+                node=current,
+                run_id=run.run_id,
+                exc_info=True,
             )
 
-            # Fire-and-forget routing history entry
-            if self._routing_history_repo is not None and node.node_type == "agentic":
-                try:
-                    accepted = result.status == "success"
-                    agent_tier: TaskTier = getattr(node, "model_tier", "standard")
-                    await self._routing_history_repo.record(
-                        agent_name=current_node_name,
-                        project_id=self._project_id,
-                        tier_used=agent_tier,
-                        accepted=accepted,
-                    )
-                except Exception:
-                    logger.debug(
-                        "blueprint.routing_history_record_failed",
-                        node=current_node_name,
-                        run_id=run.run_id,
-                        exc_info=True,
-                    )
+    async def _track_correction_pattern(
+        self,
+        run: BlueprintRun,
+        context: NodeContext,
+        current: str,
+        node: BlueprintNode,
+        result: NodeResult,
+    ) -> None:
+        """Record a (pre, post) HTML correction pair when the agent changed HTML."""
+        if not (
+            node.node_type == "agentic"
+            and context.html
+            and result.html
+            and context.html != result.html
+            and result.handoff is not None
+            and get_settings().correction_tracker.enabled
+        ):
+            return
+        try:
+            from app.design_sync.correction_tracker import CorrectionTracker
 
-            current_node_name = next_node
+            tracker = CorrectionTracker(data_dir=Path("data"))
+            await tracker.record_correction(
+                agent=result.handoff.agent_name,
+                original_html=context.html,
+                corrected_html=result.html,
+            )
+        except Exception:
+            # Fire-and-forget: correction-tracker failures must not crash the pipeline.
+            logger.debug(
+                "blueprint.correction_tracker_failed",
+                node=current,
+                run_id=run.run_id,
+                exc_info=True,
+            )
 
+    def _is_low_confidence_break(self, run: BlueprintRun, current: str, result: NodeResult) -> bool:
+        """Set ``needs_review`` and return True when the agent's confidence is too low."""
+        if result.handoff is None or result.handoff.confidence is None:
+            return False
+        effective_threshold = CONFIDENCE_REVIEW_THRESHOLD
+        if self._confidence_calibrations is not None:
+            cal = self._confidence_calibrations.get(current)
+            if cal is not None:
+                effective_threshold = cal.effective_threshold
+        if result.handoff.confidence >= effective_threshold:
+            return False
+        run.status = "needs_review"
+        logger.warning(
+            "blueprint.low_confidence",
+            node=current,
+            confidence=result.handoff.confidence,
+            threshold=effective_threshold,
+            calibrated=self._confidence_calibrations is not None
+            and current in (self._confidence_calibrations or {}),
+            run_id=run.run_id,
+        )
+        return True
+
+    async def _record_routing_history(
+        self, node: BlueprintNode, current: str, result: NodeResult
+    ) -> None:
+        """Persist routing-history entry for adaptive-tier learning."""
+        if self._routing_history_repo is None or node.node_type != "agentic":
+            return
+        try:
+            agent_tier: TaskTier = getattr(node, "model_tier", "standard")
+            await self._routing_history_repo.record(
+                agent_name=current,
+                project_id=self._project_id,
+                tier_used=agent_tier,
+                accepted=result.status == "success",
+            )
+        except Exception:
+            # Fire-and-forget: routing-history failures must not crash the pipeline.
+            logger.debug(
+                "blueprint.routing_history_record_failed",
+                node=current,
+                exc_info=True,
+            )
+
+    def _finalize_run_status(self, run: BlueprintRun, steps: int) -> None:
+        """Apply terminal status when the loop exits without one already set."""
         if run.status == "running":
             run.status = "completed" if run.qa_passed is not False else "completed_with_warnings"
         logger.info(
@@ -655,7 +761,8 @@ class BlueprintEngine:
             qa_passed=run.qa_passed,
         )
 
-        # Notify on terminal status
+    async def _emit_terminal_notification(self, run: BlueprintRun) -> None:
+        """Dispatch a completed/failed notification on terminal status."""
         from app.notifications.channels import Notification
         from app.notifications.emitter import emit_notification
 
@@ -681,8 +788,6 @@ class BlueprintEngine:
                     metadata={"run_id": run.run_id, "status": run.status},
                 )
             )
-
-        return run
 
     async def _save_checkpoint(
         self,
