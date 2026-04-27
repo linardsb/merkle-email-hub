@@ -122,3 +122,11 @@ data/debug/*/tokens.json
 data/debug/*/report.json
 data/debug/*/assets/
 e2e-screenshots/
+
+# Claude Code session state + MCP caches (machine-local, never commit)
+.claude-merkle/
+.claude/projects/
+.claude/worktrees/
+
+# Hypothesis property-based testing cache (auto-generated, OS-specific)
+.hypothesis/
