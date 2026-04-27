@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useParams, notFound } from "next/navigation";
-import { ArrowLeft, GitCompareArrows } from "../../../../components/icons";
+import { ArrowLeft, GitCompareArrows } from "@/components/icons";
 import Link from "next/link";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
