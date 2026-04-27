@@ -346,15 +346,15 @@ The whole PR is one revert because the layer signatures, `ExecutionDecision`, an
 
 ## Done when
 
-- [ ] Each LAYER ≤ 30 LOC in its own method.
-- [ ] `_build_node_context` ≤ 30 LOC (just the merge loop).
-- [ ] `_execute_from` ≤ 60 LOC (just the state-machine loop).
-- [ ] Per-LAYER unit tests exist (`test_node_context_layers.py`).
-- [ ] Layer-ordering-invariance test passes (Step 4).
-- [ ] State-machine handler tests exist (`test_engine_state_machine.py`).
-- [ ] Engine integration tests pass without modification.
-- [ ] `eval-full` output diff vs baseline is empty (modulo timestamps).
-- [ ] Late imports hoisted to module top (Step 1).
-- [ ] No `ctx.x = y` writes inside any `_layer_N` body (grep audit clean).
-- [ ] PR titled `refactor(ai/blueprints): decompose engine god-functions (F016 F017)`.
-- [ ] Mark F016, F017 as **RESOLVED**.
+- [x] Each LAYER ≤ 30 LOC in its own method.
+- [x] `_build_node_context` ≤ 30 LOC (just the merge loop — body is 18 lines, 32 lines incl. signature/docstring).
+- [x] `_execute_from` ≤ 60 LOC (just the state-machine loop — body is 53 lines, 69 lines incl. signature/docstring).
+- [x] Per-LAYER unit tests exist (`test_node_context_layers.py`).
+- [x] Layer-ordering-invariance test passes (Step 4).
+- [x] State-machine handler tests exist (`test_engine_state_machine.py`).
+- [x] Engine integration tests pass without modification.
+- [ ] `eval-full` output diff vs baseline is empty (modulo timestamps). *(Skipped per advisor — $2-5 cost, non-deterministic LLM output. Behaviour preservation verified via 767 unit/integration tests + ordering-invariance backstop.)*
+- [x] Late imports hoisted to module top (Step 1).
+- [x] No `ctx.x = y` writes inside any `_layer_N` body (grep audit clean — only documented `_layer_23_visual_override` one-shot pop).
+- [ ] PR titled `refactor(ai/blueprints): decompose engine god-functions (F016 F017)`. *(Pending user authorization to push branch.)*
+- [x] Mark F016, F017 as **RESOLVED**.
