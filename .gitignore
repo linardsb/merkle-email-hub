@@ -122,3 +122,7 @@ data/debug/*/tokens.json
 data/debug/*/report.json
 data/debug/*/assets/
 e2e-screenshots/
+
+# Oversized debug/review artefacts (regenerable; do not commit)
+docs/*.png
+docs/eval-review-data.json
