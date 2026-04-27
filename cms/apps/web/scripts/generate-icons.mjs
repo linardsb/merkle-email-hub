@@ -788,9 +788,14 @@ function processBrandSvg(content) {
     }
   }
 
-  // Remove <defs>...</defs> and <style>...</style> (may appear outside defs)
-  content = content.replace(/<defs>[\s\S]*?<\/defs>\s*/g, "");
-  content = content.replace(/<style[^>]*>[\s\S]*?<\/style>\s*/g, "");
+  // Remove <defs>...</defs> and <style>...</style> (may appear outside defs).
+  // Loop until stable: nested/overlapping tags can survive a single pass.
+  let prevContent;
+  do {
+    prevContent = content;
+    content = content.replace(/<defs>[\s\S]*?<\/defs>\s*/g, "");
+    content = content.replace(/<style[^>]*>[\s\S]*?<\/style>\s*/g, "");
+  } while (content !== prevContent);
 
   // Replace class references
   content = content.replace(/\s*class="([\w-]+)"/g, (_match, className) => {
@@ -829,9 +834,14 @@ function processSmallSvg(content) {
   const innerMatch = content.match(/<svg[^>]*>([\s\S]*)<\/svg>/);
   let inner = innerMatch ? innerMatch[1].trim() : "";
 
-  // Remove <defs>...</defs> and <style>...</style> blocks
-  inner = inner.replace(/<defs>[\s\S]*?<\/defs>\s*/g, "");
-  inner = inner.replace(/<style[^>]*>[\s\S]*?<\/style>\s*/g, "");
+  // Remove <defs>...</defs> and <style>...</style> blocks.
+  // Loop until stable: nested/overlapping tags can survive a single pass.
+  let prevInner;
+  do {
+    prevInner = inner;
+    inner = inner.replace(/<defs>[\s\S]*?<\/defs>\s*/g, "");
+    inner = inner.replace(/<style[^>]*>[\s\S]*?<\/style>\s*/g, "");
+  } while (inner !== prevInner);
 
   // Remove class attributes (styles already removed)
   inner = inner.replace(/\s*class="[^"]*"/g, "");
@@ -867,8 +877,13 @@ function processStrokeSvg(content) {
 // ── JSX conversion ───────────────────────────────────────────────────
 
 function svgInnerToJsx(inner) {
-  // Remove HTML/XML comments (invalid in JSX)
-  inner = inner.replace(/<!--[\s\S]*?-->/g, "");
+  // Remove HTML/XML comments (invalid in JSX).
+  // Loop until stable: nested/overlapping comment markers can survive a single pass.
+  let prevInner;
+  do {
+    prevInner = inner;
+    inner = inner.replace(/<!--[\s\S]*?-->/g, "");
+  } while (inner !== prevInner);
 
   // Convert SVG attributes to JSX camelCase
   return (
