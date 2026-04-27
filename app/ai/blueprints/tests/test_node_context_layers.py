@@ -8,6 +8,7 @@ keys the layer is contracted to produce.
 
 from __future__ import annotations
 
+import random
 from typing import cast
 from unittest.mock import patch
 
@@ -294,3 +295,83 @@ class TestBuildNodeContextLoop:
         assert ctx.metadata["agent_name"] == "scaffolder"
         assert ctx.metadata["client_id"] == "acme"
         assert "client_lookup_tool" in ctx.metadata
+
+
+# ── Step 4 — Layer-ordering invariance ──
+#
+# Layers must be order-independent for the metadata they merge into ``ctx``,
+# *except* for keys whose final value depends on a specific producer/consumer
+# ordering. Those are listed below and excluded from the equality assertion.
+#
+# Why each key is order-dependent:
+#
+# - ``multimodal_context_override``: ``_layer_23_visual_override`` pops it as a
+#   one-shot consumer; if shuffled before any producer it survives in metadata.
+# - ``qa_failure_details`` / ``graph_context``: ``_layer_25_injection_scan``
+#   only sanitises them if they are already strings in metadata when it runs;
+#   shuffling alters whether the sanitiser ever sees them.
+
+_ORDER_DEPENDENT_KEYS: frozenset[str] = frozenset(
+    {"multimodal_context_override", "qa_failure_details", "graph_context"}
+)
+
+
+def _filter_metadata(meta: dict[str, object]) -> dict[str, object]:
+    """Strip order-dependent keys before comparing layer outputs."""
+    return {k: v for k, v in meta.items() if k not in _ORDER_DEPENDENT_KEYS}
+
+
+@pytest.mark.asyncio
+class TestLayerOrderingInvariance:
+    """Shuffling _METADATA_LAYERS must not change the final ctx.metadata.
+
+    This is the runtime backstop that replaces the abandoned
+    ``frozen=True`` approach: it catches any layer that reads metadata
+    set by another layer earlier in the pipeline.
+    """
+
+    async def test_metadata_invariant_under_shuffle(self) -> None:
+        engine = _make_engine(client_id="acme")
+        run = BlueprintRun(html="<p>seed</p>")
+        run.qa_failures = ["html_validation: missing"]
+        node = _StubNode("scaffolder_node", node_type="agentic")
+
+        canonical = await engine._build_node_context(node, run, brief="campaign brief", iteration=0)
+        canonical_meta = _filter_metadata(canonical.metadata)
+
+        rng = random.Random(42)
+        for _ in range(5):
+            shuffled = list(engine._METADATA_LAYERS)
+            rng.shuffle(shuffled)
+            with patch.object(engine, "_METADATA_LAYERS", tuple(shuffled)):
+                ctx = await engine._build_node_context(
+                    node, run, brief="campaign brief", iteration=0
+                )
+            assert _filter_metadata(ctx.metadata) == canonical_meta, (
+                "Layer mutation observed — a layer is reading state set by "
+                "another layer. If intentional, declare the dependency in "
+                "_ORDER_DEPENDENT_KEYS with a comment naming the producer/consumer."
+            )
+
+    async def test_seed_fields_invariant_under_shuffle(self) -> None:
+        """Top-level NodeContext fields (html, brief, iteration, qa_failures) must
+        be reproducible across shuffles for fixtures that don't trigger reserved-key
+        layers (injection_scan strip mode, multimodal)."""
+        engine = _make_engine()
+        run = BlueprintRun(html="<p>seed</p>")
+        run.qa_failures = ["x"]
+        node = _StubNode("scaffolder_node", node_type="agentic")
+
+        canonical = await engine._build_node_context(node, run, brief="b", iteration=1)
+
+        rng = random.Random(123)
+        for _ in range(3):
+            shuffled = list(engine._METADATA_LAYERS)
+            rng.shuffle(shuffled)
+            with patch.object(engine, "_METADATA_LAYERS", tuple(shuffled)):
+                ctx = await engine._build_node_context(node, run, brief="b", iteration=1)
+            assert ctx.html == canonical.html
+            assert ctx.brief == canonical.brief
+            assert ctx.iteration == canonical.iteration
+            assert ctx.qa_failures == canonical.qa_failures
+            assert ctx.multimodal_context == canonical.multimodal_context
