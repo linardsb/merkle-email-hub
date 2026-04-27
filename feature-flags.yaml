@@ -61,6 +61,13 @@ flags:
     removal_date: "2026-06-15"
     status: alpha
 
+  - name: AI__EVALUATOR__ENABLED
+    description: Adversarial evaluator agent for inline review of agent output (Phase 48.4)
+    owner: ai-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
+    status: alpha
+
   # ── Knowledge ───────────────────────────────────────────────────────────────
   - name: KNOWLEDGE__AUTO_TAG_ENABLED
     description: Automatic tagging of knowledge base documents
@@ -97,6 +104,13 @@ flags:
     created: "2026-03-16"
     removal_date: "2026-06-15"
     status: beta
+
+  - name: KNOWLEDGE__PROACTIVE_QA_ENABLED
+    description: Proactive QA warnings injected from semantic memory of prior failures (Phase 48.12)
+    owner: ai-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
+    status: alpha
 
   # ── QA ──────────────────────────────────────────────────────────────────────
   - name: QA_CHAOS__ENABLED
@@ -148,6 +162,13 @@ flags:
     owner: qa-team
     created: "2026-03-17"
     removal_date: "2026-06-15"
+    status: beta
+
+  - name: QA_META_EVAL__ENABLED
+    description: QA check meta-evaluation against labeled golden samples (Phase 48.9)
+    owner: qa-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
     status: beta
 
   # ── Rendering ───────────────────────────────────────────────────────────────
@@ -202,13 +223,6 @@ flags:
     description: Penpot design tool integration
     owner: design-team
     created: "2026-03-18"
-    removal_date: "2026-06-15"
-    status: alpha
-
-  - name: DESIGN_SYNC__PENPOT_CONVERTER_ENABLED
-    description: Penpot-to-email HTML converter
-    owner: design-team
-    created: "2026-03-24"
     removal_date: "2026-06-15"
     status: alpha
 
@@ -283,6 +297,76 @@ flags:
     status: ga
     permanent_reason: "Default-on capability; flag kept for emergency rollback"
 
+  - name: DESIGN_SYNC__CONVERSION_MEMORY_ENABLED
+    description: Converter learning loop — persists section→component conversion memory (Phase 48)
+    owner: design-team
+    created: "2026-03-31"
+    removal_date: "2026-07-26"
+    status: beta
+
+  - name: DESIGN_SYNC__CONVERSION_TRACES_ENABLED
+    description: Converter trace logging to JSONL for diagnostics and review (Phase 48)
+    owner: design-team
+    created: "2026-03-31"
+    removal_date: "2026-07-26"
+    status: beta
+
+  - name: DESIGN_SYNC__BGCOLOR_PROPAGATION_ENABLED
+    description: Adjacent-section background color propagation for visual continuity (Phase 41.2)
+    owner: design-team
+    created: "2026-04-01"
+    removal_date: "2026-10-24"
+    status: beta
+
+  - name: DESIGN_SYNC__VLM_FALLBACK_ENABLED
+    description: VLM fallback for component matcher when rule-based scoring fails (Phase 41.5)
+    owner: design-team
+    created: "2026-04-01"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  - name: DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED
+    description: VLM-assisted section type classification in layout analysis (Phase 41.7)
+    owner: design-team
+    created: "2026-04-01"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  - name: DESIGN_SYNC__VLM_VERIFY_ENABLED
+    description: Visual verification loop — VLM-driven render→compare→correct iteration (Phase 47.2)
+    owner: design-team
+    created: "2026-04-02"
+    removal_date: "2026-07-26"
+    status: alpha
+
+  - name: DESIGN_SYNC__CUSTOM_COMPONENT_ENABLED
+    description: Scaffolder-generated custom components for low-confidence matcher results (Phase 47.8)
+    owner: design-team
+    created: "2026-04-03"
+    removal_date: "2026-07-26"
+    status: alpha
+
+  - name: DESIGN_SYNC__SIBLING_DETECTION_ENABLED
+    description: Repeating-content group detection for sibling section folding (Phase 49.1)
+    owner: design-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
+    status: beta
+
+  - name: DESIGN_SYNC__TOKEN_SCOPING_ENABLED
+    description: Per-email Figma token scoping to selected target frame subtree (Phase 49.6)
+    owner: design-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
+    status: beta
+
+  - name: DESIGN_SYNC__TREE_BRIDGE_ENABLED
+    description: Bridge converter output into typed EmailTree pipeline (Phase 49.8)
+    owner: design-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
+    status: alpha
+
   # ── Voice ───────────────────────────────────────────────────────────────────
   - name: VOICE__ENABLED
     description: Voice brief input pipeline (speech-to-brief)
@@ -307,6 +391,13 @@ flags:
     removal_date: null
     status: ga
     permanent_reason: "Default-on security control; flag kept for compliance flexibility"
+
+  - name: MCP__CACHE_ENABLED
+    description: In-memory MCP response cache for read-only tools (Phase 48.11)
+    owner: ai-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
+    status: beta
 
   # ── Email Engine ────────────────────────────────────────────────────────────
   - name: EMAIL_ENGINE__CSS_COMPILER_ENABLED
@@ -475,4 +566,73 @@ flags:
     owner: ai-team
     created: "2026-03-27"
     removal_date: "2026-06-15"
+    status: alpha
+
+  # ── Security ────────────────────────────────────────────────────────────────
+  - name: SECURITY__PROMPT_GUARD_ENABLED
+    description: Prompt-injection guard scanning user inputs to AI agents (Phase 44.11)
+    owner: platform-team
+    created: "2026-04-02"
+    removal_date: "2026-10-24"
+    status: beta
+
+  # ── Scheduling ──────────────────────────────────────────────────────────────
+  - name: SCHEDULING__ENABLED
+    description: Cron scheduling engine for background jobs (QA sweep, ontology sync) (Phase 45.1)
+    owner: platform-team
+    created: "2026-04-02"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  # ── Notifications ───────────────────────────────────────────────────────────
+  - name: NOTIFICATIONS__ENABLED
+    description: Notification routing master toggle for Slack, Teams, and Email channels (Phase 45.4)
+    owner: platform-team
+    created: "2026-04-02"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  - name: NOTIFICATIONS__SLACK_ENABLED
+    description: Slack webhook notification channel (Phase 45.4)
+    owner: platform-team
+    created: "2026-04-02"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  - name: NOTIFICATIONS__TEAMS_ENABLED
+    description: Microsoft Teams webhook notification channel (Phase 45.4)
+    owner: platform-team
+    created: "2026-04-02"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  - name: NOTIFICATIONS__EMAIL_ENABLED
+    description: Email (SMTP) notification channel (Phase 45.4)
+    owner: platform-team
+    created: "2026-04-02"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  # ── Debounce ────────────────────────────────────────────────────────────────
+  - name: DEBOUNCE__ENABLED
+    description: Distributed Redis-backed debounce primitive for high-frequency triggers (Phase 45.6)
+    owner: platform-team
+    created: "2026-04-03"
+    removal_date: "2026-10-24"
+    status: beta
+
+  # ── Credentials ─────────────────────────────────────────────────────────────
+  - name: CREDENTIALS__ENABLED
+    description: Credential pool rotation with health-aware cooldowns (Phase 46.1)
+    owner: platform-team
+    created: "2026-04-03"
+    removal_date: "2026-10-24"
+    status: alpha
+
+  # ── Pipeline ────────────────────────────────────────────────────────────────
+  - name: PIPELINE__ENABLED
+    description: DAG-based pipeline executor — replaces sequential blueprint engine (Phase 48.1)
+    owner: ai-team
+    created: "2026-04-06"
+    removal_date: "2026-07-26"
     status: alpha
