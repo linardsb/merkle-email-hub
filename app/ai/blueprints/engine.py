@@ -54,7 +54,7 @@ MAX_SELF_CORRECTION_ROUNDS = 2
 MAX_TOTAL_STEPS = 25  # safety brake (includes repair node steps between agents and QA gate)
 CONFIDENCE_REVIEW_THRESHOLD = 0.5
 
-EdgeCondition = Literal["success", "qa_fail", "always", "route_to", "revise"]
+EdgeCondition = Literal["success", "qa_fail", "always", "route_to"]
 
 
 @dataclass
@@ -109,7 +109,6 @@ class BlueprintRun:
     resumed_from: str | None = None
     token_budget: int = 500_000
     insights_extracted: int = 0
-    evaluator_revision_count: int = 0
 
     @property
     def remaining_budget(self) -> float:
@@ -577,29 +576,6 @@ class BlueprintEngine:
             # Resolve next node BEFORE checkpoint so checkpoint records where to resume
             next_node = self._resolve_next_node(current_node_name, result)
 
-            # Evaluator revision cap: if evaluator requests revise beyond max_revisions, reject
-            if (
-                result.handoff is not None
-                and result.handoff.agent_name == "evaluator"
-                and result.handoff.status == HandoffStatus.WARNING
-                and next_node is not None
-            ):
-                run.evaluator_revision_count += 1
-                from app.core.config import get_settings as _get_settings_ev
-
-                max_revisions = _get_settings_ev().blueprint.max_revisions
-                if run.evaluator_revision_count > max_revisions:
-                    run.status = "needs_review"
-                    logger.warning(
-                        "blueprint.evaluator_revision_cap",
-                        run_id=run.run_id,
-                        revisions=run.evaluator_revision_count,
-                        max_revisions=max_revisions,
-                    )
-                    break
-                # Inject evaluator feedback into metadata for upstream agent re-run
-                run.qa_failures.append(f"evaluator: {result.handoff.decisions[0][:500]}")
-
             # Fire-and-forget checkpoint after successful node
             await self._save_checkpoint(
                 run, current_node_name, len(run.progress) - 1, next_node_name=next_node
@@ -710,20 +686,10 @@ class BlueprintEngine:
         if hasattr(result, "details") and "route_to:" in result.details:
             metadata_route = result.details.split("route_to:")[-1].strip()
 
-        # Check for evaluator "revise" verdict
-        is_revise = (
-            result.handoff is not None
-            and result.handoff.agent_name == "evaluator"
-            and result.handoff.status == HandoffStatus.WARNING
-            and effective_status == "failed"
-        )
-
         for edge in self._definition.edges:
             if edge.from_node != current:
                 continue
 
-            if edge.condition == "revise" and is_revise:
-                return edge.to_node
             if edge.condition == "success" and effective_status == "success":
                 return edge.to_node
             if edge.condition == "qa_fail" and effective_status == "failed":

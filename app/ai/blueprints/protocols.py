@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 if TYPE_CHECKING:
     from app.ai.agents.schemas.build_plan import EmailBuildPlan
     from app.ai.multimodal import ContentBlock
-    from app.ai.pipeline.artifacts import ArtifactStore
     from app.knowledge.graph.protocols import GraphSearchResult
 
 __all__ = [
@@ -131,43 +130,6 @@ class AgentHandoff:
         unc = f" unc={len(self.uncertainties)}" if self.uncertainties else ""
         lrn = f" lrn={len(self.learnings)}" if self.learnings else ""
         return f"{self.agent_name}: {self.status.value}{conf}{unc}{lrn}"
-
-    def to_artifacts(self, store: ArtifactStore) -> None:
-        """Bridge handoff data into an artifact store.
-
-        Deprecated: use typed adapters instead. This exists for
-        backward-compatible migration from AgentHandoff to artifacts.
-        """
-        from datetime import UTC, datetime
-
-        from app.ai.pipeline.artifacts import HtmlArtifact as _HtmlArtifact
-
-        now = datetime.now(UTC)
-        if self.artifact:
-            store.put(
-                "html",
-                _HtmlArtifact(
-                    name="html",
-                    produced_by=self.agent_name,
-                    produced_at=now,
-                    html=self.artifact,
-                ),
-            )
-
-    @classmethod
-    def from_artifact_store(cls, store: ArtifactStore, agent_name: str) -> AgentHandoff:
-        """Bridge artifact store back into a handoff.
-
-        Deprecated: use typed adapters instead. This exists for
-        backward-compatible migration from AgentHandoff to artifacts.
-        """
-        from app.ai.pipeline.artifacts import HtmlArtifact as _HtmlArtifact
-
-        html_art = store.get_optional("html", _HtmlArtifact)
-        return cls(
-            agent_name=agent_name,
-            artifact=html_art.html if html_art else "",
-        )
 
 
 @dataclass(frozen=True)

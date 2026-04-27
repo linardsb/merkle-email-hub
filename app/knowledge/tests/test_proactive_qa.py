@@ -1,8 +1,7 @@
-"""Tests for proactive QA warning extraction, querying, and pipeline integration."""
+"""Tests for proactive QA warning extraction and querying."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -265,83 +264,6 @@ class TestFormatWarnings:
         assert "Add VML wrapper" in text
         assert "seen 3x" in text
         assert "card-grid" in text
-
-
-# ── Test 10-11: Pipeline integration ──
-
-
-class TestPipelineIntegration:
-    @pytest.mark.asyncio
-    async def test_pipeline_injects_artifact(self) -> None:
-        from app.ai.pipeline.artifacts import ArtifactStore, ProactiveWarningsArtifact
-        from app.ai.pipeline.dag import PipelineDag, PipelineNode
-        from app.ai.pipeline.executor import PipelineExecutor
-        from app.core.config import PipelineConfig
-
-        nodes = {
-            "a": PipelineNode("agent_a", "standard", inputs=(), outputs=("html",)),
-        }
-        dag = PipelineDag(name="test", description="test", nodes=nodes)
-        store = ArtifactStore()
-        config = PipelineConfig(enabled=True, max_concurrent_agents=5)
-
-        mock_runner = AsyncMock()
-        mock_runner.return_value = MagicMock(tokens_used=50)
-
-        executor = PipelineExecutor(dag, store, config, mock_runner)
-
-        # Mock the proactive warnings injection
-        test_warning = ProactiveWarning(
-            component="hero-full-width",
-            client="outlook_2019",
-            failure="html_validation",
-            severity="critical",
-            suggestion="Add VML wrapper",
-            occurrence_count=3,
-        )
-
-        async def mock_inject(run_id: str) -> None:
-            artifact = ProactiveWarningsArtifact(
-                name="proactive_warnings",
-                produced_by="proactive_qa",
-                produced_at=datetime.now(UTC),
-                warnings=(test_warning,),
-                formatted_text="## Known Failure Patterns\n- hero-full-width",
-            )
-            store.put("proactive_warnings", artifact)
-
-        with patch.object(executor, "_inject_proactive_warnings", side_effect=mock_inject):
-            result = await executor.execute("test-run")
-
-        assert "proactive_warnings" in result.artifacts
-        artifact = store.get("proactive_warnings", ProactiveWarningsArtifact)
-        assert len(artifact.warnings) == 1
-        assert artifact.warnings[0].component == "hero-full-width"
-
-    @pytest.mark.asyncio
-    async def test_pipeline_skips_when_disabled(self) -> None:
-        from app.ai.pipeline.artifacts import ArtifactStore
-        from app.ai.pipeline.dag import PipelineDag, PipelineNode
-        from app.ai.pipeline.executor import PipelineExecutor
-        from app.core.config import PipelineConfig
-
-        nodes = {
-            "a": PipelineNode("agent_a", "standard", inputs=(), outputs=("html",)),
-        }
-        dag = PipelineDag(name="test", description="test", nodes=nodes)
-        store = ArtifactStore()
-        config = PipelineConfig(enabled=True, max_concurrent_agents=5)
-
-        mock_runner = AsyncMock()
-        mock_runner.return_value = MagicMock(tokens_used=50)
-
-        executor = PipelineExecutor(dag, store, config, mock_runner)
-
-        mock_settings = _make_settings(proactive_qa_enabled=False)
-        with patch("app.core.config.get_settings", return_value=mock_settings):
-            result = await executor.execute("test-run")
-
-        assert "proactive_warnings" not in result.artifacts
 
 
 # ── Test 12: API endpoint ──

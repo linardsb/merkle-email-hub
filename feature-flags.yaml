@@ -61,13 +61,6 @@ flags:
     removal_date: "2026-06-15"
     status: alpha
 
-  - name: AI__EVALUATOR__ENABLED
-    description: Adversarial evaluator agent for inline review of agent output (Phase 48.4)
-    owner: ai-team
-    created: "2026-04-06"
-    removal_date: "2026-07-26"
-    status: alpha
-
   # ── Knowledge ───────────────────────────────────────────────────────────────
   - name: KNOWLEDGE__AUTO_TAG_ENABLED
     description: Automatic tagging of knowledge base documents
@@ -627,12 +620,4 @@ flags:
     owner: platform-team
     created: "2026-04-03"
     removal_date: "2026-10-24"
-    status: alpha
-
-  # ── Pipeline ────────────────────────────────────────────────────────────────
-  - name: PIPELINE__ENABLED
-    description: DAG-based pipeline executor — replaces sequential blueprint engine (Phase 48.1)
-    owner: ai-team
-    created: "2026-04-06"
-    removal_date: "2026-07-26"
     status: alpha
