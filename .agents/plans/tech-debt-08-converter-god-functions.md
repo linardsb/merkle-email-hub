@@ -42,20 +42,64 @@ from typing import Mapping
 
 @dataclass(frozen=True)
 class RenderContext:
-    section_map: Mapping[int, "EmailSection"]
-    button_ids: tuple[str, ...]
-    text_meta: Mapping[int, "TextMeta"]
-    gradients_map: Mapping[str, str]
-    container_width: int
+    section_map: Mapping[str, "EmailSection"] = field(default_factory=dict)
+    button_ids: frozenset[str] = field(default_factory=frozenset)
+    text_meta: Mapping[str, "TextBlock"] = field(default_factory=dict)
+    gradients_map: Mapping[str, "ExtractedGradient"] = field(default_factory=dict)
+    props_map: Mapping[str, "_NodeProps"] = field(default_factory=dict)
+    container_width: int = 600
     parent_bg: str | None = None
     parent_font: str | None = None
     current_section: "EmailSection | None" = None
+    body_font_size: float = 16.0
+    compat: "ConverterCompatibility | None" = None
+    indent: int = 0
     depth: int = 0
-    slot_counter: int = 0  # immutable; producers return new ctx with bumped counter
+    # Shared reference. Frozen dataclass forbids field reassignment, NOT
+    # mutation of the dict's contents. _next_slot_name() mutates this in
+    # place; with_child() preserves the reference via dataclasses.replace.
+    _slot_counts: dict[str, int] = field(default_factory=dict)
 
-    def with_child(self, *, parent_bg=..., parent_font=..., section=...) -> "RenderContext":
-        return replace(self, depth=self.depth + 1, ...)
+    def with_child(
+        self,
+        *,
+        parent_bg: str | None = None,
+        parent_font: str | None = None,
+        section: "EmailSection | None" = None,
+    ) -> "RenderContext":
+        return replace(
+            self,
+            depth=self.depth + 1,
+            indent=self.indent + 1,
+            parent_bg=parent_bg if parent_bg is not None else self.parent_bg,
+            parent_font=parent_font if parent_font is not None else self.parent_font,
+            current_section=section if section is not None else self.current_section,
+        )
+
+    @classmethod
+    def from_legacy_kwargs(cls, **kw: object) -> "RenderContext":
+        """Test/migration helper. Maps the pre-refactor kwargs to a RenderContext.
+        Preserves shared-reference semantics for slot_counter (callers passing
+        the same dict across multiple calls still see mutations propagate)."""
+        slot_counts = kw.get("slot_counter")
+        return cls(
+            section_map=kw.get("section_map") or {},  # type: ignore[arg-type]
+            button_ids=frozenset(kw.get("button_ids") or ()),  # type: ignore[arg-type]
+            text_meta=kw.get("text_meta") or {},  # type: ignore[arg-type]
+            gradients_map=kw.get("gradients_map") or {},  # type: ignore[arg-type]
+            props_map=kw.get("props_map") or {},  # type: ignore[arg-type]
+            container_width=kw.get("container_width", 600),  # type: ignore[arg-type]
+            parent_bg=kw.get("parent_bg"),  # type: ignore[arg-type]
+            parent_font=kw.get("parent_font"),  # type: ignore[arg-type]
+            current_section=kw.get("current_section"),  # type: ignore[arg-type]
+            body_font_size=kw.get("body_font_size", 16.0),  # type: ignore[arg-type]
+            compat=kw.get("compat"),  # type: ignore[arg-type]
+            indent=kw.get("indent", 0),  # type: ignore[arg-type]
+            _slot_counts=slot_counts if isinstance(slot_counts, dict) else {},
+        )
 ```
+
+**Slot-counter ownership decision:** shared-reference object (the `_slot_counts` dict), not an immutable int threaded via return tuples. Renderers keep the `Callable[[DesignNode, RenderContext], str]` signature (no return-tuple plumbing). `_next_slot_name(ctx._slot_counts, slot_type)` mutates the dict in place; this preserves the existing `converter.py:403` helper unchanged.
 
 ### A2. Refactor `node_to_email_html`
 
@@ -83,6 +127,25 @@ Each `_render_*_node` is independently testable and < 80 LOC.
 ### A4. Verify visual snapshots
 
 `make snapshot-visual` against the saved baselines. Diff must be zero.
+
+### A5. Migrate test callsites in same PR
+
+The signature change breaks 14 test callsites that pass legacy kwargs. Migrate them via the `RenderContext.from_legacy_kwargs(...)` factory — do **not** add a backward-compat overload to `node_to_email_html` itself.
+
+Affected files (pre-counted in preflight):
+- `app/design_sync/tests/test_image_pipeline.py` — 9 sites, all `node_to_email_html(node)` (single positional). These pass through unchanged because `RenderContext()` defaults are valid; just confirm they still parse after the signature flip.
+- `app/design_sync/tests/test_converter_fixes.py` — 5 sites passing `button_ids={"btn1"}`. Replace each with:
+  ```python
+  html = node_to_email_html(parent, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
+  ```
+- `app/design_sync/tests/test_builder_annotations.py` — 5 sites passing `slot_counter=counter` (and one with `button_ids` + `slot_counter`). Replace:
+  ```python
+  counter: dict[str, int] = {}
+  result = node_to_email_html(node, RenderContext.from_legacy_kwargs(slot_counter=counter))
+  # counter still mutated across calls — shared-reference semantics preserved
+  ```
+
+Verify after migration: `make test app/design_sync/tests/test_builder_annotations.py app/design_sync/tests/test_converter_fixes.py app/design_sync/tests/test_image_pipeline.py -v`.
 
 ---
 
@@ -166,11 +229,13 @@ app/design_sync/services/
   access_service.py       ← project-access checks (small)
 ```
 
-`DesignSyncService` becomes a thin facade that holds references and delegates, OR is deleted entirely with each route depending on the specific carved service via DI.
+**This PR: facade only.** `DesignSyncService` becomes a thin (~50 LOC) facade holding the 6 carved service refs and delegating each public method. **Do not delete the class in this PR** — ~30 test fixtures (`test_webhook.py`, `test_import_service.py`, `test_build_document.py`) instantiate `DesignSyncService(mock_db)` directly, plus MCP tools / blueprint engine / routes import it. Mass-migrating callers in the same PR balloons the diff and risks breaking unrelated paths.
+
+A follow-up plan **`tech-debt-08b-design-sync-service-deletion.md`** must be opened before this PR merges. It tracks: (a) migrating each route handler in `routes.py` from facade → direct carved-service `Depends`, (b) migrating MCP tools and blueprint engine references, (c) updating test fixtures to mock the specific carved service, (d) deleting the facade. Reference 08b in the `Done when` checklist below.
 
 ### C3. Routes update
 
-`app/design_sync/routes.py:1060` — currently 26 inline imports inside handlers. After carving, routes get specific service deps via FastAPI `Depends`. Route file shrinks.
+`app/design_sync/routes.py:1060` — currently 26 inline imports inside handlers. **In this PR**, routes still depend on `DesignSyncService` (the facade). Inline imports can be tidied opportunistically but the DI-per-carved-service migration lands in 08b. Route file shrinks materially only after 08b.
 
 ---
 
@@ -194,9 +259,15 @@ Migrate the two known callers:
 
 After the call-site migration, the only path that hits the shims is from external code (none expected).
 
-### D2. Wait 2 weeks
+### D2. Wait 2 weeks (calendar-tracked)
 
-In `traces/`, count `design_sync.converter.shim_called` events. If zero, proceed. If non-zero, identify the caller and migrate.
+The window is non-negotiable — its purpose is to detect *unknown* external callers. Skipping = silent breakage risk for consumers we don't know about.
+
+After D1 merges, append a tracking row to the active `TODO.md` "Operational follow-ups" section (or create one) with a target date 14 days out. Today is `2026-04-27`, so the row reads:
+
+> **2026-05-11 — F013 D3 readiness check.** Run `grep -c design_sync.converter.shim_called traces/*.jsonl traces/structured.log 2>/dev/null` (and any centralised log store the team uses). If count is **zero**, proceed to D3. If **non-zero**, identify each caller from the `caller=` log field, migrate it to `convert_document`, and reset the timer to a fresh +14 days.
+
+Do not take any code action on D3 in the same session as D1.
 
 ### D3. PR-2: Remove the shims
 
@@ -237,11 +308,11 @@ Each part (A/B/C/D1/D3) is an independent revert. The most invasive is C — ser
 
 ## Done when
 
-- [ ] **Part A**: `RenderContext` exists; `node_to_email_html` ≤ 30 LOC; per-node renderers ≤ 80 LOC each.
+- [x] **Part A**: `RenderContext` exists; `node_to_email_html` ≤ 30 LOC; per-node renderers ≤ 80 LOC each; 49 test callsites migrated via `from_legacy_kwargs` (plan undercounted — actual count was 49 across 7 test files).
 - [ ] **Part B**: `_convert_with_components` ≤ 30 LOC; 4 phase methods ≤ 80 LOC each.
-- [ ] **Part C**: `DesignSyncService` carved into 6 services or facade-only; route file imports clean.
-- [ ] **Part D1**: telemetry live for 2 weeks.
-- [ ] **Part D3**: shims removed; ~750 LOC out.
+- [ ] **Part C**: 6 carved services exist under `app/design_sync/services/`; `DesignSyncService` is a ≤50-LOC facade (NOT deleted); follow-up plan `tech-debt-08b-design-sync-service-deletion.md` created and linked here.
+- [ ] **Part D1**: telemetry live; tracking row added to `TODO.md` with date `2026-05-11`.
+- [ ] **Part D3**: deferred to a separate session after the telemetry window closes; do not attempt in this session.
 - [ ] All snapshot/visual/data-regression tests green.
 - [ ] PRs:
   - `refactor(design_sync): RenderContext + per-node dispatch (F010)`

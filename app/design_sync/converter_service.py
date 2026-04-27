@@ -43,6 +43,7 @@ from app.design_sync.protocol import (
     ExtractedTokens,
 )
 from app.design_sync.quality_contracts import QualityWarning, run_quality_contracts
+from app.design_sync.render_context import RenderContext
 from app.design_sync.section_cache import (
     SectionCacheEntry,
     compute_section_hash,
@@ -1066,15 +1067,17 @@ class DesignConverterService:
             slot_counter: dict[str, int] = {}
             section_html = node_to_email_html(
                 frame,
-                indent=1,
-                props_map=props_map or None,
-                section_map=sections_by_node_id,
-                button_ids=button_node_ids,
-                text_meta=text_meta,
-                body_font_size=body_font_size,
-                compat=compat,
-                gradients_map=gradients_map or None,
-                slot_counter=slot_counter,
+                RenderContext(
+                    indent=1,
+                    props_map=props_map or {},
+                    section_map=sections_by_node_id or {},
+                    button_ids=frozenset(button_node_ids) if button_node_ids else frozenset(),
+                    text_meta=text_meta or {},
+                    body_font_size=body_font_size,
+                    compat=compat,
+                    gradients_map=gradients_map or {},
+                    slot_counter=slot_counter,
+                ),
             )
             section_parts.append(
                 f'<tr data-section-id="section_{section_idx}"><td>\n{section_html}\n</td></tr>'

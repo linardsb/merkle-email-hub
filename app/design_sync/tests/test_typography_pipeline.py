@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from app.design_sync.converter import _font_stack, convert_typography, node_to_email_html
 from app.design_sync.protocol import DesignNode, DesignNodeType, ExtractedTypography
+from app.design_sync.render_context import RenderContext
 
 
 class TestFontStack:
@@ -177,6 +178,6 @@ class TestFontPreservation:
             font_family="Helvetica",
             font_size=24.0,
         )
-        html = node_to_email_html(node, body_font_size=16.0)
+        html = node_to_email_html(node, RenderContext.from_legacy_kwargs(body_font_size=16.0))
         assert "Helvetica" in html
         assert "font-family:" in html

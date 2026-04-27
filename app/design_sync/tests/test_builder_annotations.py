@@ -11,6 +11,7 @@ from app.design_sync.protocol import (
     DesignNodeType,
     ExtractedTokens,
 )
+from app.design_sync.render_context import RenderContext
 
 
 class TestNextSlotName:
@@ -53,9 +54,9 @@ class TestTextAnnotations:
         text_meta = {"txt1": TextBlock(node_id="txt1", content="Welcome", is_heading=True)}
         result = node_to_email_html(
             node,
-            slot_counter=counter,
-            text_meta=text_meta,
-            body_font_size=16.0,
+            RenderContext.from_legacy_kwargs(
+                slot_counter=counter, text_meta=text_meta, body_font_size=16.0
+            ),
         )
         assert 'data-slot-name="heading"' in result
         # Email HTML rule (CLAUDE.md): text rendered in <td>, never <h1>-<h6>.
@@ -70,7 +71,7 @@ class TestTextAnnotations:
             text_content="Hello world",
         )
         counter: dict[str, int] = {}
-        result = node_to_email_html(node, slot_counter=counter)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(slot_counter=counter))
         assert 'data-slot-name="body"' in result
         # Email HTML rule (CLAUDE.md): text rendered in <td>, never <p>.
         assert "<td" in result
@@ -84,7 +85,7 @@ class TestTextAnnotations:
             text_content="Line one\nLine two\nLine three",
         )
         counter: dict[str, int] = {}
-        result = node_to_email_html(node, slot_counter=counter)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(slot_counter=counter))
         assert 'data-slot-name="body"' in result
         assert 'data-slot-name="body_2"' in result
         assert 'data-slot-name="body_3"' in result
@@ -102,7 +103,7 @@ class TestImageAnnotations:
             height=400,
         )
         counter: dict[str, int] = {}
-        result = node_to_email_html(node, slot_counter=counter)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(slot_counter=counter))
         assert 'data-slot-name="image"' in result
         assert 'data-node-id="img1"' in result
 
@@ -131,7 +132,9 @@ class TestButtonAnnotations:
             ],
         )
         counter: dict[str, int] = {}
-        result = node_to_email_html(node, button_ids={"btn1"}, slot_counter=counter)
+        result = node_to_email_html(
+            node, RenderContext.from_legacy_kwargs(button_ids={"btn1"}, slot_counter=counter)
+        )
         assert 'data-slot-name="cta"' in result
         assert '<a href="#"' in result
 
