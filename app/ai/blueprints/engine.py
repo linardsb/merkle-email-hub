@@ -25,7 +25,12 @@ from app.ai.agents.context_budget import (
     summarize_trajectory,
 )
 from app.ai.agents.evals.judges.schemas import JudgeVerdict
+from app.ai.blueprints.correction_examples import (
+    format_correction_examples,
+    recall_correction_examples,
+)
 from app.ai.blueprints.exceptions import BlueprintError, BlueprintEscalatedError, BlueprintNodeError
+from app.ai.blueprints.handoff import format_upstream_constraints
 from app.ai.blueprints.protocols import (
     AgentHandoff,
     BlueprintNode,
@@ -38,6 +43,8 @@ from app.ai.blueprints.protocols import (
 )
 from app.ai.blueprints.route_advisor import RoutingDecision, RoutingPlan, build_routing_plan
 from app.ai.blueprints.schemas import BlueprintProgress
+from app.ai.security.prompt_guard import scan_for_injection
+from app.core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -177,9 +184,7 @@ class BlueprintEngine:
         # Set up cost tracking if user_id provided
         cost_tracker: BlueprintCostTracker | None = None
         if user_id is not None:
-            from app.core.config import get_settings as _get_settings
-
-            _settings = _get_settings()
+            _settings = get_settings()
             cost_tracker = BlueprintCostTracker(daily_cap=_settings.blueprint.daily_token_cap)
 
         logger.info(
@@ -251,9 +256,7 @@ class BlueprintEngine:
 
         cost_tracker: BlueprintCostTracker | None = None
         if user_id is not None:
-            from app.core.config import get_settings as _get_settings
-
-            _settings = _get_settings()
+            _settings = get_settings()
             cost_tracker = BlueprintCostTracker(daily_cap=_settings.blueprint.daily_token_cap)
 
         logger.info(
@@ -382,9 +385,7 @@ class BlueprintEngine:
                     run.judge_verdict = verdict
 
                     # Persist verdict for aggregation (fire-and-forget)
-                    from app.core.config import get_settings as _get_settings_ja
-
-                    if _get_settings_ja().blueprint.judge_aggregation_enabled:
+                    if get_settings().blueprint.judge_aggregation_enabled:
                         try:
                             from app.ai.blueprints.judge_aggregator import persist_judge_verdict
 
@@ -475,18 +476,19 @@ class BlueprintEngine:
                         )
 
                 # Store correction example on successful recovery (fire-and-forget)
-                if result.status == "success" and run._handoff_history:
-                    from app.core.config import get_settings as _get_settings_ce
-
-                    if _get_settings_ce().blueprint.correction_examples_enabled:
-                        try:
-                            await self._store_correction_example(run)
-                        except Exception:
-                            logger.debug(
-                                "blueprint.correction_example_store_failed",
-                                run_id=run.run_id,
-                                exc_info=True,
-                            )
+                if (
+                    result.status == "success"
+                    and run._handoff_history
+                    and get_settings().blueprint.correction_examples_enabled
+                ):
+                    try:
+                        await self._store_correction_example(run)
+                    except Exception:
+                        logger.debug(
+                            "blueprint.correction_example_store_failed",
+                            run_id=run.run_id,
+                            exc_info=True,
+                        )
 
             # Increment iteration for agentic nodes
             if node.node_type == "agentic":
@@ -518,26 +520,24 @@ class BlueprintEngine:
                 and result.html
                 and context.html != result.html
                 and result.handoff is not None
+                and get_settings().correction_tracker.enabled
             ):
-                from app.core.config import get_settings as _get_settings_ct
+                try:
+                    from app.design_sync.correction_tracker import CorrectionTracker
 
-                if _get_settings_ct().correction_tracker.enabled:
-                    try:
-                        from app.design_sync.correction_tracker import CorrectionTracker
-
-                        tracker = CorrectionTracker(data_dir=Path("data"))
-                        await tracker.record_correction(
-                            agent=result.handoff.agent_name,
-                            original_html=context.html,
-                            corrected_html=result.html,
-                        )
-                    except Exception:
-                        logger.debug(
-                            "blueprint.correction_tracker_failed",
-                            node=current_node_name,
-                            run_id=run.run_id,
-                            exc_info=True,
-                        )
+                    tracker = CorrectionTracker(data_dir=Path("data"))
+                    await tracker.record_correction(
+                        agent=result.handoff.agent_name,
+                        original_html=context.html,
+                        corrected_html=result.html,
+                    )
+                except Exception:
+                    logger.debug(
+                        "blueprint.correction_tracker_failed",
+                        node=current_node_name,
+                        run_id=run.run_id,
+                        exc_info=True,
+                    )
 
             # Low confidence → route to human review instead of retrying
             if (
@@ -733,8 +733,6 @@ class BlueprintEngine:
 
             # Inject formatted upstream constraints for agentic nodes
             if node.node_type == "agentic":
-                from app.ai.blueprints.handoff import format_upstream_constraints
-
                 upstream_constraints = format_upstream_constraints(run._last_handoff)
                 if upstream_constraints:
                     context.metadata["upstream_constraints"] = upstream_constraints
@@ -770,83 +768,75 @@ class BlueprintEngine:
             context.metadata["progress_anchor"] = self._build_progress_anchor(run)
 
         # LAYER 15: Correction examples (agentic + retry + feature enabled)
-        if node.node_type == "agentic" and iteration > 0:
-            from app.core.config import get_settings as _get_settings_ce2
-
-            if _get_settings_ce2().blueprint.correction_examples_enabled:
-                from app.ai.blueprints.correction_examples import (
-                    format_correction_examples,
-                    recall_correction_examples,
+        if (
+            node.node_type == "agentic"
+            and iteration > 0
+            and get_settings().blueprint.correction_examples_enabled
+        ):
+            try:
+                examples = await recall_correction_examples(
+                    agent_name=agent_name,
+                    qa_failures=run.qa_failures,
+                    project_id=self._project_id,
                 )
-
-                try:
-                    examples = await recall_correction_examples(
-                        agent_name=agent_name,
-                        qa_failures=run.qa_failures,
-                        project_id=self._project_id,
-                    )
-                    if examples:
-                        context.metadata["correction_examples"] = format_correction_examples(
-                            examples
-                        )
-                except Exception:
-                    logger.debug(
-                        "blueprint.correction_recall_failed",
-                        node=node.name,
-                        exc_info=True,
-                    )
+                if examples:
+                    context.metadata["correction_examples"] = format_correction_examples(examples)
+            except Exception:
+                logger.debug(
+                    "blueprint.correction_recall_failed",
+                    node=node.name,
+                    exc_info=True,
+                )
 
         # LAYER 16: Judge-derived prompt patches (agentic + aggregation enabled)
-        if node.node_type == "agentic":
-            from app.core.config import get_settings as _get_settings_ja2
+        if node.node_type == "agentic" and get_settings().blueprint.judge_aggregation_enabled:
+            from app.ai.blueprints.judge_aggregator import (
+                aggregate_verdicts,
+                format_prompt_patches,
+            )
 
-            if _get_settings_ja2().blueprint.judge_aggregation_enabled:
-                from app.ai.blueprints.judge_aggregator import (
-                    aggregate_verdicts,
-                    format_prompt_patches,
+            try:
+                patches = await aggregate_verdicts(agent_name, self._project_id)
+                if patches:
+                    context.metadata["prompt_patches"] = format_prompt_patches(patches)
+            except Exception:
+                logger.debug(
+                    "blueprint.judge_aggregation_inject_failed",
+                    node=node.name,
+                    exc_info=True,
                 )
-
-                try:
-                    patches = await aggregate_verdicts(agent_name, self._project_id)
-                    if patches:
-                        context.metadata["prompt_patches"] = format_prompt_patches(patches)
-                except Exception:
-                    logger.debug(
-                        "blueprint.judge_aggregation_inject_failed",
-                        node=node.name,
-                        exc_info=True,
-                    )
 
         # LAYER 17: Cross-agent insight propagation (agentic + enabled + audience)
-        if node.node_type == "agentic" and self._audience_profile is not None:
-            from app.core.config import get_settings as _get_settings_ip
+        if (
+            node.node_type == "agentic"
+            and self._audience_profile is not None
+            and get_settings().blueprint.insight_propagation_enabled
+        ):
+            from app.ai.blueprints.insight_bus import (
+                format_insight_context,
+                recall_insights,
+            )
 
-            if _get_settings_ip().blueprint.insight_propagation_enabled:
-                from app.ai.blueprints.insight_bus import (
-                    format_insight_context,
-                    recall_insights,
+            try:
+                audience_client_ids = tuple(self._audience_profile.client_ids)
+                insights = await recall_insights(
+                    agent_name=agent_name,
+                    client_ids=audience_client_ids,
+                    project_id=self._project_id,
                 )
-
-                try:
-                    audience_client_ids = tuple(self._audience_profile.client_ids)
-                    insights = await recall_insights(
-                        agent_name=agent_name,
-                        client_ids=audience_client_ids,
-                        project_id=self._project_id,
+                if insights:
+                    context.metadata["cross_agent_insights"] = format_insight_context(insights)
+                    logger.info(
+                        "blueprint.insights_injected",
+                        agent=agent_name,
+                        count=len(insights),
                     )
-                    if insights:
-                        context.metadata["cross_agent_insights"] = format_insight_context(insights)
-                        logger.info(
-                            "blueprint.insights_injected",
-                            agent=agent_name,
-                            count=len(insights),
-                        )
-                except Exception:
-                    logger.debug(
-                        "blueprint.insight_recall_failed",
-                        node=node.name,
-                        exc_info=True,
-                    )
+            except Exception:
+                logger.debug(
+                    "blueprint.insight_recall_failed",
+                    node=node.name,
+                    exc_info=True,
+                )
 
         # Inject recalled memories for agentic nodes (lazy — only if brief is present)
         if node.node_type == "agentic" and brief and self._project_id is not None:
@@ -983,9 +973,7 @@ class BlueprintEngine:
             and self._graph_provider is not None
             and self._project_id is not None
         ):
-            from app.core.config import get_settings as _get_settings
-
-            _settings = _get_settings()
+            _settings = get_settings()
             if _settings.cognee.prefetch_enabled:
                 from app.ai.agents.knowledge_prefetch import (
                     format_prefetch_context,
@@ -1015,9 +1003,7 @@ class BlueprintEngine:
                     )
 
         # LAYER 14: Multimodal context (feature-gated, agentic nodes only)
-        from app.core.config import get_settings as _get_settings_l14
-
-        _settings_l14 = _get_settings_l14()
+        _settings_l14 = get_settings()
         if _settings_l14.ai.multimodal_context_enabled and node.node_type == "agentic":
             from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
 
@@ -1104,12 +1090,8 @@ class BlueprintEngine:
             context.metadata["ds_font_map"] = resolve_font_map(self._design_system)
 
         # LAYER 18: Prompt injection scan on user-supplied fields
-        from app.core.config import get_settings as _get_settings_pg
-
-        _settings_pg = _get_settings_pg()
+        _settings_pg = get_settings()
         if _settings_pg.security.prompt_guard_enabled:
-            from app.ai.security.prompt_guard import scan_for_injection
-
             _pg_mode = _settings_pg.security.prompt_guard_mode
             for _field_name, _field_val in [
                 ("brief", brief),
@@ -1146,7 +1128,6 @@ class BlueprintEngine:
         into agentic node context. Failure-safe: returns empty list on errors.
         """
         try:
-            from app.core.config import get_settings
             from app.core.database import get_db_context
             from app.knowledge.embedding import get_embedding_provider
             from app.memory.service import MemoryService
