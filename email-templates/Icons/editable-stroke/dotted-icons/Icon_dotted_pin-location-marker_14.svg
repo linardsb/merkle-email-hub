@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="81.278" height="143.886" viewBox="0 0 81.278 143.886">
+  <g id="Group_1957" data-name="Group 1957" transform="translate(-2135.521 -607.043)">
+    <g id="location_pin_marker_map" transform="translate(2111.733 597.641)">
+      <path id="Path_2092" data-name="Path 2092" d="M100.416,48.838c0,20.538-37.19,83.169-37.19,83.169S26.038,69.376,26.038,48.838a37.189,37.189,0,0,1,74.378,0Z" transform="translate(0 0)" fill="none" stroke="#05051e" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+      <path id="Path_2093" data-name="Path 2093" d="M44.771,22.017a17.555,17.555,0,1,1-9.317,10.846" transform="translate(10.932 10.93)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+      <line id="Line_530" data-name="Line 530" x2="40.24" transform="translate(43.106 151.038)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+    </g>
+    <circle id="Ellipse_645" data-name="Ellipse 645" cx="5" cy="5" r="5" transform="translate(2152.8 636.5)" fill="#05051e"/>
+    <circle id="Ellipse_646" data-name="Ellipse 646" cx="5" cy="5" r="5" transform="translate(2170 723.5)" fill="#05051e"/>
+    <circle id="Ellipse_647" data-name="Ellipse 647" cx="5" cy="5" r="5" transform="translate(2206.8 641.5)" fill="#05051e"/>
+  </g>
+</svg>

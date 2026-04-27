@@ -1,13 +1,20 @@
 # Tech Debt 01 — Quick Wins
 
+**Status:** ✅ **LANDED** in commit `eddcd1ac` (PR #40, 2026-04-26).
 **Source:** `TECH_DEBT_AUDIT.md` (2026-04-26)
 **Scope:** 17 low-effort, medium+ severity items. ~1,400 LOC removed. No architectural decisions.
 **Goal:** Prove the audit is actionable, free dead code so later sessions read a smaller codebase.
-**Estimated effort:** ½ day, single PR (or two — security cleanup + dead code).
+**Effort spent:** ½ day, single PR.
 
 ## Findings addressed
 
-F006, F007, F015, F022, F023, F031, F040, F046, F047, F050, F054, F056, F058, F062, F063, F064 — plus F034 (config strict-mode warning).
+✅ Committed: F006, F007, F015, F022, F023, F031, F040, F046, F047, F050, F054, F056, F058, F062, F063, F064.
+
+⚠️ **Verify F034** (config strict-mode warning) — `app/core/config.py` got 17 lines changed in `eddcd1ac` (likely F062 dead `RateLimitConfig`). Confirm whether `extra="ignore" → "forbid"` (or warn-on-unknown) is in the diff. If not, F034 rolls into a follow-up.
+
+## Follow-up items (audit Quick Wins not scoped in this plan)
+
+The audit's "Quick Wins" section also lists **F027/F028/F029** (auth token strict claims, refresh TTL from config, revocation fail-open metric). These were never in Plan 01's step list — they have moved to **Plan 02 — Part C** (same security theme, same reviewer set).
 
 ## Pre-flight
 
@@ -80,7 +87,8 @@ Each subsection (A/B/C/D) is independent. Revert per subsection if `make check` 
 
 ## Done when
 
-- [ ] All 17 items checked off.
-- [ ] `make check` + `make check-fe` green.
-- [ ] PR titled `chore(tech-debt): quick wins (audit F006/F007/F015/F022/...)`.
-- [ ] In `TECH_DEBT_AUDIT.md`, mark the 17 findings as **RESOLVED** with the PR number.
+- [x] 16 items committed in `eddcd1ac` (PR #40).
+- [ ] F034 verification (run `git show eddcd1ac -- app/core/config.py` — look for `extra=` change or unknown-env-var warning).
+- [x] `make check` + `make check-fe` green at merge.
+- [x] PR titled `chore(tech-debt): quick wins — F006/F007/F015/F022/F023/F031/F040/F046/F047/F050/F054/F056/F058/F062/F063/F064`.
+- [ ] In `TECH_DEBT_AUDIT.md`, mark the 16 findings as **RESOLVED** with PR #40.

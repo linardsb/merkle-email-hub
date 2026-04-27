@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Snippets — Consolidated Guide</title>
+<style>
+  :root { --bg: #1e1e2e; --surface: #282840; --border: #3a3a5c; --text: #cdd6f4; --heading: #f5c2e7; --accent: #89b4fa; --code-bg: #313244; --green: #a6e3a1; --yellow: #f9e2af; --dim: #6c7086; --red: #f38ba8; --teal: #94e2d5; --orange: #fab387; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.6; max-width: 1200px; margin: 0 auto; }
+  h1 { color: var(--heading); font-size: 1.8rem; margin-bottom: 0.3rem; }
+  h2 { color: var(--accent); font-size: 1.2rem; margin: 2.5rem 0 0.8rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+  h3 { color: var(--yellow); font-size: 1rem; margin: 1.5rem 0 0.5rem; }
+  .subtitle { color: var(--dim); margin-bottom: 2rem; }
+
+  .howto { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+  .howto ol { padding-left: 1.5rem; }
+  .howto li { margin: 0.4rem 0; }
+
+  code { background: var(--code-bg); color: var(--green); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.9em; }
+  kbd { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.1rem 0.5rem; font-size: 0.85em; color: var(--yellow); }
+  table { width: 100%; border-collapse: collapse; margin: 0.5rem 0 1.5rem; font-size: 0.85rem; }
+  th { text-align: left; padding: 0.5rem 0.8rem; background: var(--surface); color: var(--accent); border-bottom: 2px solid var(--border); }
+  td { padding: 0.35rem 0.8rem; border-bottom: 1px solid var(--border); }
+  td:first-child { white-space: nowrap; }
+  td code { color: var(--green); }
+  tr:hover { background: var(--surface); }
+
+  .workflow { background: var(--code-bg); border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; font-size: 0.9rem; }
+  .workflow span { color: var(--dim); }
+  .workflow code { background: none; color: var(--green); padding: 0; }
+  .tip { color: var(--yellow); font-style: italic; margin: 0.5rem 0; font-size: 0.85rem; }
+  .section-count { color: var(--dim); font-size: 0.85rem; }
+
+  .placeholder-box { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; font-size: 0.85rem; }
+  .placeholder-box code { color: var(--yellow); }
+  .placeholder-box .label { color: var(--dim); display: inline-block; width: 140px; }
+</style>
+</head>
+<body>
+
+<h1>Email Snippets — Consolidated Guide</h1>
+<p class="subtitle">Brand-agnostic snippets with tab-stop placeholders for any client</p>
+
+<!-- How to use -->
+<div class="howto">
+  <h3>How to use</h3>
+  <ol>
+    <li>Open an <strong>HTML file</strong> in Sublime Text</li>
+    <li>Type the <strong>trigger word</strong> (e.g. <code>email-base</code>)</li>
+    <li>Press <kbd>Tab</kbd> — the full HTML block expands</li>
+    <li>Cursor lands on the first placeholder (font, color, etc.) — type your value</li>
+    <li>Press <kbd>Tab</kbd> to jump to next placeholder, <kbd>Shift+Tab</kbd> to go back</li>
+    <li>Press <kbd>Esc</kbd> when done editing placeholders</li>
+  </ol>
+  <p class="tip">Tip: Go to Tools &rarr; Snippets in Sublime to browse all installed snippets.</p>
+</div>
+
+
+<!-- Placeholder template -->
+<h2>Placeholder System</h2>
+<p>Every consolidated snippet uses tab-stop placeholders instead of hardcoded brand values:</p>
+
+<div class="placeholder-box">
+  <code>${1:Helvetica, Arial, sans-serif}</code> <span class="label">Font family</span><br>
+  <code>${2:#000000}</code> <span class="label">Brand primary color</span><br>
+  <code>${3:#333333}</code> <span class="label">Text color</span><br>
+  <code>${4:#ffffff}</code> <span class="label">Background color</span><br>
+  <code>${5:images/logo.png}</code> <span class="label">Logo / image URL</span><br>
+  <code>${6:Email Title}</code> <span class="label">Title / heading text</span><br>
+  <code>${7:Button Text}</code> <span class="label">CTA label</span><br>
+  <code>${8:#}</code> <span class="label">Link URL</span>
+</div>
+<p class="tip">Press Tab to cycle through each placeholder. Type once — Sublime fills all matching stops.</p>
+
+<!-- Workflow -->
+<h2>Typical Workflow</h2>
+<div class="workflow">
+  <code>email-base</code> <span>&rarr; Tab &rarr;</span> full email shell (set font + title)<br>
+  <code>preheader</code> <span>&rarr; Tab &rarr;</span> preheader with view-online link<br>
+  <code>logo</code> <span>&rarr; Tab &rarr;</span> logo header<br>
+  <code>hero</code> <span>&rarr; Tab &rarr;</span> hero banner section<br>
+  <code>col-2</code> <span>&rarr; Tab &rarr;</span> two-column content area<br>
+  <code>article-1</code> <span>&rarr; Tab &rarr;</span> article card with image<br>
+  <code>cta</code> <span>&rarr; Tab &rarr;</span> call-to-action button<br>
+  <code>spacer</code> <span>&rarr; Tab &rarr;</span> vertical spacer<br>
+  <code>footer-social</code> <span>&rarr; Tab &rarr;</span> social icons footer<br>
+  <code>footer-text</code> <span>&rarr; Tab &rarr;</span> legal text footer
+</div>
+
+<!-- ==================== SNIPPET REFERENCE ==================== -->
+
+<h2>Base Templates</h2>
+<p class="section-count">Start every email with one of these</p>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>email-base</code></td><td>Full email boilerplate with responsive CSS and web font placeholder</td></tr>
+  <tr><td><code>email-base-responsive</code></td><td>Generic responsive base with full mobile media queries</td></tr>
+  <tr><td><code>email-base-alt1</code></td><td>Alternative email boilerplate variant two</td></tr>
+  <tr><td><code>email-base-alt2</code></td><td>Alternative email boilerplate variant three</td></tr>
+  <tr><td><code>email-base-hsbc</code></td><td>HSBC-specific base with extended Outlook conditionals</td></tr>
+</table>
+
+<h2>Layout — Columns</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>col-2</code></td><td>Two-column responsive layout, stacks left-over-right on mobile</td></tr>
+  <tr><td><code>col-2-gutter</code></td><td>Two-column with 20px gutter spacing between columns</td></tr>
+  <tr><td><code>col-2-reverse</code></td><td>Two-column reverse stack, right-over-left on mobile</td></tr>
+  <tr><td><code>col-2-icon</code></td><td>Two-column layout with icon decoration per column</td></tr>
+  <tr><td><code>col-3</code></td><td>Three-column responsive stacking layout section</td></tr>
+  <tr><td><code>col-3-gutter</code></td><td>Three-column with 20px gutter spacing</td></tr>
+  <tr><td><code>col-3-reverse</code></td><td>Three-column reverse stacking order on mobile</td></tr>
+  <tr><td><code>col-3-icon</code></td><td>Three-column layout with icon decoration per column</td></tr>
+  <tr><td><code>col-4</code></td><td>Four-column responsive stacking layout section</td></tr>
+  <tr><td><code>col-4-gutter</code></td><td>Four-column with 20px gutter spacing</td></tr>
+  <tr><td><code>col-4-icon</code></td><td>Four-column layout with icon decoration per column</td></tr>
+</table>
+
+<h2>Layout — Rows, Alignment &amp; Spacing</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>row</code></td><td>Single table row with centered content cell</td></tr>
+  <tr><td><code>row-2</code></td><td>Two-row stacked table section</td></tr>
+  <tr><td><code>row-3</code></td><td>Three-row stacked table section</td></tr>
+  <tr><td><code>cell-center</code></td><td>Center-aligned table row and cell wrapper</td></tr>
+  <tr><td><code>cell-left</code></td><td>Left-aligned table row and cell wrapper</td></tr>
+  <tr><td><code>cell-right</code></td><td>Right-aligned table row and cell wrapper</td></tr>
+  <tr><td><code>spacer</code></td><td>Vertical spacer row (height as placeholder)</td></tr>
+  <tr><td><code>spacer-20</code></td><td>Fixed 20-pixel vertical spacer row</td></tr>
+  <tr><td><code>spacer-40</code></td><td>Fixed 40-pixel vertical spacer row</td></tr>
+  <tr><td><code>divider</code></td><td>Thin horizontal line divider between sections</td></tr>
+  <tr><td><code>td</code></td><td>Quick table-cell shorthand for inline use</td></tr>
+  <tr><td><code>section</code></td><td>Single centered content section wrapper</td></tr>
+  <tr><td><code>section-normal</code></td><td>Normal-width content section wrapper</td></tr>
+  <tr><td><code>section-reverse</code></td><td>Reverse-stacking content section wrapper</td></tr>
+  <tr><td><code>section-inset</code></td><td>Inset/padded content section wrapper</td></tr>
+  <tr><td><code>section-bg</code></td><td>Section wrapper with background color placeholder</td></tr>
+</table>
+
+<h2>Heroes &amp; Banners</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>hero</code></td><td>Full-width hero banner with image and text overlay</td></tr>
+  <tr><td><code>hero-2cta</code></td><td>Hero banner with two side-by-side CTA buttons</td></tr>
+  <tr><td><code>hero-text</code></td><td>Text-only hero section without background image</td></tr>
+  <tr><td><code>hero-screenshot</code></td><td>Hero section with device screenshot frame</td></tr>
+  <tr><td><code>banner</code></td><td>Generic top banner section</td></tr>
+  <tr><td><code>banner-multi</code></td><td>Multi-image banner in carousel-style row</td></tr>
+  <tr><td><code>banner-social</code></td><td>Social sharing promotional banner block</td></tr>
+</table>
+
+<h2>Buttons &amp; CTAs</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>button</code></td><td>Basic email-safe button with inline styles</td></tr>
+  <tr><td><code>button-filled</code></td><td>Solid filled background CTA button</td></tr>
+  <tr><td><code>button-ghost</code></td><td>Outline/ghost text-only CTA button</td></tr>
+  <tr><td><code>button-responsive</code></td><td>Responsive button that goes full-width on mobile</td></tr>
+  <tr><td><code>button-bulletproof</code></td><td>VML bulletproof button with Outlook fallback</td></tr>
+  <tr><td><code>button-ai</code></td><td>AI-styled gradient CTA button variant</td></tr>
+  <tr><td><code>cta</code></td><td>Standalone call-to-action section with button</td></tr>
+  <tr><td><code>cta-pair</code></td><td>Two side-by-side CTA buttons in a row</td></tr>
+</table>
+
+<h2>Text &amp; Typography</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>text</code></td><td>Standard styled email text paragraph block</td></tr>
+  <tr><td><code>text-left</code></td><td>Left-aligned text block in table cell</td></tr>
+  <tr><td><code>text-lorem</code></td><td>Lorem ipsum placeholder text paragraph</td></tr>
+  <tr><td><code>text-raised</code></td><td>Raised/elevated text effect with shadow</td></tr>
+  <tr><td><code>heading</code></td><td>Brand-agnostic heading text block</td></tr>
+  <tr><td><code>paragraph</code></td><td>Brand-agnostic paragraph text block</td></tr>
+  <tr><td><code>paragraph-heading</code></td><td>Paragraph followed by heading combo block</td></tr>
+  <tr><td><code>text-link</code></td><td>Styled inline text hyperlink with placeholder</td></tr>
+  <tr><td><code>text-block-link</code></td><td>Text block with embedded link section</td></tr>
+  <tr><td><code>font-size</code></td><td>Font-size span wrapper for inline sizing</td></tr>
+  <tr><td><code>font-color</code></td><td>Font-color span wrapper for inline coloring</td></tr>
+  <tr><td><code>font-upper</code></td><td>Uppercase text-transform span wrapper</td></tr>
+  <tr><td><code>font-web</code></td><td>Web font @font-face import with fallback stack</td></tr>
+  <tr><td><code>font-helvetica</code></td><td>Helvetica font-family stack declaration</td></tr>
+  <tr><td><code>font-arial</code></td><td>Arial font-family stack declaration</td></tr>
+  <tr><td><code>font-georgia</code></td><td>Georgia serif font-family stack declaration</td></tr>
+  <tr><td><code>font-calibri</code></td><td>Calibri font-family stack declaration</td></tr>
+  <tr><td><code>font-tahoma</code></td><td>Tahoma font-family stack declaration</td></tr>
+  <tr><td><code>font-times</code></td><td>Times New Roman font-family stack declaration</td></tr>
+  <tr><td><code>font-verdana</code></td><td>Verdana font-family stack declaration</td></tr>
+</table>
+
+<h2>Images</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>image</code></td><td>Basic fixed-width email image tag</td></tr>
+  <tr><td><code>image-responsive</code></td><td>Responsive image that scales to container width</td></tr>
+  <tr><td><code>image-placeholder</code></td><td>Placeholder image from fakeimg.pl for mockups</td></tr>
+  <tr><td><code>image-alt</code></td><td>Image with descriptive alt text and styling</td></tr>
+  <tr><td><code>image-swap</code></td><td>CSS hover image swap rollover effect</td></tr>
+  <tr><td><code>image-rollover</code></td><td>Interactive rollover image on hover/tap</td></tr>
+  <tr><td><code>image-full</code></td><td>Full-width image section spanning entire email</td></tr>
+  <tr><td><code>image-full-alt</code></td><td>Full-width image variant with text overlay</td></tr>
+  <tr><td><code>image-grid-1</code></td><td>Image grid layout — 2x2 mosaic variant</td></tr>
+  <tr><td><code>image-grid-2</code></td><td>Image grid layout — staggered masonry variant</td></tr>
+  <tr><td><code>image-grid-3</code></td><td>Image grid layout — 3-across row variant</td></tr>
+  <tr><td><code>image-large</code></td><td>Large featured image content block</td></tr>
+</table>
+
+<h2>Articles &amp; Content Blocks</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>article-1</code></td><td>Article card with top image and text below</td></tr>
+  <tr><td><code>article-1-text</code></td><td>Article card text-only without image</td></tr>
+  <tr><td><code>article-1-large</code></td><td>Article card with oversized hero image</td></tr>
+  <tr><td><code>article-2</code></td><td>Article layout with image-left text-right</td></tr>
+  <tr><td><code>article-2-text</code></td><td>Article layout two text-only variant</td></tr>
+  <tr><td><code>article-2-large</code></td><td>Article two with large image variant</td></tr>
+  <tr><td><code>article-3</code></td><td>Article layout three stacked image-over-text</td></tr>
+  <tr><td><code>article-3-text</code></td><td>Article three text-only variant</td></tr>
+  <tr><td><code>article-4</code></td><td>Article layout four compact card format</td></tr>
+  <tr><td><code>article-4-text</code></td><td>Article four text-only variant</td></tr>
+  <tr><td><code>article-reverse</code></td><td>Article with reversed image-right text-left layout</td></tr>
+  <tr><td><code>product-card</code></td><td>Product card with image, price, and CTA button</td></tr>
+</table>
+
+<h2>Editorial Blocks</h2>
+<p class="section-count">Long-form editorial content sections (originally VW ED series)</p>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>editorial-1</code></td><td>Editorial block with feature image and body text</td></tr>
+  <tr><td><code>editorial-1-text</code></td><td>Editorial one text-only without image</td></tr>
+  <tr><td><code>editorial-2</code></td><td>Editorial block with side-by-side image and text</td></tr>
+  <tr><td><code>editorial-2-text</code></td><td>Editorial two text-only variant</td></tr>
+  <tr><td><code>editorial-3</code></td><td>Editorial block with inset quote and image</td></tr>
+  <tr><td><code>editorial-3-text</code></td><td>Editorial three text-only variant</td></tr>
+  <tr><td><code>editorial-4</code></td><td>Editorial block with full-bleed image header</td></tr>
+  <tr><td><code>editorial-4-text</code></td><td>Editorial four text-only variant</td></tr>
+  <tr><td><code>editorial-5</code></td><td>Editorial block with captioned image gallery</td></tr>
+  <tr><td><code>editorial-5-text</code></td><td>Editorial five text-only variant</td></tr>
+</table>
+
+<h2>Navigation &amp; Preheader</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>preheader</code></td><td>Preheader row with hidden text and view-online link</td></tr>
+  <tr><td><code>nav</code></td><td>Horizontal navigation menu bar with link placeholders</td></tr>
+  <tr><td><code>nav-hamburger</code></td><td>Hybrid hamburger menu that collapses on mobile</td></tr>
+  <tr><td><code>nav-carousel</code></td><td>Navigation-style tabbed carousel section switcher</td></tr>
+</table>
+
+<h2>Logos</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>logo</code></td><td>Centered logo header with image placeholder</td></tr>
+  <tr><td><code>logo-left</code></td><td>Left-aligned logo header with image placeholder</td></tr>
+  <tr><td><code>logo-new</code></td><td>Updated/refreshed brand logo header variant</td></tr>
+  <tr><td><code>logo-fs</code></td><td>Financial Services logo header variant</td></tr>
+</table>
+
+<h2>Footers</h2>
+<p class="section-count">Footers have the most structural variation between brands — consolidated to common patterns</p>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>footer-text</code></td><td>Footer with legal disclaimer text and links</td></tr>
+  <tr><td><code>footer-legal</code></td><td>Financial Services / legal compliance footer</td></tr>
+  <tr><td><code>footer-social</code></td><td>Social media follow icons row with link placeholders</td></tr>
+  <tr><td><code>footer-logo-social</code></td><td>Combined logo and social media icons footer</td></tr>
+  <tr><td><code>footer-unsub</code></td><td>Unsubscribe and preference center footer link</td></tr>
+  <tr><td><code>footer-menu-1</code></td><td>Footer menu variant — single row links</td></tr>
+  <tr><td><code>footer-menu-2</code></td><td>Footer menu variant — stacked links</td></tr>
+  <tr><td><code>footer-menu-3</code></td><td>Footer menu variant — links with icons</td></tr>
+  <tr><td><code>footer-menu-4</code></td><td>Footer menu variant — expanded multi-column</td></tr>
+  <tr><td><code>footer</code></td><td>Generic full footer section with all standard elements</td></tr>
+</table>
+
+<h2>Carousels</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>carousel</code></td><td>Generic CSS-powered email image carousel</td></tr>
+  <tr><td><code>carousel-3</code></td><td>Three-item carousel with navigation dots</td></tr>
+  <tr><td><code>carousel-4</code></td><td>Four-item carousel with navigation dots</td></tr>
+  <tr><td><code>carousel-animated</code></td><td>Auto-playing animated carousel with CSS transitions</td></tr>
+  <tr><td><code>carousel-nav</code></td><td>Tabbed carousel with clickable navigation labels</td></tr>
+</table>
+
+<h2>Hotspots &amp; Interactive</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>hotspot</code></td><td>Clickable hotspot overlay positioned on image</td></tr>
+  <tr><td><code>toggle</code></td><td>CSS checkbox-powered show/hide content toggle</td></tr>
+  <tr><td><code>accordion</code></td><td>Expandable/collapsible accordion content sections</td></tr>
+  <tr><td><code>drag-drop</code></td><td>Drag-and-drop interactive email gamification</td></tr>
+</table>
+
+<h2>CSS Animations</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>anim-fade</code></td><td>CSS fade-in entrance animation keyframes</td></tr>
+  <tr><td><code>anim-bounce</code></td><td>CSS bounce-in animation keyframes</td></tr>
+  <tr><td><code>anim-flip</code></td><td>CSS 3D card-flip animation keyframes</td></tr>
+  <tr><td><code>anim-rotate</code></td><td>CSS continuous rotation animation keyframes</td></tr>
+  <tr><td><code>anim-pulse</code></td><td>CSS pulse/scale breathing animation keyframes</td></tr>
+  <tr><td><code>anim-swing</code></td><td>CSS pendulum swing animation keyframes</td></tr>
+  <tr><td><code>anim-hinge</code></td><td>CSS hinge-and-fall exit animation keyframes</td></tr>
+  <tr><td><code>anim-band</code></td><td>CSS elastic band stretch animation keyframes</td></tr>
+  <tr><td><code>anim-showoff</code></td><td>CSS dramatic entrance showoff animation keyframes</td></tr>
+  <tr><td><code>anim-gif</code></td><td>Animated GIF container with static image fallback</td></tr>
+</table>
+
+<h2>Lists</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>list-1</code></td><td>Single-item styled list block with icon</td></tr>
+  <tr><td><code>list-2</code></td><td>Two-item styled list block with icons</td></tr>
+  <tr><td><code>list-3</code></td><td>Three-item styled list block with icons</td></tr>
+  <tr><td><code>list-4</code></td><td>Four-item styled list block with icons</td></tr>
+  <tr><td><code>list-5</code></td><td>Five-item styled list block with icons</td></tr>
+  <tr><td><code>list-6</code></td><td>Six-item styled list block with icons</td></tr>
+  <tr><td><code>list-7</code></td><td>Seven-item styled list block with icons</td></tr>
+  <tr><td><code>list-8</code></td><td>Eight-item styled list block with icons</td></tr>
+  <tr><td><code>list-compact</code></td><td>Compact minimal-spacing styled list block</td></tr>
+</table>
+
+<h2>Icons</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>icon-1</code> through <code>icon-8</code></td><td>Icon block variants 1–8 with image and label placeholders</td></tr>
+</table>
+
+<h2>Tables</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>table</code></td><td>Basic data table with header row and cells</td></tr>
+  <tr><td><code>table-responsive</code></td><td>Responsive data table that stacks on mobile</td></tr>
+</table>
+
+<h2>Outlook &amp; VML</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>vml-bg</code></td><td>VML background image block for Outlook rendering</td></tr>
+  <tr><td><code>mso-lineheight</code></td><td>MSO line-height fix conditional for Outlook</td></tr>
+</table>
+
+<h2>Video</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>video</code></td><td>Embedded MP4 video with poster image fallback</td></tr>
+</table>
+
+<h2>Surveys</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>survey-icons</code></td><td>Survey rating row with clickable icon options</td></tr>
+</table>
+
+<h2>Misc &amp; Utility</h2>
+<table>
+  <tr><th>New Trigger</th><th>Description</th></tr>
+  <tr><td><code>rtl</code></td><td>Right-to-left text direction wrapper block</td></tr>
+  <tr><td><code>app-store-dark</code></td><td>Dark-themed App Store + Google Play button pair</td></tr>
+  <tr><td><code>app-store-light</code></td><td>Light-themed App Store + Google Play button pair</td></tr>
+  <tr><td><code>fixbox-2</code></td><td>Two fixed-width side-by-side box containers</td></tr>
+  <tr><td><code>editable</code></td><td>ESP editable content region marker</td></tr>
+  <tr><td><code>editable-cont</code></td><td>ESP editable content continuation marker</td></tr>
+  <tr><td><code>deletable</code></td><td>ESP deletable/removable content region marker</td></tr>
+  <tr><td><code>merge-name</code></td><td>Personalisation merge tag for recipient name</td></tr>
+  <tr><td><code>button-large</code></td><td>Large oversized CTA button block</td></tr>
+  <tr><td><code>alt-bg</code></td><td>Alternating background color content section</td></tr>
+  <tr><td><code>client-template</code></td><td>Client-ready template base structure</td></tr>
+</table>
+
+<h2>Not Migrated</h2>
+<p class="section-count">Settings and build files — not snippets, left in original folder</p>
+<table>
+  <tr><th>File</th><th>Reason</th></tr>
+  <tr><td>Sublime Text config files, not snippets</td></tr>
+  <tr><td>Support files, not snippets</td></tr>
+  <tr><td>Personal/test snippets — review before keeping</td></tr>
+</table>
+
+</body>
+</html>

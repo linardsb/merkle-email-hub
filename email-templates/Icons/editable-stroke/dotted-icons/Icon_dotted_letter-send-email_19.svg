@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144.143" height="105.918" viewBox="0 0 144.143 105.918">
+  <g id="Group_2575" data-name="Group 2575" transform="translate(-2430.958 -461.926)">
+    <g id="mail_email_letter_enveloppe_message" transform="translate(2418.139 441.598)">
+      <g id="Group_1955" data-name="Group 1955" transform="translate(15.069 22.578)">
+        <g id="Group_1523" data-name="Group 1523">
+          <path id="Path_1685" data-name="Path 1685" d="M154.712,116.36A7.66,7.66,0,0,1,147.075,124H22.705a7.662,7.662,0,0,1-7.636-7.636V30.214a7.66,7.66,0,0,1,7.636-7.636h124.37a7.659,7.659,0,0,1,7.636,7.636Z" transform="translate(-15.069 -22.578)" fill="none" stroke="#05051e" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+          <g id="Group_1522" data-name="Group 1522" transform="translate(4.416 59.878)">
+            <line id="Line_255" data-name="Line 255" x1="31.545" y2="37.753" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+            <line id="Line_256" data-name="Line 256" x2="31.542" y2="37.753" transform="translate(99.268)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4.5"/>
+          </g>
+        </g>
+        <g id="Group_1524" data-name="Group 1524" transform="translate(18.571 14.974)">
+          <path id="Path_1686" data-name="Path 1686" d="M22.365,28.461,73.823,68.184l50.613-39.723" transform="translate(-22.365 -28.461)" fill="none" stroke="#05051e" stroke-miterlimit="10" stroke-width="4.5"/>
+          <path id="Path_1687" data-name="Path 1687" d="M124.435,28.461,73.823,68.184,22.365,28.461" transform="translate(-22.365 -28.461)" fill="none" stroke="#05051e" stroke-linecap="round" stroke-miterlimit="10" stroke-width="4.5"/>
+        </g>
+      </g>
+    </g>
+    <g id="Ellipse_636" data-name="Ellipse 636" transform="translate(2445.3 472.908)" fill="#05051e" stroke="#05051e" stroke-width="1">
+      <circle cx="5" cy="5" r="5" stroke="none"/>
+      <circle cx="5" cy="5" r="4.5" fill="none"/>
+    </g>
+    <g id="Ellipse_637" data-name="Ellipse 637" transform="translate(2549.74 472.908)" fill="#05051e" stroke="#05051e" stroke-width="1">
+      <circle cx="5" cy="5" r="5" stroke="none"/>
+      <circle cx="5" cy="5" r="4.5" fill="none"/>
+    </g>
+    <g id="Ellipse_638" data-name="Ellipse 638" transform="translate(2498.199 513)" fill="#05051e" stroke="#05051e" stroke-width="1">
+      <circle cx="5" cy="5" r="5" stroke="none"/>
+      <circle cx="5" cy="5" r="4.5" fill="none"/>
+    </g>
+  </g>
+</svg>
