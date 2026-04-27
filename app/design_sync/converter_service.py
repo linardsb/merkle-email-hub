@@ -12,6 +12,7 @@ import httpx
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.design_sync.compatibility import CompatibilityHint, ConverterCompatibility
+from app.design_sync.conversion_phases import MatchPhase, RenderPhase
 from app.design_sync.converter import (
     _has_visible_content,
     _NodeProps,
@@ -45,6 +46,7 @@ from app.design_sync.protocol import (
 from app.design_sync.quality_contracts import QualityWarning, run_quality_contracts
 from app.design_sync.render_context import RenderContext
 from app.design_sync.section_cache import (
+    SectionCache,
     SectionCacheEntry,
     compute_section_hash,
     get_section_cache,
@@ -184,6 +186,20 @@ class MjmlCompileResult:
 PenpotConversionResult = ConversionResult
 
 _DARK_MODE_CLASS_PREFIX = "dm-"
+
+# Inter-section spacer block. Outlook uses a ghost table; modern clients use the div.
+_SPACER_TEMPLATE = (
+    "<!--[if mso]>\n"
+    '<table role="presentation" width="{width}" align="center" '
+    'cellpadding="0" cellspacing="0" border="0"><tr>'
+    '<td height="{h}" style="font-size:0;line-height:0;'
+    'mso-line-height-rule:exactly;">&nbsp;</td></tr></table>\n'
+    "<![endif]-->\n"
+    "<!--[if !mso]><!-->\n"
+    '<div style="height:{h}px;line-height:{h}px;'
+    'font-size:1px;mso-line-height-rule:exactly;">&nbsp;</div>\n'
+    "<!--<![endif]-->"
+)
 
 
 def dark_mode_style_block(
@@ -661,11 +677,51 @@ class DesignConverterService:
         section_hashes: dict[str, str] | None = None,
         output_format: Literal["html", "tree"] = "html",
     ) -> ConversionResult:
-        """Component-template-based conversion (table-on-table structure)."""
-        from app.design_sync.component_matcher import match_all
-        from app.design_sync.component_renderer import ComponentRenderer
+        """Component-template-based conversion (table-on-table structure).
 
-        # Detect repeating sibling groups (Phase 49.1)
+        Three-phase pipeline: match → render → assemble. The tree-bridge
+        (Phase 49.8) takes a short-circuit between match and render when
+        ``output_format="tree"`` succeeds; otherwise it falls through.
+        """
+        match = self._match_phase(
+            layout=layout, container_width=container_width, image_urls=image_urls
+        )
+        if output_format == "tree" and get_settings().design_sync.tree_bridge_enabled:
+            tree_result = self._try_tree_bridge(
+                layout=layout, match=match, tokens=tokens, warnings=warnings, compat=compat
+            )
+            if tree_result is not None:
+                return tree_result
+        render = self._render_phase(
+            match=match,
+            tokens=tokens,
+            warnings=warnings,
+            container_width=container_width,
+            connection_id=connection_id,
+            section_hashes=section_hashes,
+        )
+        return self._assemble_phase(
+            match=match,
+            render=render,
+            layout=layout,
+            tokens=tokens,
+            compat=compat,
+            container_width=container_width,
+            connection_id=connection_id,
+            section_hashes=section_hashes,
+        )
+
+    # ── Phase 1: match ────────────────────────────────────────────────
+
+    def _match_phase(
+        self,
+        *,
+        layout: DesignLayoutDescription,
+        container_width: int,
+        image_urls: dict[str, str] | None,
+    ) -> MatchPhase:
+        """Detect repeating sibling groups (Phase 49.1) and match sections to components."""
+        from app.design_sync.component_matcher import match_all
         from app.design_sync.sibling_detector import RepeatingGroup, detect_repeating_groups
 
         ds_settings = get_settings().design_sync
@@ -678,9 +734,8 @@ class DesignConverterService:
                 similarity_threshold=ds_settings.sibling_similarity_threshold,
             )
 
-        # Flatten groups back to sections for match_all (groups handled in 49.2 renderer)
         flat_sections: list[EmailSection] = []
-        group_map: dict[int, RepeatingGroup] = {}  # section_idx → group
+        group_map: dict[int, RepeatingGroup] = {}
         for item in grouped_sections:
             if isinstance(item, RepeatingGroup):
                 for section in item.sections:
@@ -689,69 +744,121 @@ class DesignConverterService:
             else:
                 flat_sections.append(item)
 
-        # Match sections to components
         matches = match_all(
             flat_sections,
             container_width=container_width,
             image_urls=image_urls,
         )
+        return MatchPhase(
+            matches=matches,
+            grouped_sections=grouped_sections,
+            group_map=group_map,
+        )
 
-        # --- Tree bridge path (Phase 49.8) ---
-        if output_format == "tree" and get_settings().design_sync.tree_bridge_enabled:
-            from app.design_sync.tree_bridge import build_email_tree
+    # ── Tree-bridge short-circuit (Phase 49.8) ────────────────────────
 
-            sibling_enabled = ds_settings.sibling_detection_enabled
-            email_tree = build_email_tree(
-                layout=layout,
-                matches=matches,
-                tokens=tokens,
-                groups=grouped_sections if sibling_enabled else None,
-                group_map=group_map if sibling_enabled else None,
+    def _try_tree_bridge(
+        self,
+        *,
+        layout: DesignLayoutDescription,
+        match: MatchPhase,
+        tokens: ExtractedTokens,
+        warnings: list[str],
+        compat: ConverterCompatibility,
+    ) -> ConversionResult | None:
+        """Compile via the tree bridge. Returns None on failure → fall through to legacy."""
+        from app.design_sync.tree_bridge import build_email_tree
+
+        sibling_enabled = get_settings().design_sync.sibling_detection_enabled
+        email_tree = build_email_tree(
+            layout=layout,
+            matches=match.matches,
+            tokens=tokens,
+            groups=match.grouped_sections if sibling_enabled else None,
+            group_map=match.group_map if sibling_enabled else None,
+        )
+
+        tree_html: str = ""
+        try:
+            from app.components.tree_compiler import TreeCompiler
+
+            compiler = TreeCompiler()
+            compiled = compiler.compile(email_tree)
+            tree_html = compiled.html
+        except Exception as exc:
+            # Upgrade to ERROR when the tree path was explicitly requested —
+            # a silent WARN hid Phase 49.8 being dead-on-arrival.
+            logger.error(
+                "tree_bridge.compile_fallback",
+                msg="TreeCompiler failed, falling through to legacy renderer",
+                exc_type=type(exc).__name__,
+                exc_detail=str(exc),
+                exc_info=True,
             )
 
-            tree_html: str = ""
-            try:
-                from app.components.tree_compiler import TreeCompiler
+        if not tree_html:
+            return None
 
-                compiler = TreeCompiler()
-                compiled = compiler.compile(email_tree)
-                tree_html = compiled.html
-            except Exception as exc:
-                # Upgrade to ERROR when the tree path was explicitly requested —
-                # a silent WARN hid Phase 49.8 being dead-on-arrival. WARN is
-                # still appropriate when "tree" was implicit/default.
-                logger.error(
-                    "tree_bridge.compile_fallback",
-                    msg="TreeCompiler failed, falling through to legacy renderer",
-                    exc_type=type(exc).__name__,
-                    exc_detail=str(exc),
-                    exc_info=True,
-                )
+        match_confidences = {m.section_idx: m.confidence for m in match.matches}
+        input_button_count = sum(len(s.buttons) for s in layout.sections)
+        quality_warnings = run_quality_contracts(
+            tree_html,
+            input_section_count=len(match.matches),
+            input_button_count=input_button_count,
+        )
+        return ConversionResult(
+            html=tree_html,
+            sections_count=len(email_tree.sections),
+            warnings=warnings,
+            layout=layout,
+            compatibility_hints=compat.hints,
+            images=[],
+            quality_warnings=quality_warnings,
+            match_confidences=match_confidences,
+            tree=email_tree.model_dump(mode="json"),
+        )
 
-            if tree_html:
-                match_confidences = {m.section_idx: m.confidence for m in matches}
-                input_button_count = sum(len(s.buttons) for s in layout.sections)
-                quality_warnings = run_quality_contracts(
-                    tree_html,
-                    input_section_count=len(matches),
-                    input_button_count=input_button_count,
-                )
-                return ConversionResult(
-                    html=tree_html,
-                    sections_count=len(email_tree.sections),
-                    warnings=warnings,
-                    layout=layout,
-                    compatibility_hints=compat.hints,
-                    images=[],
-                    quality_warnings=quality_warnings,
-                    match_confidences=match_confidences,
-                    tree=email_tree.model_dump(mode="json"),
-                )
-            # If TreeCompiler failed, fall through to legacy rendering
+    # ── Phase 2: render ───────────────────────────────────────────────
 
-        # Section cache (sync/memory-only)
-        cache = None
-        cached_entries: dict[str, Any] = {}
+    @staticmethod
+    def _store_section_cache(
+        cache: SectionCache | None,
+        connection_id: str | None,
+        section_hashes: dict[str, str] | None,
+        node_id: str,
+        html: str,
+        images: list[dict[str, str]],
+    ) -> None:
+        """Persist a rendered section into the section cache when caching is active."""
+        if cache is None or connection_id is None or not section_hashes:
+            return
+        section_hash = section_hashes.get(node_id)
+        if section_hash is None:
+            return
+        entry = SectionCacheEntry(
+            html=html,
+            images=tuple(images),
+            generated_at=datetime.now(UTC).isoformat(),
+        )
+        cache.set_sync(connection_id, section_hash, entry)
+
+    def _render_phase(
+        self,
+        *,
+        match: MatchPhase,
+        tokens: ExtractedTokens,
+        warnings: list[str],
+        container_width: int,
+        connection_id: str | None,
+        section_hashes: dict[str, str] | None,
+    ) -> RenderPhase:
+        """Render each match (cache-aware), then run bgcolor propagation (Phase 41.2)."""
+        from app.design_sync.component_renderer import ComponentRenderer
+
+        ds_settings = get_settings().design_sync
+
+        cache: SectionCache | None = None
+        cached_entries: dict[str, SectionCacheEntry] = {}
         if connection_id and section_hashes:
             cache = get_section_cache()
             for node_id, section_hash in section_hashes.items():
@@ -761,40 +868,29 @@ class DesignConverterService:
 
         hit_count = 0
         miss_count = 0
+        section_parts: list[str] = []
+        all_images: list[dict[str, str]] = []
+        custom_gen_count = 0
+        custom_gen_enabled = (
+            ds_settings.custom_component_enabled and ds_settings.custom_component_max_per_email > 0
+        )
+        rendered_group_ids: set[int] = set()
 
-        # Render each section using component templates
         renderer = ComponentRenderer(container_width=container_width)
         renderer.load()
 
-        section_parts: list[str] = []
-        all_images: list[dict[str, str]] = []
-
-        # Custom component generation for low-confidence matches (47.8)
-        custom_gen_count = 0
-        _custom_gen_enabled = (
-            ds_settings.custom_component_enabled and ds_settings.custom_component_max_per_email > 0
-        )
-
-        # Track which groups have already been rendered (49.2)
-        rendered_group_ids: set[int] = set()
-
-        for flat_idx, match in enumerate(matches):
-            # Check if this section belongs to a repeating group (49.2)
-            group = group_map.get(flat_idx)
-
+        for flat_idx, m in enumerate(match.matches):
+            group = match.group_map.get(flat_idx)
             if group is not None:
-                # Skip if we already rendered this group
                 if id(group) in rendered_group_ids:
                     continue
                 rendered_group_ids.add(id(group))
 
-                # Collect all matches for sections in this group
-                group_matches: list[ComponentMatch] = []
-                for inner_idx, inner_match in enumerate(matches):
-                    if group_map.get(inner_idx) is group:
-                        group_matches.append(inner_match)
-
-                # Check cache for group (keyed by first member's node_id)
+                group_matches: list[ComponentMatch] = [
+                    inner
+                    for inner_idx, inner in enumerate(match.matches)
+                    if match.group_map.get(inner_idx) is group
+                ]
                 first_nid = group_matches[0].section.node_id
                 group_cached = cached_entries.get(first_nid)
                 if group_cached is not None:
@@ -807,97 +903,82 @@ class DesignConverterService:
                 section_parts.append(rendered_group.html)
                 all_images.extend(rendered_group.images)
                 miss_count += len(group_matches)
-
-                # Store group result in cache keyed by first member's node_id
-                if (
-                    cache is not None
-                    and connection_id is not None
-                    and section_hashes
-                    and first_nid in section_hashes
-                ):
-                    entry = SectionCacheEntry(
-                        html=rendered_group.html,
-                        images=tuple(rendered_group.images),
-                        generated_at=datetime.now(UTC).isoformat(),
-                    )
-                    cache.set_sync(connection_id, section_hashes[first_nid], entry)
+                self._store_section_cache(
+                    cache,
+                    connection_id,
+                    section_hashes,
+                    first_nid,
+                    rendered_group.html,
+                    rendered_group.images,
+                )
                 continue
 
-            # --- Single-section rendering (unchanged) ---
-            node_id = match.section.node_id
+            node_id = m.section.node_id
             cached_entry = cached_entries.get(node_id)
-
             if cached_entry is not None:
                 section_parts.append(cached_entry.html)
                 all_images.extend(cached_entry.images)
                 hit_count += 1
             else:
                 rendered: RenderedSection | None = None
-
-                # Try custom generation for low-confidence matches
                 if (
-                    _custom_gen_enabled
-                    and match.confidence < ds_settings.custom_component_confidence_threshold
+                    custom_gen_enabled
+                    and m.confidence < ds_settings.custom_component_confidence_threshold
                     and custom_gen_count < ds_settings.custom_component_max_per_email
                 ):
-                    rendered = self._try_custom_generate(match, tokens)
+                    rendered = self._try_custom_generate(m, tokens)
                     if rendered is not None:
                         custom_gen_count += 1
                         warnings.append(
-                            f"Section {match.section_idx}: custom-generated "
-                            f"(confidence={match.confidence:.2f})"
+                            f"Section {m.section_idx}: custom-generated "
+                            f"(confidence={m.confidence:.2f})"
                         )
-
                 if rendered is None:
-                    rendered = renderer.render_section(match)
+                    rendered = renderer.render_section(m)
 
                 section_parts.append(rendered.html)
                 all_images.extend(rendered.images)
                 miss_count += 1
-
-                # Store in cache
-                if (
-                    cache is not None
-                    and connection_id is not None
-                    and section_hashes
-                    and node_id in section_hashes
-                ):
-                    entry = SectionCacheEntry(
-                        html=rendered.html,
-                        images=tuple(rendered.images),
-                        generated_at=datetime.now(UTC).isoformat(),
-                    )
-                    cache.set_sync(connection_id, section_hashes[node_id], entry)
-
-            # Inter-section spacer (only for non-group sections)
-            if match.spacing_after and match.spacing_after > 0:
-                spacer_h = int(match.spacing_after)
-                section_parts.append(
-                    f"<!--[if mso]>\n"
-                    f'<table role="presentation" width="{container_width}" align="center" '
-                    f'cellpadding="0" cellspacing="0" border="0"><tr>'
-                    f'<td height="{spacer_h}" style="font-size:0;line-height:0;'
-                    f'mso-line-height-rule:exactly;">&nbsp;</td></tr></table>\n'
-                    f"<![endif]-->\n"
-                    f"<!--[if !mso]><!-->\n"
-                    f'<div style="height:{spacer_h}px;line-height:{spacer_h}px;'
-                    f'font-size:1px;mso-line-height-rule:exactly;">&nbsp;</div>\n'
-                    f"<!--<![endif]-->"
+                self._store_section_cache(
+                    cache, connection_id, section_hashes, node_id, rendered.html, rendered.images
                 )
 
-        # Adjacent-section bgcolor propagation (Phase 41.2)
+            if m.spacing_after and m.spacing_after > 0:
+                spacer_h = int(m.spacing_after)
+                section_parts.append(_SPACER_TEMPLATE.format(width=container_width, h=spacer_h))
+
         if get_settings().design_sync.bgcolor_propagation_enabled:
             from app.design_sync.bgcolor_propagator import propagate_adjacent_bgcolor
 
             section_parts = propagate_adjacent_bgcolor(
-                matches,
-                section_parts,
-                connection_id=connection_id,
+                match.matches, section_parts, connection_id=connection_id
             )
 
-        sections_html = "\n".join(section_parts)
+        return RenderPhase(
+            section_parts=section_parts,
+            images=all_images,
+            hit_count=hit_count,
+            miss_count=miss_count,
+            warnings=warnings,
+        )
 
-        # Build style block
+    # ── Phase 3: assemble ─────────────────────────────────────────────
+
+    def _assemble_phase(
+        self,
+        *,
+        match: MatchPhase,
+        render: RenderPhase,
+        layout: DesignLayoutDescription,
+        tokens: ExtractedTokens,
+        compat: ConverterCompatibility,
+        container_width: int,
+        connection_id: str | None,
+        section_hashes: dict[str, str] | None,
+    ) -> ConversionResult:
+        """Build the final HTML shell, run quality contracts, emit cache stats."""
+        sections_html = "\n".join(render.section_parts)
+
         palette = convert_colors_to_palette(tokens.colors)
         typography = convert_typography(tokens.typography)
         bg_color = _sanitize_css_value(palette.background) or "#ffffff"
@@ -909,12 +990,7 @@ class DesignConverterService:
             tokens,
         )
 
-        # Dark mode meta tags
-        meta_tags = ""
-        if tokens.dark_colors:
-            meta_tags = dark_mode_meta_tags()
-
-        # Check max-width support
+        meta_tags = dark_mode_meta_tags() if tokens.dark_colors else ""
         if compat.has_targets:
             compat.check_and_warn("max-width", context="Email wrapper div")
 
@@ -930,42 +1006,39 @@ class DesignConverterService:
         )
         result_html = format_email_html(result_html)
 
-        # Cache stats
-        total = hit_count + miss_count
+        total = render.hit_count + render.miss_count
         cache_hit_rate: float | None = None
         if total > 0 and connection_id and section_hashes:
-            cache_hit_rate = hit_count / total
+            cache_hit_rate = render.hit_count / total
             logger.info(
                 "design_sync.conversion_cache_stats",
                 connection_id=connection_id,
-                hit_count=hit_count,
-                miss_count=miss_count,
+                hit_count=render.hit_count,
+                miss_count=render.miss_count,
                 hit_rate=round(cache_hit_rate, 2),
             )
 
         logger.info(
             "design_sync.component_converter_result",
-            sections_count=len(matches),
-            warnings_count=len(warnings),
+            sections_count=len(match.matches),
+            warnings_count=len(render.warnings),
         )
 
-        # Match confidence scores
-        match_confidences = {m.section_idx: m.confidence for m in matches}
-
+        match_confidences = {m.section_idx: m.confidence for m in match.matches}
         input_button_count = sum(len(s.buttons) for s in layout.sections)
         quality_warnings = run_quality_contracts(
             result_html,
-            input_section_count=len(matches),
+            input_section_count=len(match.matches),
             input_button_count=input_button_count,
         )
 
         return ConversionResult(
             html=result_html,
-            sections_count=len(matches),
-            warnings=warnings,
+            sections_count=len(match.matches),
+            warnings=render.warnings,
             layout=layout,
             compatibility_hints=compat.hints,
-            images=all_images,
+            images=render.images,
             cache_hit_rate=cache_hit_rate,
             quality_warnings=quality_warnings,
             match_confidences=match_confidences,
