@@ -1,4 +1,4 @@
-# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
+# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportArgumentType=false
 """Per-LAYER unit tests for the ``_build_node_context`` pipeline.
 
 Each LAYER is exercised in isolation with a minimal engine + stub node.
@@ -9,7 +9,6 @@ keys the layer is contracted to produce.
 from __future__ import annotations
 
 import random
-from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -23,6 +22,7 @@ from app.ai.blueprints.protocols import (
     AgentHandoff,
     HandoffStatus,
     NodeContext,
+    NodeResult,
     NodeType,
     StructuredFailure,
 )
@@ -32,8 +32,8 @@ class _StubNode:
     """Minimal node stand-in for layer unit tests."""
 
     def __init__(self, name: str, node_type: NodeType = "agentic") -> None:
-        self._name = name
-        self._node_type = node_type
+        self._name: str = name
+        self._node_type: NodeType = node_type
 
     @property
     def name(self) -> str:
@@ -43,11 +43,16 @@ class _StubNode:
     def node_type(self) -> NodeType:
         return self._node_type
 
+    async def execute(self, _context: NodeContext) -> NodeResult:
+        # Layer tests never call ``node.execute``; the stub satisfies the
+        # ``BlueprintNode`` Protocol so mypy accepts the helper signatures.
+        return NodeResult(status="success")
+
 
 def _make_engine(**kwargs: object) -> BlueprintEngine:
     """Construct a BlueprintEngine with an empty blueprint, overrideable kwargs."""
     definition = BlueprintDefinition(name="test", nodes={}, edges=[], entry_node="entry")
-    return BlueprintEngine(definition, **cast(dict[str, object], kwargs))  # type: ignore[arg-type]
+    return BlueprintEngine(definition, **kwargs)  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio

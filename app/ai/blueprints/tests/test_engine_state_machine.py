@@ -1,4 +1,4 @@
-# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
+# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportArgumentType=false
 """Per-helper unit tests for ``BlueprintEngine._execute_from`` decomposition.
 
 Each helper extracted in Step 3 is exercised in isolation to lock down its
@@ -8,7 +8,6 @@ break-or-continue signals returned to the orchestrator loop.
 
 from __future__ import annotations
 
-from typing import cast
 from unittest.mock import AsyncMock
 
 import pytest
@@ -31,8 +30,8 @@ from app.ai.blueprints.route_advisor import RoutingPlan
 
 class _StubNode:
     def __init__(self, name: str, node_type: NodeType = "agentic") -> None:
-        self._name = name
-        self._node_type = node_type
+        self._name: str = name
+        self._node_type: NodeType = node_type
 
     @property
     def name(self) -> str:
@@ -42,10 +41,13 @@ class _StubNode:
     def node_type(self) -> NodeType:
         return self._node_type
 
+    async def execute(self, _context: NodeContext) -> NodeResult:
+        return NodeResult(status="success")
+
 
 def _make_engine(**kwargs: object) -> BlueprintEngine:
     definition = BlueprintDefinition(name="test", nodes={}, edges=[], entry_node="entry")
-    return BlueprintEngine(definition, **cast(dict[str, object], kwargs))  # type: ignore[arg-type]
+    return BlueprintEngine(definition, **kwargs)  # type: ignore[arg-type]
 
 
 # ── _is_skipped_by_routing_plan ──
