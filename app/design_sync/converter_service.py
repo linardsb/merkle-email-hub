@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import contextlib
+import inspect
+import warnings as _stdlib_warnings
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -452,7 +454,25 @@ class DesignConverterService:
         delegates to ``convert_document()``.  Falls back to the legacy
         recursive converter when ``use_components`` is False (requires
         the full DesignNode tree which the document path doesn't carry).
+
+        Deprecated (Tech Debt F013): emits telemetry on every call.
+        Callers should migrate to ``convert_document()`` after building
+        an ``EmailDesignDocument`` themselves.
         """
+        caller_frame = inspect.stack()[1]
+        logger.info(
+            "design_sync.converter.shim_called",
+            entry="convert",
+            caller=caller_frame.function,
+            caller_module=caller_frame.frame.f_globals.get("__name__"),
+        )
+        _stdlib_warnings.warn(
+            "DesignConverterService.convert() is deprecated; use convert_document() "
+            "after building an EmailDesignDocument. Scheduled removal after "
+            "14-day telemetry window.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from app.design_sync.email_design_document import EmailDesignDocument
 
         # Normalize once — reused by both from_legacy and recursive fallback
@@ -513,7 +533,25 @@ class DesignConverterService:
         delegates to ``convert_document_mjml()``.  Falls back to the
         recursive converter if MJML compilation fails (requires full
         DesignNode tree preserved from the original structure).
+
+        Deprecated (Tech Debt F013): emits telemetry on every call.
+        Callers should migrate to ``convert_document_mjml()`` after
+        building an ``EmailDesignDocument`` themselves.
         """
+        caller_frame = inspect.stack()[1]
+        logger.info(
+            "design_sync.converter.shim_called",
+            entry="convert_mjml",
+            caller=caller_frame.function,
+            caller_module=caller_frame.frame.f_globals.get("__name__"),
+        )
+        _stdlib_warnings.warn(
+            "DesignConverterService.convert_mjml() is deprecated; use "
+            "convert_document_mjml() after building an EmailDesignDocument. "
+            "Scheduled removal after 14-day telemetry window.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from app.design_sync.email_design_document import EmailDesignDocument
 
         # Normalize once — reused by both from_legacy and recursive fallback
@@ -1095,7 +1133,26 @@ class DesignConverterService:
         container_width: int,
         raw_file_data: dict[str, Any] | None = None,
     ) -> ConversionResult:
-        """Legacy recursive converter (original tr-stacking approach)."""
+        """Legacy recursive converter (original tr-stacking approach).
+
+        Deprecated (Tech Debt F013): emits telemetry on every call. Will be
+        removed after a 14-day observation window confirms zero unexpected
+        callers. Tracking entry: TODO.md → Operational follow-ups.
+        """
+        caller_frame = inspect.stack()[1]
+        logger.info(
+            "design_sync.converter.shim_called",
+            entry="_convert_recursive",
+            caller=caller_frame.function,
+            caller_module=caller_frame.frame.f_globals.get("__name__"),
+        )
+        _stdlib_warnings.warn(
+            "_convert_recursive is deprecated; use convert_document with "
+            "use_components=True. Scheduled removal after 14-day telemetry window.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         # Build O(1) lookup maps from layout analysis
         sections_by_node_id: dict[str, EmailSection] = {
             section.node_id: section for section in layout.sections

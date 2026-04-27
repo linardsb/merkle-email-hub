@@ -1056,3 +1056,20 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 > - 49.7 → **CTA buttons match design** (color, shape, VML)
 > - 49.8 → **deterministic rendering via TreeCompiler** (bridges to Phase 48)
 > - 49.9 → **regression-proof for any email** (data-driven framework, add cases by dropping manifest.yaml + Figma JSON)
+
+## Operational follow-ups
+
+> **2026-05-11 — F013 D3 readiness check.** Telemetry was added to the legacy converter shims
+> (`DesignConverterService.convert`, `convert_mjml`, `_convert_recursive`) on 2026-04-27 (Part D1
+> of `.agents/plans/tech-debt-08-converter-god-functions-followup.md`). On the readiness date, run:
+>
+> ```bash
+> grep -c "design_sync.converter.shim_called" traces/*.jsonl traces/structured.log 2>/dev/null
+> ```
+>
+> (and any centralised log store the team uses). If the count is **zero**, proceed to D3
+> (`.agents/plans/tech-debt-08-converter-god-functions-followup.md` → Part D3) and delete the
+> shims. If **non-zero**, identify each caller from the `caller=`/`caller_module=` log fields,
+> migrate to `convert_document` / `convert_document_mjml`, and reset the timer to a fresh
+> +14 days from the migration date.
+>
