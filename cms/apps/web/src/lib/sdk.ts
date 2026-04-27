@@ -1,5 +1,5 @@
 import { client } from "@email-hub/sdk";
-import { authFetch } from "./auth-fetch";
+import { authFetch, clearTokenCache } from "./auth-fetch";
 
 // Configure the SDK client
 client.setConfig({
@@ -22,9 +22,10 @@ client.interceptors.request.use(async (request) => {
   return request;
 });
 
-// 401 response interceptor — redirect to login on expired session (client-side only)
+// 401 response interceptor — clear cached token and redirect to login (client-side only)
 client.interceptors.response.use(async (response) => {
   if (response.status === 401 && typeof window !== "undefined") {
+    clearTokenCache();
     const { signOut } = await import("next-auth/react");
     await signOut({ callbackUrl: "/login" });
   }
@@ -41,7 +42,7 @@ client.interceptors.response.use(async (response, request) => {
     if (retryCount < 1) {
       await new Promise((resolve) => setTimeout(resolve, Math.min(delayMs, 10_000)));
       (request as Request & { __retryCount?: number }).__retryCount = retryCount + 1;
-      return fetch(request);
+      return authFetch(request);
     }
   }
   return response;
