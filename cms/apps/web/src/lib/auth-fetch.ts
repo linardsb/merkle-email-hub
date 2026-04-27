@@ -43,7 +43,7 @@ export async function authFetch(
   }
 }
 
-async function getAccessToken(): Promise<string | null> {
+export async function getAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") {
     // Server context
     try {
