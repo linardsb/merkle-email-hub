@@ -122,3 +122,9 @@ data/debug/*/tokens.json
 data/debug/*/report.json
 data/debug/*/assets/
 e2e-screenshots/
+
+# Icons/ source library (~305 MB / 10,416 files). Only the 309 SVGs
+# referenced by cms/apps/web/scripts/generate-icons.mjs are committed
+# (force-added). Everything else stays out — pull from the design library
+# when needed and force-add specific files: git add -f email-templates/Icons/...
+email-templates/Icons/
