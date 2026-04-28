@@ -12,11 +12,18 @@ from typing import Any
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from app.ai.shared import sanitize_html_xss
 from app.auth.models import User
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.resilience import CircuitBreaker, CircuitOpenError
 from app.email_engine.exceptions import BuildFailedError, BuildServiceUnavailableError
 from app.email_engine.models import EmailBuild
 from app.email_engine.schemas import (
@@ -34,7 +41,27 @@ from app.email_engine.schemas import (
 logger = get_logger(__name__)
 settings = get_settings()
 
-MAIZZLE_BUILDER_URL = settings.maizzle_builder_url
+_maizzle_breaker = CircuitBreaker(name="maizzle", failure_threshold=5, reset_timeout=30.0)
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
+    reraise=True,
+)
+async def _post_to_builder(payload: dict[str, object]) -> dict[str, Any]:
+    """POST to the Maizzle sidecar build endpoint with retry + circuit breaker.
+
+    URL is resolved at call time (not import time) so test monkey-patches of
+    `settings.maizzle_builder_url` take effect.
+    """
+    url = settings.maizzle_builder_url
+    async with _maizzle_breaker:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(f"{url}/build", json=payload)
+            response.raise_for_status()
+            return response.json()  # type: ignore[no-any-return]
 
 
 class EmailEngineService:
@@ -261,15 +288,11 @@ class EmailEngineService:
             payload["target_clients"] = target_clients
 
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(f"{MAIZZLE_BUILDER_URL}/build", json=payload)
-                response.raise_for_status()
-                result = response.json()
-                return (
-                    str(result["html"]),
-                    result.get("optimization"),
-                    bool(result.get("passthrough", False)),
-                )
+            result = await _post_to_builder(payload)
+        except CircuitOpenError as exc:
+            raise BuildServiceUnavailableError(
+                "Maizzle builder unavailable (circuit open)"
+            ) from exc
         except httpx.ConnectError as exc:
             raise BuildServiceUnavailableError("Cannot connect to maizzle-builder service") from exc
         except httpx.HTTPStatusError as exc:
@@ -278,3 +301,8 @@ class EmailEngineService:
                 status_code=exc.response.status_code,
             )
             raise BuildFailedError("Email build failed") from exc
+        return (
+            str(result["html"]),
+            result.get("optimization"),
+            bool(result.get("passthrough", False)),
+        )
