@@ -236,8 +236,8 @@ def _warn_unknown_nested_env_vars() -> None:
     Settings model to build the known-name set and flag anything else that uses
     the nested-delimiter pattern.
     """
-    # Local import to avoid a top-level dependency cycle (app.core.logging
-    # imports from app.core.config in some configurations).
+    # Local import keeps app.core.config free of a top-level dependency on
+    # app.core.logging in case logging ever needs to read from config.
     from app.core.logging import get_logger
 
     logger = get_logger("config")
