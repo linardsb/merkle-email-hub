@@ -15,9 +15,9 @@ class DatabaseConfig(BaseModel):
     """Database connection settings."""
 
     url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/email_hub"
-    pool_size: int = 3
-    pool_max_overflow: int = 5
-    pool_recycle: int = 3600
+    pool_size: int = Field(default=20, ge=1)
+    pool_max_overflow: int = Field(default=20, ge=0)
+    pool_recycle: int = 1800
 
 
 class RedisConfig(BaseModel):
