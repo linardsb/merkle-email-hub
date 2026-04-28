@@ -11,9 +11,10 @@ Environment variables use double-underscore nesting:
     AUTH__JWT_SECRET_KEY=...
 """
 
+import os
 from functools import lru_cache
 
-from pydantic import model_validator
+from pydantic import BaseModel, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.config.ai import AIConfig, EmbeddingConfig, RerankerConfig
@@ -214,6 +215,42 @@ class Settings(BaseSettings):
         return self
 
 
+def _walk_known_env_vars(model: type[BaseModel], prefix: str = "") -> set[str]:
+    """Collect every env-var name Settings would resolve, including nested via `__`."""
+    known: set[str] = set()
+    for name, info in model.model_fields.items():
+        env_name = f"{prefix}{name.upper()}"
+        annotation = info.annotation
+        if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+            known |= _walk_known_env_vars(annotation, prefix=f"{env_name}__")
+        else:
+            known.add(env_name)
+    return known
+
+
+def _warn_unknown_nested_env_vars() -> None:
+    """Log a warning for any *__* env var Settings would silently ignore.
+
+    Pydantic's `extra="ignore"` keeps platform-injected variables from breaking
+    startup, but it also masks typos like `AUT__JWT_SECRET_KEY=...`. Walk the
+    Settings model to build the known-name set and flag anything else that uses
+    the nested-delimiter pattern.
+    """
+    # Local import to avoid a top-level dependency cycle (app.core.logging
+    # imports from app.core.config in some configurations).
+    from app.core.logging import get_logger
+
+    logger = get_logger("config")
+    known = _walk_known_env_vars(Settings)
+    suspicious = sorted(
+        key
+        for key in os.environ
+        if "__" in key and not key.startswith("_") and key.upper() not in known
+    )
+    for key in suspicious:
+        logger.warning("config.unknown_env_var", env_var=key)
+
+
 @lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance.
@@ -221,4 +258,6 @@ def get_settings() -> Settings:
     Returns:
         The application settings instance.
     """
-    return Settings()  # pyright: ignore[reportCallIssue]
+    instance = Settings()  # pyright: ignore[reportCallIssue]
+    _warn_unknown_nested_env_vars()
+    return instance
