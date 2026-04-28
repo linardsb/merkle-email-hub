@@ -1,4 +1,4 @@
-.PHONY: bootstrap check-env ci ci-be ci-fe dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana lint-polling mutate help
+.PHONY: bootstrap check-env check-env-drift ci ci-be ci-fe dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana lint-polling mutate help
 
 # === Local Development ===
 
@@ -19,6 +19,20 @@ bootstrap: ## Create .env with random dev secrets if missing (idempotent)
 
 check-env: ## Verify .env.example documents every required docker-compose var
 	@bash scripts/check-env-example.sh
+
+.env.example: app/core/config/*.py scripts/generate-env-example.py ## Regenerate .env.example from Settings
+	@uv run python scripts/generate-env-example.py > .env.example.tmp
+	@mv .env.example.tmp .env.example
+	@echo "Regenerated .env.example ($$(wc -l < .env.example) lines)."
+
+check-env-drift: ## Fail if .env.example drifts from Settings.model_fields
+	@uv run python scripts/generate-env-example.py > /tmp/env.generated
+	@if ! diff -q .env.example /tmp/env.generated > /dev/null; then \
+	  echo "::error::.env.example out of sync with Settings — run 'make .env.example'"; \
+	  diff .env.example /tmp/env.generated | head -40; \
+	  exit 1; \
+	fi
+	@echo ".env.example matches Settings."
 
 up: ## Bootstrap dev env after restart (Docker + DB + migrations + seed)
 	@./scripts/startup.sh
@@ -143,9 +157,9 @@ endif
 converter-data-regression-report: ## Generate per-case regression reports
 	uv run python -m app.design_sync.tests.regression_runner --report
 
-check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks (backend + frontend + security)
+check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance flag-audit check-env-drift ## Run all checks (backend + frontend + security)
 
-check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks including migration lint
+check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance flag-audit check-env-drift ## Run all checks including migration lint
 
 ci: ci-be ci-fe ## Mirror CI exactly: backend (lint+types+tests+security) + frontend (lint+format+types+tests)
 
