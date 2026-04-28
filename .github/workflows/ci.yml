@@ -40,6 +40,9 @@ jobs:
       - name: Security check (Bandit)
         run: uv run ruff check app/ --select=S --ignore=S311 --no-fix
 
+      - name: .env.example drift gate
+        run: make check-env-drift
+
       - name: Test
         run: uv run pytest -v -m "not integration" --cov=app --cov-report=term --cov-fail-under=88
 

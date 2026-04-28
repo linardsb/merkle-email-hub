@@ -110,12 +110,10 @@ async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse
     """Handle application exceptions globally."""
     logger.error(
         "app.error",
-        extra={
-            "error_type": type(exc).__name__,
-            "error_message": str(exc),
-            "path": request.url.path,
-            "method": request.method,
-        },
+        error_type=type(exc).__name__,
+        error_message=str(exc),
+        path=request.url.path,
+        method=request.method,
         exc_info=True,
     )
 
@@ -148,7 +146,8 @@ async def invalid_credentials_handler(request: Request, exc: AppError) -> JSONRe
     """Handle invalid credentials with 401 Unauthorized."""
     logger.warning(
         "auth.invalid_credentials",
-        extra={"path": request.url.path, "method": request.method},
+        path=request.url.path,
+        method=request.method,
     )
     from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
 
@@ -165,7 +164,8 @@ async def account_locked_handler(request: Request, exc: AppError) -> JSONRespons
     """Handle locked accounts with 423 Locked."""
     logger.warning(
         "auth.account_locked",
-        extra={"path": request.url.path, "method": request.method},
+        path=request.url.path,
+        method=request.method,
     )
     from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
 
