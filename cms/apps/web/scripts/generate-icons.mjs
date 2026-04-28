@@ -3,7 +3,12 @@
  * Generate React icon components from SVG source files.
  * Processes SVGs: removes hardcoded colors, uses currentColor, outputs TSX.
  *
- * Usage: node scripts/generate-icons.mjs
+ * Emits one file per icon under `src/components/icons/generated/` plus a
+ * regenerated barrel at `src/components/icons/index.ts`.
+ *
+ * Usage:
+ *   node scripts/generate-icons.mjs
+ *   pnpm exec prettier --write src/components/icons   # always re-format after regenerating
  */
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
@@ -904,11 +909,97 @@ function svgInnerToJsx(inner) {
   );
 }
 
+// ── Lucide-react fallback set ────────────────────────────────────────
+// Icons re-exported from `lucide-react` because no custom equivalent exists.
+// Keep alphabetised. Adding/removing entries requires regenerating the barrel.
+const LUCIDE_FALLBACK = [
+  "AlertCircle",
+  "AlertTriangle",
+  "AlignCenter",
+  "AlignLeft",
+  "AlignRight",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowRightLeft",
+  "Ban",
+  "Braces",
+  "Bug",
+  "Check",
+  "CheckCircle",
+  "CheckCircle2",
+  "ChevronDown",
+  "ChevronLeft",
+  "ChevronRight",
+  "ChevronUp",
+  "Columns",
+  "Component",
+  "Copy",
+  "ExternalLink",
+  "EyeOff",
+  "Figma",
+  "FileSearch",
+  "Filter",
+  "Frame",
+  "GitCommitVertical",
+  "GitCompareArrows",
+  "GripHorizontal",
+  "GripVertical",
+  "Group",
+  "Image",
+  "ImageOff",
+  "ImagePlus",
+  "Info",
+  "Languages",
+  "Layout",
+  "Link",
+  "Link2",
+  "Loader2",
+  "LogOut",
+  "Maximize2",
+  "Moon",
+  "MoreVertical",
+  "MousePointer",
+  "MousePointerClick",
+  "PanelBottom",
+  "PanelRight",
+  "Paperclip",
+  "Pause",
+  "Pencil",
+  "Plus",
+  "RefreshCw",
+  "Repeat",
+  "RotateCcw",
+  "Save",
+  "SkipForward",
+  "Square",
+  "Tag",
+  "ToggleLeft",
+  "ToggleRight",
+  "Trash2",
+  "Type",
+  "Variable",
+  "WifiOff",
+  "WrapText",
+  "Wrench",
+  "X",
+  "XCircle",
+  "ZoomIn",
+  "ZoomOut",
+];
+
 // ── Code Generation ──────────────────────────────────────────────────
 
-function generateComponent(name, viewBox, jsxInner, isStroke = false) {
+function generateIconFile(name, viewBox, jsxInner, isStroke = false) {
   const fillAttr = isStroke ? 'fill="none" stroke="currentColor"' : 'fill="currentColor"';
-  return `export const ${name} = forwardRef<SVGSVGElement, IconProps>(
+  return `/**
+ * ${name} icon — auto-generated from SVG source.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import { forwardRef } from "react";
+import type { IconProps } from "./_types";
+
+export const ${name} = forwardRef<SVGSVGElement, IconProps>(
   ({ size = 24, className, ...props }, ref) => (
     <svg
       ref={ref}
@@ -928,14 +1019,57 @@ ${name}.displayName = "${name}";
 `;
 }
 
+const TYPES_FILE = `/**
+ * Shared icon prop type — auto-generated.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import type { SVGProps } from "react";
+
+export interface IconProps extends SVGProps<SVGSVGElement> {
+  size?: number | string;
+}
+`;
+
+function generateBarrel(iconNames) {
+  const customExports = iconNames
+    .map((name) => `export { ${name} } from "./generated/${name}";`)
+    .join("\n");
+  const lucideExports = LUCIDE_FALLBACK.map((name) => `  ${name},`).join("\n");
+  return `/**
+ * Unified icon barrel — auto-generated. Do not edit manually.
+ * Regenerate with: node scripts/generate-icons.mjs
+ *
+ * Custom icons (per-file under ./generated) replace lucide-react where available;
+ * lucide-react provides the rest.
+ */
+
+// ── Custom icon replacements (${iconNames.length} icons — auto-generated) ──
+${customExports}
+
+export type { IconProps } from "./generated/_types";
+
+// ── Lucide-react fallbacks (${LUCIDE_FALLBACK.length} icons — no custom equivalent) ──
+export {
+${lucideExports}
+} from "lucide-react";
+
+// Re-export the LucideIcon type for components that use it for prop typing
+export type { LucideIcon } from "lucide-react";
+`;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────
 
-mkdirSync(OUTPUT_DIR, { recursive: true });
+const GENERATED_DIR = resolve(OUTPUT_DIR, "generated");
+mkdirSync(GENERATED_DIR, { recursive: true });
+
+// Write shared types file
+writeFileSync(resolve(GENERATED_DIR, "_types.ts"), TYPES_FILE);
 
 // Track unique SVGs (some icons share the same source)
 const processedSvgs = new Map(); // path → { viewBox, jsxInner, isStroke }
 
-const components = [];
+const generatedNames = [];
 const errors = [];
 
 for (const [name, config] of Object.entries(ICON_MAP)) {
@@ -968,28 +1102,22 @@ for (const [name, config] of Object.entries(ICON_MAP)) {
     }
   }
 
-  components.push(
-    generateComponent(name, processed.viewBox, processed.jsxInner, processed.isStroke),
+  const fileContent = generateIconFile(
+    name,
+    processed.viewBox,
+    processed.jsxInner,
+    processed.isStroke,
   );
+  writeFileSync(resolve(GENERATED_DIR, `${name}.tsx`), fileContent);
+  generatedNames.push(name);
 }
 
-// Write the output file
-const output = `/**
- * Custom icon components generated from SVG source files.
- * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
- */
-import { forwardRef } from "react";
-import type { SVGProps } from "react";
+// Regenerate the unified barrel
+writeFileSync(resolve(OUTPUT_DIR, "index.ts"), generateBarrel(generatedNames));
 
-export interface IconProps extends SVGProps<SVGSVGElement> {
-  size?: number | string;
-}
-
-${components.join("\n")}`;
-
-writeFileSync(resolve(OUTPUT_DIR, "custom-icons.tsx"), output);
-
-console.log(`Generated ${components.length} icon components`);
+console.log(`Generated ${generatedNames.length} icon files in ${GENERATED_DIR}`);
+console.log(`Regenerated barrel at ${resolve(OUTPUT_DIR, "index.ts")}`);
 if (errors.length > 0) {
   console.error("Errors:", errors);
+  process.exit(1);
 }

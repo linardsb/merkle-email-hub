@@ -25,6 +25,7 @@ from app.design_sync.protocol import (
     ExtractedGradient,
     ExtractedTypography,
 )
+from app.design_sync.render_context import RenderContext
 
 
 class TestConvertColors:
@@ -241,7 +242,7 @@ class TestNodeToEmailHtml:
         props_map = {
             "30": _NodeProps(font_family="Inter", font_size=24.0, font_weight="700"),
         }
-        result = node_to_email_html(node, props_map=props_map)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert "Inter" in result
         assert "font-size:24px" in result
         assert "font-weight:bold" in result
@@ -253,7 +254,7 @@ class TestNodeToEmailHtml:
             id="40", name="Section", type=DesignNodeType.FRAME, width=600, children=[]
         )
         props_map = {"40": _NodeProps(bg_color="#f5f5f5")}
-        result = node_to_email_html(node, props_map=props_map)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert 'bgcolor="#f5f5f5"' in result
 
     def test_dark_bg_text_gets_white_color(self) -> None:
@@ -270,7 +271,7 @@ class TestNodeToEmailHtml:
             ],
         )
         props_map = {"100": _NodeProps(bg_color="#1a1a2e")}
-        result = node_to_email_html(node, props_map=props_map)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert "color:#ffffff" in result
         assert "Hello" in result
 
@@ -288,7 +289,7 @@ class TestNodeToEmailHtml:
             ],
         )
         props_map = {"110": _NodeProps(bg_color="#ffffff")}
-        result = node_to_email_html(node, props_map=props_map)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert "color:#000000" in result
 
     def test_nested_dark_bg_propagates(self) -> None:
@@ -311,7 +312,7 @@ class TestNodeToEmailHtml:
             children=[inner],
         )
         props_map = {"120": _NodeProps(bg_color="#0d1117")}
-        result = node_to_email_html(outer, props_map=props_map)
+        result = node_to_email_html(outer, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert "color:#ffffff" in result
         assert "Deep" in result
 
@@ -321,7 +322,7 @@ class TestNodeToEmailHtml:
         props_map = {
             "50": _NodeProps(padding_top=20, padding_right=10, padding_bottom=20, padding_left=10),
         }
-        result = node_to_email_html(node, props_map=props_map)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map=props_map))
         # Padding on <td>, not <table> — Outlook ignores padding on <table>
         assert "padding:20px 10px 20px 10px" in result
         assert '<td style="padding:' in result
@@ -349,7 +350,7 @@ class TestNodeToEmailHtml:
             height=20,
         )
         props = _NodeProps(font_weight="300", font_size=16.0, line_height_px=24.0)
-        result = node_to_email_html(node, props_map={"t1": props})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map={"t1": props}))
         assert "font-weight:normal" in result
         assert "line-height:24px" in result
         assert "mso-line-height-rule:exactly" in result
@@ -365,7 +366,7 @@ class TestNodeToEmailHtml:
             height=20,
         )
         props = _NodeProps(font_family="Inter", font_size=16.0)
-        result = node_to_email_html(node, props_map={"t1": props})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map={"t1": props}))
         assert "mso-font-alt:Arial" in result
 
     def test_text_transform_and_decoration(self) -> None:
@@ -378,7 +379,7 @@ class TestNodeToEmailHtml:
             height=20,
         )
         props = _NodeProps(font_size=16.0, text_transform="uppercase", text_decoration="underline")
-        result = node_to_email_html(node, props_map={"t1": props})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map={"t1": props}))
         assert "text-transform:uppercase" in result
         assert "text-decoration:underline" in result
 
@@ -392,7 +393,7 @@ class TestNodeToEmailHtml:
             height=20,
         )
         props = _NodeProps(font_size=16.0, letter_spacing_px=0.5)
-        result = node_to_email_html(node, props_map={"t1": props})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map={"t1": props}))
         assert "letter-spacing:0.5px" in result
 
 
@@ -530,7 +531,7 @@ class TestFillColorFromNode:
             children=[],
         )
         props_map = {"po1": _NodeProps(bg_color="#f5f5f5")}
-        result = node_to_email_html(node, props_map=props_map)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert 'bgcolor="#f5f5f5"' in result
         assert 'bgcolor="#111111"' not in result
 
@@ -563,7 +564,7 @@ class TestFrameWidthAndFont:
             ],
         )
         props_map = {"f1": _NodeProps(font_family="Inter")}
-        result = node_to_email_html(frame, props_map=props_map)
+        result = node_to_email_html(frame, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert "Inter,Arial,Helvetica,sans-serif" in result
 
     def test_font_family_on_td_wrapper(self) -> None:
@@ -585,7 +586,7 @@ class TestFrameWidthAndFont:
             ],
         )
         props_map = {"f2": _NodeProps(font_family="Roboto")}
-        result = node_to_email_html(frame, props_map=props_map)
+        result = node_to_email_html(frame, RenderContext.from_legacy_kwargs(props_map=props_map))
         assert "font-family:Roboto,Arial,Helvetica,sans-serif" in result
 
     def test_email_skeleton_has_width_600(self) -> None:
@@ -1308,7 +1309,7 @@ class TestMultiColumnLayout:
                 ),
             ],
         )
-        result = node_to_email_html(node, container_width=600)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(container_width=600))
         assert "max-width:200px" in result
         assert "max-width:400px" in result
         assert '<td width="200"' in result
@@ -1333,7 +1334,7 @@ class TestMultiColumnLayout:
                 for i in range(3)
             ],
         )
-        result = node_to_email_html(node, container_width=600)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(container_width=600))
         assert result.count("max-width:200px") == 3
         assert result.count('<td width="200"') == 3
 
@@ -1352,7 +1353,7 @@ class TestMultiColumnLayout:
                 ),
             ],
         )
-        result = node_to_email_html(node, container_width=600)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(container_width=600))
         assert '<td width="20">' in result
 
     def test_single_child_no_multi_column(self) -> None:
@@ -1366,7 +1367,7 @@ class TestMultiColumnLayout:
                 DesignNode(id="c1", name="Only", type=DesignNodeType.FRAME, width=600, children=[]),
             ],
         )
-        result = node_to_email_html(node, container_width=600)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(container_width=600))
         assert "<!--[if mso]>" not in result or result.count("<!--[if mso]>") == 0
         assert 'class="column"' not in result
 
@@ -1384,7 +1385,7 @@ class TestMultiColumnLayout:
                 for i in range(3)
             ],
         )
-        result = node_to_email_html(node, container_width=600)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(container_width=600))
         assert result.count("<tr>") >= 3
         assert 'class="column"' not in result
 
@@ -1400,7 +1401,7 @@ class TestMultiColumnLayout:
                 DesignNode(id="c2", name="B", type=DesignNodeType.FRAME, children=[]),
             ],
         )
-        result = node_to_email_html(node, container_width=600)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(container_width=600))
         assert "max-width:300px" in result
         assert result.count("max-width:300px") == 2
 
@@ -1427,7 +1428,7 @@ class TestMultiColumnLayout:
                 inner_row,
             ],
         )
-        result = node_to_email_html(outer, container_width=600)
+        result = node_to_email_html(outer, RenderContext.from_legacy_kwargs(container_width=600))
         opens = result.count("<!--[if mso]>")
         closes = result.count("<![endif]-->")
         assert opens == closes, f"Unbalanced MSO: {opens} opens vs {closes} closes"
@@ -1541,7 +1542,9 @@ class TestSemanticHTMLGeneration:
                 is_heading=True,
             ),
         }
-        result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
+        result = node_to_email_html(
+            node, RenderContext.from_legacy_kwargs(text_meta=text_meta, body_font_size=16.0)
+        )
         assert "<h1" not in result
         assert "Big Title" in result
         assert "<td" in result
@@ -1566,7 +1569,9 @@ class TestSemanticHTMLGeneration:
                 is_heading=True,
             ),
         }
-        result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
+        result = node_to_email_html(
+            node, RenderContext.from_legacy_kwargs(text_meta=text_meta, body_font_size=16.0)
+        )
         assert "<h2" not in result
         assert "<td" in result
         assert "Subtitle" in result
@@ -1590,7 +1595,9 @@ class TestSemanticHTMLGeneration:
                 is_heading=True,
             ),
         }
-        result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
+        result = node_to_email_html(
+            node, RenderContext.from_legacy_kwargs(text_meta=text_meta, body_font_size=16.0)
+        )
         assert "<h3" not in result
         assert "<td" in result
         assert "Section" in result
@@ -1606,7 +1613,7 @@ class TestSemanticHTMLGeneration:
             font_size=16.0,
             y=0,
         )
-        result = node_to_email_html(node, body_font_size=16.0)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(body_font_size=16.0))
         assert "<p" not in result
         assert "<td" in result
         assert "padding:0 0 10px 0" in result
@@ -1661,7 +1668,7 @@ class TestSemanticHTMLGeneration:
                 ),
             ],
         )
-        result = node_to_email_html(node, button_ids={"btn1"})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert '<a href="#"' in result
         assert "Shop Now" in result
         assert "v:roundrect" in result
@@ -1689,7 +1696,7 @@ class TestSemanticHTMLGeneration:
                 ),
             ],
         )
-        result = node_to_email_html(node, button_ids={"btn1"})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert "height:44px" in result
 
     def test_button_not_in_ids_renders_as_table(self) -> None:
@@ -1709,7 +1716,7 @@ class TestSemanticHTMLGeneration:
                 ),
             ],
         )
-        result = node_to_email_html(node, button_ids=set())
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(button_ids=set()))
         assert "v:roundrect" not in result
         assert "<table" in result
 
@@ -1735,9 +1742,9 @@ class TestSemanticHTMLGeneration:
         props_map = {"t1": _NodeProps(line_height_px=38.0)}
         result = node_to_email_html(
             node,
-            text_meta=text_meta,
-            body_font_size=16.0,
-            props_map=props_map,
+            RenderContext.from_legacy_kwargs(
+                text_meta=text_meta, body_font_size=16.0, props_map=props_map
+            ),
         )
         assert "mso-line-height-rule:exactly" in result
         assert "<h1" not in result
@@ -1798,8 +1805,7 @@ class TestGradientNodeRendering:
             fallback_hex="#800080",
         )
         html = node_to_email_html(
-            node,
-            gradients_map={"hero-bg": grad},
+            node, RenderContext.from_legacy_kwargs(gradients_map={"hero-bg": grad})
         )
         assert 'bgcolor="#800080"' in html
 
@@ -1820,8 +1826,7 @@ class TestGradientNodeRendering:
             fallback_hex="#808080",
         )
         html = node_to_email_html(
-            node,
-            gradients_map={"hero-bg": grad},
+            node, RenderContext.from_legacy_kwargs(gradients_map={"hero-bg": grad})
         )
         assert "linear-gradient(90.0deg" in html
         assert "#FF0000 0.0%" in html
@@ -1875,7 +1880,7 @@ class TestHeadingMsoLineHeight:
             font_size=32.0,
         )
         tb = TextBlock(node_id="t1", content="Hello", font_size=32.0, is_heading=True)
-        result = node_to_email_html(node, text_meta={"t1": tb})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(text_meta={"t1": tb}))
         assert "mso-line-height-rule:exactly" in result
 
 

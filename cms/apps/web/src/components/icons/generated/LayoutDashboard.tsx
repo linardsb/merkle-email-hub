@@ -1,0 +1,32 @@
+/**
+ * LayoutDashboard icon — auto-generated from SVG source.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import { forwardRef } from "react";
+import type { IconProps } from "./_types";
+
+export const LayoutDashboard = forwardRef<SVGSVGElement, IconProps>(
+  ({ size = 24, className, ...props }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="currentColor"
+      className={className}
+      {...props}
+    >
+      <path
+        fill="none"
+        d="M15.92,21.63c3.1,0,5.63-2.53,5.63-5.63,0-1.01-.27-1.96-.74-2.78l-4.81,2.8-.04-.02v.02h-5.67c.01,3.09,2.53,5.61,5.63,5.61Z"
+      />
+      <path fill="none" d="M15.96,10.37v4.52l4.28-2.49c-1.03-1.23-2.56-2.01-4.28-2.03Z" />
+      <path fill="none" d="M1.36,25.6c0,.4.32.72.72.72h27.69c.4,0,.72-.32.72-.72v-.51H1.36v.51Z" />
+      <path d="M4.26,8.52c0-.38.31-.7.7-.7h21.79c.38,0,.7.31.7.7v15.56h1v-15.56c0-.94-.76-1.7-1.7-1.7H4.95c-.94,0-1.7.76-1.7,1.7v15.56h1v-15.56Z" />
+      <path d="M.36,24.09v1.51c0,.95.77,1.72,1.72,1.72h27.69c.95,0,1.72-.77,1.72-1.72v-1.51H.36ZM30.49,25.6c0,.4-.32.72-.72.72H2.08c-.4,0-.72-.32-.72-.72v-.51h29.13v.51Z" />
+      <path d="M9.29,16c0,3.66,2.97,6.63,6.63,6.63s6.63-2.97,6.63-6.63-2.97-6.63-6.63-6.63-6.63,2.97-6.63,6.63ZM15.96,10.37c1.72.01,3.26.8,4.28,2.03l-4.28,2.49v-4.52ZM15.96,16.01l.04.02,4.81-2.8c.47.82.74,1.77.74,2.78,0,3.1-2.53,5.63-5.63,5.63s-5.61-2.51-5.63-5.61h5.67v-.02Z" />
+    </svg>
+  ),
+);
+LayoutDashboard.displayName = "LayoutDashboard";

@@ -321,14 +321,17 @@ def _sync_patches(
             "save_snapshot",
             mock_save if mock_save is not None else AsyncMock(),
         ),
-        patch.object(service, "_get_provider", return_value=mock_provider),
-        patch("app.design_sync.service.decrypt_token", return_value="token123"),
+        patch.object(service._ctx, "get_provider", return_value=mock_provider),
+        patch(
+            "app.design_sync.services.connection_service.decrypt_token",
+            return_value="token123",
+        ),
         patch(
             "app.design_sync.service.fetch_target_clients",
             new_callable=AsyncMock,
             return_value=None,
         ),
-        patch.object(service, "_get_project_name", new_callable=AsyncMock, return_value="Test"),
+        patch.object(service._ctx, "get_project_name", new_callable=AsyncMock, return_value="Test"),
         patch.object(ConnectionResponse, "from_model", return_value=MagicMock()),
     )
 

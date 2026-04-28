@@ -23,6 +23,7 @@ from app.design_sync.protocol import (
     ExportedImage,
     ExtractedTokens,
 )
+from app.design_sync.render_context import RenderContext
 
 
 class TestImageNodeRendering:
@@ -93,7 +94,7 @@ class TestImageNodeRendering:
         """IMAGE with slot_counter → data-slot-name="image"."""
         node = DesignNode(id="img1", name="Photo", type=DesignNodeType.IMAGE, width=400, height=300)
         counter: dict[str, int] = {}
-        html = node_to_email_html(node, slot_counter=counter)
+        html = node_to_email_html(node, RenderContext.from_legacy_kwargs(slot_counter=counter))
         assert 'data-slot-name="image"' in html
 
     def test_image_no_slot_name_when_no_counter(self) -> None:

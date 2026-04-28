@@ -20,11 +20,11 @@ from app.design_sync.protocol import (
     ExtractedTypography,
     StyleRun,
 )
+from app.design_sync.render_context import RenderContext
 from app.projects.design_system import BrandPalette, Typography
 
 if TYPE_CHECKING:
-    from app.design_sync.compatibility import ConverterCompatibility
-    from app.design_sync.figma.layout_analyzer import EmailSection, TextBlock
+    from app.design_sync.figma.layout_analyzer import EmailSection
 
 logger = get_logger(__name__)
 
@@ -613,545 +613,589 @@ def _render_button(
     return "\n".join(parts)
 
 
-def node_to_email_html(
-    node: DesignNode,
-    *,
-    indent: int = 0,
-    props_map: dict[str, _NodeProps] | None = None,
-    parent_bg: str | None = None,
-    parent_font: str | None = None,
-    section_map: dict[str, EmailSection] | None = None,
-    button_ids: set[str] | None = None,
-    text_meta: dict[str, TextBlock] | None = None,
-    current_section: EmailSection | None = None,
-    body_font_size: float = 16.0,
-    compat: ConverterCompatibility | None = None,
-    gradients_map: dict[str, ExtractedGradient] | None = None,
-    _depth: int = 0,
-    container_width: int = 600,
-    slot_counter: dict[str, int] | None = None,
-) -> str:
-    """Convert a DesignNode tree to email-safe HTML (table layout).
+@dataclass(frozen=True)
+class _FrameStyle:
+    """Computed frame styling: bgcolor, gradient, border, font, MSO VML wrapper."""
 
-    Converts flex/grid frames to table rows/cells.
-    This produces a structural skeleton — the Scaffolder fills content.
+    bgcolor_attr: str
+    style_parts: list[str]
+    effective_bg: str | None
+    effective_font: str | None
+    bg_vml_open: str
+    bg_vml_close: str
 
-    Args:
-        node: The design node to convert.
-        indent: Current indentation level.
-        props_map: Optional supplementary visual properties keyed by node ID.
-        parent_bg: Inherited background color from parent frame for contrast.
-        parent_font: Inherited font-family from parent frame for inline styles.
-        section_map: Node ID → EmailSection from layout analysis.
-        button_ids: Node IDs identified as buttons by layout analysis.
-        text_meta: Node ID → TextBlock metadata from layout analysis.
-        current_section: The enclosing EmailSection (for context propagation).
-        body_font_size: Base body font size in px (default 16).
-        compat: Compatibility checker for client-aware warnings.
-        gradients_map: Node name → ExtractedGradient for gradient CSS.
-        _depth: Internal nesting depth counter for guard.
-        container_width: Available width in px for column calculations.
-        slot_counter: Shared per-section counter for unique data-slot-name attrs.
+
+@dataclass(frozen=True)
+class _FramePadding:
+    """Computed frame inner-td padding."""
+
+    has_padding: bool
+    padding_css: str
+
+
+def _text_style_from_props(
+    props: _NodeProps, node_name: str, ctx: RenderContext
+) -> tuple[str, str]:
+    """Resolve font-family + accumulated inline style suffix from text props."""
+    font_family = ""
+    extra_style = ""
+    if props.font_family:
+        safe_family = _sanitize_css_value(props.font_family)
+        if safe_family:
+            font_family = _font_stack(safe_family)
+    if props.font_size:
+        extra_style += f"font-size:{int(props.font_size)}px;"
+    if props.font_weight:
+        try:
+            weight_num = int(props.font_weight)
+            mapped = "bold" if weight_num >= 500 else "normal"
+        except (ValueError, TypeError):
+            mapped = "bold" if str(props.font_weight).lower() == "bold" else "normal"
+        extra_style += f"font-weight:{mapped};"
+    if props.line_height_px:
+        lh = round(props.line_height_px)
+        extra_style += f"line-height:{lh}px;mso-line-height-rule:exactly;"
+    if props.letter_spacing_px:
+        if ctx.compat:
+            ctx.compat.check_and_warn("letter-spacing", context=f"Text node '{node_name}'")
+        ls = round(props.letter_spacing_px, 1)
+        extra_style += f"letter-spacing:{ls}px;"
+    if props.text_transform:
+        extra_style += f"text-transform:{_sanitize_css_value(props.text_transform)};"
+    if props.text_decoration:
+        extra_style += f"text-decoration:{_sanitize_css_value(props.text_decoration)};"
+    return font_family, extra_style
+
+
+def _render_text_node(node: DesignNode, ctx: RenderContext) -> str:
+    """Render a TEXT node as a semantic <td> with inline styles.
+
+    Resolves font-family/size/weight/line-height/letter-spacing/transform/decoration
+    from optional props, then maps text-align and color, computes the MSO font-alt
+    fallback, and decides heading level from the layout analyzer's text_meta.
     """
-    pad = "  " * indent
-    props = props_map.get(node.id) if props_map else None
+    pad = "  " * ctx.indent
+    props = ctx.props_map.get(node.id) if ctx.props_map else None
+    raw_text = node.text_content or ""
+    content = (
+        _render_style_runs(raw_text, node.style_runs) if node.style_runs else html.escape(raw_text)
+    )
+    font_family = ctx.parent_font or "Arial,Helvetica,sans-serif"
+    extra_style = ""
+    if props:
+        prop_font, extra_style = _text_style_from_props(props, node.name or "", ctx)
+        if prop_font:
+            font_family = prop_font
+    if node.text_align and node.text_align != "left":
+        extra_style += f"text-align:{node.text_align};"
+    if node.text_color:
+        safe_text_color = _sanitize_css_value(node.text_color)
+        if safe_text_color:
+            extra_style += f"color:{safe_text_color};"
+    elif ctx.parent_bg:
+        extra_style += f"color:{_contrasting_text_color(ctx.parent_bg)};"
+    mso_alt = ""
+    if font_family:
+        primary = font_family.split(",")[0].strip().strip("'\"")
+        for mapped_name, chain in _FALLBACK_MAP.items():
+            if mapped_name.strip("'\"").lower() == primary.lower() and chain:
+                mso_alt = f"mso-font-alt:{chain[0]};"
+                break
+    if "line-height:" in extra_style and "mso-line-height-rule" not in extra_style:
+        extra_style += "mso-line-height-rule:exactly;"
 
-    if node.type == DesignNodeType.TEXT:
-        raw_text = node.text_content or ""
-        content = (
-            _render_style_runs(raw_text, node.style_runs)
-            if node.style_runs
-            else html.escape(raw_text)
+    is_heading = False
+    heading_level: int | None = None
+    if ctx.text_meta and node.id in ctx.text_meta:
+        is_heading = ctx.text_meta[node.id].is_heading
+    if is_heading:
+        font_size_val = props.font_size if props else None
+        if font_size_val is None:
+            font_size_val = node.font_size if node.font_size is not None else 16.0
+        heading_level = _determine_heading_level(font_size_val, ctx.body_font_size)
+        if heading_level is None:
+            heading_level = 3
+
+    return _render_semantic_text(
+        content=content,
+        font_family=font_family,
+        extra_style=extra_style,
+        mso_alt=mso_alt,
+        pad=pad,
+        is_heading=is_heading,
+        heading_level=heading_level,
+        slot_counter=ctx.slot_counter,
+    )
+
+
+def _render_image_node(node: DesignNode, ctx: RenderContext) -> str:
+    """Render an IMAGE node as <img> with placeholder src and accessible alt."""
+    pad = "  " * ctx.indent
+    w_val = int(node.width) if node.width else None
+    h_val = int(node.height) if node.height else None
+    w = f' width="{w_val}"' if w_val else ""
+    h = f' height="{h_val}"' if h_val else ""
+    alt = _meaningful_alt(node.name, section=ctx.current_section)
+    node_id_attr = f' data-node-id="{html.escape(node.id)}"'
+    slot_attr = ""
+    if ctx.slot_counter is not None:
+        slot_attr = f' data-slot-name="{_next_slot_name(ctx.slot_counter, "image")}"'
+    max_w = f"max-width:{w_val}px;" if w_val else ""
+    return (
+        f'{pad}<img src="" alt="{alt}"{node_id_attr}{slot_attr}{w}{h}'
+        f' style="display:block;border:0;outline:none;text-decoration:none;'
+        f'-ms-interpolation-mode:bicubic;width:100%;{max_w}height:auto;" />'
+    )
+
+
+def _render_image_only_frame_node(node: DesignNode, ctx: RenderContext) -> str:
+    """Render a childless FRAME with image_ref as a standalone <img>."""
+    pad = "  " * ctx.indent
+    w_val = int(node.width) if node.width else None
+    h_val = int(node.height) if node.height else None
+    w = f' width="{w_val}"' if w_val else ""
+    h = f' height="{h_val}"' if h_val else ""
+    alt = _meaningful_alt(node.name, section=ctx.current_section)
+    max_w = f"max-width:{w_val}px;" if w_val else ""
+    return (
+        f'{pad}<img src="{html.escape(node.image_ref or "")}" alt="{alt}"'
+        f' data-node-id="{html.escape(node.id)}"{w}{h}'
+        f' style="display:block;border:0;outline:none;text-decoration:none;'
+        f'-ms-interpolation-mode:bicubic;width:100%;{max_w}height:auto;" />'
+    )
+
+
+def _frame_styling(node: DesignNode, ctx: RenderContext, props: _NodeProps | None) -> _FrameStyle:
+    """Compute background, gradient, border, radius and font for a frame."""
+    pad = "  " * ctx.indent
+    bgcolor_attr = ""
+    style_parts: list[str] = [
+        "border-collapse:collapse",
+        "mso-table-lspace:0pt",
+        "mso-table-rspace:0pt",
+    ]
+    effective_bg = ctx.parent_bg
+
+    if node.fill_color:
+        bgcolor_attr = f' bgcolor="{html.escape(node.fill_color)}"'
+        effective_bg = node.fill_color
+    if props and props.bg_color:
+        bgcolor_attr = f' bgcolor="{html.escape(props.bg_color)}"'
+        effective_bg = props.bg_color
+
+    if ctx.gradients_map and node.name in ctx.gradients_map:
+        grad = ctx.gradients_map[node.name]
+        gradient_css = _gradient_to_css(grad)
+        if not bgcolor_attr:
+            bgcolor_attr = f' bgcolor="{html.escape(grad.fallback_hex)}"'
+        style_parts.append(f"background:{gradient_css}")
+
+    if node.stroke_weight and node.stroke_color:
+        stroke_w = int(node.stroke_weight)
+        safe_stroke = _sanitize_css_value(node.stroke_color)
+        if safe_stroke:
+            style_parts.append(f"border:{stroke_w}px solid {safe_stroke}")
+
+    if node.corner_radius:
+        style_parts.append(f"border-radius:{int(node.corner_radius)}px")
+
+    bg_vml_open = ""
+    bg_vml_close = ""
+    if node.image_ref and node.children and _is_safe_url(node.image_ref):
+        safe_url = html.escape(node.image_ref)
+        style_parts.append(f"background-image:url('{safe_url}')")
+        style_parts.append("background-size:cover")
+        style_parts.append("background-position:center")
+        style_parts.append("background-repeat:no-repeat")
+        bg_w = int(node.width) if node.width else 600
+        bg_h = int(node.height) if node.height else 300
+        bg_vml_open = (
+            f"{pad}<!--[if gte mso 9]>\n"
+            f'{pad}<v:rect xmlns:v="urn:schemas-microsoft-com:vml"'
+            f' fill="true" stroke="false"'
+            f' style="width:{bg_w}px;height:{bg_h}px;">\n'
+            f'{pad}<v:fill type="frame" src="{safe_url}" />\n'
+            f'{pad}<v:textbox inset="0,0,0,0">\n'
+            f"{pad}<![endif]-->"
         )
-        font_family = parent_font or "Arial,Helvetica,sans-serif"
-        extra_style = ""
-        if props:
-            if props.font_family:
-                safe_family = _sanitize_css_value(props.font_family)
-                if safe_family:
-                    font_family = _font_stack(safe_family)
-            if props.font_size:
-                extra_style += f"font-size:{int(props.font_size)}px;"
-            if props.font_weight:
-                # Map to email-safe weight: >=500 → bold, <500 → normal
-                try:
-                    weight_num = int(props.font_weight)
-                    mapped = "bold" if weight_num >= 500 else "normal"
-                except (ValueError, TypeError):
-                    mapped = "bold" if str(props.font_weight).lower() == "bold" else "normal"
-                extra_style += f"font-weight:{mapped};"
-            if props.line_height_px:
-                lh = round(props.line_height_px)
-                extra_style += f"line-height:{lh}px;mso-line-height-rule:exactly;"
-            if props.letter_spacing_px:
-                if compat:
-                    compat.check_and_warn(
-                        "letter-spacing",
-                        context=f"Text node '{node.name}'",
-                    )
-                ls = round(props.letter_spacing_px, 1)
-                extra_style += f"letter-spacing:{ls}px;"
-            if props.text_transform:
-                extra_style += f"text-transform:{_sanitize_css_value(props.text_transform)};"
-            if props.text_decoration:
-                extra_style += f"text-decoration:{_sanitize_css_value(props.text_decoration)};"
-        # Text alignment from design tool
-        if node.text_align and node.text_align != "left":
-            extra_style += f"text-align:{node.text_align};"
-        # Color priority: node.text_color (from design) > contrast auto > none
-        if node.text_color:
-            safe_text_color = _sanitize_css_value(node.text_color)
-            if safe_text_color:
-                extra_style += f"color:{safe_text_color};"
-        elif parent_bg:
-            extra_style += f"color:{_contrasting_text_color(parent_bg)};"
-        # MSO font-alt for Outlook fallback
-        mso_alt = ""
-        if font_family:
-            primary = font_family.split(",")[0].strip().strip("'\"")
-            for mapped_name, chain in _FALLBACK_MAP.items():
-                if mapped_name.strip("'\"").lower() == primary.lower() and chain:
-                    mso_alt = f"mso-font-alt:{chain[0]};"
-                    break
-        # Safety net: ensure mso-line-height-rule if line-height added without it
-        if "line-height:" in extra_style and "mso-line-height-rule" not in extra_style:
-            extra_style += "mso-line-height-rule:exactly;"
+        bg_vml_close = f"{pad}<!--[if gte mso 9]>\n{pad}</v:textbox></v:rect>\n{pad}<![endif]-->"
 
-        # Determine semantic role from layout analysis
-        is_heading = False
-        heading_level: int | None = None
-        if text_meta and node.id in text_meta:
-            tb = text_meta[node.id]
-            is_heading = tb.is_heading
-        if is_heading:
-            font_size_val = props.font_size if props else None
-            if font_size_val is None:
-                font_size_val = node.font_size if node.font_size is not None else 16.0
-            heading_level = _determine_heading_level(font_size_val, body_font_size)
-            if heading_level is None:
-                # is_heading from analyzer but ratio too small — default h3
-                heading_level = 3
+    effective_font = ctx.parent_font
+    if props and props.font_family:
+        safe_family = _sanitize_css_value(props.font_family)
+        if safe_family:
+            effective_font = f"{safe_family},Arial,Helvetica,sans-serif"
 
-        return _render_semantic_text(
-            content=content,
-            font_family=font_family,
-            extra_style=extra_style,
-            mso_alt=mso_alt,
-            pad=pad,
-            is_heading=is_heading,
-            heading_level=heading_level,
-            slot_counter=slot_counter,
+    return _FrameStyle(
+        bgcolor_attr=bgcolor_attr,
+        style_parts=style_parts,
+        effective_bg=effective_bg,
+        effective_font=effective_font,
+        bg_vml_open=bg_vml_open,
+        bg_vml_close=bg_vml_close,
+    )
+
+
+def _frame_padding(node: DesignNode, props: _NodeProps | None) -> _FramePadding:
+    """Compute the inner-td padding string from node + props padding values."""
+    pad_top = (
+        node.padding_top if node.padding_top is not None else (props.padding_top if props else 0)
+    )
+    pad_right = (
+        node.padding_right
+        if node.padding_right is not None
+        else (props.padding_right if props else 0)
+    )
+    pad_bottom = (
+        node.padding_bottom
+        if node.padding_bottom is not None
+        else (props.padding_bottom if props else 0)
+    )
+    pad_left = (
+        node.padding_left if node.padding_left is not None else (props.padding_left if props else 0)
+    )
+    has_padding = any(v > 0 for v in (pad_top, pad_right, pad_bottom, pad_left))
+    padding_css = (
+        f"padding:{int(pad_top)}px {int(pad_right)}px {int(pad_bottom)}px {int(pad_left)}px"
+        if has_padding
+        else ""
+    )
+    return _FramePadding(has_padding=has_padding, padding_css=padding_css)
+
+
+def _render_frame_flat_fallback(
+    node: DesignNode, ctx: RenderContext, child_ctx: RenderContext
+) -> str:
+    """Flatten frame children when nesting depth >6. Avoids Outlook crashes."""
+    pad = "  " * ctx.indent
+    logger.warning(
+        "design_sync.nesting_depth_exceeded",
+        node_id=node.id,
+        node_name=node.name,
+        depth=ctx.depth,
+    )
+    flat_lines: list[str] = []
+    for child in node.children:
+        child_html = node_to_email_html(child, child_ctx)
+        is_button = bool(ctx.button_ids and child.id in ctx.button_ids)
+        if child.type != DesignNodeType.TEXT and not is_button:
+            flat_lines.append(f"{pad}<tr><td>{child_html}</td></tr>")
+        else:
+            flat_lines.append(f"{pad}<tr>{child_html}</tr>")
+    return "\n".join(flat_lines) if flat_lines else ""
+
+
+def _render_inline_row(
+    row: list[DesignNode],
+    ctx: RenderContext,
+    style: _FrameStyle,
+    inner_indent: int,
+) -> list[str]:
+    """Render a row of TEXT/IMAGE children as inline content within one <td>."""
+    pad = "  " * ctx.indent
+    inner_pad = "  " * inner_indent
+    td_font = style.effective_font or "Arial,Helvetica,sans-serif"
+    lines: list[str] = [f'{pad}    <tr><td style="vertical-align:middle;font-family:{td_font};">']
+    for child in row:
+        if child.type == DesignNodeType.TEXT:
+            text = html.escape(child.text_content or "")
+            if not text:
+                continue
+            child_props = ctx.props_map.get(child.id) if ctx.props_map else None
+            font = td_font
+            child_style_parts: list[str] = []
+            if child_props:
+                if child_props.font_family:
+                    sf = _sanitize_css_value(child_props.font_family)
+                    if sf:
+                        font = _font_stack(sf)
+                if child_props.font_size:
+                    child_style_parts.append(f"font-size:{int(child_props.font_size)}px")
+                if child_props.font_weight:
+                    try:
+                        wn = int(child_props.font_weight)
+                        mw = "bold" if wn >= 500 else "normal"
+                    except (ValueError, TypeError):
+                        s = str(child_props.font_weight).lower()
+                        mw = "bold" if s == "bold" else "normal"
+                    child_style_parts.append(f"font-weight:{mw}")
+            child_style_parts.insert(0, f"font-family:{font}")
+            if child.text_color:
+                sc = _sanitize_css_value(child.text_color)
+                if sc:
+                    child_style_parts.append(f"color:{sc}")
+            elif style.effective_bg:
+                child_style_parts.append(f"color:{_contrasting_text_color(style.effective_bg)}")
+            css = ";".join(child_style_parts)
+            lines.append(f'{inner_pad}<span style="{css}">{text}</span>')
+        elif child.type == DesignNodeType.IMAGE:
+            w = str(int(child.width)) if child.width else ""
+            h = str(int(child.height)) if child.height else ""
+            alt = _meaningful_alt(child.name, section=ctx.current_section)
+            w_attr = f' width="{w}"' if w else ""
+            h_attr = f' height="{h}"' if h else ""
+            lines.append(
+                f'{inner_pad}<img src="" alt="{alt}"'
+                f' data-node-id="{child.id}"'
+                f"{w_attr}{h_attr}"
+                f' style="vertical-align:middle;border:0;" />'
+            )
+    lines.append(f"{pad}    </td></tr>")
+    return lines
+
+
+def _render_single_col_row(
+    row: list[DesignNode],
+    ctx: RenderContext,
+    style: _FrameStyle,
+    *,
+    has_padding: bool,
+    layout_dir: str | None,
+    gap: float,
+    cross_gap: float,
+    section: EmailSection | None,
+) -> list[str]:
+    """Render a single-column row (or short row of inline children)."""
+    pad = "  " * ctx.indent
+    lines: list[str] = [f"{pad}    <tr>"]
+    child_indent = ctx.indent + (4 if has_padding else 2)
+    for cell_idx, child in enumerate(row):
+        child_ctx = ctx.with_child(
+            indent=child_indent,
+            parent_bg=style.effective_bg,
+            parent_font=style.effective_font,
+            section=section,
+        )
+        child_html = node_to_email_html(child, child_ctx)
+        is_button = bool(ctx.button_ids and child.id in ctx.button_ids)
+        if child.type != DesignNodeType.TEXT and not is_button:
+            td_styles: list[str] = []
+            if style.effective_font:
+                td_styles.append(f"font-family:{style.effective_font}")
+            if layout_dir == "row" and cell_idx > 0 and gap > 0:
+                td_styles.append(f"padding-left:{int(gap)}px")
+            if cross_gap > 0:
+                if layout_dir == "row":
+                    td_styles.append(f"padding-top:{int(cross_gap)}px")
+                elif layout_dir == "column":
+                    td_styles.append(f"padding-left:{int(cross_gap)}px")
+            td_style = f' style="{";".join(td_styles)}"' if td_styles else ""
+            lines.append(f"{pad}      <td{td_style}>")
+            lines.append(child_html)
+            lines.append(f"{pad}      </td>")
+        else:
+            lines.append(child_html)
+    lines.append(f"{pad}    </tr>")
+    return lines
+
+
+def _render_frame_rows(
+    rows: list[list[DesignNode]],
+    ctx: RenderContext,
+    style: _FrameStyle,
+    *,
+    has_padding: bool,
+    layout_dir: str | None,
+    gap: float,
+    cross_gap: float,
+    effective_width: int,
+    section: EmailSection | None,
+) -> list[str]:
+    """Iterate rows, dispatching to inline / multi-column / single-column renderers."""
+    pad = "  " * ctx.indent
+    lines: list[str] = []
+    gap_px = int(gap)
+    inner_indent = ctx.indent + (3 if has_padding else 2)
+    mc_indent = ctx.indent + (2 if has_padding else 1)
+
+    for row_idx, row in enumerate(rows):
+        if row_idx > 0 and gap > 0 and layout_dir in ("column", None):
+            lines.append(
+                f'{pad}    <tr><td style="height:{gap_px}px;'
+                f"font-size:1px;line-height:1px;"
+                f'mso-line-height-rule:exactly;" '
+                f'aria-hidden="true">&nbsp;</td></tr>'
+            )
+
+        if len(row) > 1 and _is_inline_row(row):
+            lines.extend(_render_inline_row(row, ctx, style, inner_indent))
+            continue
+
+        if len(row) > 1:
+            col_widths = _calculate_column_widths(row, effective_width, gap=gap_px)
+            mc_ctx = ctx.with_child(
+                indent=mc_indent,
+                depth_delta=0,
+                parent_bg=style.effective_bg,
+                parent_font=style.effective_font,
+                section=section,
+                container_width=effective_width,
+            )
+            lines.extend(
+                _render_multi_column_row(
+                    row,
+                    column_widths=col_widths,
+                    gap=gap_px,
+                    indent=mc_indent,
+                    ctx=mc_ctx,
+                )
+            )
+            continue
+
+        lines.extend(
+            _render_single_col_row(
+                row,
+                ctx,
+                style,
+                has_padding=has_padding,
+                layout_dir=layout_dir,
+                gap=gap,
+                cross_gap=cross_gap,
+                section=section,
+            )
+        )
+    return lines
+
+
+def _resolve_frame_layout(
+    node: DesignNode, props: _NodeProps | None
+) -> tuple[str | None, float, float, list[list[DesignNode]]]:
+    """Pick layout direction, gaps, and row groupings for a frame's children."""
+    layout_dir = props.layout_direction if props else None
+    if node.layout_mode == "HORIZONTAL":
+        layout_dir = "row"
+    elif node.layout_mode == "VERTICAL":
+        layout_dir = "column"
+
+    gap = (
+        props.item_spacing if props else (node.item_spacing if node.item_spacing is not None else 0)
+    )
+    cross_gap = (
+        props.counter_axis_spacing
+        if props
+        else (node.counter_axis_spacing if node.counter_axis_spacing is not None else 0)
+    )
+
+    if layout_dir == "row":
+        rows = [node.children]
+    elif layout_dir == "column":
+        rows = [[child] for child in node.children]
+    else:
+        rows = _group_into_rows(node.children, parent_width=node.width)
+    return layout_dir, gap, cross_gap, rows
+
+
+def _render_frame_node(node: DesignNode, ctx: RenderContext) -> str:
+    """Render a FRAME/GROUP/COMPONENT/INSTANCE as a <table> with rows."""
+    pad = "  " * ctx.indent
+    props = ctx.props_map.get(node.id) if ctx.props_map else None
+
+    section = ctx.current_section
+    if ctx.section_map and node.id in ctx.section_map:
+        section = ctx.section_map[node.id]
+
+    style = _frame_styling(node, ctx, props)
+    pad_info = _frame_padding(node, props)
+
+    if ctx.depth > 6:
+        flat_ctx = ctx.with_child(
+            parent_bg=style.effective_bg,
+            parent_font=style.effective_font,
+            section=section,
+        )
+        return _render_frame_flat_fallback(node, ctx, flat_ctx)
+
+    style_attr = f' style="{";".join(style.style_parts)}"'
+    component_attr = ""
+    if ctx.depth == 0 and ctx.slot_counter is not None:
+        component_attr = f' data-component-name="{html.escape(node.name or "")}"'
+
+    lines: list[str] = []
+    if style.bg_vml_open:
+        lines.append(style.bg_vml_open)
+    lines.append(
+        f'{pad}<table width="100%"{style.bgcolor_attr}{component_attr}{style_attr}'
+        f' cellpadding="0" cellspacing="0" border="0" role="presentation">'
+    )
+
+    if not node.children:
+        if pad_info.has_padding:
+            lines.append(f'{pad}  <tr><td style="{pad_info.padding_css}">&nbsp;</td></tr>')
+        else:
+            lines.append(f"{pad}  <tr><td>&nbsp;</td></tr>")
+    else:
+        layout_dir, gap, cross_gap, rows = _resolve_frame_layout(node, props)
+        effective_width = int(node.width) if node.width else ctx.container_width
+
+        if pad_info.has_padding:
+            lines.append(f'{pad}  <tr><td style="{pad_info.padding_css}">')
+            lines.append(
+                f'{pad}    <table width="100%" cellpadding="0" cellspacing="0"'
+                f' border="0" role="presentation"'
+                f' style="border-collapse:collapse;'
+                f'mso-table-lspace:0pt;mso-table-rspace:0pt;">'
+            )
+
+        lines.extend(
+            _render_frame_rows(
+                rows,
+                ctx,
+                style,
+                has_padding=pad_info.has_padding,
+                layout_dir=layout_dir,
+                gap=gap,
+                cross_gap=cross_gap,
+                effective_width=effective_width,
+                section=section,
+            )
         )
 
-    if node.type == DesignNodeType.IMAGE:
-        w_val = int(node.width) if node.width else None
-        h_val = int(node.height) if node.height else None
-        w = f' width="{w_val}"' if w_val else ""
-        h = f' height="{h_val}"' if h_val else ""
-        alt = _meaningful_alt(node.name, section=current_section)
-        node_id_attr = f' data-node-id="{html.escape(node.id)}"'
-        slot_attr = ""
-        if slot_counter is not None:
-            slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "image")}"'
-        max_w = f"max-width:{w_val}px;" if w_val else ""
-        return (
-            f'{pad}<img src="" alt="{alt}"{node_id_attr}{slot_attr}{w}{h}'
-            f' style="display:block;border:0;outline:none;text-decoration:none;'
-            f'-ms-interpolation-mode:bicubic;width:100%;{max_w}height:auto;" />'
-        )
+        if pad_info.has_padding:
+            lines.append(f"{pad}    </table>")
+            lines.append(f"{pad}  </td></tr>")
+    lines.append(f"{pad}</table>")
+    if style.bg_vml_close:
+        lines.append(style.bg_vml_close)
+    return "\n".join(lines)
 
-    # Button detection: node is in button_ids from layout analysis
-    if button_ids and node.id in button_ids:
-        return _render_button(
-            node,
-            pad=pad,
-            props=props,
-            slot_counter=slot_counter,
-        )
 
-    # FRAME with image_ref but no children → render as standalone <img>
-    if (
-        node.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.INSTANCE)
-        and node.image_ref
-        and not node.children
-        and _is_safe_url(node.image_ref)
-    ):
-        w_val = int(node.width) if node.width else None
-        h_val = int(node.height) if node.height else None
-        w = f' width="{w_val}"' if w_val else ""
-        h = f' height="{h_val}"' if h_val else ""
-        alt = _meaningful_alt(node.name, section=current_section)
-        max_w = f"max-width:{w_val}px;" if w_val else ""
-        return (
-            f'{pad}<img src="{html.escape(node.image_ref)}" alt="{alt}"'
-            f' data-node-id="{html.escape(node.id)}"{w}{h}'
-            f' style="display:block;border:0;outline:none;text-decoration:none;'
-            f'-ms-interpolation-mode:bicubic;width:100%;{max_w}height:auto;" />'
-        )
-
-    # Frame/Group/Component/Instance → table with rows
-    if node.type in (
+_FRAME_TYPES: frozenset[DesignNodeType] = frozenset(
+    {
         DesignNodeType.FRAME,
         DesignNodeType.GROUP,
         DesignNodeType.COMPONENT,
         DesignNodeType.INSTANCE,
-    ):
-        # Look up section data from layout analysis
-        section = current_section
-        if section_map and node.id in section_map:
-            section = section_map[node.id]
+    }
+)
 
-        # Nested frames use 100% to fill parent; the converter_service wraps
-        # top-level frames in <tr><td>, so 100% is correct at every level.
-        width_attr = ' width="100%"'
-        bgcolor_attr = ""
-        # MSO reset styles on every <table>
-        style_parts: list[str] = [
-            "border-collapse:collapse",
-            "mso-table-lspace:0pt",
-            "mso-table-rspace:0pt",
-        ]
-        # Track the effective background for child text contrast
-        effective_bg = parent_bg
 
-        # Priority: node.fill_color (from design tool) first
-        if node.fill_color:
-            bgcolor_attr = f' bgcolor="{html.escape(node.fill_color)}"'
-            effective_bg = node.fill_color
-        # props_map overrides if present (backward compat with Penpot raw data)
-        if props and props.bg_color:
-            bgcolor_attr = f' bgcolor="{html.escape(props.bg_color)}"'
-            effective_bg = props.bg_color
+def node_to_email_html(node: DesignNode, ctx: RenderContext | None = None) -> str:
+    """Convert a DesignNode tree to email-safe HTML (table layout).
 
-        # Gradient override: if node name matches a gradient, add CSS background
-        if gradients_map and node.name in gradients_map:
-            grad = gradients_map[node.name]
-            gradient_css = _gradient_to_css(grad)
-            # Keep bgcolor as fallback for Outlook
-            if not bgcolor_attr:
-                bgcolor_attr = f' bgcolor="{html.escape(grad.fallback_hex)}"'
-            style_parts.append(f"background:{gradient_css}")
+    Converts flex/grid frames to table rows/cells. Produces a structural
+    skeleton — the Scaffolder fills content. Pass ``ctx`` to thread inherited
+    render state (parent bg/font, section map, button ids, etc.) through the
+    recursion; defaults are valid for top-level calls without layout analysis.
+    """
+    if ctx is None:
+        ctx = RenderContext()
 
-        # Border from stroke data (e.g. product cards)
-        if node.stroke_weight and node.stroke_color:
-            stroke_w = int(node.stroke_weight)
-            safe_stroke = _sanitize_css_value(node.stroke_color)
-            if safe_stroke:
-                style_parts.append(f"border:{stroke_w}px solid {safe_stroke}")
-
-        # Corner radius on frames (cards, panels)
-        if node.corner_radius:
-            style_parts.append(f"border-radius:{int(node.corner_radius)}px")
-
-        # Background image for frames with image_ref + text children (hero sections)
-        bg_vml_open = ""
-        bg_vml_close = ""
-        if node.image_ref and node.children:
-            bg_url = node.image_ref
-            if _is_safe_url(bg_url):
-                safe_url = html.escape(bg_url)
-                style_parts.append(f"background-image:url('{safe_url}')")
-                style_parts.append("background-size:cover")
-                style_parts.append("background-position:center")
-                style_parts.append("background-repeat:no-repeat")
-                bg_w = int(node.width) if node.width else 600
-                bg_h = int(node.height) if node.height else 300
-                bg_vml_open = (
-                    f"{pad}<!--[if gte mso 9]>\n"
-                    f'{pad}<v:rect xmlns:v="urn:schemas-microsoft-com:vml"'
-                    f' fill="true" stroke="false"'
-                    f' style="width:{bg_w}px;height:{bg_h}px;">\n'
-                    f'{pad}<v:fill type="frame" src="{safe_url}" />\n'
-                    f'{pad}<v:textbox inset="0,0,0,0">\n'
-                    f"{pad}<![endif]-->"
-                )
-                bg_vml_close = (
-                    f"{pad}<!--[if gte mso 9]>\n{pad}</v:textbox></v:rect>\n{pad}<![endif]-->"
-                )
-
-        # Resolve effective font for children
-        effective_font = parent_font
-        if props and props.font_family:
-            safe_family = _sanitize_css_value(props.font_family)
-            if safe_family:
-                effective_font = f"{safe_family},Arial,Helvetica,sans-serif"
-
-        # Build padding string for inner <td> wrapper (NOT <table>).
-        # Outlook ignores padding on <table>; only <td> is reliable.
-        pad_top = (
-            node.padding_top
-            if node.padding_top is not None
-            else (props.padding_top if props else 0)
+    if node.type == DesignNodeType.TEXT:
+        return _render_text_node(node, ctx)
+    if node.type == DesignNodeType.IMAGE:
+        return _render_image_node(node, ctx)
+    if node.id in ctx.button_ids:
+        props = ctx.props_map.get(node.id) if ctx.props_map else None
+        return _render_button(
+            node,
+            pad="  " * ctx.indent,
+            props=props,
+            slot_counter=ctx.slot_counter,
         )
-        pad_right = (
-            node.padding_right
-            if node.padding_right is not None
-            else (props.padding_right if props else 0)
-        )
-        pad_bottom = (
-            node.padding_bottom
-            if node.padding_bottom is not None
-            else (props.padding_bottom if props else 0)
-        )
-        pad_left = (
-            node.padding_left
-            if node.padding_left is not None
-            else (props.padding_left if props else 0)
-        )
-        has_padding = any(v > 0 for v in (pad_top, pad_right, pad_bottom, pad_left))
-        padding_css = (
-            f"padding:{int(pad_top)}px {int(pad_right)}px {int(pad_bottom)}px {int(pad_left)}px"
-            if has_padding
-            else ""
-        )
-
-        # Nesting depth guard — flatten beyond depth 6
-        if _depth > 6:
-            logger.warning(
-                "design_sync.nesting_depth_exceeded",
-                node_id=node.id,
-                node_name=node.name,
-                depth=_depth,
-            )
-            flat_lines: list[str] = []
-            for child in node.children:
-                child_html = node_to_email_html(
-                    child,
-                    indent=indent + 1,
-                    props_map=props_map,
-                    parent_bg=effective_bg,
-                    parent_font=effective_font,
-                    section_map=section_map,
-                    button_ids=button_ids,
-                    text_meta=text_meta,
-                    current_section=section,
-                    body_font_size=body_font_size,
-                    compat=compat,
-                    gradients_map=gradients_map,
-                    _depth=_depth + 1,
-                    container_width=container_width,
-                    slot_counter=slot_counter,
-                )
-                is_button = bool(button_ids and child.id in button_ids)
-                if child.type != DesignNodeType.TEXT and not is_button:
-                    flat_lines.append(f"{pad}<tr><td>{child_html}</td></tr>")
-                else:
-                    flat_lines.append(f"{pad}<tr>{child_html}</tr>")
-            return "\n".join(flat_lines) if flat_lines else ""
-
-        style_attr = f' style="{";".join(style_parts)}"'
-        component_attr = ""
-        if _depth == 0 and slot_counter is not None:
-            component_attr = f' data-component-name="{html.escape(node.name or "")}"'
-        lines: list[str] = []
-        if bg_vml_open:
-            lines.append(bg_vml_open)
-        lines.append(
-            f"{pad}<table{width_attr}{bgcolor_attr}{component_attr}{style_attr}"
-            f' cellpadding="0" cellspacing="0" border="0" role="presentation">'
-        )
-
-        if not node.children:
-            if has_padding:
-                lines.append(f'{pad}  <tr><td style="{padding_css}">&nbsp;</td></tr>')
-            else:
-                lines.append(f"{pad}  <tr><td>&nbsp;</td></tr>")
-        else:
-            # Determine layout strategy
-            layout_dir = props.layout_direction if props else None
-            # DesignNode takes priority
-            if node.layout_mode == "HORIZONTAL":
-                layout_dir = "row"
-            elif node.layout_mode == "VERTICAL":
-                layout_dir = "column"
-
-            gap = (
-                props.item_spacing
-                if props
-                else (node.item_spacing if node.item_spacing is not None else 0)
-            )
-            cross_gap = (
-                props.counter_axis_spacing
-                if props
-                else (node.counter_axis_spacing if node.counter_axis_spacing is not None else 0)
-            )
-
-            if layout_dir == "row":
-                # HORIZONTAL: all children in a single <tr>
-                rows = [node.children] if node.children else []
-            elif layout_dir == "column":
-                # VERTICAL: each child in its own <tr>
-                rows = [[child] for child in node.children]
-            else:
-                # No auto-layout: fall back to y-position grouping
-                rows = _group_into_rows(node.children, parent_width=node.width)
-
-            # Wrap all rows in a padding <td> if the node has padding
-            if has_padding:
-                lines.append(f'{pad}  <tr><td style="{padding_css}">')
-                lines.append(
-                    f'{pad}    <table width="100%" cellpadding="0" cellspacing="0"'
-                    f' border="0" role="presentation"'
-                    f' style="border-collapse:collapse;'
-                    f'mso-table-lspace:0pt;mso-table-rspace:0pt;">'
-                )
-
-            gap_px = int(gap)
-            effective_width = int(node.width) if node.width else container_width
-
-            for row_idx, row in enumerate(rows):
-                # Insert vertical spacer between rows (not before first)
-                if row_idx > 0 and gap > 0 and layout_dir in ("column", None):
-                    lines.append(
-                        f'{pad}    <tr><td style="height:{gap_px}px;'
-                        f"font-size:1px;line-height:1px;"
-                        f'mso-line-height-rule:exactly;" '
-                        f'aria-hidden="true">&nbsp;</td></tr>'
-                    )
-
-                # Multi-column row: use hybrid inline-block + MSO ghost table
-                if len(row) > 1 and _is_inline_row(row):
-                    # B2: Inline content heuristic — render TEXT + small images
-                    # inline in a single <td> instead of ghost table columns.
-                    # TEXT → <span> with typography; IMAGE → inline <img>.
-                    inner_pad = "  " * (indent + (3 if has_padding else 2))
-                    td_font = effective_font or "Arial,Helvetica,sans-serif"
-                    lines.append(
-                        f'{pad}    <tr><td style="vertical-align:middle;font-family:{td_font};">'
-                    )
-                    for child in row:
-                        if child.type == DesignNodeType.TEXT:
-                            text = html.escape(child.text_content or "")
-                            if not text:
-                                continue
-                            child_props = props_map.get(child.id) if props_map else None
-                            font = td_font
-                            child_style_parts: list[str] = []
-                            if child_props:
-                                if child_props.font_family:
-                                    sf = _sanitize_css_value(child_props.font_family)
-                                    if sf:
-                                        font = _font_stack(sf)
-                                if child_props.font_size:
-                                    child_style_parts.append(
-                                        f"font-size:{int(child_props.font_size)}px"
-                                    )
-                                if child_props.font_weight:
-                                    try:
-                                        wn = int(child_props.font_weight)
-                                        mw = "bold" if wn >= 500 else "normal"
-                                    except (ValueError, TypeError):
-                                        s = str(child_props.font_weight).lower()
-                                        mw = "bold" if s == "bold" else "normal"
-                                    child_style_parts.append(f"font-weight:{mw}")
-                            child_style_parts.insert(0, f"font-family:{font}")
-                            if child.text_color:
-                                sc = _sanitize_css_value(child.text_color)
-                                if sc:
-                                    child_style_parts.append(f"color:{sc}")
-                            elif effective_bg:
-                                child_style_parts.append(
-                                    f"color:{_contrasting_text_color(effective_bg)}"
-                                )
-                            css = ";".join(child_style_parts)
-                            lines.append(f'{inner_pad}<span style="{css}">{text}</span>')
-                        elif child.type == DesignNodeType.IMAGE:
-                            w = str(int(child.width)) if child.width else ""
-                            h = str(int(child.height)) if child.height else ""
-                            alt = _meaningful_alt(child.name, section=section)
-                            w_attr = f' width="{w}"' if w else ""
-                            h_attr = f' height="{h}"' if h else ""
-                            lines.append(
-                                f'{inner_pad}<img src="" alt="{alt}"'
-                                f' data-node-id="{child.id}"'
-                                f"{w_attr}{h_attr}"
-                                f' style="vertical-align:middle;border:0;" />'
-                            )
-                    lines.append(f"{pad}    </td></tr>")
-                    continue
-
-                if len(row) > 1:
-                    col_widths = _calculate_column_widths(
-                        row,
-                        effective_width,
-                        gap=gap_px,
-                    )
-                    mc_indent = indent + (2 if has_padding else 1)
-                    mc_lines = _render_multi_column_row(
-                        row,
-                        column_widths=col_widths,
-                        gap=gap_px,
-                        indent=mc_indent,
-                        props_map=props_map,
-                        parent_bg=effective_bg,
-                        parent_font=effective_font,
-                        section_map=section_map,
-                        button_ids=button_ids,
-                        text_meta=text_meta,
-                        current_section=section,
-                        body_font_size=body_font_size,
-                        compat=compat,
-                        gradients_map=gradients_map,
-                        _depth=_depth,
-                        container_width=effective_width,
-                        slot_counter=slot_counter,
-                    )
-                    lines.extend(mc_lines)
-                    continue
-
-                # Single-column row: existing rendering
-                lines.append(f"{pad}    <tr>")
-                for cell_idx, child in enumerate(row):
-                    child_html = node_to_email_html(
-                        child,
-                        indent=indent + (4 if has_padding else 2),
-                        props_map=props_map,
-                        parent_bg=effective_bg,
-                        parent_font=effective_font,
-                        section_map=section_map,
-                        button_ids=button_ids,
-                        text_meta=text_meta,
-                        current_section=section,
-                        body_font_size=body_font_size,
-                        compat=compat,
-                        gradients_map=gradients_map,
-                        _depth=_depth + 1,
-                        container_width=container_width,
-                        slot_counter=slot_counter,
-                    )
-
-                    is_button = bool(button_ids and child.id in button_ids)
-                    if child.type != DesignNodeType.TEXT and not is_button:
-                        # Build <td> style
-                        td_styles: list[str] = []
-                        if effective_font:
-                            td_styles.append(f"font-family:{effective_font}")
-                        # Horizontal gap: padding-left on all cells except first
-                        if layout_dir == "row" and cell_idx > 0 and gap > 0:
-                            td_styles.append(f"padding-left:{int(gap)}px")
-                        # Cross-axis padding
-                        if cross_gap > 0:
-                            if layout_dir == "row":
-                                td_styles.append(f"padding-top:{int(cross_gap)}px")
-                            elif layout_dir == "column":
-                                td_styles.append(f"padding-left:{int(cross_gap)}px")
-                        td_style = f' style="{";".join(td_styles)}"' if td_styles else ""
-                        lines.append(f"{pad}      <td{td_style}>")
-                        lines.append(child_html)
-                        lines.append(f"{pad}      </td>")
-                    else:
-                        lines.append(child_html)
-                lines.append(f"{pad}    </tr>")
-
-            if has_padding:
-                lines.append(f"{pad}    </table>")
-                lines.append(f"{pad}  </td></tr>")
-        lines.append(f"{pad}</table>")
-        if bg_vml_close:
-            lines.append(bg_vml_close)
-        return "\n".join(lines)
-
-    # Vector/other → skip (vectors/SVGs are not email-safe)
+    if node.type in _FRAME_TYPES:
+        if node.image_ref and not node.children and _is_safe_url(node.image_ref):
+            return _render_image_only_frame_node(node, ctx)
+        return _render_frame_node(node, ctx)
     return ""
 
 
@@ -1485,49 +1529,34 @@ def _render_multi_column_row(
     column_widths: list[int],
     gap: int,
     indent: int,
-    props_map: dict[str, _NodeProps] | None,
-    parent_bg: str | None,
-    parent_font: str | None,
-    section_map: dict[str, EmailSection] | None,
-    button_ids: set[str] | None,
-    text_meta: dict[str, TextBlock] | None,
-    current_section: EmailSection | None,
-    body_font_size: float,
-    compat: ConverterCompatibility | None,
-    gradients_map: dict[str, ExtractedGradient] | None,
-    _depth: int,
-    container_width: int,
-    slot_counter: dict[str, int] | None = None,
+    ctx: RenderContext,
 ) -> list[str]:
     """Render a multi-column row using hybrid inline-block + MSO ghost table.
 
     Returns a list of HTML lines forming a single ``<tr>`` with columns rendered
     as ``display:inline-block`` divs for modern clients and an MSO ghost table
-    for Outlook.
+    for Outlook. ``ctx`` carries the inherited render state for child recursion.
     """
     pad = "  " * indent
     inner_pad = "  " * (indent + 1)
     col_pad = "  " * (indent + 2)
     lines: list[str] = []
 
-    # Compatibility warning for display:inline-block (once per row)
-    if compat:
-        compat.check_and_warn(
+    if ctx.compat:
+        ctx.compat.check_and_warn(
             "display",
             value="inline-block",
             context="Multi-column layout",
         )
 
-    # Open outer <tr><td>
     lines.append(f"{pad}<tr>")
     lines.append(
         f'{inner_pad}<td style="font-size:0;text-align:center;mso-line-height-rule:exactly;">'
     )
 
-    # Open MSO ghost table
     lines.append(
         f"{inner_pad}<!--[if mso]>"
-        f'<table role="presentation" width="{container_width}"'
+        f'<table role="presentation" width="{ctx.container_width}"'
         f' cellpadding="0" cellspacing="0" border="0"'
         f' style="border-collapse:collapse;mso-table-lspace:0pt;'
         f'mso-table-rspace:0pt;">'
@@ -1535,67 +1564,62 @@ def _render_multi_column_row(
     )
 
     for col_idx, (child, col_width) in enumerate(zip(children, column_widths, strict=True)):
-        # MSO spacer between columns
         if col_idx > 0 and gap > 0:
             lines.append(f'{inner_pad}<!--[if mso]><td width="{gap}"></td><![endif]-->')
-
-        # MSO column open
-        lines.append(f'{inner_pad}<!--[if mso]><td width="{col_width}" valign="top"><![endif]-->')
-
-        # G-REF-1: <div class="column"> matches golden components and enables
-        # mobile stacking via CSS .column { display: block !important; }
-        lines.append(
-            f'{inner_pad}<div class="column"'
-            f' style="display:inline-block;max-width:{col_width}px;'
-            f'width:100%;vertical-align:top;">'
-        )
-        lines.append(
-            f'{col_pad}<table role="presentation" width="100%"'
-            f' cellpadding="0" cellspacing="0" border="0"'
-            f' style="border-collapse:collapse;mso-table-lspace:0pt;'
-            f'mso-table-rspace:0pt;">'
+        lines.extend(
+            _render_mso_column(
+                child,
+                ctx=ctx,
+                col_idx=col_idx,
+                col_count=len(children),
+                col_width=col_width,
+                indent=indent,
+                inner_pad=inner_pad,
+                col_pad=col_pad,
+            )
         )
 
-        # Recurse into child
-        child_html = node_to_email_html(
-            child,
-            indent=indent + 2,
-            props_map=props_map,
-            parent_bg=parent_bg,
-            parent_font=parent_font,
-            section_map=section_map,
-            button_ids=button_ids,
-            text_meta=text_meta,
-            current_section=current_section,
-            body_font_size=body_font_size,
-            compat=compat,
-            gradients_map=gradients_map,
-            _depth=_depth + 1,
-            container_width=col_width,
-            slot_counter=slot_counter,
-        )
-
-        # B3: Skip empty column content
-        if not child_html or not child_html.strip():
-            lines.append(f"{col_pad}</table>")
-            lines.append(f"{inner_pad}</div>")
-            lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")
-            continue
-
-        padding = _col_padding(col_idx, len(children))
-        lines.append(f'{col_pad}<tr><td style="padding:{padding};">{child_html}</td></tr>')
-
-        lines.append(f"{col_pad}</table>")
-        lines.append(f"{inner_pad}</div>")
-
-        # MSO column close
-        lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")
-
-    # Close MSO ghost table
     lines.append(f"{inner_pad}<!--[if mso]></tr></table><![endif]-->")
-
-    # Close outer </td></tr>
     lines.append(f"{inner_pad}</td>")
     lines.append(f"{pad}</tr>")
 
+    return lines
+
+
+def _render_mso_column(
+    child: DesignNode,
+    *,
+    ctx: RenderContext,
+    col_idx: int,
+    col_count: int,
+    col_width: int,
+    indent: int,
+    inner_pad: str,
+    col_pad: str,
+) -> list[str]:
+    """Render one column of a multi-column row (MSO ghost cell + responsive div)."""
+    lines: list[str] = [
+        f'{inner_pad}<!--[if mso]><td width="{col_width}" valign="top"><![endif]-->',
+        # G-REF-1: <div class="column"> matches golden components and enables
+        # mobile stacking via CSS .column { display: block !important; }
+        f'{inner_pad}<div class="column"'
+        f' style="display:inline-block;max-width:{col_width}px;'
+        f'width:100%;vertical-align:top;">',
+        f'{col_pad}<table role="presentation" width="100%"'
+        f' cellpadding="0" cellspacing="0" border="0"'
+        f' style="border-collapse:collapse;mso-table-lspace:0pt;'
+        f'mso-table-rspace:0pt;">',
+    ]
+    child_ctx = ctx.with_child(indent=indent + 2, container_width=col_width)
+    child_html = node_to_email_html(child, child_ctx)
+    if not child_html or not child_html.strip():
+        lines.append(f"{col_pad}</table>")
+        lines.append(f"{inner_pad}</div>")
+        lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")
+        return lines
+    padding = _col_padding(col_idx, col_count)
+    lines.append(f'{col_pad}<tr><td style="padding:{padding};">{child_html}</td></tr>')
+    lines.append(f"{col_pad}</table>")
+    lines.append(f"{inner_pad}</div>")
+    lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")
     return lines

@@ -17,6 +17,7 @@ from app.design_sync.protocol import (
     ExtractedGradient,
     ExtractedTokens,
 )
+from app.design_sync.render_context import RenderContext
 
 
 class TestDarkModeCSSGeneration:
@@ -177,6 +178,8 @@ class TestGradientRendering:
                 ),
             ],
         )
-        html = node_to_email_html(frame, gradients_map={"HeroBG": grad})
+        html = node_to_email_html(
+            frame, RenderContext.from_legacy_kwargs(gradients_map={"HeroBG": grad})
+        )
         assert "linear-gradient" in html
         assert 'bgcolor="#800080"' in html

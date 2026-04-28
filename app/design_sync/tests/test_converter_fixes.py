@@ -10,6 +10,7 @@ from app.design_sync.converter import (
     node_to_email_html,
 )
 from app.design_sync.protocol import DesignNode, DesignNodeType
+from app.design_sync.render_context import RenderContext
 
 # ---------------------------------------------------------------------------
 # B3: _has_visible_content — empty subtree pruning
@@ -440,7 +441,7 @@ class TestDuplicateButtonMsoConditional:
                 ),
             ],
         )
-        html = node_to_email_html(parent, button_ids={"btn1"})
+        html = node_to_email_html(parent, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         # VML for Outlook
         assert "<!--[if mso]>" in html
         assert "v:roundrect" in html
@@ -468,7 +469,7 @@ class TestDuplicateButtonMsoConditional:
                 ),
             ],
         )
-        html = node_to_email_html(parent, button_ids={"btn1"})
+        html = node_to_email_html(parent, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert 'stroke="false"' in html
         assert 'stroke="f"' not in html
 
@@ -497,7 +498,7 @@ class TestButtonEnrichedFields:
                 ),
             ],
         )
-        html = node_to_email_html(parent, button_ids={"btn1"})
+        html = node_to_email_html(parent, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert "border-radius:8px" in html
         # VML arcsize should use 8px not 4px
         # arcsize = round(8/48*100) = 17%
@@ -521,7 +522,7 @@ class TestButtonEnrichedFields:
                 ),
             ],
         )
-        html = node_to_email_html(parent, button_ids={"btn1"})
+        html = node_to_email_html(parent, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert 'href="https://example.com/shop"' in html
         assert 'href="#"' not in html
 
@@ -543,7 +544,7 @@ class TestButtonEnrichedFields:
                 ),
             ],
         )
-        html = node_to_email_html(parent, button_ids={"btn1"})
+        html = node_to_email_html(parent, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert 'href="#"' in html
 
 

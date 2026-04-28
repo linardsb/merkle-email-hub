@@ -1,0 +1,29 @@
+/**
+ * SquareX icon — auto-generated from SVG source.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import { forwardRef } from "react";
+import type { IconProps } from "./_types";
+
+export const SquareX = forwardRef<SVGSVGElement, IconProps>(
+  ({ size = 24, className, ...props }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="currentColor"
+      className={className}
+      {...props}
+    >
+      <path
+        fill="none"
+        d="M5.73,26.35h20.64V5.65H5.73v20.7ZM8.11,11.29l3.22-3.22,4.71,4.71,4.71-4.71,3.22,3.22-4.71,4.71,4.71,4.71-3.22,3.22-4.71-4.71-4.71,4.71-3.22-3.22,4.71-4.71-4.71-4.71Z"
+      />
+      <path d="M26.37,4.65H4.73v22.7h22.64V4.65h-1ZM26.37,26.35H5.73V5.65h20.64v20.7Z" />
+      <polygon points="11.33 23.93 16.05 19.22 20.76 23.93 23.98 20.71 19.27 16 23.98 11.29 20.76 8.06 16.05 12.78 11.33 8.06 8.11 11.29 12.82 16 8.11 20.71 11.33 23.93" />
+    </svg>
+  ),
+);
+SquareX.displayName = "SquareX";

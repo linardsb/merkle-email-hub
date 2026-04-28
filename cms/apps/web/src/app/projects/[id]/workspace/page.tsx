@@ -5,15 +5,9 @@ import type { PersonaResponse } from "@email-hub/sdk";
 import { notFound, useParams, useSearchParams, useRouter } from "next/navigation";
 import { Group, Panel, Separator, usePanelRef, type PanelSize } from "react-resizable-panels";
 import { toast } from "sonner";
-import { useProject } from "@/hooks/use-projects";
-import {
-  useTemplates,
-  useTemplateVersion,
-  useSaveVersion,
-  useCreateTemplate,
-} from "@/hooks/use-templates";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { stripAnnotations } from "@/lib/builder-sync";
+import { useSaveVersion, useCreateTemplate } from "@/hooks/use-templates";
 import { useEmailPreview } from "@/hooks/use-email";
 import { useQARun } from "@/hooks/use-qa";
 import { usePersonas } from "@/hooks/use-personas";
@@ -22,7 +16,6 @@ import { WorkspaceToolbar } from "@/components/workspace/workspace-toolbar";
 import { EditorPanel } from "@/components/workspace/editor-panel";
 import { PreviewPanel } from "@/components/workspace/preview-panel";
 import { BottomPanel } from "@/components/workspace/bottom-panel";
-import type { AgentMode } from "@/types/chat";
 import { ToolSidebar } from "@/components/workspace/sidebar/tool-sidebar";
 import { DesignReferencePanel } from "@/components/workspace/design-reference-panel";
 import { useEditorBridge } from "@/hooks/use-editor-bridge";
@@ -40,8 +33,12 @@ import { PushToESPDialog } from "@/components/connectors/push-to-esp-dialog";
 import { ApprovalRequestDialog } from "@/components/approvals/approval-request-dialog";
 import { CommandPalette } from "@/components/workspace/command-palette";
 import { useWorkspaceShortcuts } from "@/hooks/use-workspace-shortcuts";
-import { ChevronUp, GripVertical, GripHorizontal } from "../../../../components/icons";
-import type { SaveStatus } from "@/components/workspace/save-indicator";
+import { useAgentMode } from "@/hooks/workspace/use-agent-mode";
+import { useWorkspaceTemplate } from "@/hooks/workspace/use-workspace-template";
+import { useWorkspaceDialogs } from "@/hooks/workspace/use-workspace-dialogs";
+import { useWorkspaceFollowMode } from "@/hooks/workspace/use-workspace-follow-mode";
+import { useEditorState } from "@/hooks/workspace/use-editor-state";
+import { ChevronUp, GripVertical, GripHorizontal } from "@/components/icons";
 import type { TemplateResponse } from "@/types/templates";
 import type { QAResultResponse } from "@/types/qa";
 import type { ViewMode } from "@/components/workspace/view-switcher";
@@ -68,92 +65,45 @@ export default function WorkspacePage() {
     notFound();
   }
 
-  // ── Agent from query param (e.g., ?agent=scaffolder from project creation) ──
-  const VALID_AGENTS: AgentMode[] = [
-    "chat",
-    "scaffolder",
-    "dark_mode",
-    "content",
-    "outlook_fixer",
-    "accessibility",
-    "personalisation",
-    "code_reviewer",
-    "knowledge",
-    "innovation",
-  ];
-  const agentParam = searchParams.get("agent");
-  const initialAgent: AgentMode | undefined =
-    agentParam && VALID_AGENTS.includes(agentParam as AgentMode)
-      ? (agentParam as AgentMode)
-      : undefined;
+  const initialAgent = useAgentMode();
 
-  // ── Data Fetching ──
-  const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId);
   const {
-    data: templateData,
-    isLoading: templatesLoading,
-    mutate: mutateTemplates,
-  } = useTemplates(projectId);
-  const templates = templateData?.items ?? [];
+    project,
+    projectLoading,
+    projectError,
+    templates,
+    templatesLoading,
+    mutateTemplates,
+    activeTemplateId,
+    setActiveTemplateId,
+    activeTemplate,
+    latestVersion,
+    latestVersionNumber,
+  } = useWorkspaceTemplate(projectId);
 
-  // ── Active Template ──
-  const templateIdParam = searchParams.get("template");
-  const [activeTemplateId, setActiveTemplateId] = useState<number | null>(
-    templateIdParam ? Number(templateIdParam) : null,
-  );
-  const activeTemplate = templates.find((tpl) => tpl.id === activeTemplateId) ?? null;
+  const {
+    editorContent,
+    setEditorContent,
+    savedContent,
+    setSavedContent,
+    saveStatus,
+    setSaveStatus,
+    isDirty,
+    effectiveSaveStatus,
+    savedTimerRef,
+    cursorOffsetRef,
+  } = useEditorState(DEFAULT_TEMPLATE);
 
-  // Sync activeTemplateId when URL param changes (e.g. after design sync import)
-  useEffect(() => {
-    if (templateIdParam) {
-      const paramId = Number(templateIdParam);
-      if (paramId !== activeTemplateId) {
-        setActiveTemplateId(paramId);
-      }
-    }
-  }, [templateIdParam]); // eslint-disable-line react-hooks/exhaustive-deps
+  const dialogs = useWorkspaceDialogs();
 
-  // Auto-select first template when templates load and none selected
-  useEffect(() => {
-    const first = templates[0];
-    if (!activeTemplateId && first) {
-      setActiveTemplateId(first.id);
-    }
-  }, [activeTemplateId, templates]);
-
-  // Load latest version content
-  const latestVersionNumber = activeTemplate?.latest_version ?? null;
-  const { data: latestVersion } = useTemplateVersion(activeTemplateId, latestVersionNumber);
-
-  // ── Editor State ──
-  const [editorContent, setEditorContent] = useState(DEFAULT_TEMPLATE);
-  const [savedContent, setSavedContent] = useState(DEFAULT_TEMPLATE);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cursorOffsetRef = useRef<number>(0);
-
-  // ── Preview State ──
+  // ── Preview / QA / Push / Approval ──
   const [compiledHtml, setCompiledHtml] = useState<string | null>(null);
   const [buildTimeMs, setBuildTimeMs] = useState<number | null>(null);
   const { trigger: triggerPreview, isMutating: isCompiling } = useEmailPreview();
-
-  // ── QA State ──
   const { trigger: triggerQA, isMutating: isRunningQA } = useQARun();
   const [qaResultData, setQaResultData] = useState<QAResultResponse | null>(null);
   const [qaPanelOpen, setQaPanelOpen] = useState(false);
-
-  // ── Export State ──
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [imageGenOpen, setImageGenOpen] = useState(false);
-  const [briefDialogOpen, setBriefDialogOpen] = useState(false);
-  const [blueprintOpen, setBlueprintOpen] = useState(false);
   const { addRecord } = useExportHistory();
-
-  // ── Push to ESP State ──
-  const [pushDialogOpen, setPushDialogOpen] = useState(false);
-
-  // ── Approval State ──
-  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [lastBuildId, setLastBuildId] = useState<number | null>(null);
 
   // ── Design Reference Panel ──
@@ -193,7 +143,7 @@ export default function WorkspacePage() {
     setSelectedPersonaId(persona?.id ?? null);
   }, []);
 
-  // Sync editor content when version data loads
+  // Sync editor content when version data loads + auto-compile once per template
   const autoCompiledRef = useRef(false);
   useEffect(() => {
     if (latestVersion?.html_source) {
@@ -201,7 +151,6 @@ export default function WorkspacePage() {
       setSavedContent(latestVersion.html_source);
       setSaveStatus("idle");
 
-      // Populate Yjs document so collaborative editor shows the content
       if (collabDoc) {
         const yText = collabDoc.getText("content");
         if (yText.length === 0) {
@@ -209,7 +158,6 @@ export default function WorkspacePage() {
         }
       }
 
-      // Auto-compile so preview is always populated
       if (!autoCompiledRef.current) {
         autoCompiledRef.current = true;
         const sanitized = sanitizeHtml(stripAnnotations(latestVersion.html_source));
@@ -219,35 +167,27 @@ export default function WorkspacePage() {
               setCompiledHtml(r.compiled_html);
               setBuildTimeMs(r.build_time_ms);
             } else {
-              // Compile returned no result — show raw HTML as fallback
               setCompiledHtml(sanitized);
             }
           })
           .catch(() => {
-            // Compile failed — show raw HTML so preview isn't blank
             setCompiledHtml(sanitized);
           });
       }
     }
-  }, [latestVersion?.html_source, triggerPreview, collabDoc]);
+  }, [
+    latestVersion?.html_source,
+    triggerPreview,
+    collabDoc,
+    setEditorContent,
+    setSavedContent,
+    setSaveStatus,
+  ]);
 
   // Reset auto-compile flag when template changes
   useEffect(() => {
     autoCompiledRef.current = false;
   }, [activeTemplateId]);
-
-  // Track dirty state
-  const isDirty = editorContent !== savedContent;
-  const effectiveSaveStatus: SaveStatus =
-    saveStatus === "saving"
-      ? "saving"
-      : saveStatus === "error"
-        ? "error"
-        : saveStatus === "saved"
-          ? "saved"
-          : isDirty
-            ? "unsaved"
-            : "idle";
 
   // ── Mutations ──
   const { trigger: saveVersion, isMutating: isSaving } = useSaveVersion(activeTemplateId);
@@ -259,7 +199,7 @@ export default function WorkspacePage() {
       setEditorContent(newValue);
       if (saveStatus === "saved") setSaveStatus("idle");
     },
-    [saveStatus],
+    [saveStatus, setEditorContent, setSaveStatus],
   );
 
   const handleSave = useCallback(async () => {
@@ -267,7 +207,6 @@ export default function WorkspacePage() {
 
     const sanitized = sanitizeHtml(stripAnnotations(editorContent));
 
-    // Always compile preview on Ctrl+S
     triggerPreview({ source_html: sanitized })
       .then((r) => {
         if (r?.compiled_html) {
@@ -281,7 +220,6 @@ export default function WorkspacePage() {
         setCompiledHtml(sanitized);
       });
 
-    // Only persist if there are unsaved changes
     if (!isDirty) return;
 
     setSaveStatus("saving");
@@ -293,7 +231,6 @@ export default function WorkspacePage() {
         mutateTemplates();
         toast.success(`Changes saved as version ${result.version_number}`);
 
-        // Auto-clear "saved" indicator after 3s
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), 3000);
       }
@@ -309,6 +246,9 @@ export default function WorkspacePage() {
     saveVersion,
     mutateTemplates,
     triggerPreview,
+    setSavedContent,
+    setSaveStatus,
+    savedTimerRef,
   ]);
 
   const handleCompile = useCallback(async () => {
@@ -338,7 +278,7 @@ export default function WorkspacePage() {
       url.searchParams.set("template", String(template.id));
       router.replace(url.pathname + url.search, { scroll: false });
     },
-    [router],
+    [router, setActiveTemplateId, setSaveStatus],
   );
 
   const handleCreateTemplate = useCallback(async () => {
@@ -358,23 +298,36 @@ export default function WorkspacePage() {
     } catch {
       toast.error("Failed to save");
     }
-  }, [createTemplate, mutateTemplates]);
+  }, [
+    createTemplate,
+    mutateTemplates,
+    setActiveTemplateId,
+    setEditorContent,
+    setSavedContent,
+    setSaveStatus,
+  ]);
 
-  const handleApplyToEditor = useCallback((html: string) => {
-    setEditorContent(html);
-    setSaveStatus("idle");
-    toast.success("AI output applied to editor");
-  }, []);
+  const handleApplyToEditor = useCallback(
+    (html: string) => {
+      setEditorContent(html);
+      setSaveStatus("idle");
+      toast.success("AI output applied to editor");
+    },
+    [setEditorContent, setSaveStatus],
+  );
 
-  const handleApplyBlueprintResult = useCallback((html: string) => {
-    setEditorContent(html);
-    setSaveStatus("idle");
-    setBlueprintOpen(false);
-    toast.success("AI output applied to editor");
-  }, []);
+  const handleApplyBlueprintResult = useCallback(
+    (html: string) => {
+      setEditorContent(html);
+      setSaveStatus("idle");
+      dialogs.setBlueprintOpen(false);
+      toast.success("AI output applied to editor");
+    },
+    [setEditorContent, setSaveStatus, dialogs],
+  );
 
   const handleRestoreVersion = useCallback(
-    (html: string, versionNumber: number) => {
+    (html: string, _versionNumber: number) => {
       setEditorContent(html);
       setSavedContent(html);
       setSaveStatus("idle");
@@ -382,7 +335,6 @@ export default function WorkspacePage() {
       autoCompiledRef.current = false;
       mutateTemplates();
 
-      // Auto-compile the restored content
       const sanitized = sanitizeHtml(stripAnnotations(html));
       triggerPreview({ source_html: sanitized })
         .then((r) => {
@@ -397,11 +349,10 @@ export default function WorkspacePage() {
           setCompiledHtml(sanitized);
         });
     },
-    [mutateTemplates, triggerPreview],
+    [mutateTemplates, triggerPreview, setEditorContent, setSavedContent, setSaveStatus],
   );
 
   // ── QA Handlers ──
-
   const handleRunQA = useCallback(async () => {
     if (!compiledHtml?.trim()) {
       toast.error("Compile the template first before running QA");
@@ -433,16 +384,15 @@ export default function WorkspacePage() {
     }
   }, [qaResultData?.id]);
 
-  // ── Export Handler ──
+  // ── Export / Push / Approval Handlers ──
   const handleExport = useCallback(() => {
     if (!compiledHtml?.trim()) {
       toast.error("Compile the template first before exporting");
       return;
     }
-    setExportDialogOpen(true);
-  }, [compiledHtml]);
+    dialogs.setExportOpen(true);
+  }, [compiledHtml, dialogs]);
 
-  // ── Builder Export Handlers ──
   const handleCopyHtml = useCallback(() => {
     const html = sanitizeHtml(stripAnnotations(editorContent));
     navigator.clipboard.writeText(html).then(
@@ -465,7 +415,6 @@ export default function WorkspacePage() {
     toast.success("HTML downloaded");
   }, [editorContent, activeTemplate?.name]);
 
-  // ── Export Complete Handler (captures build ID) ──
   const handleExportComplete = useCallback(
     (record: Parameters<typeof addRecord>[0]) => {
       if (record.build_id) setLastBuildId(record.build_id);
@@ -474,25 +423,22 @@ export default function WorkspacePage() {
     [addRecord],
   );
 
-  // ── Submit for Approval Handler ──
   const handleSubmitForApproval = useCallback(() => {
     if (!compiledHtml?.trim()) {
       toast.error("Compile the template first before submitting for approval");
       return;
     }
-    setApprovalDialogOpen(true);
-  }, [compiledHtml]);
+    dialogs.setApprovalOpen(true);
+  }, [compiledHtml, dialogs]);
 
-  // ── Push to ESP Handler ──
   const handlePushToESP = useCallback(() => {
     if (!compiledHtml?.trim()) {
       toast.error("Compile the template first before pushing to ESP");
       return;
     }
-    setPushDialogOpen(true);
-  }, [compiledHtml]);
+    dialogs.setPushOpen(true);
+  }, [compiledHtml, dialogs]);
 
-  // ── Image Gen Handler ──
   const handleInsertImage = useCallback(
     (url: string, width: number, height: number, alt: string) => {
       const escapeAttr = (s: string): string =>
@@ -509,7 +455,7 @@ export default function WorkspacePage() {
       setSaveStatus("idle");
       toast.success("AI output applied to editor");
     },
-    [],
+    [setEditorContent, setSaveStatus, cursorOffsetRef],
   );
 
   // ── Panel State ──
@@ -535,7 +481,6 @@ export default function WorkspacePage() {
     }
   }, [chatCollapsed, chatPanelRef]);
 
-  // ── View Toggle ──
   const handleToggleView = useCallback(() => {
     setViewMode((current) => {
       const cycle: ViewMode[] = ["code", "builder", "split"];
@@ -547,7 +492,7 @@ export default function WorkspacePage() {
   // ── Keyboard Shortcuts ──
   useWorkspaceShortcuts({
     onSave: handleSave,
-    onGenerate: () => setBlueprintOpen(true),
+    onGenerate: () => dialogs.setBlueprintOpen(true),
     onRunQA: handleRunQA,
     onExport: handleExport,
     onToggleChat: handleToggleChat,
@@ -555,28 +500,12 @@ export default function WorkspacePage() {
     onToggleView: handleToggleView,
   });
 
-  // ── Follow Mode: scroll editor to followed user's cursor ──
-  const lastFollowLineRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (!followTarget) {
-      lastFollowLineRef.current = null;
-      return;
-    }
-    const target = collaborators.find((c) => c.clientId === followTarget.clientId);
-    if (!target?.cursor) return;
-
-    // Only scroll if the followed cursor actually moved to a different line
-    if (target.cursor.line === lastFollowLineRef.current) return;
-    lastFollowLineRef.current = target.cursor.line;
-
-    const editor = editorBridge.editorRef.current?.getEditor?.();
-    if (!editor) return;
-
-    const model = editor.getModel();
-    if (!model) return;
-    const lineNum = Math.min(target.cursor.line, model.getLineCount());
-    editor.revealLineInCenter(lineNum);
-  }, [followTarget, collaborators, editorBridge.editorRef]);
+  // ── Follow Mode ──
+  useWorkspaceFollowMode({
+    followTarget,
+    collaborators,
+    editorRef: editorBridge.editorRef,
+  });
 
   // ── Render ──
   if (projectLoading) {
@@ -623,21 +552,21 @@ export default function WorkspacePage() {
         onPushToESP={handlePushToESP}
         onSubmitForApproval={handleSubmitForApproval}
         brandViolations={brandViolations}
-        onGenerateImage={() => setImageGenOpen(true)}
+        onGenerateImage={() => dialogs.setImageGenOpen(true)}
         collaborators={collaborators}
         collaborationStatus={collabStatus}
         onTogglePresencePanel={() => setPresencePanelOpen((v) => !v)}
-        onViewBrief={() => setBriefDialogOpen(true)}
-        onRunBlueprint={() => setBlueprintOpen(true)}
+        onViewBrief={() => dialogs.setBriefOpen(true)}
+        onRunBlueprint={() => dialogs.setBlueprintOpen(true)}
         commandPalette={
           <CommandPalette
             onSave={handleSave}
-            onRunBlueprint={() => setBlueprintOpen(true)}
+            onRunBlueprint={() => dialogs.setBlueprintOpen(true)}
             onRunQA={handleRunQA}
             onExport={handleExport}
             onPushToESP={handlePushToESP}
             onSubmitForApproval={handleSubmitForApproval}
-            onGenerateImage={() => setImageGenOpen(true)}
+            onGenerateImage={() => dialogs.setImageGenOpen(true)}
             onToggleQAPanel={handleToggleQAPanel}
             onDesignRefToggle={(open) => {
               setDesignRefOpen(open);
@@ -652,7 +581,6 @@ export default function WorkspacePage() {
 
       <div className="flex flex-1 overflow-hidden">
         <Group orientation="vertical" className="flex-1">
-          {/* Top: Editor + Preview (horizontal split) */}
           <Panel defaultSize={75} minSize={40}>
             <Group orientation="horizontal">
               <Panel defaultSize={50} minSize={25}>
@@ -687,7 +615,7 @@ export default function WorkspacePage() {
                   builderProps={{
                     onRunQA: handleRunQA,
                     isRunningQA,
-                    onAISuggest: () => setBlueprintOpen(true),
+                    onAISuggest: () => dialogs.setBlueprintOpen(true),
                     onCopyHtml: handleCopyHtml,
                     onDownloadHtml: handleDownloadHtml,
                     onPushToESP: handlePushToESP,
@@ -715,12 +643,10 @@ export default function WorkspacePage() {
             </Group>
           </Panel>
 
-          {/* Horizontal resize handle */}
           <Separator className="bg-border hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50 flex h-1.5 items-center justify-center transition-colors">
             <GripHorizontal className="text-muted-foreground h-4 w-4" />
           </Separator>
 
-          {/* Bottom: AI Chat (collapsible) */}
           <Panel
             panelRef={chatPanelRef}
             defaultSize={25}
@@ -742,7 +668,6 @@ export default function WorkspacePage() {
           </Panel>
         </Group>
 
-        {/* Tool Sidebar (right — tabbed QA/Testing/Clients/Intelligence) */}
         {qaPanelOpen && qaResultData && (
           <ToolSidebar
             result={qaResultData}
@@ -755,7 +680,6 @@ export default function WorkspacePage() {
           />
         )}
 
-        {/* Presence Panel (right sidebar) */}
         {presencePanelOpen && (
           <PresencePanel
             collaborators={collaborators}
@@ -766,7 +690,6 @@ export default function WorkspacePage() {
           />
         )}
 
-        {/* Design Reference Panel (right sidebar) */}
         {designRefOpen && (
           <DesignReferencePanel
             projectId={projectId}
@@ -780,8 +703,8 @@ export default function WorkspacePage() {
       </div>
 
       <ExportDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
+        open={dialogs.exportOpen}
+        onOpenChange={dialogs.setExportOpen}
         compiledHtml={compiledHtml}
         projectId={projectId}
         templateName={activeTemplate?.name ?? "email"}
@@ -791,30 +714,30 @@ export default function WorkspacePage() {
       />
 
       <ImageGenDialog
-        open={imageGenOpen}
-        onOpenChange={setImageGenOpen}
+        open={dialogs.imageGenOpen}
+        onOpenChange={dialogs.setImageGenOpen}
         projectId={projectId}
         onInsertImage={handleInsertImage}
       />
 
       <CompatibilityBriefDialog
-        open={briefDialogOpen}
-        onOpenChange={setBriefDialogOpen}
+        open={dialogs.briefOpen}
+        onOpenChange={dialogs.setBriefOpen}
         projectId={projectId}
         targetClients={project.target_clients ?? null}
       />
 
       <BlueprintRunDialog
-        open={blueprintOpen}
-        onOpenChange={setBlueprintOpen}
+        open={dialogs.blueprintOpen}
+        onOpenChange={dialogs.setBlueprintOpen}
         projectId={projectId}
         currentHtml={editorContent}
         onApplyResult={handleApplyBlueprintResult}
       />
 
       <PushToESPDialog
-        open={pushDialogOpen}
-        onOpenChange={setPushDialogOpen}
+        open={dialogs.pushOpen}
+        onOpenChange={dialogs.setPushOpen}
         templateId={activeTemplate?.id ?? 0}
         templateName={activeTemplate?.name ?? "email"}
         projectId={projectId}
@@ -823,13 +746,13 @@ export default function WorkspacePage() {
       />
 
       <ApprovalRequestDialog
-        open={approvalDialogOpen}
-        onOpenChange={setApprovalDialogOpen}
+        open={dialogs.approvalOpen}
+        onOpenChange={dialogs.setApprovalOpen}
         buildId={lastBuildId}
         projectId={projectId}
         compiledHtml={compiledHtml}
         onSubmitted={() => {
-          setApprovalDialogOpen(false);
+          dialogs.setApprovalOpen(false);
         }}
       />
 

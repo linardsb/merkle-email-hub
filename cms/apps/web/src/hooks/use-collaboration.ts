@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, startTransition } from "react";
 import * as Y from "yjs";
 import type { Awareness } from "y-protocols/awareness";
+import { getAccessToken } from "@/lib/auth-fetch";
 import type { CollaborationStatus, Collaborator } from "@/types/collaboration";
 
 const USER_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#f43f16"];
@@ -35,11 +36,14 @@ export function useCollaboration(projectId: number, templateId: number | null) {
     setYText(ydoc.getText("content"));
 
     // Production mode: Hub-authenticated WebSocket provider
-    import("@/lib/collaboration/yjs-provider")
-      .then(({ createHubProvider }) => {
+    Promise.all([import("@/lib/collaboration/yjs-provider"), getAccessToken()])
+      .then(([{ createHubProvider }, token]) => {
         if (cancelled) return;
-        // TODO(24.2): Retrieve JWT token from session for auth
-        const token = "";
+        if (!token) {
+          // No session token — collab WS requires auth; stay disconnected.
+          setStatus("disconnected");
+          return;
+        }
         const provider = createHubProvider(roomName, ydoc, { token });
         providerRef.current = provider;
 

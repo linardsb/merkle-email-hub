@@ -1,0 +1,40 @@
+/**
+ * AppWindow icon — auto-generated from SVG source.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import { forwardRef } from "react";
+import type { IconProps } from "./_types";
+
+export const AppWindow = forwardRef<SVGSVGElement, IconProps>(
+  ({ size = 24, className, ...props }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="currentColor"
+      className={className}
+      {...props}
+    >
+      <polygon
+        fill="none"
+        points="25.09 26.16 23.62 24.69 25.64 22.67 17.48 20.65 19.51 28.8 21.53 26.78 24.95 30.21 27.04 28.12 25.09 26.16 25.09 26.16"
+      />
+      <path
+        fill="none"
+        d="M30.33,6.49v-2.23H1.8v2.23h28.53ZM7.99,5.06c.32,0,.57.26.57.57s-.26.57-.57.57-.57-.26-.57-.57.26-.57.57-.57ZM5.89,5.06c.32,0,.57.26.57.57s-.26.57-.57.57-.57-.26-.57-.57.26-.57.57-.57ZM3.78,5.06c.32,0,.57.26.57.57s-.26.57-.57.57-.57-.26-.57-.57.26-.57.57-.57Z"
+      />
+      <path
+        fill="none"
+        d="M1.8,7.49v17.82h15.81l-1.5-6.03,11.48,2.85-2.57,2.57.62.62h4.68V7.49H1.8ZM28.03,19.96l-2.5-2.5-7.54-7.54h10.04v10.04Z"
+      />
+      <path d="M31.33,3.26H.8v23.05h17.06l1.11,4.45,2.57-2.57,3.42,3.42,3.5-3.5-1.81-1.81h4.68V3.26ZM30.33,4.26v2.23H1.8v-2.23h28.53ZM24.95,30.21l-3.42-3.42-2.02,2.02-2.02-8.16,8.16,2.02-2.02,2.02,1.47,1.47s0,0,0,0l1.95,1.96-2.09,2.09ZM25.65,25.31l-.62-.62,2.57-2.57-11.48-2.85,1.5,6.03H1.8V7.49h28.53v17.82h-4.68Z" />
+      <path d="M3.78,6.21c.32,0,.57-.26.57-.57s-.26-.57-.57-.57-.57.26-.57.57.26.57.57.57Z" />
+      <path d="M5.89,6.21c.32,0,.57-.26.57-.57s-.26-.57-.57-.57-.57.26-.57.57.26.57.57.57Z" />
+      <circle cx="7.99" cy="5.64" r=".57" />
+      <polygon points="25.53 17.46 28.03 19.96 28.03 9.92 17.99 9.92 25.53 17.46" />
+    </svg>
+  ),
+);
+AppWindow.displayName = "AppWindow";

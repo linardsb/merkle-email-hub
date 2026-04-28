@@ -9,6 +9,7 @@ from app.design_sync.converter import (
 )
 from app.design_sync.figma.layout_analyzer import TextBlock
 from app.design_sync.protocol import DesignNode, DesignNodeType
+from app.design_sync.render_context import RenderContext
 
 
 class TestHeadingDetection:
@@ -56,7 +57,9 @@ class TestTextRendering:
             font_size=32.0,
         )
         text_meta = {"txt1": TextBlock(node_id="txt1", content="Welcome", is_heading=True)}
-        result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
+        result = node_to_email_html(
+            node, RenderContext.from_legacy_kwargs(text_meta=text_meta, body_font_size=16.0)
+        )
         assert "<h1" not in result
         assert "<td" in result
         assert "Welcome" in result
@@ -70,7 +73,7 @@ class TestTextRendering:
             type=DesignNodeType.TEXT,
             text_content="Hello world",
         )
-        result = node_to_email_html(node, body_font_size=16.0)
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(body_font_size=16.0))
         assert "<p" not in result
         assert "<td" in result
         assert "padding:0 0 10px 0" in result
@@ -148,7 +151,7 @@ class TestButtonRendering:
                 ),
             ],
         )
-        result = node_to_email_html(node, button_ids={"btn1"})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert '<a href="#"' in result
         assert "v:roundrect" in result
         assert "Shop Now" in result
@@ -166,7 +169,7 @@ class TestButtonRendering:
                 DesignNode(id="t", name="T", type=DesignNodeType.TEXT, text_content="Click", y=0),
             ],
         )
-        result = node_to_email_html(node, button_ids={"btn1"})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert "height:44px" in result
 
     def test_button_no_text_children_empty(self) -> None:
@@ -179,5 +182,5 @@ class TestButtonRendering:
             height=48,
             children=[],
         )
-        result = node_to_email_html(node, button_ids={"btn1"})
+        result = node_to_email_html(node, RenderContext.from_legacy_kwargs(button_ids={"btn1"}))
         assert result == ""
