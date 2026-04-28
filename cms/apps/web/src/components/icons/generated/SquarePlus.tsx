@@ -1,0 +1,29 @@
+/**
+ * SquarePlus icon — auto-generated from SVG source.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import { forwardRef } from "react";
+import type { IconProps } from "./_types";
+
+export const SquarePlus = forwardRef<SVGSVGElement, IconProps>(
+  ({ size = 24, className, ...props }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="currentColor"
+      className={className}
+      {...props}
+    >
+      <path
+        fill="none"
+        d="M5.73,26.35h20.64V5.65H5.73v20.7ZM9.49,13.72h4.28v-4.28h4.56v4.28h4.28v4.56h-4.28v4.28h-4.56v-4.28h-4.28v-4.56Z"
+      />
+      <path d="M26.37,4.65H4.73v22.7h22.64V4.65h-1ZM26.37,26.35H5.73V5.65h20.64v20.7Z" />
+      <polygon points="13.77 22.56 18.33 22.56 18.33 18.28 22.6 18.28 22.6 13.72 18.33 13.72 18.33 9.44 13.77 9.44 13.77 13.72 9.49 13.72 9.49 18.28 13.77 18.28 13.77 22.56" />
+    </svg>
+  ),
+);
+SquarePlus.displayName = "SquarePlus";

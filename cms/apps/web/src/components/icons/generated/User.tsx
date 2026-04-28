@@ -1,0 +1,43 @@
+/**
+ * User icon — auto-generated from SVG source.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import { forwardRef } from "react";
+import type { IconProps } from "./_types";
+
+export const User = forwardRef<SVGSVGElement, IconProps>(
+  ({ size = 24, className, ...props }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="currentColor"
+      className={className}
+      {...props}
+    >
+      <rect x="8.95" y="28.91" width="14.1" height="1" />
+      <path d="M16,8.95c-1.73,0-3.14-1.41-3.14-3.14s1.41-3.14,3.14-3.14,3.14,1.41,3.14,3.14-1.41,3.14-3.14,3.14ZM16,3.67c-1.18,0-2.14.96-2.14,2.14s.96,2.14,2.14,2.14,2.14-.96,2.14-2.14-.96-2.14-2.14-2.14Z" />
+
+      <rect
+        x="13.19"
+        y="14.48"
+        width="1"
+        height="14.69"
+        transform="translate(-1.29 .87) rotate(-3.46)"
+      />
+      <rect
+        x="10.96"
+        y="21.33"
+        width="14.69"
+        height="1"
+        transform="translate(-4.58 38.79) rotate(-86.56)"
+      />
+
+      <path d="M13.52,21.74l-2.57-.87-.95-4.67c-.33-1.87-.05-3.34.83-4.39,1.52-1.81,4.47-1.81,5.44-1.81v1c-.85,0-3.45,0-4.67,1.45-.68.81-.89,2.01-.62,3.56l.84,4.1,2.03.69-.32.95Z" />
+      <path d="M18.49,21.73l-.33-.94,1.96-.69.91-4.12c.27-1.53.06-2.72-.62-3.53-1.22-1.45-3.82-1.45-4.67-1.45v-1c.97,0,3.92,0,5.44,1.81.88,1.05,1.16,2.52.84,4.37l-1.04,4.69-2.49.87Z" />
+    </svg>
+  ),
+);
+User.displayName = "User";

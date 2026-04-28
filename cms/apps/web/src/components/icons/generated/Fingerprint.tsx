@@ -1,0 +1,145 @@
+/**
+ * Fingerprint icon — auto-generated from SVG source.
+ * Do not edit manually — regenerate with: node scripts/generate-icons.mjs
+ */
+import { forwardRef } from "react";
+import type { IconProps } from "./_types";
+
+export const Fingerprint = forwardRef<SVGSVGElement, IconProps>(
+  ({ size = 24, className, ...props }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 143.994 145.091"
+      fill="none"
+      stroke="currentColor"
+      className={className}
+      {...props}
+    >
+      <path
+        d="M40.741,13.646A73.943,73.943,0,0,1,52.183,14.8c1.859.346,2.921.574,3.976.825a75.665,75.665,0,0,1,58.1,69.955"
+        transform="translate(38.143 0)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M13.88,47.178A76.209,76.209,0,0,1,64.5,14.082"
+        transform="translate(0 0.619)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M62.379,31.939c.445.731.869,1.469,1.28,2.219A60.013,60.013,0,0,1,70.2,73.432,149.22,149.22,0,0,1,60.564,103.9"
+        transform="translate(66.291 25.976)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M16.09,62.76A60.553,60.553,0,0,1,84.525,20.816c1.428.266,2.3.455,3.163.656A60.219,60.219,0,0,1,117.81,38.894"
+        transform="translate(3.138 8.838)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M68.428,47.1c-.09.743-.2,1.479-.332,2.222a143.281,143.281,0,0,1-16.519,43.1"
+        transform="translate(53.531 47.502)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M48.295,28.064a45.543,45.543,0,0,1,24.522,33.12"
+        transform="translate(48.869 20.474)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M17.1,83.98c6.469-6.57,9.937-16.775,10.89-21.107A45.318,45.318,0,0,1,80.432,26.818"
+        transform="translate(4.567 17.691)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M61.678,57.338A118.858,118.858,0,0,1,39.959,90.9"
+        transform="translate(37.032 62.043)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M35.8,34.1a29.963,29.963,0,0,1,15.42-1.285c.6.111,1.067.211,1.532.322A30.247,30.247,0,0,1,75.637,67.677a100.553,100.553,0,0,1-3.284,12.572"
+        transform="translate(31.122 26.547)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M17.314,88.445C36.95,79.072,42.419,52.566,42.472,52.3a29.815,29.815,0,0,1,9.266-16.671"
+        transform="translate(4.876 31.219)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M38.683,50.978a15.093,15.093,0,0,1,29.725,5.256C68.1,58.015,61.153,95.813,30.419,117.9"
+        transform="translate(23.485 35.401)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M20,83.786C36.827,75.761,45.667,59.59,49.953,48.5"
+        transform="translate(8.692 49.495)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M64.519,44.8s-7.214,41.348-41.832,57.867"
+        transform="translate(12.506 44.237)"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeMiterlimit="10"
+        strokeWidth="4.5"
+      />
+
+      <circle cx="5" cy="5" r="5" transform="translate(2317.5 323.246)" fill="currentColor" />
+      <circle cx="5" cy="5" r="5" transform="translate(2349.9 380.578)" fill="currentColor" />
+      <circle cx="5" cy="5" r="5" transform="translate(2371.7 310.191)" fill="currentColor" />
+    </svg>
+  ),
+);
+Fingerprint.displayName = "Fingerprint";
