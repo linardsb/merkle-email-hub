@@ -72,6 +72,14 @@ constraint-dependencies = [
 graph = [
     "cognee>=0.1.0",
 ]
+observability = [
+    "sentry-sdk[fastapi]>=2.20.0",
+    "opentelemetry-api>=1.30.0",
+    "opentelemetry-sdk>=1.30.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.30.0",
+    "opentelemetry-instrumentation-fastapi>=0.51b0",
+    "opentelemetry-instrumentation-asyncpg>=0.51b0",
+]
 
 [dependency-groups]
 dev = [
@@ -85,9 +93,12 @@ dev = [
     "ruff>=0.14.2",
     "types-jsonschema>=4.26.0.20260408",
     "types-lxml>=2026.2",
+    "types-PyYAML>=6.0",
+    "types-croniter>=2.0",
     "hypothesis>=6.100",
     "playwright>=1.40",
     "mutmut>=3.0",
+    "locust>=2.32",
 ]
 
 [tool.ruff]
@@ -234,19 +245,12 @@ module = "docx.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "fitz.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "anthropic.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
 module = "cognee.*"
 ignore_missing_imports = true
 
+# PyMuPDF 1.27 ships without a py.typed marker; revisit when upstream adds one.
 [[tool.mypy.overrides]]
-module = "yaml.*"
+module = "fitz.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -254,15 +258,7 @@ module = "liquid.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "cryptography.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
 module = "cssutils.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "hypothesis.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -272,10 +268,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "app.mcp.tools.*"
 disable_error_code = ["type-arg"]
-
-[[tool.mypy.overrides]]
-module = "croniter.*"
-ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "app.scheduling.engine"

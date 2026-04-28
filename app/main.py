@@ -78,6 +78,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     )
     logger = get_logger(__name__)
 
+    # Initialise Sentry + OTEL (Phase 3 §3.3) — both no-op when unconfigured
+    from app.core.observability import init_observability
+
+    init_observability(_app, settings)
+
     # SECURITY: Fail hard if JWT secret is weak in non-development environments
     _insecure_defaults = {
         "CHANGE-ME-IN-PRODUCTION",

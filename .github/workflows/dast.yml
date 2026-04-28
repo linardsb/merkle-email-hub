@@ -1,0 +1,46 @@
+name: DAST baseline
+
+# Weekly OWASP ZAP baseline scan against staging.
+# Manual dispatch is also enabled so security ops can run ad-hoc scans.
+#
+# Prerequisite: STAGING_URL secret must be set in repo settings.
+# When STAGING_URL is unset the job exits cleanly without scanning so the
+# workflow can ship before staging exists. Once the URL is configured,
+# remove the guard step.
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"  # Mondays 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write  # ZAP action opens an issue on findings
+
+jobs:
+  zap-baseline:
+    name: ZAP baseline scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve target URL
+        id: target
+        run: |
+          if [ -z "${{ secrets.STAGING_URL }}" ]; then
+            echo "STAGING_URL secret is not set — skipping scan." >&2
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "url=${{ secrets.STAGING_URL }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ZAP baseline scan
+        if: steps.target.outputs.skip != 'true'
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          rules_file_name: ".zap/rules.tsv"
+          fail_action: true
+          allow_issue_writing: true
+          issue_title: "DAST: ZAP baseline findings"

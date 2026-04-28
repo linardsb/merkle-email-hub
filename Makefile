@@ -88,6 +88,13 @@ test: ## Run backend unit tests
 bench: ## Run performance benchmark tests
 	uv run pytest -v -m benchmark --no-header -rN
 
+load-test: ## Run Maizzle + CRDT load tests (manual; capture in docs/load-baseline.md)
+	@mkdir -p reports/load
+	uv run locust -f tests/load/locustfile.py \
+		--headless -u 10 -r 2 -t 60s \
+		--host http://localhost:3001 \
+		--csv reports/load/maizzle
+
 rendering-baselines: ## Regenerate visual regression baselines (manual, destructive)
 	uv run python -c "import asyncio; from app.rendering.tests.visual_regression.baseline_generator import BaselineGenerator; asyncio.run(BaselineGenerator().generate_baselines())"
 

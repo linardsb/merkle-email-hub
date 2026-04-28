@@ -47,6 +47,7 @@ from app.core.config.misc import (
     WebSocketConfig,
 )
 from app.core.config.notifications import NotificationsConfig
+from app.core.config.observability import OtelConfig, SentryConfig
 from app.core.config.qa import (
     QABIMIConfig,
     QAChaosConfig,
@@ -91,6 +92,7 @@ __all__ = [
     "MemoryConfig",
     "NotificationsConfig",
     "OntologySyncConfig",
+    "OtelConfig",
     "PluginsConfig",
     "ProgressConfig",
     "QABIMIConfig",
@@ -108,6 +110,7 @@ __all__ = [
     "SandboxConfig",
     "SchedulingConfig",
     "SecurityConfig",
+    "SentryConfig",
     "Settings",
     "SkillExtractionConfig",
     "TemplatesUploadConfig",
@@ -198,6 +201,8 @@ class Settings(BaseSettings):
     credentials: CredentialsConfig = CredentialsConfig()
     qa_synthetic: QASyntheticConfig = QASyntheticConfig()
     qa_meta_eval: QAMetaEvalConfig = QAMetaEvalConfig()
+    sentry: SentryConfig = SentryConfig()
+    otel: OtelConfig = OtelConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

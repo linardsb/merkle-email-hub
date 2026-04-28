@@ -1,0 +1,20 @@
+# OWASP ZAP rule overrides for the email-hub baseline scan.
+# Format: <ruleId>	<status>	<reason>
+# Status: IGNORE | WARN | FAIL
+#
+# Reduce noise from rules whose findings are tracked separately or which
+# are explicitly out of scope per .agents/plans/audit-implementation.md.
+
+# CSP unsafe-inline / unsafe-eval — out of scope per audit plan; removal
+# requires nonces/hashes across every inline style and script (multi-week
+# effort). Tracked as a separate plan.
+10038	IGNORE	CSP unsafe-inline acknowledged; covered by separate plan
+
+# X-Content-Type-Options — already set in next.config.ts; ZAP can mis-detect
+# when it scans static assets that bypass the Next.js middleware. Demote
+# to warn so we surface real misses without blocking CI on noise.
+10021	WARN	Header is set in next.config.ts; ZAP may miss it on static assets
+
+# Cookie without SameSite — FastAPI session cookies set SameSite=Lax via
+# starlette default, but ZAP sometimes misreads. Warn rather than fail.
+10054	WARN	SameSite is set by Starlette defaults; verify per-cookie if flagged
