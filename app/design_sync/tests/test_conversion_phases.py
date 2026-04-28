@@ -275,7 +275,7 @@ class TestAssemblePhase:
             section_hashes={"node_0": "hash"},
         )
 
-        assert result.cache_hit_rate == pytest.approx(0.75)
+        assert result.cache_hit_rate == pytest.approx(0.75)  # pyright: ignore[reportUnknownMemberType]
 
     def test_compatibility_hints_included(self, service: DesignConverterService) -> None:
         layout = _make_layout([_make_section(idx=0)])
