@@ -226,6 +226,7 @@ def analyze_layout(
     section_name_map: dict[str, str] | None = None,
     button_name_hints: list[str] | None = None,
     vlm_classifications: dict[str, VLMSectionClassification] | None = None,
+    global_design_image: bytes | None = None,  # noqa: ARG001  Phase 50.1 pass-through; consumed in 50.4/50.5/50.7
 ) -> DesignLayoutDescription:
     """Analyze a design file structure and detect email sections.
 

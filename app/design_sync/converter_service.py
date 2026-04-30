@@ -275,6 +275,7 @@ class DesignConverterService:
         image_urls: dict[str, str] | None = None,
         connection_id: str | None = None,
         design_screenshots: dict[str, bytes] | None = None,
+        global_design_image: bytes | None = None,
         output_format: Literal["html", "tree"] = "html",
     ) -> ConversionResult:
         """Convert an EmailDesignDocument into email HTML.
@@ -290,6 +291,7 @@ class DesignConverterService:
             image_urls: Mapping of node-id → image URL for component matcher.
             connection_id: If set and caching enabled, cache section results.
             design_screenshots: Figma PNG bytes per node-id (async verification only).
+            global_design_image: Full-frame PNG for VLM low-confidence fallback context (Phase 50.1).
             output_format: Output format — "html" (legacy) or "tree" (EmailTree bridge).
         """
         # design_screenshots is accepted but not used in this sync method;
@@ -332,6 +334,7 @@ class DesignConverterService:
                 image_urls=image_urls,
                 connection_id=connection_id,
                 section_hashes=section_hashes,
+                global_design_image=global_design_image,
                 output_format=output_format,
             )
 
@@ -351,6 +354,7 @@ class DesignConverterService:
         target_clients: list[str] | None = None,
         connection_id: str | None = None,
         design_screenshots: dict[str, bytes] | None = None,
+        global_design_image: bytes | None = None,
     ) -> ConversionResult:
         """Convert an EmailDesignDocument into email HTML via MJML.
 
@@ -382,7 +386,11 @@ class DesignConverterService:
             connection_id=connection_id,
         )
         return await self._apply_verification(
-            result, design_screenshots or {}, layout.sections, container_width
+            result,
+            design_screenshots or {},
+            layout.sections,
+            container_width,
+            global_design_image=global_design_image,
         )
 
     # ── VLM verification loop (Phase 47.5) ────────────────────────────
@@ -393,6 +401,8 @@ class DesignConverterService:
         design_screenshots: dict[str, bytes],
         sections: list[EmailSection],
         container_width: int,
+        *,
+        global_design_image: bytes | None = None,
     ) -> ConversionResult:
         """Run VLM verification loop on conversion result if enabled."""
         ds = get_settings().design_sync
@@ -409,6 +419,7 @@ class DesignConverterService:
                 max_iterations=ds.vlm_verify_max_iterations,
                 render_client=ds.vlm_verify_client,
                 viewport_width=container_width,
+                global_design_image=global_design_image,
             )
         except Exception:
             logger.warning("design_sync.verification_loop_failed", exc_info=True)
@@ -494,6 +505,7 @@ class DesignConverterService:
                 use_components=True,
                 image_urls=image_urls,
                 connection_id=connection_id,
+                global_design_image=structure.design_image,
             )
 
         # Recursive converter requires full DesignNode frames
@@ -573,6 +585,7 @@ class DesignConverterService:
                 document,
                 target_clients=target_clients,
                 connection_id=connection_id,
+                global_design_image=structure.design_image,
             )
         except MjmlCompileError:
             logger.warning("design_sync.mjml_fallback", reason="compilation_failed")
@@ -713,6 +726,7 @@ class DesignConverterService:
         image_urls: dict[str, str] | None = None,
         connection_id: str | None = None,
         section_hashes: dict[str, str] | None = None,
+        global_design_image: bytes | None = None,
         output_format: Literal["html", "tree"] = "html",
     ) -> ConversionResult:
         """Component-template-based conversion (table-on-table structure).
@@ -722,7 +736,10 @@ class DesignConverterService:
         ``output_format="tree"`` succeeds; otherwise it falls through.
         """
         match = self._match_phase(
-            layout=layout, container_width=container_width, image_urls=image_urls
+            layout=layout,
+            container_width=container_width,
+            image_urls=image_urls,
+            global_design_image=global_design_image,
         )
         if output_format == "tree" and get_settings().design_sync.tree_bridge_enabled:
             tree_result = self._try_tree_bridge(
@@ -757,6 +774,7 @@ class DesignConverterService:
         layout: DesignLayoutDescription,
         container_width: int,
         image_urls: dict[str, str] | None,
+        global_design_image: bytes | None = None,
     ) -> MatchPhase:
         """Detect repeating sibling groups (Phase 49.1) and match sections to components."""
         from app.design_sync.component_matcher import match_all
@@ -786,6 +804,7 @@ class DesignConverterService:
             flat_sections,
             container_width=container_width,
             image_urls=image_urls,
+            global_design_image=global_design_image,
         )
         return MatchPhase(
             matches=matches,

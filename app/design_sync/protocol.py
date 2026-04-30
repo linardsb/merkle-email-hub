@@ -162,6 +162,8 @@ class DesignFileStructure:
 
     file_name: str
     pages: list[DesignNode] = field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    # Full-frame PNG @ scale=2.0 for global visual context (Phase 50.1, Gap 9)
+    design_image: bytes | None = None
 
 
 @dataclass(frozen=True)

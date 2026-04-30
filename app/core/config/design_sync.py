@@ -94,3 +94,6 @@ class DesignSyncConfig(BaseModel):
     token_scoping_enabled: bool = True  # DESIGN_SYNC__TOKEN_SCOPING_ENABLED
     # Design-sync → EmailTree bridge (Phase 49.8)
     tree_bridge_enabled: bool = False  # DESIGN_SYNC__TREE_BRIDGE_ENABLED
+    # Full-design PNG threading for global visual context (Phase 50.1, Gap 9)
+    full_design_png_enabled: bool = True  # DESIGN_SYNC__FULL_DESIGN_PNG_ENABLED
+    vlm_low_confidence_threshold: float = 0.7  # DESIGN_SYNC__VLM_LOW_CONFIDENCE_THRESHOLD

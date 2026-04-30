@@ -96,6 +96,7 @@ async def compare_sections(
     sections: list[EmailSection],
     *,
     iteration: int = 0,
+    global_design_image: bytes | None = None,
 ) -> VerificationResult:
     """Compare Figma design screenshots against rendered HTML screenshots.
 
@@ -108,6 +109,9 @@ async def compare_sections(
         html: The full rendered HTML (for context, not directly used yet).
         sections: Email sections from layout analysis.
         iteration: Current correction loop iteration number.
+        global_design_image: Full-frame PNG; passed to the VLM as additional
+            context when per-section fidelity falls below
+            ``vlm_low_confidence_threshold`` (Phase 50.1).
 
     Returns:
         VerificationResult with per-section scores and corrections.
@@ -157,9 +161,19 @@ async def compare_sections(
             all_corrections.extend(_vlm_cache[key])
             continue
 
-        # 3. VLM analysis
+        # 3. VLM analysis — pass full-design PNG when section fidelity falls
+        # below the low-confidence threshold (Phase 50.1, Gap 9).
         idx, section = section_map.get(node_id, (0, None))
-        corrections = await _call_vlm_for_section(node_id, idx, figma_bytes, html_bytes, section)
+        section_fidelity = 1.0 - diff_pct / 100.0
+        global_for_vlm = (
+            global_design_image
+            if global_design_image is not None
+            and section_fidelity < settings.design_sync.vlm_low_confidence_threshold
+            else None
+        )
+        corrections = await _call_vlm_for_section(
+            node_id, idx, figma_bytes, html_bytes, section, global_image=global_for_vlm
+        )
         all_corrections.extend(corrections)
 
         # 4. Cache
@@ -186,6 +200,7 @@ async def run_verification_loop(
     max_iterations: int | None = None,
     render_client: str = "gmail_web",
     viewport_width: int = 680,
+    global_design_image: bytes | None = None,
 ) -> VerificationLoopResult:
     """Iterative render-compare-correct loop for visual fidelity convergence.
 
@@ -200,6 +215,8 @@ async def run_verification_loop(
         max_iterations: Override config max iterations (for testing).
         render_client: Email client profile for rendering.
         viewport_width: Viewport width for screenshot cropping.
+        global_design_image: Full-frame PNG threaded into ``compare_sections``
+            for low-fidelity VLM context (Phase 50.1).
 
     Returns:
         VerificationLoopResult with iteration history and final HTML.
@@ -292,6 +309,7 @@ async def run_verification_loop(
                 current_html,
                 sections,
                 iteration=i,
+                global_design_image=global_design_image,
             )
         except Exception:
             logger.warning(
@@ -397,35 +415,65 @@ def _build_vlm_prompt(
     figma_bytes: bytes,
     html_bytes: bytes,
     section: EmailSection | None,
+    global_image: bytes | None = None,
 ) -> list[ContentBlock]:
-    """Build multimodal content blocks for VLM comparison."""
+    """Build multimodal content blocks for VLM comparison.
+
+    When ``global_image`` is provided, a third ImageBlock is appended so the
+    VLM can reason about the section's role within the overall email layout
+    (Phase 50.1 low-confidence fallback, Gap 9).
+    """
     from app.ai.multimodal import ImageBlock, TextBlock
 
     section_desc = ""
     if section:
         section_desc = f"\nSection type: {section.section_type.value}, index: {section_idx}"
 
-    return [
-        TextBlock(
-            text=(
-                "Compare these two email section screenshots. "
-                "First image: original Figma design. Second image: rendered HTML.\n"
-                "For each visible difference, return a JSON array of objects with:\n"
-                '- "correction_type": one of "color","font","spacing","layout","content","image"\n'
-                '- "css_selector": CSS selector for the element\n'
-                '- "css_property": the CSS property to change\n'
-                '- "current_value": what the rendered version has\n'
-                '- "correct_value": what the design shows\n'
-                '- "confidence": 0.0-1.0\n'
-                '- "reasoning": brief explanation\n'
-                "Only report differences you are confident about. "
-                "Return [] if sections look identical."
-                f"{section_desc}"
-            )
-        ),
+    if global_image is not None:
+        prompt_text = (
+            "Compare these email section screenshots. "
+            "First image: original Figma design (this section). "
+            "Second image: rendered HTML (this section). "
+            "Third image: full-page Figma design — use it only as context "
+            "for what role this section plays in the overall email.\n"
+            "For each visible difference between images one and two, return a JSON "
+            "array of objects with:\n"
+            '- "correction_type": one of "color","font","spacing","layout","content","image"\n'
+            '- "css_selector": CSS selector for the element\n'
+            '- "css_property": the CSS property to change\n'
+            '- "current_value": what the rendered version has\n'
+            '- "correct_value": what the design shows\n'
+            '- "confidence": 0.0-1.0\n'
+            '- "reasoning": brief explanation\n'
+            "Only report differences you are confident about. "
+            "Return [] if sections look identical."
+            f"{section_desc}"
+        )
+    else:
+        prompt_text = (
+            "Compare these two email section screenshots. "
+            "First image: original Figma design. Second image: rendered HTML.\n"
+            "For each visible difference, return a JSON array of objects with:\n"
+            '- "correction_type": one of "color","font","spacing","layout","content","image"\n'
+            '- "css_selector": CSS selector for the element\n'
+            '- "css_property": the CSS property to change\n'
+            '- "current_value": what the rendered version has\n'
+            '- "correct_value": what the design shows\n'
+            '- "confidence": 0.0-1.0\n'
+            '- "reasoning": brief explanation\n'
+            "Only report differences you are confident about. "
+            "Return [] if sections look identical."
+            f"{section_desc}"
+        )
+
+    blocks: list[ContentBlock] = [
+        TextBlock(text=prompt_text),
         ImageBlock(data=figma_bytes, media_type="image/png", source="base64"),
         ImageBlock(data=html_bytes, media_type="image/png", source="base64"),
     ]
+    if global_image is not None:
+        blocks.append(ImageBlock(data=global_image, media_type="image/png", source="base64"))
+    return blocks
 
 
 async def _call_vlm_for_section(
@@ -434,6 +482,8 @@ async def _call_vlm_for_section(
     figma_bytes: bytes,
     html_bytes: bytes,
     section: EmailSection | None,
+    *,
+    global_image: bytes | None = None,
 ) -> list[SectionCorrection]:
     """Call VLM for a single section and return parsed corrections."""
     settings = get_settings()
@@ -451,7 +501,7 @@ async def _call_vlm_for_section(
             ) or resolve_model("standard")
 
         content: list[ContentBlock] = _build_vlm_prompt(
-            section_idx, figma_bytes, html_bytes, section
+            section_idx, figma_bytes, html_bytes, section, global_image=global_image
         )
         registry = get_registry()
         provider = registry.get_llm(model_name)

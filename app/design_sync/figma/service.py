@@ -564,7 +564,13 @@ class FigmaDesignSyncService:
                     )
                 )
 
-        structure = DesignFileStructure(file_name=file_name, pages=pages)
+        # Full-design PNG fetch (Phase 50.1) — only when a target frame is selected
+        # so token-only callers don't pay an extra API roundtrip.
+        design_image: bytes | None = None
+        if target_node_id and settings.design_sync.full_design_png_enabled:
+            design_image = await self._export_full_frame_png(file_ref, access_token, target_node_id)
+
+        structure = DesignFileStructure(file_name=file_name, pages=pages, design_image=design_image)
 
         return tokens, structure
 
@@ -1609,6 +1615,38 @@ class FigmaDesignSyncService:
                 size_bytes=len(content),
             )
             return content
+
+    async def _export_full_frame_png(
+        self,
+        file_ref: str,
+        access_token: str,
+        target_node_id: str,
+    ) -> bytes | None:
+        """Export the root frame as a 2x PNG for global visual context (Phase 50.1).
+
+        Returns ``None`` on any failure — never raises — so the conversion
+        pipeline degrades gracefully when Figma is unreachable or the node
+        cannot be exported.
+        """
+        try:
+            exported = await self.export_images(
+                file_ref,
+                access_token,
+                [target_node_id],
+                format="png",
+                scale=2.0,
+            )
+            img = next((e for e in exported if e.node_id == target_node_id), None)
+            if img is None:
+                return None
+            return await self.download_image_bytes(img)
+        except Exception:
+            logger.warning(
+                "design_sync.figma.full_frame_png_failed",
+                node_id=target_node_id,
+                exc_info=True,
+            )
+            return None
 
     async def export_frame_screenshots(
         self,

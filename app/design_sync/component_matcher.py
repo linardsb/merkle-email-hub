@@ -59,6 +59,7 @@ def match_section(
     *,
     container_width: int = 600,
     image_urls: dict[str, str] | None = None,
+    global_design_image: bytes | None = None,  # noqa: ARG001  Phase 50.1 pass-through; consumed in 50.5
 ) -> ComponentMatch:
     """Match a single EmailSection to a component slug with slot fills."""
     # Column layouts override section type for CONTENT sections
@@ -95,6 +96,7 @@ def match_all(
     *,
     container_width: int = 600,
     image_urls: dict[str, str] | None = None,
+    global_design_image: bytes | None = None,
 ) -> list[ComponentMatch]:
     """Match all sections in order."""
     return [
@@ -103,6 +105,7 @@ def match_all(
             idx,
             container_width=container_width,
             image_urls=image_urls,
+            global_design_image=global_design_image,
         )
         for idx, section in enumerate(sections)
     ]
