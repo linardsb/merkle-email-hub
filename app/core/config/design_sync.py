@@ -97,3 +97,9 @@ class DesignSyncConfig(BaseModel):
     # Full-design PNG threading for global visual context (Phase 50.1, Gap 9)
     full_design_png_enabled: bool = True  # DESIGN_SYNC__FULL_DESIGN_PNG_ENABLED
     vlm_low_confidence_threshold: float = 0.7  # DESIGN_SYNC__VLM_LOW_CONFIDENCE_THRESHOLD
+    # Wrapper unwrap pre-pass (Phase 50.3, Gap 1) — expand coloured mj-wrappers
+    # with ≥2 section children into per-child sections so heading + cards
+    # don't collapse into one component. Gated to MJML naming convention.
+    # Default off for one release after merge per master plan risks table;
+    # flip on once the 4 regression cases re-validate in production.
+    wrapper_unwrap_enabled: bool = False  # DESIGN_SYNC__WRAPPER_UNWRAP_ENABLED

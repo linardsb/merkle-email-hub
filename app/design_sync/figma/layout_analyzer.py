@@ -167,6 +167,12 @@ class EmailSection:
     boundary_below: str | None = None
     sampled_top_color: str | None = None
     sampled_bottom_color: str | None = None
+    # Wrapper unwrap pre-pass (Phase 50.3, Gap 1) — populated when a coloured
+    # ``mj-wrapper`` is expanded into its child sections; ``container_bg`` is
+    # the wrapper's own fill propagated to each child, and ``parent_wrapper_id``
+    # records the source wrapper node id for downstream Rule 1 logic.
+    container_bg: str | None = None
+    parent_wrapper_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -250,24 +256,34 @@ def analyze_layout(
         return DesignLayoutDescription(file_name=structure.file_name)
 
     page = _find_primary_page(structure.pages)
-    candidates = _get_section_candidates(page)
+    raw_candidates = _get_section_candidates(page)
 
-    if not candidates:
+    if not raw_candidates:
         return DesignLayoutDescription(file_name=structure.file_name)
 
-    # Detect naming convention
+    # Detect naming convention from raw frames so the wrapper-unwrap pre-pass
+    # can gate on it. Naming detection is keyword-pattern-based and unaffected
+    # by whether wrappers have been expanded.
     if naming_convention == "auto":
-        convention = _detect_naming_convention(candidates)
+        convention = _detect_naming_convention(raw_candidates)
     elif naming_convention == "custom" and section_name_map:
         convention = NamingConvention.CUSTOM
     else:
         try:
             convention = NamingConvention(naming_convention)
         except ValueError:
-            convention = _detect_naming_convention(candidates)
+            convention = _detect_naming_convention(raw_candidates)
+
+    # Wrapper unwrap pre-pass (Phase 50.3) — expand coloured ``mj-wrapper``s
+    # with ≥2 section children into per-child sections, propagating the
+    # wrapper fill. Gated to MJML naming + ``wrapper_unwrap_enabled`` flag.
+    candidates = _expand_container_wrappers(raw_candidates, convention)
 
     # Determine overall width from the widest top-level frame
-    overall_width = max((c.width for c in candidates if c.width is not None), default=None)
+    overall_width = max(
+        (node.width for node, _, _ in candidates if node.width is not None),
+        default=None,
+    )
 
     # Build sections
     sections: list[EmailSection] = []
@@ -277,7 +293,7 @@ def analyze_layout(
         if vlm_classifications
         else 0.0
     )
-    for idx, node in enumerate(candidates):
+    for idx, (node, container_bg, parent_wrapper_id) in enumerate(candidates):
         section_type, classification_confidence = _classify_section(
             node,
             convention,
@@ -356,6 +372,8 @@ def analyze_layout(
                 vlm_confidence=vlm_conf,
                 content_roles=roles,
                 child_content_groups=child_groups,
+                container_bg=container_bg,
+                parent_wrapper_id=parent_wrapper_id,
             )
         )
 
@@ -417,25 +435,78 @@ def _get_section_candidates(page: DesignNode) -> list[DesignNode]:
     use its children as section candidates instead of treating the wrapper
     as one section.
     """
-    top_frames = [
-        child
-        for child in page.children
-        if child.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.GROUP)
-    ]
+    top_frames = [child for child in page.children if child.type in _FRAME_TYPES]
 
     # If there's exactly one tall frame with multiple children, unwrap it —
     # it's likely a full-email wrapper (e.g. "EmailLove" containing mj-wrappers)
     if len(top_frames) == 1:
         wrapper = top_frames[0]
-        inner = [
-            child
-            for child in wrapper.children
-            if child.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.GROUP)
-        ]
+        inner = [child for child in wrapper.children if child.type in _FRAME_TYPES]
         if len(inner) >= 2:
             return inner
 
     return top_frames
+
+
+def _expand_container_wrappers(
+    candidates: list[DesignNode],
+    naming: NamingConvention,
+) -> list[tuple[DesignNode, str | None, str | None]]:
+    """Wrapper unwrap pre-pass (Phase 50.3, Gap 1).
+
+    A ``mj-wrapper`` (or any FRAME with a coloured fill plus ≥2 ``mj-section``
+    children) is treated as one ``EmailSection`` by ``analyze_layout`` today;
+    that collapses heading + cards / heading + product rows into a single
+    component. This pass replaces such a wrapper with its children, propagating
+    the wrapper's fill as ``container_bg`` and recording the wrapper's id as
+    ``parent_wrapper_id``.
+
+    Gated to MJML-named files for now — descriptive naming is deferred to
+    Phase 51 — and behind ``DESIGN_SYNC__WRAPPER_UNWRAP_ENABLED`` so the
+    behaviour change can be rolled out per the master plan risks table.
+
+    Returns a list of ``(section_node, container_bg, parent_wrapper_id)``
+    tuples. When unchanged, ``container_bg`` and ``parent_wrapper_id`` are
+    ``None`` so existing downstream code sees the same shape it always has.
+    """
+    if naming != NamingConvention.MJML:
+        return [(node, None, None) for node in candidates]
+
+    if not get_settings().design_sync.wrapper_unwrap_enabled:
+        return [(node, None, None) for node in candidates]
+
+    expanded: list[tuple[DesignNode, str | None, str | None]] = []
+    for node in candidates:
+        if _is_container_wrapper(node):
+            wrapper_bg = node.fill_color
+            for child in node.children:
+                if _is_section_child(child):
+                    expanded.append((child, wrapper_bg, node.id))
+        else:
+            expanded.append((node, None, None))
+    return expanded
+
+
+def _is_container_wrapper(node: DesignNode) -> bool:
+    """A container wrapper has a non-default fill AND ≥2 section children."""
+    if not node.fill_color:
+        return False
+    section_children = [c for c in node.children if _is_section_child(c)]
+    return len(section_children) >= 2
+
+
+def _is_section_child(node: DesignNode) -> bool:
+    """An ``mj-section``/``mj-wrapper`` child of a container, by name or shape.
+
+    Matches name convention first (``mj-section``/``mj-wrapper`` substring).
+    Falls back to a structural check: a FRAME/GROUP/COMPONENT with at least
+    one content child of its own — that is what an MJML section looks like
+    after the Figma plugin has flattened the column layer.
+    """
+    name_lower = (node.name or "").lower()
+    if "mj-section" in name_lower or "mj-wrapper" in name_lower:
+        return True
+    return node.type in _FRAME_TYPES and bool(node.children)
 
 
 def _detect_naming_convention(candidates: list[DesignNode]) -> NamingConvention:

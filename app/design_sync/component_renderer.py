@@ -264,12 +264,48 @@ class ComponentRenderer:
         dark_classes = self._extract_dark_mode_classes(result_html)
         images = self._extract_images(result_html)
 
+        # 7. Wrap in container_bg cell when the section came from a coloured
+        # mj-wrapper (Phase 50.3 — superseded by 50.4 inner-table layer).
+        container_bg = match.section.container_bg
+        if container_bg:
+            result_html = self._wrap_with_container_bg(result_html, container_bg)
+            safe = container_bg.lstrip("#").upper()
+            dark_classes.append(f"bgcolor-{safe}")
+
         return RenderedSection(
             html=result_html,
             component_slug=match.component_slug,
             section_idx=match.section_idx,
             dark_mode_classes=tuple(dark_classes),
             images=images,
+        )
+
+    def _wrap_with_container_bg(self, inner_html: str, container_bg: str) -> str:
+        """Wrap rendered section HTML in an outer ``<td bgcolor>`` cell.
+
+        Phase 50.3 emits the wrapper fill as an outer cell with an MSO ghost
+        table so Outlook honours the colour. Phase 50.4 will replace this
+        with a proper outer/inner table pair.
+        """
+        width = self._container_width
+        return (
+            "<!--[if mso]>\n"
+            f'<table role="presentation" width="{width}" align="center" '
+            'cellpadding="0" cellspacing="0" border="0">'
+            f'<tr><td bgcolor="{container_bg}" '
+            f'style="background-color:{container_bg};">\n'
+            "<![endif]-->\n"
+            f'<table role="presentation" width="100%" '
+            'cellpadding="0" cellspacing="0" border="0" '
+            f'style="background-color:{container_bg};" bgcolor="{container_bg}">\n'
+            f'<tr><td bgcolor="{container_bg}" '
+            f'style="background-color:{container_bg};">\n'
+            f"{inner_html}\n"
+            "</td></tr>\n"
+            "</table>\n"
+            "<!--[if mso]>\n"
+            "</td></tr></table>\n"
+            "<![endif]-->"
         )
 
     def render_all(self, matches: list[ComponentMatch]) -> list[RenderedSection]:
