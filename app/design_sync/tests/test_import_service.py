@@ -565,7 +565,7 @@ class TestDesignImportServiceOrchestrator:
         mock_ctx.__aexit__ = AsyncMock(return_value=False)
 
         with (
-            patch("app.design_sync.import_service.get_db_context", return_value=mock_ctx),
+            patch("app.design_sync.import_service.get_scoped_db_context", return_value=mock_ctx),
             patch(
                 "app.design_sync.import_service.DesignSyncRepository",
                 return_value=mock_repo,
@@ -608,7 +608,7 @@ class TestDesignImportServiceOrchestrator:
         mock_ctx.__aexit__ = AsyncMock(return_value=False)
 
         with (
-            patch("app.design_sync.import_service.get_db_context", return_value=mock_ctx),
+            patch("app.design_sync.import_service.get_scoped_db_context", return_value=mock_ctx),
             patch(
                 "app.design_sync.import_service.DesignSyncRepository",
                 return_value=mock_repo,
@@ -640,7 +640,7 @@ class TestDesignImportServiceOrchestrator:
         mock_ctx.__aexit__ = AsyncMock(return_value=False)
 
         with (
-            patch("app.design_sync.import_service.get_db_context", return_value=mock_ctx),
+            patch("app.design_sync.import_service.get_scoped_db_context", return_value=mock_ctx),
             patch(
                 "app.design_sync.import_service.DesignSyncRepository",
                 return_value=mock_repo,
