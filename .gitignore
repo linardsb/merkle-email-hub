@@ -128,6 +128,13 @@ e2e-screenshots/
 .claude/projects/
 .claude/worktrees/
 
+# Figma export cache (~26 MB of design preview PNGs + JSON manifests).
+# Regenerable from Figma on demand; not source-of-truth content.
+.agents/figma-cache/
+
+# Playwright test runner state (per-machine, regenerated on each run)
+cms/apps/web/test-results/
+
 # Hypothesis property-based testing cache (auto-generated, OS-specific)
 .hypothesis/
 
