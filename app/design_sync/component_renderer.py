@@ -178,6 +178,35 @@ _BG_CLASS_BGCOLOR_RE = re.compile(
     r"background-color:\s*[^;\"]+([;\"\'])"
 )
 
+# Outer/inner card surface targeting (Phase 50.4) — matches class="_outer" or
+# class="_inner" exactly to avoid accidental matches against other tokens.
+# Whitespace tokenisation lets the class share a slot with siblings.
+_OUTER_CLASS_PRESENT_RE = re.compile(r'<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_outer(?:\s[^"]*)?"')
+_OUTER_CLASS_BGCOLOR_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_outer(?:\s[^"]*)?"[^>]*style="[^"]*?)'
+    r"background-color:\s*[^;\"]+([;\"\'])"
+)
+_OUTER_CLASS_BG_INSERT_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_outer(?:\s[^"]*)?"[^>]*style=")'
+    r'(?![^"]*background-color:)'
+)
+_INNER_CLASS_BGCOLOR_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*style="[^"]*?)'
+    r"background-color:\s*[^;\"]+([;\"\'])"
+)
+_INNER_CLASS_BG_INSERT_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*style=")'
+    r'(?![^"]*background-color:)'
+)
+_INNER_CLASS_RADIUS_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*style="[^"]*?)'
+    r"border-radius:\s*[^;\"]+([;\"\'])"
+)
+_INNER_CLASS_RADIUS_INSERT_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*style=")'
+    r'(?![^"]*border-radius:)'
+)
+
 _SLOT_ATTR_RE = re.compile(r'data-slot="([^"]+)"')
 
 
@@ -264,11 +293,12 @@ class ComponentRenderer:
         dark_classes = self._extract_dark_mode_classes(result_html)
         images = self._extract_images(result_html)
 
-        # 7. Wrap in container_bg cell when the section came from a coloured
-        # mj-wrapper (Phase 50.3 — superseded by 50.4 inner-table layer).
+        # Stamp a dark-mode-class hook so Track 41.3's text-color inversion
+        # can see the wrapper fill on the section. Phase 50.4 applies the
+        # actual bgcolor via the ``_outer`` token override path; the class
+        # name keeps the existing inversion contract working.
         container_bg = match.section.container_bg
         if container_bg:
-            result_html = self._wrap_with_container_bg(result_html, container_bg)
             safe = container_bg.lstrip("#").upper()
             dark_classes.append(f"bgcolor-{safe}")
 
@@ -278,34 +308,6 @@ class ComponentRenderer:
             section_idx=match.section_idx,
             dark_mode_classes=tuple(dark_classes),
             images=images,
-        )
-
-    def _wrap_with_container_bg(self, inner_html: str, container_bg: str) -> str:
-        """Wrap rendered section HTML in an outer ``<td bgcolor>`` cell.
-
-        Phase 50.3 emits the wrapper fill as an outer cell with an MSO ghost
-        table so Outlook honours the colour. Phase 50.4 will replace this
-        with a proper outer/inner table pair.
-        """
-        width = self._container_width
-        return (
-            "<!--[if mso]>\n"
-            f'<table role="presentation" width="{width}" align="center" '
-            'cellpadding="0" cellspacing="0" border="0">'
-            f'<tr><td bgcolor="{container_bg}" '
-            f'style="background-color:{container_bg};">\n'
-            "<![endif]-->\n"
-            f'<table role="presentation" width="100%" '
-            'cellpadding="0" cellspacing="0" border="0" '
-            f'style="background-color:{container_bg};" bgcolor="{container_bg}">\n'
-            f'<tr><td bgcolor="{container_bg}" '
-            f'style="background-color:{container_bg};">\n'
-            f"{inner_html}\n"
-            "</td></tr>\n"
-            "</table>\n"
-            "<!--[if mso]>\n"
-            "</td></tr></table>\n"
-            "<![endif]-->"
         )
 
     def render_all(self, matches: list[ComponentMatch]) -> list[RenderedSection]:
@@ -576,10 +578,22 @@ class ComponentRenderer:
             target = override.target_class
 
             if target == "_outer":
-                # Replace on the first/outermost table or element with the property
-                result = self._replace_first_css_prop(result, prop, val)
-                if prop == "background-color":
+                if prop == "background-color" and _OUTER_CLASS_PRESENT_RE.search(result):
+                    # Phase 50.4 component HTML with explicit _outer class —
+                    # avoid the legacy "first style block" heuristic which
+                    # would otherwise overwrite the inner card's bg.
+                    result = self._replace_outer_bg_color(result, val)
                     result = self._replace_bg_class_color(result, val)
+                else:
+                    # Legacy components without _outer class
+                    result = self._replace_first_css_prop(result, prop, val)
+                    if prop == "background-color":
+                        result = self._replace_bg_class_color(result, val)
+            elif target == "_inner":
+                if prop == "background-color":
+                    result = self._replace_inner_bg_color(result, val)
+                elif prop == "border-radius":
+                    result = self._replace_inner_radius(result, val)
             elif target == "_heading" and prop == "font-family":
                 result = self._replace_heading_font(result, val)
             elif target == "_heading" and prop == "color":
@@ -673,6 +687,59 @@ class ComponentRenderer:
         safe = html.escape(color, quote=True)
         repl = rf"\g<1>background-color:{safe}\g<2>"
         return _BG_CLASS_BGCOLOR_RE.sub(repl, html_str)
+
+    def _replace_outer_bg_color(self, html_str: str, color: str) -> str:
+        """Apply background-color to elements carrying ``class="_outer"`` (Phase 50.4).
+
+        Two-pass: replace inline ``background-color:`` if present, otherwise
+        inject one. Stamps ``bgcolor`` attribute when missing for Outlook.
+        """
+        safe = html.escape(color, quote=True)
+        result = _OUTER_CLASS_BGCOLOR_RE.sub(rf"\g<1>background-color:{safe}\g<2>", html_str)
+        result = _OUTER_CLASS_BG_INSERT_RE.sub(rf"\g<1>background-color:{safe};", result)
+        bgcolor_pattern = re.compile(
+            r'(<(?:table|td)\b)((?:(?!\bbgcolor=)[^>])*?\bclass="(?:[^"]*\s)?_outer'
+            r'(?:\s[^"]*)?"(?:(?!\bbgcolor=)[^>])*?)(/?>)'
+        )
+        return bgcolor_pattern.sub(rf'\g<1>\g<2> bgcolor="{safe}"\g<3>', result)
+
+    def _replace_inner_bg_color(self, html_str: str, color: str) -> str:
+        """Apply background-color to elements carrying ``class="_inner"``.
+
+        Two-pass:
+        * If an inline ``background-color:`` already exists on the ``_inner``
+          element, replace it.
+        * Otherwise, inject a ``background-color:`` declaration into the
+          existing style attribute.
+
+        Also stamps a matching ``bgcolor=`` attribute when none is present —
+        Outlook reads the attribute, modern clients prefer the inline style.
+        """
+        safe = html.escape(color, quote=True)
+        result = _INNER_CLASS_BGCOLOR_RE.sub(rf"\g<1>background-color:{safe}\g<2>", html_str)
+        # Inject when the _inner element has a style attr but no background-color
+        result = _INNER_CLASS_BG_INSERT_RE.sub(rf"\g<1>background-color:{safe};", result)
+        # Stamp bgcolor attribute on the same element when missing (Outlook)
+        bgcolor_pattern = re.compile(
+            r'(<(?:table|td)\b)((?:(?!\bbgcolor=)[^>])*?\bclass="(?:[^"]*\s)?_inner'
+            r'(?:\s[^"]*)?"(?:(?!\bbgcolor=)[^>])*?)(/?>)'
+        )
+        return bgcolor_pattern.sub(rf'\g<1>\g<2> bgcolor="{safe}"\g<3>', result)
+
+    def _replace_inner_radius(self, html_str: str, value: str) -> str:
+        """Apply border-radius to elements carrying ``class="_inner"``.
+
+        Replaces an existing inline ``border-radius:`` when present; otherwise
+        injects one alongside ``border-collapse:separate; overflow:hidden;`` so
+        rounded corners actually clip in clients that support them.
+        """
+        safe = html.escape(value, quote=True)
+        result = _INNER_CLASS_RADIUS_RE.sub(rf"\g<1>border-radius:{safe}\g<2>", html_str)
+        result = _INNER_CLASS_RADIUS_INSERT_RE.sub(
+            rf"\g<1>border-radius:{safe};border-collapse:separate;overflow:hidden;",
+            result,
+        )
+        return result
 
     _CTA_LINK_COLOR_RE = re.compile(
         r'(<a\b[^>]*data-slot="cta_url"[^>]*style="[^"]*?)(?<!background-)color:\s*[^;"]+(;?)'

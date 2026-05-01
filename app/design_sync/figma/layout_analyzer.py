@@ -173,6 +173,12 @@ class EmailSection:
     # records the source wrapper node id for downstream Rule 1 logic.
     container_bg: str | None = None
     parent_wrapper_id: str | None = None
+    # Nested-card background (Phase 50.4, Gap 10) — when the section sits on a
+    # coloured wrapper but has its own card surface (e.g. white card on lime
+    # wrapper), ``inner_bg`` carries the card's own fill and ``inner_radius``
+    # carries its border radius. Renderer emits these on a ``_inner`` table.
+    inner_bg: str | None = None
+    inner_radius: float | None = None
 
 
 @dataclass(frozen=True)
@@ -347,6 +353,13 @@ def analyze_layout(
         # Extract child content groups (preserves parent-child structure)
         child_groups = _extract_content_groups(node, button_name_hints=button_name_hints)
 
+        # Nested-card surface detection (Phase 50.4, Gap 10)
+        inner_bg, inner_radius = _detect_inner_bg(
+            node,
+            container_bg=container_bg,
+            global_design_image=global_design_image,
+        )
+
         sections.append(
             EmailSection(
                 section_type=section_type,
@@ -374,6 +387,8 @@ def analyze_layout(
                 child_content_groups=child_groups,
                 container_bg=container_bg,
                 parent_wrapper_id=parent_wrapper_id,
+                inner_bg=inner_bg,
+                inner_radius=inner_radius,
             )
         )
 
@@ -1396,3 +1411,94 @@ def _section_bottom(section: EmailSection) -> float | None:
     if section.y_position is None or section.height is None:
         return None
     return section.y_position + section.height
+
+
+# ── Nested-card surface detection (Phase 50.4, Gap 10) ──
+
+
+def _detect_inner_bg(
+    node: DesignNode,
+    *,
+    container_bg: str | None,
+    global_design_image: bytes | None,
+) -> tuple[str | None, float | None]:
+    """Detect the section's own card-surface bg + radius distinct from the wrapper.
+
+    Two paths:
+
+    * **Direct**: ``node.fill_color`` is non-default and differs from
+      ``container_bg`` — the section carries its own fill (e.g. white card on
+      lime wrapper).
+    * **Indirect (PNG-sampled)**: ``node.fill_color`` is empty but the global
+      design PNG shows a perceptually distinct color at the section's interior
+      centroid versus the wrapper bg. Used when the design tool stores the
+      card background as a child rectangle the analyzer hasn't promoted into
+      ``fill_color``.
+
+    Returns ``(inner_bg, inner_radius)`` or ``(None, None)`` when no nested
+    card is detected. Gated by ``DESIGN_SYNC__NESTED_CARD_DETECTION_ENABLED``.
+    """
+    cfg = get_settings().design_sync
+    if not cfg.nested_card_detection_enabled:
+        return None, None
+
+    # Nested-card detection is only meaningful when the section sits inside
+    # a coloured wrapper (``container_bg``). Without one, the section's own
+    # ``bg_color`` keeps the Phase 49 contract of mapping to ``_outer``.
+    if container_bg is None:
+        return None, None
+
+    # Direct: section has its own fill that differs from the container.
+    if node.fill_color and _hex_max_channel_delta(node.fill_color, container_bg) > 0:
+        return node.fill_color, _resolve_corner_radius(node)
+
+    # Indirect: PNG centroid sample — covers the case where the section's own
+    # fill is empty but the rendered design shows a distinct surface colour.
+    if global_design_image is not None:
+        sampled = _sample_section_centroid(node, global_design_image)
+        if sampled and _hex_max_channel_delta(sampled, container_bg) > (
+            cfg.nested_card_perceptual_threshold
+        ):
+            return sampled, _resolve_corner_radius(node)
+
+    return None, None
+
+
+def _resolve_corner_radius(node: DesignNode) -> float | None:
+    """Return the section's corner radius, preferring the per-corner max."""
+    if node.corner_radii:
+        return max(node.corner_radii)
+    return node.corner_radius
+
+
+def _sample_section_centroid(node: DesignNode, image_bytes: bytes) -> str | None:
+    """Sample the dominant color of a 5x5 block at the section's geometric centre."""
+    if (
+        node.x is None
+        or node.y is None
+        or node.width is None
+        or node.height is None
+        or node.width <= 0
+        or node.height <= 0
+    ):
+        return None
+    cx = int(node.x + node.width / 2)
+    cy = int(node.y + node.height / 2)
+
+    from app.design_sync.image_sampler import sample_centroid_color
+
+    return sample_centroid_color(image_bytes, cx=cx, cy=cy)
+
+
+def _hex_max_channel_delta(hex_a: str, hex_b: str) -> int:
+    """Return the maximum per-channel RGB delta between two hex colors."""
+    ar, ag, ab = _hex_to_rgb(hex_a)
+    br, bg, bb = _hex_to_rgb(hex_b)
+    return max(abs(ar - br), abs(ag - bg), abs(ab - bb))
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)

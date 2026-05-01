@@ -230,6 +230,8 @@ def _mock_layout_settings() -> Any:
             "vlm_classification_model": "",
             "vlm_classification_confidence_threshold": 0.7,
             "vlm_classification_timeout": 15.0,
+            "nested_card_detection_enabled": False,
+            "nested_card_perceptual_threshold": 30,
         },
     )()
     mock_s = type("S", (), {"design_sync": mock_ds})()

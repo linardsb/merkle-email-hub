@@ -1405,8 +1405,20 @@ def _build_token_overrides(section: EmailSection) -> list[TokenOverride]:
     """Extract token overrides from section properties."""
     overrides: list[TokenOverride] = []
 
-    if section.bg_color:
+    # Outer wrapper background (Phase 50.3 — wrapper-unwrap)
+    if section.container_bg:
+        overrides.append(TokenOverride("background-color", "_outer", section.container_bg))
+
+    # Inner card background (Phase 50.4 — nested-card surface)
+    if section.inner_bg:
+        overrides.append(TokenOverride("background-color", "_inner", section.inner_bg))
+    elif section.bg_color:
+        # No nested card detected — preserve Phase 49 contract (bg_color → _outer).
         overrides.append(TokenOverride("background-color", "_outer", section.bg_color))
+
+    # Inner card border radius (Phase 50.4)
+    if section.inner_radius is not None:
+        overrides.append(TokenOverride("border-radius", "_inner", f"{section.inner_radius:.0f}px"))
 
     # Font overrides from first heading text
     for text in section.texts:

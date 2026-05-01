@@ -103,3 +103,11 @@ class DesignSyncConfig(BaseModel):
     # Default off for one release after merge per master plan risks table;
     # flip on once the 4 regression cases re-validate in production.
     wrapper_unwrap_enabled: bool = False  # DESIGN_SYNC__WRAPPER_UNWRAP_ENABLED
+    # Nested-card background detection (Phase 50.4, Gap 10) — detect when a
+    # section sits on a coloured wrapper but has its own card surface
+    # (e.g. white card on lime wrapper). Renderer wraps content in a ``_inner``
+    # table when ``inner_bg`` is detected.
+    nested_card_detection_enabled: bool = True  # DESIGN_SYNC__NESTED_CARD_DETECTION_ENABLED
+    # Per-channel RGB Δ above which a PNG-sampled centroid color is considered
+    # distinct from the container background (i.e. a real inner card surface).
+    nested_card_perceptual_threshold: int = 30  # DESIGN_SYNC__NESTED_CARD_PERCEPTUAL_THRESHOLD

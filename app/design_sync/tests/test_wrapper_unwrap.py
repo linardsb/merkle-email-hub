@@ -242,6 +242,11 @@ class TestWrapperUnwrap:
 
 class TestRendererEmitsContainerBg:
     def test_renderer_emits_wrapper_bg(self) -> None:
+        # Phase 50.4: container_bg flows through the ``_outer`` token override
+        # path (built by ``_build_token_overrides``), not the provisional 50.3
+        # wrap that used to inject a bare ``<td bgcolor>`` cell.
+        from app.design_sync.component_matcher import TokenOverride
+
         renderer = ComponentRenderer(container_width=600)
         renderer.load()
 
@@ -255,14 +260,16 @@ class TestRendererEmitsContainerBg:
         match = ComponentMatch(
             section_idx=0,
             section=section,
-            component_slug="text-block",
+            component_slug="article-card",
             slot_fills=[],
-            token_overrides=[],
+            token_overrides=[TokenOverride("background-color", "_outer", "#123456")],
         )
 
         result = renderer.render_section(match)
 
-        assert 'bgcolor="#123456"' in result.html
+        # ``_outer`` class targeting injects both the inline style (modern
+        # clients) and the bgcolor attribute (Outlook).
         assert "background-color:#123456" in result.html
-        # Dark mode class is registered for the new wrapper bg
+        assert 'bgcolor="#123456"' in result.html
+        # Dark-mode class is still registered for the wrapper bg.
         assert "bgcolor-123456" in result.dark_mode_classes
