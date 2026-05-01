@@ -7,18 +7,244 @@ sample the facing edge of the image. If a solid color is detected, inject
 
 from __future__ import annotations
 
+import io
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
+
+import numpy as np
+from PIL import Image
 
 from app.core.logging import get_logger
 from app.design_sync.converter import _relative_luminance
 from app.design_sync.image_sampler import sample_edge_color
+from app.shared.imaging import safe_image_open
 
 if TYPE_CHECKING:
     from app.design_sync.component_matcher import ComponentMatch
+    from app.design_sync.figma.layout_analyzer import EmailSection
 
 logger = get_logger(__name__)
+
+# ── Section boundary classification (Phase 50.2) ──
+
+BoundaryRelation = Literal[
+    "continuous_with_above",
+    "continuous_with_below",
+    "hard_break",
+    "unknown",
+]
+
+# Per-channel RGB delta below which two edge colors are "continuous"
+_DEFAULT_DELTA_THRESHOLD = 5
+
+# Pixel band height sampled at each section's top/bottom
+_BOUNDARY_SAMPLE_BAND = 5
+
+# Minimum uniformity required for a band's dominant color to be reported
+_BOUNDARY_MIN_UNIFORMITY = 0.80
+
+# Tolerance for the boundary band's dominant-color clustering
+_BOUNDARY_CLUSTER_TOLERANCE = 10
+
+
+@dataclass(frozen=True)
+class SectionBoundary:
+    """Per-section boundary classification."""
+
+    section_node_id: str
+    boundary_above: BoundaryRelation
+    boundary_below: BoundaryRelation
+    sampled_top_color: str | None  # hex
+    sampled_bottom_color: str | None
+
+
+def classify_section_boundaries(
+    sections: list[EmailSection],
+    *,
+    global_design_image: bytes | None,
+    delta_threshold: int = _DEFAULT_DELTA_THRESHOLD,
+) -> dict[str, SectionBoundary]:
+    """Sample top + bottom edges of each section in the global PNG and classify boundaries.
+
+    Walks sections in y-position order; for each consecutive pair samples a
+    5px band at the previous section's bottom and the next section's top.
+    When per-channel RGB delta is within ``delta_threshold`` the boundary is
+    flagged ``continuous`` (paired direction); otherwise ``hard_break``.
+
+    Returns a dict keyed by ``section.node_id``. Sections with no PNG, no
+    geometry, or out-of-bounds y-coordinates receive ``unknown`` for both
+    boundaries.
+    """
+    if not sections:
+        return {}
+
+    # No PNG → unknown for everything
+    if global_design_image is None:
+        return {
+            s.node_id: SectionBoundary(
+                section_node_id=s.node_id,
+                boundary_above="unknown",
+                boundary_below="unknown",
+                sampled_top_color=None,
+                sampled_bottom_color=None,
+            )
+            for s in sections
+        }
+
+    try:
+        img = safe_image_open(io.BytesIO(global_design_image)).convert("RGB")
+    except Exception as exc:
+        logger.warning("design_sync.boundary_classifier.open_failed", error=str(exc))
+        return {
+            s.node_id: SectionBoundary(
+                section_node_id=s.node_id,
+                boundary_above="unknown",
+                boundary_below="unknown",
+                sampled_top_color=None,
+                sampled_bottom_color=None,
+            )
+            for s in sections
+        }
+
+    img_w, img_h = img.size
+    ordered = sorted(
+        sections,
+        key=lambda s: s.y_position if s.y_position is not None else 0.0,
+    )
+
+    # Pre-sample top + bottom colors for each section (or None when geometry missing)
+    sampled_top: dict[str, str | None] = {}
+    sampled_bottom: dict[str, str | None] = {}
+    for sec in ordered:
+        top, bottom = _sample_section_edges(sec, img, img_w, img_h)
+        sampled_top[sec.node_id] = top
+        sampled_bottom[sec.node_id] = bottom
+
+    # Initialize all boundaries as unknown — pair walk overwrites where pairs are valid
+    above: dict[str, BoundaryRelation] = {s.node_id: "unknown" for s in ordered}
+    below: dict[str, BoundaryRelation] = {s.node_id: "unknown" for s in ordered}
+
+    for i in range(len(ordered) - 1):
+        curr = ordered[i]
+        nxt = ordered[i + 1]
+        bottom = sampled_bottom[curr.node_id]
+        top = sampled_top[nxt.node_id]
+        if bottom is None or top is None:
+            below[curr.node_id] = "unknown"
+            above[nxt.node_id] = "unknown"
+            continue
+
+        if _max_channel_delta(bottom, top) <= delta_threshold:
+            below[curr.node_id] = "continuous_with_below"
+            above[nxt.node_id] = "continuous_with_above"
+        else:
+            below[curr.node_id] = "hard_break"
+            above[nxt.node_id] = "hard_break"
+
+    return {
+        s.node_id: SectionBoundary(
+            section_node_id=s.node_id,
+            boundary_above=above[s.node_id],
+            boundary_below=below[s.node_id],
+            sampled_top_color=sampled_top[s.node_id],
+            sampled_bottom_color=sampled_bottom[s.node_id],
+        )
+        for s in ordered
+    }
+
+
+def _sample_section_edges(
+    section: EmailSection,
+    img: Image.Image,
+    img_w: int,
+    img_h: int,
+) -> tuple[str | None, str | None]:
+    """Sample top and bottom edge colors for a section against the global PNG.
+
+    Returns ``(top_hex, bottom_hex)`` — either entry is ``None`` when the
+    section's y-extent falls outside the PNG or geometry is missing.
+    """
+    if section.y_position is None or section.height is None:
+        return None, None
+
+    y_top = int(section.y_position)
+    y_bottom = int(section.y_position + section.height)
+
+    # Out of bounds — bail before clamping turns into a no-op band
+    if y_top < 0 or y_bottom > img_h or y_top >= y_bottom or img_w == 0:
+        return None, None
+
+    band = _BOUNDARY_SAMPLE_BAND
+    top_band = _crop_band(img, 0, max(0, y_top), img_w, min(img_h, y_top + band))
+    bottom_band = _crop_band(img, 0, max(0, y_bottom - band), img_w, min(img_h, y_bottom))
+
+    top_color = _band_dominant_color(top_band) if top_band is not None else None
+    bottom_color = _band_dominant_color(bottom_band) if bottom_band is not None else None
+    return top_color, bottom_color
+
+
+def _crop_band(img: Image.Image, x0: int, y0: int, x1: int, y1: int) -> Image.Image | None:
+    """Return PIL crop or None when the band is empty."""
+    if y1 <= y0 or x1 <= x0:
+        return None
+    return img.crop((x0, y0, x1, y1))
+
+
+def _band_dominant_color(band: Image.Image) -> str | None:
+    """Return hex of dominant color in a PIL band image, or None when noisy."""
+    pixels: np.ndarray = np.array(band).reshape(-1, 3)
+    if len(pixels) == 0:
+        return None
+    return _dominant_hex(
+        pixels,
+        tolerance=_BOUNDARY_CLUSTER_TOLERANCE,
+        min_uniformity=_BOUNDARY_MIN_UNIFORMITY,
+    )
+
+
+def _dominant_hex(
+    pixels: np.ndarray,
+    *,
+    tolerance: int,
+    min_uniformity: float,
+) -> str | None:
+    """Greedy single-pass clustering — mirrors image_sampler._dominant_color."""
+    clusters: list[tuple[np.ndarray, int]] = []
+    for px in pixels:
+        assigned = False
+        for i, (rgb_sum, count) in enumerate(clusters):
+            centroid = rgb_sum / count
+            if np.all(np.abs(px.astype(np.int16) - centroid.astype(np.int16)) <= tolerance):
+                clusters[i] = (rgb_sum + px.astype(np.int64), count + 1)
+                assigned = True
+                break
+        if not assigned:
+            clusters.append((px.astype(np.int64).copy(), 1))
+
+    if not clusters:
+        return None
+    best_sum, best_count = max(clusters, key=lambda c: c[1])
+    if best_count / len(pixels) < min_uniformity:
+        return None
+    centroid = (best_sum / best_count).astype(np.uint8)
+    return f"#{int(centroid[0]):02X}{int(centroid[1]):02X}{int(centroid[2]):02X}"
+
+
+def _max_channel_delta(hex_a: str, hex_b: str) -> int:
+    """Return the maximum per-channel RGB delta between two hex colors."""
+    ar, ag, ab = _hex_to_rgb(hex_a)
+    br, bg, bb = _hex_to_rgb(hex_b)
+    return max(abs(ar - br), abs(ag - bg), abs(ab - bb))
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
 
 # Component slugs that receive propagated bgcolor
 _TEXT_LIKE_SLUGS: frozenset[str] = frozenset(

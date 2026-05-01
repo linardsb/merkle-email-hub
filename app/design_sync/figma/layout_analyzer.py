@@ -161,6 +161,12 @@ class EmailSection:
     vlm_confidence: float | None = None
     content_roles: tuple[str, ...] = ()
     child_content_groups: list[ContentGroup] = field(default_factory=list[ContentGroup])
+    # Section-boundary classification (Phase 50.2) — populated by
+    # ``classify_section_boundaries`` when a global design PNG is available.
+    boundary_above: str | None = None
+    boundary_below: str | None = None
+    sampled_top_color: str | None = None
+    sampled_bottom_color: str | None = None
 
 
 @dataclass(frozen=True)
@@ -226,7 +232,7 @@ def analyze_layout(
     section_name_map: dict[str, str] | None = None,
     button_name_hints: list[str] | None = None,
     vlm_classifications: dict[str, VLMSectionClassification] | None = None,
-    global_design_image: bytes | None = None,  # noqa: ARG001  Phase 50.1 pass-through; consumed in 50.4/50.5/50.7
+    global_design_image: bytes | None = None,
 ) -> DesignLayoutDescription:
     """Analyze a design file structure and detect email sections.
 
@@ -358,6 +364,27 @@ def analyze_layout(
 
     # Calculate spacing between sections
     sections = _calculate_spacing(sections)
+
+    # Boundary classification (Phase 50.2) — needs the y-sorted sections
+    if global_design_image is not None:
+        from app.design_sync.bgcolor_propagator import classify_section_boundaries
+
+        boundaries = classify_section_boundaries(
+            sections,
+            global_design_image=global_design_image,
+        )
+        sections = [
+            dataclasses.replace(
+                s,
+                boundary_above=boundaries[s.node_id].boundary_above,
+                boundary_below=boundaries[s.node_id].boundary_below,
+                sampled_top_color=boundaries[s.node_id].sampled_top_color,
+                sampled_bottom_color=boundaries[s.node_id].sampled_bottom_color,
+            )
+            if s.node_id in boundaries
+            else s
+            for s in sections
+        ]
 
     total_text_blocks = sum(len(s.texts) for s in sections)
     total_images = sum(len(s.images) for s in sections)
