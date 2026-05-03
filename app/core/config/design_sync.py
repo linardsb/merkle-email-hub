@@ -117,3 +117,9 @@ class DesignSyncConfig(BaseModel):
     frame_rules_enabled: bool = True  # DESIGN_SYNC__FRAME_RULES_ENABLED
     # Pill x-offset tolerance (px) for Rule 7 alignment classification.
     rule_7_alignment_tolerance_px: float = 4.0  # DESIGN_SYNC__RULE_7_ALIGNMENT_TOLERANCE_PX
+    # Physical-card identity exception (Phase 50.7, Rule 9 prep) — detect
+    # FRAMEs that depict a real plastic card so Phase 52.7's dark-mode flip
+    # can opt out and keep them visually consistent across modes. Pure
+    # FRAME-tree heuristics; runs only on sections with an ``inner_bg``.
+    physical_card_detection_enabled: bool = True  # DESIGN_SYNC__PHYSICAL_CARD_DETECTION_ENABLED
+    physical_card_min_signals: int = 2  # DESIGN_SYNC__PHYSICAL_CARD_MIN_SIGNALS

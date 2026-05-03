@@ -11,6 +11,10 @@ from typing import TYPE_CHECKING
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.design_sync.figma.physical_card_detector import (
+    collect_sibling_radii,
+    detect_physical_card_surface,
+)
 from app.design_sync.frame_rules import (
     CornerRadiusSpec,
     rule_8_corner_radius,
@@ -195,6 +199,12 @@ class EmailSection:
     # Rule 11 (Phase 50.5) — when all direct image children share the same
     # max-width, the inner card pins its width to that dominant image width.
     inner_card_fixed_width: int | None = None
+    # Physical-card identity exception (Phase 50.7, Rule 9 prep) — when the
+    # nested card visually depicts a real plastic card (membership card,
+    # boarding pass, loyalty card), Rule 9's dark-mode flip must skip it.
+    # ``physical_card_signals`` records which heuristics fired (telemetry).
+    is_physical_card_surface: bool = False
+    physical_card_signals: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -384,6 +394,25 @@ def analyze_layout(
             if card_spec is not None:
                 inner_card_fixed_width = card_spec.fixed_width_px
 
+        # Physical-card identity exception (Phase 50.7) — runs only on sections
+        # that already carry a card surface (inner_bg). Rule 9 (Phase 52.7)
+        # reads ``is_physical_card_surface`` to skip the dark-mode flip.
+        is_physical_card_surface = False
+        physical_card_signals: tuple[str, ...] = ()
+        ds_cfg = get_settings().design_sync
+        if inner_bg is not None and ds_cfg.physical_card_detection_enabled:
+            sibling_radii = collect_sibling_radii(
+                [n for n, _, _ in candidates],
+                exclude_node_id=node.id,
+            )
+            detection = detect_physical_card_surface(
+                node,
+                sibling_radii=sibling_radii,
+                min_signals=ds_cfg.physical_card_min_signals,
+            )
+            is_physical_card_surface = detection.is_physical
+            physical_card_signals = detection.signals
+
         sections.append(
             EmailSection(
                 section_type=section_type,
@@ -414,6 +443,8 @@ def analyze_layout(
                 inner_bg=inner_bg,
                 inner_radius=inner_radius,
                 inner_card_fixed_width=inner_card_fixed_width,
+                is_physical_card_surface=is_physical_card_surface,
+                physical_card_signals=physical_card_signals,
             )
         )
 
