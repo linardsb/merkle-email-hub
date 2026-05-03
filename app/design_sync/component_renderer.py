@@ -206,6 +206,26 @@ _INNER_CLASS_RADIUS_INSERT_RE = re.compile(
     r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*style=")'
     r'(?![^"]*border-radius:)'
 )
+# Rule 11 (Phase 50.5) — width / align attr / class-add helpers on ``_inner``.
+_INNER_CLASS_WIDTH_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*style="[^"]*?)'
+    r"(?<!max-)(?<!min-)width:\s*[^;\"]+([;\"\'])"
+)
+_INNER_CLASS_WIDTH_INSERT_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*style=")'
+    r'(?![^"]*(?<!max-)(?<!min-)width:)'
+)
+_INNER_CLASS_ELEMENT_RE = re.compile(
+    r'(<(?:table|td)\b)((?:(?!\balign=)[^>])*?\bclass="(?:[^"]*\s)?_inner(?:\s[^"]*)?")'
+    r"((?:(?!\balign=)[^>])*?)(/?>)"
+)
+_INNER_CLASS_ALIGN_REPLACE_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*class="(?:[^"]*\s)?_inner(?:\s[^"]*)?"[^>]*?)'
+    r'\balign="[^"]*"'
+)
+_INNER_CLASS_ATTR_RE = re.compile(
+    r'(<(?:table|td)\b[^>]*\bclass=")((?:[^"]*\s)?_inner(?:\s[^"]*)?)(")'
+)
 
 _SLOT_ATTR_RE = re.compile(r'data-slot="([^"]+)"')
 
@@ -594,6 +614,19 @@ class ComponentRenderer:
                     result = self._replace_inner_bg_color(result, val)
                 elif prop == "border-radius":
                     result = self._replace_inner_radius(result, val)
+                elif prop == "width":
+                    result = self._replace_inner_width(result, val)
+                elif prop == "__html_attr_align":
+                    result = self._set_inner_align_attr(result, val)
+                elif prop == "__html_attr_class_add":
+                    result = self._add_inner_class(result, val)
+            elif (
+                target.startswith("_image_")
+                and prop.startswith("border-")
+                and prop.endswith("-radius")
+            ):
+                node_id = target[len("_image_") :]
+                result = self._apply_image_corner_radius(result, node_id, prop, val)
             elif target == "_heading" and prop == "font-family":
                 result = self._replace_heading_font(result, val)
             elif target == "_heading" and prop == "color":
@@ -737,6 +770,100 @@ class ComponentRenderer:
         result = _INNER_CLASS_RADIUS_RE.sub(rf"\g<1>border-radius:{safe}\g<2>", html_str)
         result = _INNER_CLASS_RADIUS_INSERT_RE.sub(
             rf"\g<1>border-radius:{safe};border-collapse:separate;overflow:hidden;",
+            result,
+        )
+        return result
+
+    def _replace_inner_width(self, html_str: str, value: str) -> str:
+        """Apply width to elements carrying ``class="_inner"`` (Rule 11)."""
+        safe = html.escape(value, quote=True)
+        result = _INNER_CLASS_WIDTH_RE.sub(rf"\g<1>width:{safe}\g<2>", html_str)
+        result = _INNER_CLASS_WIDTH_INSERT_RE.sub(rf"\g<1>width:{safe};", result)
+        return result
+
+    def _set_inner_align_attr(self, html_str: str, value: str) -> str:
+        """Set ``align="<value>"`` attribute on the ``_inner`` element (Rule 11)."""
+        if value not in ("left", "center", "right"):
+            return html_str
+        safe = html.escape(value, quote=True)
+        result, replaced = _INNER_CLASS_ALIGN_REPLACE_RE.subn(
+            rf'\g<1>align="{safe}"',
+            html_str,
+        )
+        if replaced:
+            return result
+        return _INNER_CLASS_ELEMENT_RE.sub(
+            rf'\g<1>\g<2> align="{safe}"\g<3>\g<4>',
+            html_str,
+        )
+
+    def _add_inner_class(self, html_str: str, value: str) -> str:
+        """Append a class token to ``class="_inner ..."`` (Rule 11 ``wf`` add)."""
+        token = value.strip()
+        if not token:
+            return html_str
+        safe = html.escape(token, quote=True)
+
+        def _replace(match: re.Match[str]) -> str:
+            existing = match.group(2)
+            tokens = existing.split()
+            if safe in tokens:
+                return match.group(0)
+            return f"{match.group(1)}{existing} {safe}{match.group(3)}"
+
+        return _INNER_CLASS_ATTR_RE.sub(_replace, html_str)
+
+    def _apply_image_corner_radius(
+        self,
+        html_str: str,
+        node_id: str,
+        prop: str,
+        value: str,
+    ) -> str:
+        """Apply per-corner border-radius to ``<img data-node-id="X">`` (Rule 10).
+
+        Per-corner longhand survives more legacy renderers (Outlook 2016, AOL)
+        than the shorthand. Also stamps ``overflow:hidden`` on the parent
+        ``<td>`` so WebKit clients clip the corners.
+        """
+        safe_prop = re.escape(prop)
+        safe_val = html.escape(value, quote=True)
+        safe_node = re.escape(node_id)
+
+        # Replace existing prop on the matching <img> if present
+        existing = re.compile(
+            rf'(<img\b[^>]*\bdata-node-id="{safe_node}"[^>]*style="[^"]*?){safe_prop}:'
+            rf'\s*[^;"]+(;?)'
+        )
+        result, replaced = existing.subn(
+            rf"\g<1>{prop}:{safe_val}\g<2>",
+            html_str,
+        )
+        if not replaced:
+            # Inject into existing style attr
+            inject = re.compile(
+                rf'(<img\b[^>]*\bdata-node-id="{safe_node}"[^>]*style=")'
+                rf'(?![^"]*{safe_prop}:)'
+            )
+            result, injected = inject.subn(rf"\g<1>{prop}:{safe_val};", result)
+            if not injected:
+                # No style attr — add one before the closing >
+                add = re.compile(
+                    rf'(<img\b[^>]*\bdata-node-id="{safe_node}"(?:(?!style=)[^>])*?)(/?>)'
+                )
+                result = add.sub(
+                    rf'\g<1> style="{prop}:{safe_val};"\g<2>',
+                    result,
+                )
+
+        # Stamp overflow:hidden on the wrapping <td> when missing
+        td_pattern = re.compile(
+            rf'(<td\b[^>]*style=")((?:(?!overflow:)[^"])*)(")'
+            rf'((?:(?!<td\b)(?!</td>).)*?<img\b[^>]*\bdata-node-id="{safe_node}")',
+            re.DOTALL,
+        )
+        result = td_pattern.sub(
+            r"\g<1>\g<2>overflow:hidden;\g<3>\g<4>",
             result,
         )
         return result

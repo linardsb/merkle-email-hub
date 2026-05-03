@@ -111,3 +111,9 @@ class DesignSyncConfig(BaseModel):
     # Per-channel RGB Δ above which a PNG-sampled centroid color is considered
     # distinct from the container background (i.e. a real inner card surface).
     nested_card_perceptual_threshold: int = 30  # DESIGN_SYNC__NESTED_CARD_PERCEPTUAL_THRESHOLD
+    # FRAME-tree rules 7/8/10/11 (Phase 50.5) — pure FRAME-tree predicates that
+    # emit alignment, per-corner radius, and dominant-image card width without
+    # PNG sampling. Disable to fall back to Phase 50.4 behaviour.
+    frame_rules_enabled: bool = True  # DESIGN_SYNC__FRAME_RULES_ENABLED
+    # Pill x-offset tolerance (px) for Rule 7 alignment classification.
+    rule_7_alignment_tolerance_px: float = 4.0  # DESIGN_SYNC__RULE_7_ALIGNMENT_TOLERANCE_PX

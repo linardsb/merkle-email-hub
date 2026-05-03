@@ -11,6 +11,12 @@ from typing import TYPE_CHECKING
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.design_sync.frame_rules import (
+    CornerRadiusSpec,
+    rule_8_corner_radius,
+    rule_10_image_corner_radii,
+    rule_11_card_width_from_dominant_image,
+)
 from app.design_sync.protocol import DesignFileStructure, DesignNode, DesignNodeType, StyleRun
 
 if TYPE_CHECKING:
@@ -73,6 +79,9 @@ class TextBlock:
     text_decoration: str | None = None  # underline|line-through
     source_frame_id: str | None = None  # Parent frame that contains this text
     role_hint: str | None = None  # "heading" | "body" | "label" | "cta"
+    # Rule 7 (Phase 50.5) — alignment derived from x-offset against parent column.
+    # Populated only when the text was identified as a tag/pill candidate.
+    layout_align: str | None = None  # "left" | "center" | "right" | None
 
 
 @dataclass(frozen=True)
@@ -85,6 +94,8 @@ class ImagePlaceholder:
     height: float | None = None
     is_background: bool = False
     export_node_id: str | None = None  # Frame node to export (includes bg fills)
+    # Rule 10 (Phase 50.5) — per-corner radii from rectangleCornerRadii.
+    corner_radius_spec: CornerRadiusSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -102,6 +113,8 @@ class ButtonElement:
     stroke_color: str | None = None
     stroke_weight: float | None = None
     icon_node_id: str | None = None
+    # Rule 8 (Phase 50.5) — per-corner radii on tag/pill non-CTA frames.
+    corner_radius_spec: CornerRadiusSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -179,6 +192,9 @@ class EmailSection:
     # carries its border radius. Renderer emits these on a ``_inner`` table.
     inner_bg: str | None = None
     inner_radius: float | None = None
+    # Rule 11 (Phase 50.5) — when all direct image children share the same
+    # max-width, the inner card pins its width to that dominant image width.
+    inner_card_fixed_width: int | None = None
 
 
 @dataclass(frozen=True)
@@ -360,6 +376,14 @@ def analyze_layout(
             global_design_image=global_design_image,
         )
 
+        # Rule 11 (Phase 50.5) — pin inner card width to dominant image width.
+        # Only meaningful when a nested card was actually detected.
+        inner_card_fixed_width: int | None = None
+        if inner_bg is not None and get_settings().design_sync.frame_rules_enabled:
+            card_spec = rule_11_card_width_from_dominant_image(node)
+            if card_spec is not None:
+                inner_card_fixed_width = card_spec.fixed_width_px
+
         sections.append(
             EmailSection(
                 section_type=section_type,
@@ -389,6 +413,7 @@ def analyze_layout(
                 parent_wrapper_id=parent_wrapper_id,
                 inner_bg=inner_bg,
                 inner_radius=inner_radius,
+                inner_card_fixed_width=inner_card_fixed_width,
             )
         )
 
@@ -1056,6 +1081,7 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
                 node_name=node.name,
                 width=node.width,
                 height=node.height,
+                corner_radius_spec=_corner_spec_or_none(rule_10_image_corner_radii(node)),
             )
         )
     elif node.type == DesignNodeType.FRAME and node.image_ref:
@@ -1067,6 +1093,7 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
                 width=node.width,
                 height=node.height,
                 is_background=True,
+                corner_radius_spec=_corner_spec_or_none(rule_10_image_corner_radii(node)),
             )
         )
         # Still recurse into children (frame has content over the bg)
@@ -1077,7 +1104,9 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
         and len(node.children) == 1
         and node.children[0].type == DesignNodeType.IMAGE
     ):
-        # Frame wrapping a single image — export the FRAME (includes bg fills)
+        # Frame wrapping a single image — export the FRAME (includes bg fills).
+        # Rule 10 reads radius from the frame (where Figma sets corner radii on
+        # the wrapper, not the inner image).
         img = node.children[0]
         results.append(
             ImagePlaceholder(
@@ -1086,11 +1115,19 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
                 width=node.width,  # Use frame dimensions (includes padding/bg)
                 height=node.height,
                 export_node_id=node.id,  # Export the frame, not just the image fill
+                corner_radius_spec=_corner_spec_or_none(rule_10_image_corner_radii(node)),
             )
         )
     else:
         for child in node.children:
             _walk_for_images(child, results)
+
+
+def _corner_spec_or_none(spec: CornerRadiusSpec) -> CornerRadiusSpec | None:
+    """Drop the no-radius case so downstream callers can ``if spec:``."""
+    if spec.scalar is None and spec.per_corner is None:
+        return None
+    return spec
 
 
 def validate_image_dimensions(
@@ -1197,6 +1234,7 @@ def _walk_for_buttons(
                         stroke_color=node.stroke_color,
                         stroke_weight=node.stroke_weight,
                         icon_node_id=icon_node_id,
+                        corner_radius_spec=_corner_spec_or_none(rule_8_corner_radius(node)),
                     )
                 )
                 return  # Don't recurse into button internals
