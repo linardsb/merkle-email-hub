@@ -1465,6 +1465,21 @@ def _build_token_overrides(section: EmailSection) -> list[TokenOverride]:
             overrides.append(TokenOverride("text-align", "_heading", text.layout_align))
             break
 
+    # Gap 11 (Phase 50.6) — text-align from the text-node's own attribute.
+    # Emitted after Rule 7 so an explicit ``text_align`` wins over the
+    # tag-detection heuristic via last-write-wins in the renderer.
+    for text in section.texts:
+        align = text.text_align.lower() if text.text_align else None
+        if text.is_heading and align in ("left", "center", "right", "justify"):
+            overrides.append(TokenOverride("text-align", "_heading", align))
+            break
+
+    for text in section.texts:
+        align = text.text_align.lower() if text.text_align else None
+        if not text.is_heading and align in ("left", "center", "right", "justify"):
+            overrides.append(TokenOverride("text-align", "_body", align))
+            break
+
     # Font overrides from first heading text
     for text in section.texts:
         if text.is_heading and text.font_family:
