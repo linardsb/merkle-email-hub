@@ -145,12 +145,23 @@ def _has_distinct_corner_radius(
     card: DesignNode,
     sibling_radii: list[float] | None,
 ) -> bool:
-    radius = card.corner_radius
+    radius = _resolve_corner_radius(card)
     if radius is None or radius < _CARD_MIN_RADIUS:
         return False
     if sibling_radii is None:
         return True
     return not _is_in_sibling_set(radius, sibling_radii)
+
+
+def _resolve_corner_radius(node: DesignNode) -> float | None:
+    """Mirror ``layout_analyzer._resolve_corner_radius``: prefer per-corner max.
+
+    Figma exports populate ``corner_radii`` (TL/TR/BR/BL) for any node with
+    explicit per-corner radii, often leaving ``corner_radius`` as ``None``.
+    """
+    if node.corner_radii:
+        return max(node.corner_radii)
+    return node.corner_radius
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────

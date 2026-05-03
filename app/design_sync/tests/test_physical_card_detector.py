@@ -18,6 +18,7 @@ def _node(
     height: float | None = None,
     fill_color: str | None = None,
     corner_radius: float | None = None,
+    corner_radii: tuple[float, ...] | None = None,
     image_ref: str | None = None,
     children: list[DesignNode] | None = None,
 ) -> DesignNode:
@@ -30,6 +31,7 @@ def _node(
         height=height,
         fill_color=fill_color,
         corner_radius=corner_radius,
+        corner_radii=corner_radii,
         image_ref=image_ref,
     )
 
@@ -170,6 +172,31 @@ class TestDistinctCornerRadius:
         card = _node(width=600, height=600, corner_radius=8)
         result = detect_physical_card_surface(card, sibling_radii=[0.0])
         assert "distinct_corner_radius" not in result.signals
+
+    def test_falls_back_to_corner_radii_per_corner(self) -> None:
+        # Figma exports per-corner radii in ``corner_radii`` and may leave
+        # ``corner_radius`` as ``None``. Detector mirrors layout_analyzer's
+        # ``_resolve_corner_radius`` and uses the per-corner max.
+        card = _node(
+            width=600,
+            height=600,
+            corner_radius=None,
+            corner_radii=(24.0, 24.0, 24.0, 24.0),
+        )
+        result = detect_physical_card_surface(card, sibling_radii=[8.0])
+        assert "distinct_corner_radius" in result.signals
+
+    def test_corner_radii_uses_max(self) -> None:
+        # Mixed radii — the max corner is what defines the visual radius for
+        # purposes of physical-card detection (matches layout_analyzer pattern).
+        card = _node(
+            width=600,
+            height=600,
+            corner_radius=None,
+            corner_radii=(0.0, 0.0, 24.0, 24.0),
+        )
+        result = detect_physical_card_surface(card, sibling_radii=[0.0])
+        assert "distinct_corner_radius" in result.signals
 
 
 # ── Aggregate threshold ────────────────────────────────────────────────────
