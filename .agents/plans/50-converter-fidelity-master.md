@@ -204,6 +204,8 @@ Image-right desktop layout where mobile expects image-on-top → DOM order `[ima
 
 Every nested coloured surface gets its own `class="card-bg-N"` + matching `@media (prefers-color-scheme: dark) { .card-bg-N { background-color: <darkColor> !important } }`. Light→dark mapping from `design_system.py:dark_palette` (fallback: shift L by –40, hue preserved). **Identity exception**: physical-card surfaces (50.7's `is_physical_card_surface`) opt OUT — stay white in dark mode. User-info row text on dark-flipped bg gets `class="footer-strong"` + `!important` color overrides.
 
+**Pre-flight:** check `.agents/deferred-items.json` for any open `phase-50.7-*` entries — Rule 9's correctness depends on `is_physical_card_surface` returning True on real cards, which is currently validated only against synthetic fixtures.
+
 ### 52.8 — Rule 4: visible divider absent from FRAME tree (needs PNG)
 
 PNG diff: ≥2 sibling columns visibly separated by uniform 1-2px line, no LINE/RECTANGLE/TEXT node containing `|`/`·`/`–` between them in FRAME tree → emit `<td>` containing literal `|` + `color: #c8c8c8; padding: 0 14px;` (most robust across mail clients).
@@ -247,6 +249,8 @@ Add 2 new reference designs to `email-templates/`:
 2. **Newsletter** (multi-section, multi-CTA) anchoring rules 1, 2, 3 across editorial content.
 
 Tag both with `[Rule N]` markup matching LEGO. Wire into the regression suite (Phase 49.9) so the 11 rules are validated across heterogeneous designs.
+
+**Closes:** `phase-50.7-ac-4` (LEGO regression promotion) and `phase-50-stranded-templates` (performance_reimagined + slate). See `.agents/deferred-items.json` — also promote those three existing `email-templates/training_HTML/for_converter_engine/` templates into `data/debug/`, not only the 2 new transactional/newsletter designs.
 
 ### 53.7 — Conversion quality checklist as automated gate (Appendix)
 
