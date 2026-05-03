@@ -37,7 +37,7 @@ jobs:
 
       - name: ZAP baseline scan
         if: steps.target.outputs.skip != 'true'
-        uses: zaproxy/action-baseline@v0.13.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: ${{ steps.target.outputs.url }}
           rules_file_name: ".zap/rules.tsv"
