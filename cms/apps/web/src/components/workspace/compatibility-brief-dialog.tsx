@@ -77,8 +77,8 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-border text-muted-foreground border-b text-left">
-                    <th className="pb-2 pr-4 font-medium">{"CSS Property"}</th>
-                    <th className="pb-2 pr-4 font-medium">{"Fallback"}</th>
+                    <th className="pr-4 pb-2 font-medium">{"CSS Property"}</th>
+                    <th className="pr-4 pb-2 font-medium">{"Fallback"}</th>
                     <th className="pb-2 font-medium">{"Technique"}</th>
                   </tr>
                 </thead>
@@ -220,8 +220,8 @@ export function CompatibilityBriefDialog({
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-border text-muted-foreground border-b text-left">
-                        <th className="pb-2 pr-4 font-medium">{"CSS Property"}</th>
-                        <th className="pb-2 pr-4 font-medium">{"Unsupported In"}</th>
+                        <th className="pr-4 pb-2 font-medium">{"CSS Property"}</th>
+                        <th className="pr-4 pb-2 font-medium">{"Unsupported In"}</th>
                         <th className="pb-2 font-medium">{"Fallback"}</th>
                       </tr>
                     </thead>

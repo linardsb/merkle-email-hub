@@ -79,13 +79,13 @@ export function ComponentPalette() {
       {/* Search */}
       <div className="border-border border-b p-2">
         <div className="relative">
-          <Search className="text-muted-foreground absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-muted-foreground absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search components..."
-            className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring w-full rounded border py-1.5 pl-7 pr-2 text-xs focus:outline-none focus:ring-1"
+            className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring w-full rounded border py-1.5 pr-2 pl-7 text-xs focus:ring-1 focus:outline-none"
           />
         </div>
       </div>

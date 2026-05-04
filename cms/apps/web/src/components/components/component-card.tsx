@@ -45,7 +45,7 @@ export function ComponentCard({ component, onClick }: ComponentCardProps) {
             onClick();
           }
         }}
-        className="border-card-border bg-card-bg hover:border-interactive focus-visible:ring-interactive cursor-pointer overflow-hidden rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2"
+        className="border-card-border bg-card-bg hover:border-interactive focus-visible:ring-interactive cursor-pointer overflow-hidden rounded-lg border transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <ComponentPreview html={latestHtml} height={200} />
 

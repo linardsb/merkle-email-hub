@@ -131,7 +131,7 @@ export function ApprovalRequestDialog({
               placeholder="Add context for the reviewer..."
               rows={3}
               maxLength={2000}
-              className="border-input-border bg-input-bg text-foreground placeholder:text-foreground-muted focus:border-interactive focus:ring-interactive w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              className="border-input-border bg-input-bg text-foreground placeholder:text-foreground-muted focus:border-interactive focus:ring-interactive w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             />
           </div>
         </div>

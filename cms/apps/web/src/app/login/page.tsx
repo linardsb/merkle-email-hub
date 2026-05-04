@@ -76,7 +76,7 @@ export default function LoginPage() {
               onChange={() =>
                 fieldErrors.username && setFieldErrors((prev) => ({ ...prev, username: undefined }))
               }
-              className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
               placeholder={"Enter your email"}
             />
             {fieldErrors.username && (
@@ -96,7 +96,7 @@ export default function LoginPage() {
               onChange={() =>
                 fieldErrors.password && setFieldErrors((prev) => ({ ...prev, password: undefined }))
               }
-              className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
               placeholder={"Enter your password"}
             />
             {fieldErrors.password && (
@@ -107,7 +107,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover focus:ring-interactive w-full rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-interactive text-foreground-inverse hover:bg-interactive-hover focus:ring-interactive w-full rounded-md px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? (
               <span className="flex items-center justify-center gap-1.5">

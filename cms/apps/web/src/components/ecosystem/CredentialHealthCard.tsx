@@ -104,7 +104,7 @@ function ServiceRow({ service }: { service: ServiceHealth }) {
       </button>
 
       {expanded && (
-        <ul className="ml-8 mt-1 space-y-1">
+        <ul className="mt-1 ml-8 space-y-1">
           {service.keys.map((key) => (
             <li
               key={key.key_hash}

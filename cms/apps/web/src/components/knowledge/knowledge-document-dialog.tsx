@@ -100,7 +100,7 @@ export function KnowledgeDocumentDialog({ documentId, open, onOpenChange }: Prop
                       <p className="text-foreground-muted mb-1 text-xs font-medium">
                         {`Chunk ${chunk.chunk_index + 1}`}
                       </p>
-                      <p className="text-foreground whitespace-pre-wrap text-sm">{chunk.content}</p>
+                      <p className="text-foreground text-sm whitespace-pre-wrap">{chunk.content}</p>
                     </div>
                   ))}
                 </div>

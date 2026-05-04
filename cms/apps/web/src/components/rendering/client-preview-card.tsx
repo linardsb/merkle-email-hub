@@ -48,7 +48,7 @@ export function ClientPreviewCard({
         <button
           type="button"
           onClick={() => onViewFull(clientId)}
-          className="bg-surface/80 text-foreground-muted hover:text-foreground absolute right-1.5 top-1.5 rounded p-1"
+          className="bg-surface/80 text-foreground-muted hover:text-foreground absolute top-1.5 right-1.5 rounded p-1"
           title="View full size"
         >
           <Maximize2 className="h-3.5 w-3.5" />

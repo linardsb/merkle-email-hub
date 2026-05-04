@@ -15,7 +15,7 @@ export function BlockOutput({ block, onUpdate }: BlockOutputProps) {
         type="text"
         value={block.expression}
         onChange={(e) => onUpdate({ expression: e.target.value })}
-        className="border-default bg-input text-foreground focus:ring-interactive flex-1 rounded border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-1"
+        className="border-default bg-input text-foreground focus:ring-interactive flex-1 rounded border px-2 py-1 font-mono text-xs focus:ring-1 focus:outline-none"
         placeholder={"subscriber.first_name"}
       />
       <span className="text-muted-foreground font-mono text-xs">{"}}"}</span>

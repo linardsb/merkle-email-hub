@@ -54,7 +54,7 @@ export function ApprovalDecisionBar({
         className="border-input-border bg-input-bg text-foreground placeholder:text-foreground-muted focus:border-input-focus w-full resize-none rounded-md border px-3 py-2 text-sm focus:outline-none"
         disabled={isMutating}
       />
-      <p className="text-foreground-muted mb-3 mt-1 text-xs">{"Review note (optional)"}</p>
+      <p className="text-foreground-muted mt-1 mb-3 text-xs">{"Review note (optional)"}</p>
       <div className="flex gap-2">
         <button
           type="button"

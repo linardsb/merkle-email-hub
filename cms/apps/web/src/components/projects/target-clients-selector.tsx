@@ -89,14 +89,14 @@ export function TargetClientsSelector({
       {/* Header: search + common preset */}
       <div className="border-border flex items-center gap-2 border-b p-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-muted-foreground absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={"Search clients..."}
             disabled={disabled}
-            className="text-foreground placeholder:text-input-placeholder w-full rounded border-0 bg-transparent py-1 pl-7 pr-2 text-sm focus:outline-none disabled:opacity-50"
+            className="text-foreground placeholder:text-input-placeholder w-full rounded border-0 bg-transparent py-1 pr-2 pl-7 text-sm focus:outline-none disabled:opacity-50"
           />
         </div>
         <button

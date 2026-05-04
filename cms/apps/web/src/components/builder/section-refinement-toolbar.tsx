@@ -102,7 +102,7 @@ export function SectionRefinementToolbar({
             <input
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
-              className="border-input bg-background text-foreground focus:ring-ring w-20 rounded border px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1"
+              className="border-input bg-background text-foreground focus:ring-ring w-20 rounded border px-1.5 py-0.5 text-[10px] focus:ring-1 focus:outline-none"
               autoFocus
               onBlur={() => setIsRenaming(false)}
             />

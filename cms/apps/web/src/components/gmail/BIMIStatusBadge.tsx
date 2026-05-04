@@ -72,7 +72,7 @@ export function BIMIStatusBadge() {
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCheck();
           }}
-          className="border-border bg-surface-muted text-foreground placeholder:text-foreground-muted focus:ring-accent-primary flex-1 rounded-md border px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1"
+          className="border-border bg-surface-muted text-foreground placeholder:text-foreground-muted focus:ring-accent-primary flex-1 rounded-md border px-2.5 py-1.5 text-xs focus:ring-1 focus:outline-none"
         />
         <button
           type="button"

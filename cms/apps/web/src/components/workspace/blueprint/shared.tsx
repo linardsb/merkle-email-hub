@@ -172,7 +172,7 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
 
           {handoff.decisions.length > 0 && (
             <div className="mt-2">
-              <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+              <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                 {"Decisions"}
               </p>
               <ul className="mt-1 space-y-0.5">
@@ -188,7 +188,7 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
 
           {handoff.warnings.length > 0 && (
             <div className="mt-2">
-              <p className="text-destructive text-[10px] font-medium uppercase tracking-wide">
+              <p className="text-destructive text-[10px] font-medium tracking-wide uppercase">
                 {"Warnings"}
               </p>
               <ul className="mt-1 space-y-0.5">
@@ -204,7 +204,7 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
 
           {handoff.component_refs.length > 0 && (
             <div className="mt-2">
-              <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+              <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                 {"Components Used"}
               </p>
               <div className="mt-1 flex flex-wrap gap-1">

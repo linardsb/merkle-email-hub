@@ -26,7 +26,7 @@ interface BlockPaletteProps {
 export function BlockPalette({ onAddBlock }: BlockPaletteProps) {
   return (
     <div className="space-y-1 p-2">
-      <h3 className="text-muted-foreground px-1 text-[10px] uppercase tracking-wider">
+      <h3 className="text-muted-foreground px-1 text-[10px] tracking-wider uppercase">
         {"Blocks"}
       </h3>
       {PALETTE_ITEMS.map((item) => (

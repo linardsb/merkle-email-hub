@@ -159,7 +159,7 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
 
               return (
                 <div key={type}>
-                  <h3 className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wider">
+                  <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                     {typeLabel}
                     <span className="ml-1.5 opacity-70">({entities.length})</span>
                   </h3>
@@ -175,7 +175,7 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
             {/* Relationships */}
             {(result.relationships ?? []).length > 0 && (
               <div>
-                <h3 className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wider">
+                <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                   {"Relationships"}
                   <span className="ml-1.5 opacity-70">({(result.relationships ?? []).length})</span>
                 </h3>

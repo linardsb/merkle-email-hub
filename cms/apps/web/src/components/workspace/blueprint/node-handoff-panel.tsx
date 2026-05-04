@@ -50,7 +50,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
             <div className="border-border bg-muted/30 mt-1 space-y-1.5 rounded border p-2">
               {handoff.decisions.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+                  <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                     {"Decisions"}
                   </p>
                   <ul className="mt-0.5 space-y-0.5">
@@ -66,7 +66,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
 
               {handoff.warnings.length > 0 && (
                 <div>
-                  <p className="text-destructive text-[10px] font-medium uppercase tracking-wide">
+                  <p className="text-destructive text-[10px] font-medium tracking-wide uppercase">
                     {"Warnings"}
                   </p>
                   <ul className="mt-0.5 space-y-0.5">
@@ -82,7 +82,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
 
               {handoff.component_refs.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+                  <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                     {"Components Used"}
                   </p>
                   <div className="mt-0.5 flex flex-wrap gap-1">

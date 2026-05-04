@@ -171,7 +171,7 @@ function KeyColorList({
 
   return (
     <div className="space-y-2">
-      <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+      <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         {label}
       </Label>
       <p className="text-muted-foreground text-[10px]">{description}</p>
@@ -247,7 +247,7 @@ function HtmlAttributeList({
 
   return (
     <div className="space-y-2">
-      <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+      <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         {"HTML Attributes"}
       </Label>
       <p className="text-muted-foreground text-[10px]">

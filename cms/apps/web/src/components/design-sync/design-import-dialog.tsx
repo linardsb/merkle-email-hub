@@ -245,7 +245,7 @@ function ImportDesignWizard({
               value={editedBrief}
               onChange={(e) => setEditedBrief(e.target.value)}
               rows={12}
-              className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 font-mono text-sm focus:outline-none focus:ring-1"
+              className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 font-mono text-sm focus:ring-1 focus:outline-none"
             />
             <p className="text-foreground-muted mt-1 text-xs">
               {

@@ -75,7 +75,7 @@ export function RunDetailDialog({
 
               {runData.audience_summary && (
                 <div className="border-border bg-muted/50 rounded-lg border p-3">
-                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+                  <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                     {"Audience Summary"}
                   </p>
                   <p className="text-foreground mt-1 text-xs">{runData.audience_summary}</p>
@@ -89,7 +89,7 @@ export function RunDetailDialog({
 
               {(runData.skipped_nodes ?? []).length > 0 && (
                 <div className="border-border bg-muted/50 rounded-lg border p-3">
-                  <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+                  <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                     {"Skipped Nodes"}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">

@@ -89,7 +89,7 @@ export function MCPConfigPanel() {
         <div className="flex flex-col gap-4">
           {Object.entries(toolsByCategory).map(([category, categoryTools]) => (
             <div key={category}>
-              <p className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
+              <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
                 {category}
               </p>
               <div className="flex flex-col gap-1">
@@ -127,9 +127,9 @@ export function MCPConfigPanel() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-default text-muted-foreground border-b text-left">
-                  <th className="pb-2 pr-4">{"Client ID"}</th>
-                  <th className="pb-2 pr-4">{"Connected"}</th>
-                  <th className="pb-2 pr-4">{"Tool Calls"}</th>
+                  <th className="pr-4 pb-2">{"Client ID"}</th>
+                  <th className="pr-4 pb-2">{"Connected"}</th>
+                  <th className="pr-4 pb-2">{"Tool Calls"}</th>
                   <th className="pb-2">{"Last Call"}</th>
                 </tr>
               </thead>

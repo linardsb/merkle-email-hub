@@ -117,7 +117,7 @@ export function DesignReferencePanel({
           {/* Design assets */}
           {autoImport?.assets && autoImport.assets.length > 0 && (
             <section>
-              <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
+              <h4 className="text-foreground-muted mb-2 text-xs font-semibold tracking-wide uppercase">
                 {"Design Assets"}
               </h4>
               <AssetViewer assets={autoImport.assets} connectionId={autoImport.connection_id} />

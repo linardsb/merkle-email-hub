@@ -18,7 +18,7 @@ export function GraphCompletionResult({ content, query }: GraphCompletionResultP
 
       {/* Answer */}
       <div className="border-border bg-card rounded-lg border p-4">
-        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wider">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
           {"Answer from knowledge graph"}
         </p>
         <div className="text-foreground text-sm">

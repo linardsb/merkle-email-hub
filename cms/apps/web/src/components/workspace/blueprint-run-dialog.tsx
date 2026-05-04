@@ -90,7 +90,7 @@ function BriefCard({
 
       {/* Selected indicator */}
       {selected && (
-        <div className="absolute right-2 top-2">
+        <div className="absolute top-2 right-2">
           <CheckCircle2 className="text-primary h-4 w-4" />
         </div>
       )}
@@ -192,7 +192,7 @@ export function BlueprintRunDialog({
             <div>
               <Label className="text-sm font-medium">{"Select a Brief"}</Label>
               <div className="relative mt-1.5">
-                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   value={briefSearch}
                   onChange={(e) => setBriefSearch(e.target.value)}
@@ -257,7 +257,7 @@ export function BlueprintRunDialog({
             {/* Audience summary */}
             {result.audience_summary && (
               <div className="border-border bg-muted/50 rounded-lg border p-3">
-                <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+                <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                   {"Audience Context"}
                 </p>
                 <p className="text-foreground mt-1 text-xs">{result.audience_summary}</p>
@@ -269,7 +269,7 @@ export function BlueprintRunDialog({
             {/* Skipped nodes */}
             {(result.skipped_nodes ?? []).length > 0 && (
               <div className="border-border bg-muted/50 rounded-lg border p-3">
-                <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+                <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                   {"Skipped by routing"}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1">

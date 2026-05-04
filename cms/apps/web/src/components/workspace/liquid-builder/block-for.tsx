@@ -16,7 +16,7 @@ export function BlockFor({ block, onUpdate }: BlockForProps) {
           type="text"
           value={block.variable}
           onChange={(e) => onUpdate({ variable: e.target.value })}
-          className="border-default bg-input text-foreground focus:ring-interactive w-24 rounded border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-1"
+          className="border-default bg-input text-foreground focus:ring-interactive w-24 rounded border px-2 py-1 font-mono text-xs focus:ring-1 focus:outline-none"
           placeholder="item"
         />
         <span className="text-muted-foreground text-xs">{"in"}</span>
@@ -24,7 +24,7 @@ export function BlockFor({ block, onUpdate }: BlockForProps) {
           type="text"
           value={block.collection}
           onChange={(e) => onUpdate({ collection: e.target.value })}
-          className="border-default bg-input text-foreground focus:ring-interactive flex-1 rounded border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-1"
+          className="border-default bg-input text-foreground focus:ring-interactive flex-1 rounded border px-2 py-1 font-mono text-xs focus:ring-1 focus:outline-none"
           placeholder="products"
         />
       </div>

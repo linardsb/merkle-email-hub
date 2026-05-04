@@ -74,7 +74,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Color overrides */}
       {defaults?.colors && Object.keys(defaults.colors).length > 0 && (
         <div className="space-y-3">
-          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {"Colors"}
           </Label>
           <div className="space-y-2">
@@ -95,7 +95,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Background */}
       {palette.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {"Background"}
           </Label>
           <div className="flex items-center justify-between">
@@ -112,7 +112,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Font override */}
       {fontChoices.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {"Font"}
           </Label>
           <Select value={tokenStr(tokens, "font")} onValueChange={(v) => updateToken("font", v)}>
@@ -133,7 +133,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
       {/* Font size */}
       {fontSizes.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {"Font Size"}
           </Label>
           <Select
@@ -159,7 +159,7 @@ export function StyleTab({ section, onUpdate, designSystem }: StyleTabProps) {
 
       {/* Text alignment */}
       <div className="space-y-2">
-        <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {"Text Alignment"}
         </Label>
         <AlignmentButtons
@@ -203,7 +203,7 @@ function SpacingEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {"Spacing"}
         </Label>
         <button

@@ -68,7 +68,7 @@ export function QATab({ result, onOverrideSuccess, onHighlightSection }: QATabPr
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {failedChecks.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-destructive text-xs font-medium uppercase tracking-wider">
+            <h3 className="text-destructive text-xs font-medium tracking-wider uppercase">
               {`${failedChecks.length} Failed`}
             </h3>
             {failedChecks.map((check) => (
@@ -87,7 +87,7 @@ export function QATab({ result, onOverrideSuccess, onHighlightSection }: QATabPr
             <button
               type="button"
               onClick={() => setShowPassing((v) => !v)}
-              className="text-status-success flex w-full items-center justify-between text-xs font-medium uppercase tracking-wider"
+              className="text-status-success flex w-full items-center justify-between text-xs font-medium tracking-wider uppercase"
             >
               {`${passedChecks.length} Passed`}
               {showPassing ? (

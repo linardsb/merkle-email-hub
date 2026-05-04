@@ -32,7 +32,7 @@ export function BlueprintResultCard({ result, onApplyHtml }: BlueprintResultCard
       {/* Pipeline timeline */}
       {result.progress && result.progress.length > 0 && (
         <div>
-          <p className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
+          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
             {"Pipeline"}
           </p>
           <PipelineTimeline progress={result.progress} handoffHistory={result.handoff_history} />

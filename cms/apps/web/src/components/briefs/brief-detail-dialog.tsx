@@ -128,7 +128,7 @@ export function BriefDetailDialog({
             )}
 
             {/* Description */}
-            <div className="prose-sm border-card-border bg-surface-muted text-foreground max-h-60 overflow-y-auto whitespace-pre-wrap rounded border p-3 text-sm">
+            <div className="prose-sm border-card-border bg-surface-muted text-foreground max-h-60 overflow-y-auto rounded border p-3 text-sm whitespace-pre-wrap">
               {detail.description || "No description available"}
             </div>
 

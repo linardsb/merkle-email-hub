@@ -71,7 +71,7 @@ export function BlockNode({ block, onUpdate, onRemove }: BlockNodeProps) {
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         {BLOCK_ICONS[block.type]}
-        <span className="text-muted-foreground flex-1 text-xs font-medium uppercase tracking-wider">
+        <span className="text-muted-foreground flex-1 text-xs font-medium tracking-wider uppercase">
           {BLOCK_TYPE_LABELS[block.type] ?? block.type}
         </span>
         <button

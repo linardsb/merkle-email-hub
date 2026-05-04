@@ -72,7 +72,7 @@ export default function ProjectsPage() {
               <button
                 type="button"
                 onClick={(e) => handleDelete(e, project.id, project.name)}
-                className="text-foreground-muted hover:bg-destructive/10 hover:text-destructive absolute right-3 top-3 rounded p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                className="text-foreground-muted hover:bg-destructive/10 hover:text-destructive absolute top-3 right-3 rounded p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
                 title="Delete project"
               >
                 <Trash2 className="h-4 w-4" />

@@ -117,7 +117,7 @@ export function BuilderOnboarding() {
       <button
         type="button"
         onClick={complete}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground absolute right-2 top-2 rounded p-1 transition-colors"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground absolute top-2 right-2 rounded p-1 transition-colors"
         aria-label="Close onboarding"
       >
         <X className="h-3.5 w-3.5" />

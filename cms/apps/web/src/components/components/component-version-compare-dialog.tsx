@@ -96,7 +96,7 @@ function ComparePane({
   return (
     <div className="border-border flex flex-1 flex-col overflow-hidden rounded-lg border">
       <div className="border-border bg-surface-muted flex items-center justify-between border-b px-3 py-2">
-        <span className="text-foreground-muted text-xs font-semibold uppercase tracking-wider">
+        <span className="text-foreground-muted text-xs font-semibold tracking-wider uppercase">
           {label}
         </span>
         <select

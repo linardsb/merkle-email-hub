@@ -87,7 +87,7 @@ export function FailurePatternDetailDialog({ pattern, onClose }: FailurePatternD
           {/* Description */}
           <div>
             <p className="text-foreground-muted text-xs font-medium">{"Description"}</p>
-            <p className="text-foreground mt-1 whitespace-pre-wrap text-sm">
+            <p className="text-foreground mt-1 text-sm whitespace-pre-wrap">
               {pattern.description}
             </p>
           </div>

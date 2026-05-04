@@ -75,7 +75,7 @@ export function GmailPredictionPanel({
       >
         <div className="flex items-center gap-2">
           <Mail className="text-foreground-muted h-4 w-4" />
-          <h3 className="text-foreground-muted text-xs font-medium uppercase tracking-wider">
+          <h3 className="text-foreground-muted text-xs font-medium tracking-wider uppercase">
             {"Gmail Intelligence"}
           </h3>
         </div>
@@ -112,7 +112,7 @@ export function GmailPredictionPanel({
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                       placeholder={"Enter email subject"}
-                      className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-1"
+                      className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -122,7 +122,7 @@ export function GmailPredictionPanel({
                       value={fromName}
                       onChange={(e) => setFromName(e.target.value)}
                       placeholder={"Enter sender name"}
-                      className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-1"
+                      className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -169,7 +169,7 @@ export function GmailPredictionPanel({
                           value={targetSummary}
                           onChange={(e) => setTargetSummary(e.target.value)}
                           placeholder={"Desired summary focus"}
-                          className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-1"
+                          className="border-border bg-card text-foreground placeholder:text-foreground-muted focus:ring-accent-primary mt-0.5 w-full rounded-md border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
                         />
                       </div>
                       <button

@@ -376,7 +376,7 @@ export default function DesignSyncPage() {
                 onChange={(e) => setRefreshTokenValue(e.target.value)}
                 placeholder="figd_..."
                 disabled={isRefreshing}
-                className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:opacity-50"
+                className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none disabled:opacity-50"
               />
               <p className="text-foreground-muted mt-1 text-xs">
                 {"Generate a new token from your design tool's developer settings."}

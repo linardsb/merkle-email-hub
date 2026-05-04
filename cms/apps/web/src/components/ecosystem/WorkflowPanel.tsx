@@ -97,7 +97,7 @@ export function WorkflowPanel() {
     <div className="space-y-6">
       {/* Available Flows */}
       <section>
-        <h3 className="text-foreground-muted mb-3 text-sm font-semibold uppercase tracking-wider">
+        <h3 className="text-foreground-muted mb-3 text-sm font-semibold tracking-wider uppercase">
           Available Flows
         </h3>
         {isLoading ? (
@@ -151,7 +151,7 @@ export function WorkflowPanel() {
       {/* Executions */}
       {executions.length > 0 && (
         <section>
-          <h3 className="text-foreground-muted mb-3 text-sm font-semibold uppercase tracking-wider">
+          <h3 className="text-foreground-muted mb-3 text-sm font-semibold tracking-wider uppercase">
             Executions
           </h3>
           <div className="space-y-2">
@@ -228,7 +228,7 @@ export function WorkflowPanel() {
                       {/* Logs */}
                       {logs && logs.execution_id === exec.execution_id && (
                         <div className="mt-4">
-                          <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wider">
+                          <h4 className="text-foreground-muted mb-2 text-xs font-semibold tracking-wider uppercase">
                             Logs
                           </h4>
                           <div className="bg-surface-sunken max-h-64 overflow-y-auto rounded p-3 font-mono text-xs">

@@ -401,7 +401,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
               /* Visual file grid */
               <>
                 <div className="relative">
-                  <Search className="text-foreground-muted absolute left-2.5 top-2.5 h-4 w-4" />
+                  <Search className="text-foreground-muted absolute top-2.5 left-2.5 h-4 w-4" />
                   <input
                     type="text"
                     value={searchQuery}

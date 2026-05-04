@@ -143,7 +143,7 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
                   value={html}
                   onChange={(e) => setHtml(e.target.value)}
                   placeholder="<!DOCTYPE html>..."
-                  className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring h-40 w-full resize-none rounded-md border px-3 py-2 font-mono text-xs focus:outline-none focus:ring-1"
+                  className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring h-40 w-full resize-none rounded-md border px-3 py-2 font-mono text-xs focus:ring-1 focus:outline-none"
                 />
               </div>
 
@@ -173,7 +173,7 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
                 <select
                   value={espPlatform}
                   onChange={(e) => setEspPlatform(e.target.value)}
-                  className="border-input bg-background text-foreground focus:ring-ring w-full rounded-md border px-3 py-1.5 text-xs focus:outline-none focus:ring-1"
+                  className="border-input bg-background text-foreground focus:ring-ring w-full rounded-md border px-3 py-1.5 text-xs focus:ring-1 focus:outline-none"
                 >
                   {ESP_PLATFORMS.map((p) => (
                     <option key={p.value} value={p.value}>

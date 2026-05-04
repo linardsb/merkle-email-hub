@@ -250,13 +250,13 @@ export function TranslationPanel({
 
         {/* Search */}
         <div className="relative">
-          <Search className="text-foreground-muted absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-foreground-muted absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search keys…"
-            className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-48 rounded-md border py-1 pl-7 pr-2 text-xs focus:outline-none focus:ring-1"
+            className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-48 rounded-md border py-1 pr-2 pl-7 text-xs focus:ring-1 focus:outline-none"
           />
         </div>
       </div>

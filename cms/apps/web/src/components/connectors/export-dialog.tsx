@@ -493,7 +493,7 @@ function EspTabContent({
           placeholder={config.namePlaceholder}
           maxLength={200}
           disabled={isBusy}
-          className="border-input-border bg-input-bg text-foreground placeholder:text-foreground-muted focus:border-interactive focus:ring-interactive w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:opacity-50"
+          className="border-input-border bg-input-bg text-foreground placeholder:text-foreground-muted focus:border-interactive focus:ring-interactive w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none disabled:opacity-50"
         />
         <p className="text-foreground-muted mt-1 text-xs">{config.nameHint}</p>
       </div>

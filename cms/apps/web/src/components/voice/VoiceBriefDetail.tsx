@@ -174,7 +174,7 @@ export function VoiceBriefDetail({
                   )}
                   <div>
                     <span className="text-foreground font-medium">{"Sections"}:</span>
-                    <ul className="text-muted-foreground ml-4 mt-1 list-disc">
+                    <ul className="text-muted-foreground mt-1 ml-4 list-disc">
                       {brief.brief.sections.map((s, i) => (
                         <li key={i}>
                           <span className="font-medium">{s.type}</span>: {s.description}
@@ -185,7 +185,7 @@ export function VoiceBriefDetail({
                   {brief.brief.constraints.length > 0 && (
                     <div>
                       <span className="text-foreground font-medium">{"Constraints"}:</span>
-                      <ul className="text-muted-foreground ml-4 mt-1 list-disc">
+                      <ul className="text-muted-foreground mt-1 ml-4 list-disc">
                         {brief.brief.constraints.map((c, i) => (
                           <li key={i}>{c}</li>
                         ))}

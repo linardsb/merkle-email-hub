@@ -66,7 +66,7 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-card-border border-b">
-              <th className="text-foreground-muted pb-2 pr-4 text-left font-medium">{"Client"}</th>
+              <th className="text-foreground-muted pr-4 pb-2 text-left font-medium">{"Client"}</th>
               {recentTests.map((test) => (
                 <th
                   key={test.id}
@@ -83,8 +83,8 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
               if (catClients.length === 0) return [];
               return [
                 <tr key={`header-${cat.key}`}>
-                  <td colSpan={1 + recentTests.length} className="pb-1 pt-4">
-                    <span className="text-foreground-muted text-xs font-semibold uppercase tracking-wider">
+                  <td colSpan={1 + recentTests.length} className="pt-4 pb-1">
+                    <span className="text-foreground-muted text-xs font-semibold tracking-wider uppercase">
                       {cat.label}
                     </span>
                   </td>

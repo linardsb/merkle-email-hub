@@ -180,7 +180,7 @@ export function VersionHistoryPanel({
 
               {/* Inline HTML preview */}
               {isPreviewing && (
-                <div className="border-border bg-muted/30 mx-3 mb-1 mt-1 overflow-hidden rounded border">
+                <div className="border-border bg-muted/30 mx-3 mt-1 mb-1 overflow-hidden rounded border">
                   <pre className="text-muted-foreground max-h-48 overflow-auto p-2 text-[10px] leading-relaxed">
                     <code>
                       {version.html_source.length > 3000

@@ -29,7 +29,7 @@ export function MigrationTimeline({ plan }: MigrationTimelineProps) {
         return (
           <div key={`${step.dependency_type}-${i}`} className="relative">
             {/* Timeline dot */}
-            <div className="border-primary bg-surface-muted text-foreground absolute -left-[25px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 text-[8px] font-bold">
+            <div className="border-primary bg-surface-muted text-foreground absolute top-0.5 -left-[25px] flex h-4 w-4 items-center justify-center rounded-full border-2 text-[8px] font-bold">
               {i + 1}
             </div>
 

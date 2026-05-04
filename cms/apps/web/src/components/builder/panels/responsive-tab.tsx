@@ -29,7 +29,7 @@ export function ResponsiveTab({
     <div className="space-y-5 p-4">
       {/* Preview mode toggle */}
       <div className="space-y-2">
-        <Label className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {"Preview Mode"}
         </Label>
         <div className="flex gap-1">

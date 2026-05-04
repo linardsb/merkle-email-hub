@@ -19,7 +19,7 @@ export function VisualQAPanelTab({ html, entityType, entityId }: VisualQAPanelTa
       <div className="bg-surface-muted rounded-lg p-3">
         <div className="mb-2 flex items-center gap-2">
           <Camera className="text-foreground-muted h-4 w-4" />
-          <h3 className="text-foreground-muted text-xs font-medium uppercase tracking-wider">
+          <h3 className="text-foreground-muted text-xs font-medium tracking-wider uppercase">
             {"Visual QA"}
           </h3>
         </div>

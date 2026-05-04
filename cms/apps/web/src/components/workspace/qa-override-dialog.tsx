@@ -129,7 +129,7 @@ export function QAOverrideDialog({
             onChange={(e) => setJustification(e.target.value)}
             placeholder={"Explain why these checks can be safely overridden..."}
             rows={3}
-            className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1"
+            className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
           />
           <p className="text-foreground-muted text-xs">{`Minimum ${10} characters required`}</p>
         </div>

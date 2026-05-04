@@ -36,7 +36,7 @@ export function ViewSwitcher({ activeView, onViewChange, syncStatus }: ViewSwitc
       <div className="border-border bg-muted/50 relative flex items-center rounded-md border p-0.5">
         {/* Sliding background indicator */}
         <div
-          className="bg-background absolute bottom-0.5 top-0.5 rounded-sm shadow-sm transition-transform duration-200 ease-out"
+          className="bg-background absolute top-0.5 bottom-0.5 rounded-sm shadow-sm transition-transform duration-200 ease-out"
           style={{
             width: `calc(${100 / VIEWS.length}% - 2px)`,
             transform: `translateX(calc(${activeIndex} * 100% + ${activeIndex * 2}px))`,

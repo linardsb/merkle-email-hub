@@ -24,7 +24,7 @@ export function LiquidPreview({ code }: LiquidPreviewProps) {
 
   return (
     <div className="border-border bg-surface-elevated h-full overflow-auto border-t p-4">
-      <h3 className="text-muted-foreground mb-2 text-[10px] uppercase tracking-wider">
+      <h3 className="text-muted-foreground mb-2 text-[10px] tracking-wider uppercase">
         {"Preview"}
       </h3>
       <div

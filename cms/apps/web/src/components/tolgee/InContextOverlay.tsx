@@ -104,7 +104,7 @@ export function InContextOverlay({
       <button
         type="button"
         onClick={onToggle}
-        className={`absolute right-3 top-3 z-20 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-sm transition-colors ${
+        className={`absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-sm transition-colors ${
           enabled
             ? "bg-interactive text-foreground-inverse"
             : "bg-surface-elevated text-foreground hover:bg-surface-hover"
@@ -117,7 +117,7 @@ export function InContextOverlay({
 
       {/* ── Edit Popover ── */}
       {editingKey && activeKeyRow && (
-        <div className="border-border bg-surface absolute left-1/2 top-16 z-30 w-80 -translate-x-1/2 rounded-md border p-3 shadow-lg">
+        <div className="border-border bg-surface absolute top-16 left-1/2 z-30 w-80 -translate-x-1/2 rounded-md border p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-foreground text-xs font-medium">{activeKeyRow.key}</span>
             <button
@@ -143,7 +143,7 @@ export function InContextOverlay({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               rows={2}
-              className="border-input-border bg-input-bg text-foreground focus:border-input-focus focus:ring-input-focus w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1"
+              className="border-input-border bg-input-bg text-foreground focus:border-input-focus focus:ring-input-focus w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
             />
           </div>
 

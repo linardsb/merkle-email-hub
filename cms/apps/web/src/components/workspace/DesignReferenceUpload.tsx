@@ -66,7 +66,7 @@ export function DesignReferenceUpload({
         <button
           type="button"
           onClick={onClear}
-          className="bg-surface text-muted-foreground hover:text-foreground absolute right-1 top-1 rounded-full p-1 shadow-sm"
+          className="bg-surface text-muted-foreground hover:text-foreground absolute top-1 right-1 rounded-full p-1 shadow-sm"
         >
           <X className="h-3.5 w-3.5" />
         </button>

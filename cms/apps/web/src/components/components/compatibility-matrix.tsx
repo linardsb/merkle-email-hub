@@ -80,7 +80,7 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
         <div className="space-y-3">
           {groups.map(([family, clients]) => (
             <div key={family}>
-              <h4 className="text-foreground-muted mb-1.5 text-xs font-semibold uppercase tracking-wide">
+              <h4 className="text-foreground-muted mb-1.5 text-xs font-semibold tracking-wide uppercase">
                 {family}
               </h4>
               <div className="space-y-1">

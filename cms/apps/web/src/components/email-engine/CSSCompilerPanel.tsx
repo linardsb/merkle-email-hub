@@ -64,7 +64,7 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Paintbrush className="text-foreground-muted h-4 w-4" />
-          <h3 className="text-foreground-muted text-xs font-medium uppercase tracking-wider">
+          <h3 className="text-foreground-muted text-xs font-medium tracking-wider uppercase">
             {"CSS Compiler"}
           </h3>
         </div>

@@ -110,13 +110,13 @@ export function BriefsOverview() {
     <div className="space-y-4">
       {/* Search */}
       <div className="relative">
-        <Search className="text-foreground-muted absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+        <Search className="text-foreground-muted absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={"Search briefs..."}
-          className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1"
+          className="border-input-border bg-input-bg text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:ring-input-focus w-full rounded-md border py-2 pr-4 pl-10 text-sm focus:ring-1 focus:outline-none"
           aria-label={"Search briefs..."}
         />
       </div>

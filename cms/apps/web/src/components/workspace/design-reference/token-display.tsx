@@ -72,7 +72,7 @@ function ColorSwatch({
           style={{ backgroundColor: color.hex, opacity: color.opacity }}
         />
         <span
-          className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center text-[10px] font-semibold ${
+          className={`absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center text-[10px] font-semibold ${
             count === 0 ? "bg-warning text-on-warning" : "bg-surface-elevated text-foreground-muted"
           } border-border border`}
         >
@@ -82,7 +82,7 @@ function ColorSwatch({
         <button
           type="button"
           onClick={handleFind}
-          className="bg-surface text-foreground-muted hover:text-foreground absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center group-hover:flex"
+          className="bg-surface text-foreground-muted hover:text-foreground absolute -top-1 -left-1 hidden h-4 w-4 items-center justify-center group-hover:flex"
           title={"Find in code"}
         >
           <Search className="h-3 w-3" />
@@ -162,7 +162,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {tokens.colors.length > 0 && (
         <section>
-          <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
+          <h4 className="text-foreground-muted mb-2 text-xs font-semibold tracking-wide uppercase">
             {"Colors"}
           </h4>
           <div className="grid grid-cols-4 gap-3">
@@ -181,7 +181,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {offBrandColors.length > 0 && (
         <section>
-          <h4 className="text-warning mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide">
+          <h4 className="text-warning mb-2 flex items-center gap-1 text-xs font-semibold tracking-wide uppercase">
             <AlertTriangle className="h-3 w-3" />
             {"Off-brand colors"}
           </h4>
@@ -224,7 +224,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {tokens.typography.length > 0 && (
         <section>
-          <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
+          <h4 className="text-foreground-muted mb-2 text-xs font-semibold tracking-wide uppercase">
             {"Typography"}
           </h4>
           <div className="space-y-1.5">
@@ -237,7 +237,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
 
       {tokens.spacing.length > 0 && (
         <section>
-          <h4 className="text-foreground-muted mb-2 text-xs font-semibold uppercase tracking-wide">
+          <h4 className="text-foreground-muted mb-2 text-xs font-semibold tracking-wide uppercase">
             {"Spacing"}
           </h4>
           <div className="grid grid-cols-3 gap-2">

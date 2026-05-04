@@ -98,7 +98,7 @@ export function BriefCampaignCard({
           </div>
         )}
         {item.platform && (
-          <div className="absolute right-2 top-2">
+          <div className="absolute top-2 right-2">
             <BriefPlatformBadge platform={item.platform} />
           </div>
         )}

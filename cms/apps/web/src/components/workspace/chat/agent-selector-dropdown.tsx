@@ -82,7 +82,7 @@ export function AgentSelectorDropdown({ agent, onSelect }: AgentSelectorDropdown
       <DropdownMenuContent align="start" className="w-48">
         {AGENT_GROUPS.map((group) => (
           <DropdownMenuGroup key={group.label}>
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">
+            <DropdownMenuLabel className="text-[10px] tracking-wider uppercase">
               {group.label}
             </DropdownMenuLabel>
             {group.agents.map((a) => {
