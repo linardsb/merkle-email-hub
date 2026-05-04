@@ -56,6 +56,10 @@ export default [
       "no-new-func": "error",
       "no-script-url": "error",
       "security/detect-object-injection": "off", // Too noisy for TS
+      // eslint-plugin-security@3.0.1 ships an Express-only rule that calls
+      // context.getSourceCode(), removed in ESLint 10. Disable until upstream
+      // fix lands (https://github.com/eslint-community/eslint-plugin-security).
+      "security/detect-no-csrf-before-method-override": "off",
 
       // Code quality
       "no-console": ["warn", { allow: ["warn", "error"] }],

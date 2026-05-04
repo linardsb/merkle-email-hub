@@ -17,6 +17,7 @@ from app.auth.dependencies import require_role
 from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.design_sync.diagnose.schemas import DiagnosticReportResponse
 from app.design_sync.schemas import (
     AnalyzeLayoutRequest,
@@ -61,7 +62,7 @@ from app.design_sync.service import DesignSyncService
 router = APIRouter(prefix="/api/v1/design-sync", tags=["design-sync"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> DesignSyncService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> DesignSyncService:
     return DesignSyncService(db)
 
 

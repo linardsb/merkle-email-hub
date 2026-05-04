@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Email Hub · Approval · BF2026-hero-v3</title>
+<link rel="stylesheet" href="_shell.css" />
+<style>
+  .ap-grid {
+    display: grid; grid-template-columns: 1fr 360px;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-6);
+  }
+  .ap-main { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .ap-side { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+  /* Decision bar */
+  .decision-bar {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-tertiary);
+    padding: var(--sp-4) var(--sp-6);
+    display: flex; align-items: center; gap: var(--sp-4);
+  }
+  .decision-bar .h { font-size: 16px; font-weight: 600; color: var(--color-primary); }
+  .decision-bar .sub { font-size: 12px; color: var(--color-secondary); margin-top: 2px; }
+
+  /* a2-card audit timeline cards */
+  .a2 {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-border-strong);
+    margin-bottom: var(--sp-3);
+    overflow: hidden;
+  }
+  .a2.brand { border-left-color: var(--color-tertiary); }
+  .a2.success { border-left-color: var(--color-success); }
+  .a2.warning { border-left-color: var(--color-warning); }
+  .a2.danger { border-left-color: var(--color-danger); }
+  .a2.info { border-left-color: var(--color-info); }
+  .a2-head {
+    display: flex; align-items: center; gap: var(--sp-2);
+    padding: 8px 14px;
+    background: var(--color-surface-2);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 11.5px;
+  }
+  .a2-head .name { font-family: var(--font-mono); color: var(--color-info); display: inline-flex; align-items: center; gap: 4px; }
+  .a2-head .name::before { content: "{"; color: var(--color-tertiary); font-weight: 600; }
+  .a2-head .name::after { content: "}"; color: var(--color-tertiary); font-weight: 600; }
+  .a2-head .ts { font-family: var(--font-mono); color: var(--color-muted); font-size: 10.5px; margin-left: auto; }
+
+  .a2-body { padding: var(--sp-3) var(--sp-4); font-size: 12.5px; }
+  .a2-body p { margin: 0 0 6px; line-height: 1.55; }
+  .a2-body .h { font-weight: 600; font-size: 13px; margin-bottom: 2px; color: var(--color-primary); }
+  .a2-body .sub { font-size: 11.5px; color: var(--color-secondary); }
+  .a2-body code { background: var(--color-surface-2); padding: 1px 4px; font-size: 11.5px; }
+
+  .a2-prop {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--color-secondary);
+    display: flex; gap: 8px;
+    padding: 1px 0;
+  }
+  .a2-prop .k { color: var(--color-info); width: 130px; flex-shrink: 0; }
+  .a2-prop .v { color: var(--color-primary); }
+  .a2-prop .v.string { color: var(--color-success); }
+  .a2-prop .v.tok { color: var(--color-tertiary); }
+
+  .a2-foot { display: flex; gap: 6px; padding: 8px 14px; border-top: 1px solid var(--color-border); background: var(--color-surface-2); }
+
+  /* Hitl pause */
+  .hitl {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-tertiary) 4%, white) 0%, #fff 100%);
+    border: 1px solid var(--color-tertiary);
+    padding: var(--sp-3) var(--sp-4);
+  }
+  .hitl-h {
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 600; font-size: 11px;
+    color: var(--color-tertiary);
+    font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .hitl-body { font-size: 12.5px; color: var(--color-primary); line-height: 1.5; }
+
+  /* Version compare */
+  .ver-pair {
+    display: grid; grid-template-columns: 1fr 8px 1fr; gap: 0;
+  }
+  .ver-pair .pane {
+    aspect-ratio: 16/22;
+    background:
+      linear-gradient(180deg, var(--color-primary) 0 22px, transparent 22px),
+      linear-gradient(180deg, var(--color-tertiary) 22px, var(--color-tertiary) 90px, transparent 90px),
+      repeating-linear-gradient(0deg, var(--color-surface-2) 0 10px, var(--color-surface) 10px 20px),
+      var(--color-surface);
+    border: 1px solid var(--color-border);
+    position: relative;
+  }
+  .ver-pair .pane.b::after {
+    content: ""; position: absolute; left: 12%; top: 38%; width: 60%; height: 16%;
+    background: rgba(6,117,126,.18); outline: 1px dashed var(--color-success);
+  }
+  .ver-pair .splitter { background: var(--color-border-strong); }
+  .ver-pair .pane .label {
+    position: absolute; top: 6px; left: 6px;
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    font-family: var(--font-mono); font-size: 9px; padding: 2px 4px;
+  }
+
+  /* Stakeholders */
+  .stk-row {
+    padding: 8px var(--sp-4); border-bottom: 1px solid var(--color-border);
+    display: grid; grid-template-columns: 28px 1fr auto;
+    gap: var(--sp-2); align-items: center; font-size: 12px;
+  }
+  .stk-row:last-child { border-bottom: 0; }
+  .stk-row .av {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-label); font-size: 10px; color: #fff; font-weight: 600;
+    background: var(--color-info);
+  }
+  .stk-row .body .h { font-weight: 500; color: var(--color-primary); }
+  .stk-row .body .sub { color: var(--color-muted); font-size: 10.5px; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4V11"/><path d="M21 7v10l-9 4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6z"/></symbol>
+    <symbol id="i-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-paint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 11h2v8H3v-8h2"/><path d="M7 7l5-5 5 5v6H7z"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 8v3M12 11l-5 5M12 11l5 5"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M8.6 10.5l6.8-4"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c4 0 7 4 7 9v6l-3-2h-8l-3 2v-6c0-5 3-9 7-9z"/><circle cx="12" cy="11" r="2"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+    <symbol id="i-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v6M12 18v.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v.5M12 11v5"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14"/><path d="M2 7l10 7L22 7"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">EH</div>
+      <div class="brand-name">Email&nbsp;Hub</div>
+    </div>
+    <div class="brand-divider"></div>
+    <nav class="crumb">
+      <span>ACME&nbsp;Co</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span>Approvals</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span class="current">#APR-1842 · BF2026-hero-v3</span>
+    </nav>
+    <button class="designmd-chip">
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.7)"><use href="#i-paint"/></svg>
+      <span>Brand&nbsp;·&nbsp;<strong>Default</strong></span>
+      <span class="swatch">
+        <span style="background: var(--color-primary)"></span>
+        <span style="background: var(--color-secondary)"></span>
+        <span style="background: var(--color-tertiary)"></span>
+        <span style="background: var(--color-neutral); border-color: rgba(255,255,255,.3)"></span>
+      </span>
+    </button>
+
+    <nav class="page-nav">
+      <a href="index.html">Index</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="renderings.html">Renderings</a>
+      <a href="approvals-detail.html" class="active">Approval</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="qa-engine.html">QA</a>
+    </nav>
+
+    <div class="grow"></div>
+
+    <div class="save-pill">
+      <span class="dot" style="background: var(--color-warning)"></span>
+      <span>Awaiting review</span>
+      <span style="color:rgba(255,255,255,.36); margin-left:4px;">·</span>
+      <span style="font-family:var(--font-mono); color:rgba(255,255,255,.6);">SLA 4h 12m</span>
+    </div>
+
+    <button class="btn btn-ghost"><svg class="ico"><use href="#i-search"/></svg> <span>Search</span> <span class="kbd">⌘K</span></button>
+    <button class="btn"><svg class="ico"><use href="#i-share"/></svg> Share</button>
+    <button class="btn btn-primary"><svg class="ico"><use href="#i-rocket"/></svg> Push to ESP</button>
+  </header>
+
+  <aside class="rail">
+    <button class="rail-btn"        title="Dashboard"><svg class="ico ico-lg"><use href="#i-grid"/></svg></button>
+    <button class="rail-btn"        title="Workspace"><svg class="ico ico-lg"><use href="#i-folder"/></svg></button>
+    <button class="rail-btn"        title="Components"><svg class="ico ico-lg"><use href="#i-cube"/></svg></button>
+    <button class="rail-btn active" title="Approvals (current)"><svg class="ico ico-lg"><use href="#i-check"/></svg></button>
+    <button class="rail-btn"        title="Intelligence"><svg class="ico ico-lg"><use href="#i-spark"/></svg></button>
+    <button class="rail-btn"        title="Knowledge"><svg class="ico ico-lg"><use href="#i-database"/></svg></button>
+    <button class="rail-btn"        title="Connectors"><svg class="ico ico-lg"><use href="#i-share"/></svg></button>
+    <button class="rail-btn"        title="Ecosystem"><svg class="ico ico-lg"><use href="#i-network"/></svg></button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-bell"/></svg></button>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-cog"/></svg></button>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Approval · BF2026-hero-v3 <span class="pill warn dot" style="margin-left:8px; vertical-align: 4px;">awaiting review</span></h1>
+        <div class="page-sub">Requested by <strong style="color:var(--color-primary); font-weight:500;">L. Berzins</strong> · 1h 24m ago · 3 reviewers · v3.14</div>
+      </div>
+      <div class="grow"></div>
+      <div class="kv-row">
+        <div class="kv"><span class="k">SLA</span><span class="v">4h 12m</span></div>
+        <div class="kv"><span class="k">Run</span><span class="v">#bp_412</span></div>
+        <div class="kv"><span class="k">Iter</span><span class="v">2/3</span></div>
+        <div class="kv"><span class="k">QA</span><span class="v" style="color:var(--color-success)">12/14 pass</span></div>
+      </div>
+    </div>
+
+    <div class="designmd-strip">
+      <span><svg class="ico ico-sm" style="color:var(--color-tertiary); vertical-align:-2px"><use href="#i-paint"/></svg></span>
+      <span><span class="k">DESIGN.md</span> · v0.4.1 · brand red <code class="mono">#E4002B</code> · MSO ghost-table OK · 142 tokens</span>
+      <span class="grow"></span>
+      <span><a style="color:var(--color-tertiary)">Inspect</a> · <a>Diff vs prod</a></span>
+    </div>
+
+    <!-- Decision bar -->
+    <div class="decision-bar">
+      <div>
+        <div class="h">Approve · reject · request changes</div>
+        <div class="sub">Your decision unblocks the push-to-ESP gate. Requires 2 of 3 reviewer sign-offs.</div>
+      </div>
+      <div class="grow"></div>
+      <button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-eye"/></svg> Diff vs v3.13</button>
+      <button class="a2-btn danger"><svg class="ico ico-sm"><use href="#i-x"/></svg> Reject</button>
+      <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-pause"/></svg> Request changes</button>
+      <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-check"/></svg> Approve</button>
+    </div>
+
+    <div class="ap-grid">
+      <!-- LEFT MAIN: status header + audit timeline -->
+      <div class="ap-main">
+
+        <!-- InsightCard: status -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Status</h4>
+            <div class="row gap-2">
+              <span class="pill warn dot">awaiting review</span>
+              <span class="pill info">2 of 3 sign-offs</span>
+            </div>
+          </div>
+          <div style="padding: var(--sp-4); display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3);">
+            <div class="insight info">
+              <div class="label">Requester</div>
+              <div class="value" style="font-size: 14px;">L. Berzins</div>
+              <div class="meta">Brand owner · 1h 24m ago</div>
+            </div>
+            <div class="insight">
+              <div class="label">Iteration</div>
+              <div class="value">2 / 3</div>
+              <div class="meta">+1 since prior submit · iter delta 0.06</div>
+            </div>
+            <div class="insight success">
+              <div class="label">QA gate</div>
+              <div class="value">12 / 14</div>
+              <div class="meta"><span class="delta">▲ 2pp</span><span>2 warns, 0 fails</span></div>
+            </div>
+            <div class="insight warning">
+              <div class="label">Rendering</div>
+              <div class="value">11 / 14</div>
+              <div class="meta">Outlook 2016 · O365 conditional fail</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Audit timeline -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Audit timeline · 12 events</h4>
+            <div class="row gap-2">
+              <button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-history"/></svg> Newest first</button>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Trace JSON</button>
+            </div>
+          </div>
+          <div style="padding: var(--sp-4);">
+
+            <!-- HitlPauseCard -->
+            <div class="a2 brand">
+              <div class="a2-head">
+                <span class="name">HitlPauseCard</span>
+                <span class="agent-chip alt">CR</span>
+                <span class="ts">14:38:02 · 12s ago</span>
+              </div>
+              <div class="hitl">
+                <div class="hitl-h"><svg class="ico ico-sm"><use href="#i-pause"/></svg> Awaiting human review</div>
+                <div class="hitl-body">
+                  Code Reviewer flagged 1 inline-style override conflicting with token <code class="mono">colors.tertiary</code>. Confidence 0.54 — below auto-merge threshold (0.80). Pausing for human approval before push.
+                </div>
+              </div>
+              <div class="a2-foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg> Open hero section</button>
+                <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-check"/></svg> Override</button>
+              </div>
+            </div>
+
+            <!-- AgentProposalCard - Outlook Fixer -->
+            <div class="a2 success">
+              <div class="a2-head">
+                <span class="name">AgentProposalCard</span>
+                <span class="agent-chip alt">OF</span>
+                <span class="pill pass dot">accepted</span>
+                <span class="ts">14:36:48 · 1m 26s ago</span>
+              </div>
+              <div class="a2-body">
+                <div class="h">Outlook Fixer · injected 4 MSO ghost-tables on hero + footer</div>
+                <div class="sub">Confidence 0.94 · 2.1s · diff +312 bytes</div>
+                <div style="margin-top: 8px;">
+                  <div class="a2-prop"><span class="k">esec.id</span><span class="v">e_hero_01, e_footer_01</span></div>
+                  <div class="a2-prop"><span class="k">conditional</span><span class="v string">"if mso"</span></div>
+                  <div class="a2-prop"><span class="k">tokens.applied</span><span class="v tok">colors.primary, colors.tertiary</span></div>
+                  <div class="a2-prop"><span class="k">odiff.before</span><span class="v">4.7%</span></div>
+                  <div class="a2-prop"><span class="k">odiff.after</span><span class="v" style="color:var(--color-success)">0.3%</span></div>
+                </div>
+              </div>
+              <div class="a2-foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg> Diff</button>
+                <button class="a2-btn ghost">Trace</button>
+              </div>
+            </div>
+
+            <!-- EvalVerdictCard -->
+            <div class="a2 success">
+              <div class="a2-head">
+                <span class="name">EvalVerdictCard</span>
+                <span class="agent-chip">AX</span>
+                <span class="pill pass dot">pass</span>
+                <span class="ts">14:35:12 · 3m 02s ago</span>
+              </div>
+              <div class="a2-body">
+                <div class="h">Accessibility · 5/5 criteria · score 0.91</div>
+                <div class="sub">contrast_ratio · alt_text · semantic_structure · keyboard_focus · aria</div>
+                <div style="margin-top: 8px;">
+                  <div class="a2-prop"><span class="k">criteria.passed</span><span class="v string">5</span></div>
+                  <div class="a2-prop"><span class="k">contrast_ratio</span><span class="v">4.7:1 (target 4.5)</span></div>
+                  <div class="a2-prop"><span class="k">alt_text.coverage</span><span class="v">100% (8/8 images)</span></div>
+                  <div class="a2-prop"><span class="k">judge.calibration</span><span class="v">TPR 0.89 · TNR 0.84</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AgentProposalCard - Dark Mode -->
+            <div class="a2 warning">
+              <div class="a2-head">
+                <span class="name">AgentProposalCard</span>
+                <span class="agent-chip info">DM</span>
+                <span class="pill warn dot">accepted with warning</span>
+                <span class="ts">14:33:48 · 4m 26s ago</span>
+              </div>
+              <div class="a2-body">
+                <div class="h">Dark Mode · inverted 4 hero/footer color pairs</div>
+                <div class="sub">Confidence 0.62 · streaming · 2 contrast warnings remain</div>
+                <div style="margin-top: 8px;">
+                  <div class="a2-prop"><span class="k">pairs.inverted</span><span class="v">4 (hero, eyebrow, footer, divider)</span></div>
+                  <div class="a2-prop"><span class="k">contrast.violations</span><span class="v" style="color:var(--color-warning)">2 (Apple Mail dark)</span></div>
+                  <div class="a2-prop"><span class="k">prefers-color-scheme</span><span class="v string">"dark"</span></div>
+                </div>
+              </div>
+              <div class="a2-foot">
+                <button class="a2-btn">Override</button>
+                <button class="a2-btn ghost">Diff</button>
+              </div>
+            </div>
+
+            <!-- RenderingMatrixCard -->
+            <div class="a2 info">
+              <div class="a2-head">
+                <span class="name">RenderingMatrixCard</span>
+                <span class="agent-chip mute">SYSTEM</span>
+                <span class="pill warn">11/14</span>
+                <span class="ts">14:31:14 · 7m ago</span>
+              </div>
+              <div class="a2-body">
+                <div class="h">Rendering matrix · 14 clients · ODiff threshold 1.5%</div>
+                <div class="sub">Outlook 2016 fail · O365 conditional fail · 3 warns</div>
+                <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 8px;">
+                  <span class="pill pass dot" style="font-size: 10px;">A.MAC</span>
+                  <span class="pill pass dot" style="font-size: 10px;">A.IOS</span>
+                  <span class="pill warn dot" style="font-size: 10px;">A.DARK</span>
+                  <span class="pill pass dot" style="font-size: 10px;">G.WEB</span>
+                  <span class="pill pass dot" style="font-size: 10px;">G.MOB</span>
+                  <span class="pill warn dot" style="font-size: 10px;">G.DARK</span>
+                  <span class="pill fail dot" style="font-size: 10px;">O.2016</span>
+                  <span class="pill pass dot" style="font-size: 10px;">O.2019</span>
+                  <span class="pill pass dot" style="font-size: 10px;">O.WEB</span>
+                  <span class="pill pass dot" style="font-size: 10px;">O.MOB</span>
+                  <span class="pill fail dot" style="font-size: 10px;">O.O365</span>
+                  <span class="pill warn dot" style="font-size: 10px;">YHO</span>
+                  <span class="pill pass dot" style="font-size: 10px;">AOL</span>
+                  <span class="pill pass dot" style="font-size: 10px;">SAM</span>
+                </div>
+              </div>
+              <div class="a2-foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg> Inspect Outlook 2016</button>
+                <button class="a2-btn ghost">Open renderings page</button>
+              </div>
+            </div>
+
+            <!-- AgentProposalCard - Content -->
+            <div class="a2 success">
+              <div class="a2-head">
+                <span class="name">AgentProposalCard</span>
+                <span class="agent-chip warn">CN</span>
+                <span class="pill pass dot">accepted</span>
+                <span class="ts">14:28:12 · 10m ago</span>
+              </div>
+              <div class="a2-body">
+                <div class="h">Content · drafted 3 article cards · brand voice "concise"</div>
+                <div class="sub">Confidence 0.78 · streaming · 0.91 voice score</div>
+                <div style="margin-top: 8px;">
+                  <div class="a2-prop"><span class="k">cards.drafted</span><span class="v">3</span></div>
+                  <div class="a2-prop"><span class="k">voice.score</span><span class="v string">0.91 (target 0.85)</span></div>
+                  <div class="a2-prop"><span class="k">avg.words</span><span class="v">42 per card</span></div>
+                  <div class="a2-prop"><span class="k">cta.tested</span><span class="v">3 variants (A/B/C)</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- KnowledgeHitCard -->
+            <div class="a2 info">
+              <div class="a2-head">
+                <span class="name">KnowledgeHitCard</span>
+                <span class="agent-chip info">KN</span>
+                <span class="pill info dot">4 hits</span>
+                <span class="ts">14:24:08 · 14m ago</span>
+              </div>
+              <div class="a2-body">
+                <div class="h">Knowledge · 4 proactive warnings injected</div>
+                <div class="sub">pgvector recall · component+client filter</div>
+                <ul style="margin: 6px 0 0; padding-left: 16px; font-size: 12px; color: var(--color-secondary);">
+                  <li>3-col card-grid fails Outlook 2016 (0.86 conf)</li>
+                  <li>Apple Mail dark hero needs explicit fg color (0.92 conf)</li>
+                  <li>Yahoo strips background-image px units (0.81 conf)</li>
+                  <li>Liquid whitespace-strip needed for SFMC (0.78 conf)</li>
+                </ul>
+              </div>
+              <div class="a2-foot">
+                <button class="a2-btn">View patterns</button>
+                <button class="a2-btn ghost">Memory recall</button>
+              </div>
+            </div>
+
+            <!-- ScaffolderCard -->
+            <div class="a2 success">
+              <div class="a2-head">
+                <span class="name">AgentProposalCard</span>
+                <span class="agent-chip">SC</span>
+                <span class="pill pass dot">accepted</span>
+                <span class="ts">14:22:04 · 16m ago</span>
+              </div>
+              <div class="a2-body">
+                <div class="h">Scaffolder · built layout from 7 components · 3 manifest hits</div>
+                <div class="sub">Confidence 0.94 · 3.4s · template_selection_accuracy 0.92</div>
+                <div style="margin-top: 8px;">
+                  <div class="a2-prop"><span class="k">components.matched</span><span class="v">hero-image-cta · card-grid-2col · footer-mini</span></div>
+                  <div class="a2-prop"><span class="k">manifest.confidence</span><span class="v string">0.94 / 0.91 / 0.96</span></div>
+                  <div class="a2-prop"><span class="k">slots.locked</span><span class="v">footer.legal · logo.url</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Version compare -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Version compare · v3.13 → v3.14</h4>
+            <div class="row gap-2">
+              <span class="pill brand">+312 bytes</span>
+              <span class="pill">14 esec edits</span>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Open</button>
+            </div>
+          </div>
+          <div class="ver-pair" style="padding: var(--sp-4);">
+            <div class="pane">
+              <div class="label">v3.13</div>
+              <div style="position:absolute; bottom:6px; right:6px; font-family:var(--font-mono); font-size:9px; color: var(--color-muted)">prior</div>
+            </div>
+            <div class="splitter"></div>
+            <div class="pane b">
+              <div class="label">v3.14</div>
+              <div style="position:absolute; bottom:6px; right:6px; font-family:var(--font-mono); font-size:9px; background:rgba(6,117,126,.92); color:#fff; padding:2px 4px;">CURRENT</div>
+            </div>
+          </div>
+          <div class="card-foot">
+            <span class="pill brand dot">hero · 4 changes</span>
+            <span class="pill brand dot">card-grid · 3 changes</span>
+            <span class="pill brand dot">cta-band · 1 change</span>
+            <span class="grow"></span>
+            <button class="a2-btn">Side-by-side</button>
+            <button class="a2-btn primary">Inline diff</button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT SIDE: stakeholders + related runs + blueprint trace -->
+      <aside class="ap-side">
+
+        <!-- Reviewers -->
+        <section class="card card-tight">
+          <div class="card-head"><h4>Reviewers · 3</h4><span class="pill info">2 / 3</span></div>
+          <div>
+            <div class="stk-row">
+              <div class="av" style="background: var(--color-success)">JK</div>
+              <div class="body">
+                <div class="h">J. Kowalski</div>
+                <div class="sub">Brand · approved · 38m ago</div>
+              </div>
+              <span class="pill pass">approved</span>
+            </div>
+            <div class="stk-row">
+              <div class="av" style="background: var(--color-tertiary)">MR</div>
+              <div class="body">
+                <div class="h">M. Rivera</div>
+                <div class="sub">Engineering · approved · 22m ago</div>
+              </div>
+              <span class="pill pass">approved</span>
+            </div>
+            <div class="stk-row">
+              <div class="av" style="background: var(--color-warning)">DT</div>
+              <div class="body">
+                <div class="h">D. Tanaka</div>
+                <div class="sub">Legal · pending · 4h SLA</div>
+              </div>
+              <span class="pill warn dot">pending</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Related runs -->
+        <section class="card card-tight">
+          <div class="card-head"><h4>Related runs</h4><span class="pill">5</span></div>
+          <table class="tbl">
+            <thead><tr><th>#run</th><th>Iter</th><th>QA</th><th></th></tr></thead>
+            <tbody>
+              <tr class="info"><td class="mono" style="color:var(--color-tertiary); font-weight:600;">bp_412</td><td>2/3</td><td>12/14</td><td><span class="pill warn">current</span></td></tr>
+              <tr class="pass"><td class="mono">bp_408</td><td>3/3</td><td>14/14</td><td><span class="pill pass">accepted</span></td></tr>
+              <tr class="warn"><td class="mono">bp_402</td><td>3/3</td><td>11/14</td><td><span class="pill warn">overridden</span></td></tr>
+              <tr class="fail"><td class="mono">bp_398</td><td>1/3</td><td>8/14</td><td><span class="pill fail">rejected</span></td></tr>
+              <tr class="pass"><td class="mono">bp_392</td><td>2/3</td><td>13/14</td><td><span class="pill pass">accepted</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Blueprint trace mini -->
+        <section class="card card-tight">
+          <div class="card-head"><h4>Blueprint trace · #bp_412</h4><span class="pill info">L2 · 14m</span></div>
+          <div style="padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 6px; font-size: 11.5px; font-family: var(--font-mono);">
+            <div style="display:flex; justify-content:space-between"><span style="color:var(--color-success)">L0 · KN</span><span class="muted">0.4s · ✓</span></div>
+            <div style="display:flex; justify-content:space-between"><span style="color:var(--color-success)">L1 · SC + PR</span><span class="muted">3.4s · ✓</span></div>
+            <div style="display:flex; justify-content:space-between"><span style="color:var(--color-success)">L2 · DM + CN</span><span class="muted">2.1s · ✓ warn</span></div>
+            <div style="display:flex; justify-content:space-between"><span style="color:var(--color-warning)">L3 · OF + AX</span><span class="muted">2.4s · ✓ warn</span></div>
+            <div style="display:flex; justify-content:space-between"><span style="color:var(--color-tertiary)">L4 · CR · paused</span><span class="muted">12s · awaiting</span></div>
+          </div>
+          <div class="card-foot">
+            <button class="a2-btn">Full trace</button>
+            <button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-history"/></svg> Iter 1</button>
+          </div>
+        </section>
+
+        <!-- Pre-check -->
+        <section class="card card-tight">
+          <div class="card-head"><h4>Pre-check · push to ESP</h4></div>
+          <div style="padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 6px;">
+            <div class="metric-row" style="display:flex; justify-content:space-between"><span style="color:var(--color-secondary)">QA gate</span><span class="pill pass dot">pass</span></div>
+            <div class="metric-row" style="display:flex; justify-content:space-between"><span style="color:var(--color-secondary)">Rendering gate</span><span class="pill warn dot">warn</span></div>
+            <div class="metric-row" style="display:flex; justify-content:space-between"><span style="color:var(--color-secondary)">Approval gate</span><span class="pill warn dot">awaiting</span></div>
+            <div class="metric-row" style="display:flex; justify-content:space-between"><span style="color:var(--color-secondary)">Brand gate</span><span class="pill pass dot">pass</span></div>
+            <div class="metric-row" style="display:flex; justify-content:space-between"><span style="color:var(--color-secondary)">PII redaction</span><span class="pill pass dot">enabled</span></div>
+          </div>
+          <div class="card-foot">
+            <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-lock"/></svg> Force push</button>
+            <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-rocket"/></svg> Push when ready</button>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

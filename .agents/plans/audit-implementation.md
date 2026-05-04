@@ -744,16 +744,16 @@ After **every** phase:
 - [ ] Type-check baselines re-confirmed for `app/auth/`, `app/core/config.py`, `app/core/exceptions.py`, `app/ai/security/`, `app/ai/shared.py`
 
 After **Phase 1**:
-- [ ] `docker compose -f docker-compose.prod.yml --env-file /dev/null config` fails loudly
-- [ ] `app/core/tests/test_config_security.py` passes
-- [ ] Pillow guard active at all 11 sites; bomb test passes
+- [x] `docker compose -f docker-compose.prod.yml --env-file /dev/null config` fails loudly
+- [x] `app/core/tests/test_config_security.py` passes
+- [x] Pillow guard active at all 11 sites; bomb test passes
 
 After **Phase 2**:
-- [ ] Trivy CI job green (or all findings tracked in `dependency-debt.md`)
-- [ ] pip-audit CI job green
-- [ ] Coverage gate enforced
-- [ ] `alembic check` runs clean on fresh DB
-- [ ] First mutmut run completes; report committed
+- [x] Trivy CI job green (or all findings tracked in `dependency-debt.md`)
+- [x] pip-audit CI job green
+- [x] Coverage gate enforced
+- [x] `alembic check` runs clean on fresh DB
+- [x] First mutmut run completes; report committed
 
 After **Phase 3**:
 - [ ] DAST workflow scheduled and successful first run

@@ -42,6 +42,27 @@ Use jCodeMunch to locate violations without reading full files:
 
 Only `Read` files when you need to fix a violation found above.
 
+## Level 6: Unit Tests
+```bash
+cd cms && pnpm --filter web test
+```
+Vitest runs the frontend unit suite. CI runs this via `make check-fe`; skipping it locally is the single biggest source of red builds.
+
+## Level 7: CI Parity Gates (conditional on diff scope)
+
+CI runs `make check-fe`, which bundles Levels 1, 2, 6 plus a polling-literal scan. Run only the gates whose trigger files appear in the diff:
+
+| Gate | Command | Run when diff touches |
+|------|---------|------------------------|
+| Polling literals | `make lint-polling` | `cms/apps/web/src/hooks/**` (any file adding/changing SWR refresh intervals) |
+| OpenAPI SDK drift | `cd cms && pnpm --filter web exec openapi-ts-check` *(if present)* | `app/**/routes.py` or `app/**/schemas/**.py` (backend route/schema changes that should regenerate the SDK) |
+| Tailwind class sort | `cd cms && pnpm --filter web format:check` | already covered by Level 1 — re-mention if formatter was bypassed |
+| `.env.example` drift | `make check-env-drift` | only if frontend change pulled in a backend `Settings` field |
+
+If unsure or the diff spans many areas, run **`make check-fe`** (≈60s) — it bundles every frontend gate above plus Levels 1–2, 6 in one shot and matches CI exactly. For mixed backend+frontend changes, `make check` (or `make ci`) covers both sides.
+
+When a CI gate fails on push, the fix is almost always a regenerated artifact (SDK regen via `cd cms && pnpm --filter web codegen`, snapshot regen, etc.) — note which gate failed and add the regenerate step to the same commit, never as a separate "fix CI" follow-up.
+
 ## Notes
 - ESLint config: `cms/apps/web/eslint.config.mjs` — Prettier config: `cms/.prettierrc.json`
 - Report results for each level. Do NOT auto-fix convention violations — use `/fe-code-review-fix` for targeted fixes

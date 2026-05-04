@@ -14,6 +14,7 @@ from app.design_sync.figma.layout_analyzer import (
     ContentGroup,
     EmailSection,
     EmailSectionType,
+    ImagePlaceholder,
     TextBlock,
 )
 
@@ -729,6 +730,15 @@ def _build_column_fill_html(
     return "\n".join(parts)
 
 
+def _image_node_id_attrs(img: ImagePlaceholder) -> dict[str, str]:
+    """Stamp ``data-node-id`` on every image SlotFill (Phase 50.5).
+
+    Lets the per-corner radius handler (Rule 10) locate the rendered ``<img>``
+    by node id.
+    """
+    return {"data-node-id": img.node_id}
+
+
 def _resolve_image_url(
     node_id: str,
     image_urls: dict[str, str] | None,
@@ -773,7 +783,7 @@ def _fills_logo_header(
     fills: list[SlotFill] = []
     if section.images:
         img = section.images[0]
-        overrides: dict[str, str] = {}
+        overrides: dict[str, str] = _image_node_id_attrs(img)
         if img.width:
             overrides["width"] = str(int(img.width))
         if img.height:
@@ -808,6 +818,7 @@ def _fills_hero(
                 "hero_image",
                 _resolve_image_url(img.node_id, image_urls),
                 slot_type="image",
+                attr_overrides=_image_node_id_attrs(img),
             )
         )
     # Headline + Subtext
@@ -843,7 +854,7 @@ def _fills_full_width_image(
     fills: list[SlotFill] = []
     if section.images:
         img = section.images[0]
-        overrides: dict[str, str] = {}
+        overrides: dict[str, str] = _image_node_id_attrs(img)
         if img.width:
             overrides["width"] = str(int(img.width))
         if img.height:
@@ -937,6 +948,7 @@ def _fills_article_card(
                 "image_url",
                 _resolve_image_url(img.node_id, image_urls),
                 slot_type="image",
+                attr_overrides=_image_node_id_attrs(img),
             )
         )
         fills.append(SlotFill("image_alt", img.node_name))
@@ -986,6 +998,7 @@ def _fills_image_block(
                 "image_url",
                 _resolve_image_url(img.node_id, image_urls),
                 slot_type="image",
+                attr_overrides=_image_node_id_attrs(img),
             )
         )
         fills.append(SlotFill("image_alt", img.node_name))
@@ -1006,6 +1019,7 @@ def _fills_image_grid(
                 f"image_{i}",
                 _resolve_image_url(img.node_id, image_urls),
                 slot_type="image",
+                attr_overrides=_image_node_id_attrs(img),
             )
         )
     return fills
@@ -1029,6 +1043,7 @@ def _fills_product_grid(
                     f"product_{i}_image",
                     _resolve_image_url(img.node_id, image_urls),
                     slot_type="image",
+                    attr_overrides=_image_node_id_attrs(img),
                 )
             )
         heading = _first_heading(group.texts)
@@ -1069,6 +1084,7 @@ def _fills_image_gallery(
                 f"image_{i}",
                 _resolve_image_url(img.node_id, image_urls),
                 slot_type="image",
+                attr_overrides=_image_node_id_attrs(img),
             )
         )
     return fills
@@ -1192,6 +1208,7 @@ def _fills_event_card(
                 "image_url",
                 _resolve_image_url(img.node_id, image_urls),
                 slot_type="image",
+                attr_overrides=_image_node_id_attrs(img),
             )
         )
         fills.append(SlotFill("image_alt", img.node_name))
@@ -1405,8 +1422,63 @@ def _build_token_overrides(section: EmailSection) -> list[TokenOverride]:
     """Extract token overrides from section properties."""
     overrides: list[TokenOverride] = []
 
-    if section.bg_color:
+    # Outer wrapper background (Phase 50.3 — wrapper-unwrap)
+    if section.container_bg:
+        overrides.append(TokenOverride("background-color", "_outer", section.container_bg))
+
+    # Inner card background (Phase 50.4 — nested-card surface)
+    if section.inner_bg:
+        overrides.append(TokenOverride("background-color", "_inner", section.inner_bg))
+    elif section.bg_color:
+        # No nested card detected — preserve Phase 49 contract (bg_color → _outer).
         overrides.append(TokenOverride("background-color", "_outer", section.bg_color))
+
+    # Inner card border radius (Phase 50.4)
+    if section.inner_radius is not None:
+        overrides.append(TokenOverride("border-radius", "_inner", f"{section.inner_radius:.0f}px"))
+
+    # Rule 11 (Phase 50.5) — fixed width on inner card from dominant image width.
+    # Three emissions: width inline style, align="center" attr, class="wf" add.
+    if section.inner_card_fixed_width is not None:
+        width_px = f"{section.inner_card_fixed_width}px"
+        overrides.append(TokenOverride("width", "_inner", width_px))
+        overrides.append(TokenOverride("__html_attr_align", "_inner", "center"))
+        overrides.append(TokenOverride("__html_attr_class_add", "_inner", "wf"))
+
+    # Rule 10 (Phase 50.5) — per-corner image radii via 4 longhand emissions.
+    for img in section.images:
+        spec = img.corner_radius_spec
+        if spec is None or spec.per_corner is None:
+            continue
+        tl, tr, br, bl = spec.per_corner
+        target = f"_image_{img.node_id}"
+        overrides.append(TokenOverride("border-top-left-radius", target, f"{tl:.0f}px"))
+        overrides.append(TokenOverride("border-top-right-radius", target, f"{tr:.0f}px"))
+        overrides.append(TokenOverride("border-bottom-right-radius", target, f"{br:.0f}px"))
+        overrides.append(TokenOverride("border-bottom-left-radius", target, f"{bl:.0f}px"))
+
+    # Rule 7 (Phase 50.5) — tag/pill alignment surfaced on the heading slot
+    # until 51.3 ships the tag slot proper. Picks the first text whose
+    # ``layout_align`` was populated by tag detection.
+    for text in section.texts:
+        if text.layout_align in ("left", "center", "right"):
+            overrides.append(TokenOverride("text-align", "_heading", text.layout_align))
+            break
+
+    # Gap 11 (Phase 50.6) — text-align from the text-node's own attribute.
+    # Emitted after Rule 7 so an explicit ``text_align`` wins over the
+    # tag-detection heuristic via last-write-wins in the renderer.
+    for text in section.texts:
+        align = text.text_align.lower() if text.text_align else None
+        if text.is_heading and align in ("left", "center", "right", "justify"):
+            overrides.append(TokenOverride("text-align", "_heading", align))
+            break
+
+    for text in section.texts:
+        align = text.text_align.lower() if text.text_align else None
+        if not text.is_heading and align in ("left", "center", "right", "justify"):
+            overrides.append(TokenOverride("text-align", "_body", align))
+            break
 
     # Font overrides from first heading text
     for text in section.texts:

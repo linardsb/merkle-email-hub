@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Email Hub · QA Engine</title>
+<link rel="stylesheet" href="_shell.css" />
+<style>
+  .qa-pad { padding: var(--sp-4) var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-4); }
+
+  /* 14 QA checks grid */
+  .check-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--color-border); border: 1px solid var(--color-border); }
+  .check-tile {
+    background: var(--color-surface);
+    padding: var(--sp-3) var(--sp-4);
+    border-left: 3px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 6px;
+    cursor: pointer;
+  }
+  .check-tile:hover { background: var(--color-surface-2); }
+  .check-tile.pass { border-left-color: var(--color-success); }
+  .check-tile.warn { border-left-color: var(--color-warning); }
+  .check-tile.fail { border-left-color: var(--color-danger); }
+  .check-tile .ch-head { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+  .check-tile .ch-head .name { font-weight: 600; font-size: 12.5px; color: var(--color-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .check-tile .meta { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--color-muted); }
+  .check-tile .meta .v { font-family: var(--font-mono); color: var(--color-secondary); }
+  .check-tile .findings { font-size: 11px; color: var(--color-secondary); line-height: 1.4; }
+  .check-tile .findings strong { color: var(--color-primary); font-weight: 600; }
+
+  /* Repair pipeline (8 stages) */
+  .repair-flow {
+    display: flex; align-items: stretch; gap: 0;
+    overflow-x: auto;
+    padding: var(--sp-4);
+  }
+  .repair-stage {
+    flex: 1; min-width: 130px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 10px 12px;
+    position: relative;
+    border-left: 3px solid var(--color-success);
+    margin-right: var(--sp-3);
+  }
+  .repair-stage:last-child { margin-right: 0; }
+  .repair-stage::after {
+    content: ""; position: absolute; right: -16px; top: 50%; transform: translateY(-50%);
+    width: 0; height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 10px solid var(--color-border-strong);
+    z-index: 1;
+  }
+  .repair-stage:last-child::after { display: none; }
+  .repair-stage.skip { border-left-color: var(--color-border-strong); opacity: 0.6; }
+  .repair-stage.warn { border-left-color: var(--color-warning); }
+  .repair-stage .ord { font-family: var(--font-mono); font-size: 10px; color: var(--color-muted); }
+  .repair-stage .name { font-size: 12px; font-weight: 600; color: var(--color-primary); margin-top: 2px; }
+  .repair-stage .stat { font-family: var(--font-mono); font-size: 10.5px; color: var(--color-secondary); margin-top: 4px; }
+
+  /* ISP analyzer */
+  .isp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  .isp-card { background: var(--color-surface); border: 1px solid var(--color-border); padding: var(--sp-3) var(--sp-4); }
+  .isp-card .h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .isp-card .h .badge {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--color-tertiary); color: #fff;
+    font-family: var(--font-label); font-weight: 700; font-size: 11px;
+  }
+  .isp-card .h .badge.gmail { background: var(--color-tertiary); }
+  .isp-card .h .badge.outlook { background: var(--color-info); }
+  .isp-card .h .badge.yahoo { background: #6001D2; }
+  .isp-card .name { font-weight: 600; font-size: 13px; color: var(--color-primary); flex: 1; }
+  .isp-card .grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 11px; margin-top: 8px;
+  }
+  .isp-card .grid .k { color: var(--color-muted); font-family: var(--font-label); text-transform: uppercase; font-size: 10px; }
+  .isp-card .grid .v { font-family: var(--font-mono); color: var(--color-primary); }
+
+  /* Snapshot regression cases */
+  .snap-row {
+    display: grid; grid-template-columns: 56px 1fr 96px 96px auto;
+    gap: var(--sp-3); align-items: center;
+    padding: 10px var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+  }
+  .snap-row:last-child { border-bottom: 0; }
+  .snap-row .case-id { font-family: var(--font-mono); font-size: 11px; color: var(--color-tertiary); font-weight: 600; }
+  .snap-row .body .h { font-weight: 500; color: var(--color-primary); }
+  .snap-row .body .sub { font-size: 10.5px; color: var(--color-muted); margin-top: 2px; font-family: var(--font-mono); }
+  .snap-row .met { font-family: var(--font-mono); font-size: 11.5px; color: var(--color-primary); text-align: right; }
+
+  /* Confusion matrix */
+  .cm-mat {
+    display: grid; grid-template-columns: 110px repeat(3, 1fr);
+    border: 1px solid var(--color-border);
+    font-size: 11px;
+  }
+  .cm-mat > div {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+  }
+  .cm-mat > div:nth-child(4n) { border-right: 0; }
+  .cm-mat > div:nth-last-child(-n+4) { border-bottom: 0; }
+  .cm-mat .head { background: var(--color-surface-2); font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; color: var(--color-secondary); text-align: center; }
+  .cm-mat .head.first { text-align: left; }
+  .cm-mat .row-label { font-family: var(--font-label); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; color: var(--color-secondary); background: var(--color-surface-2); }
+  .cm-mat .cell { font-family: var(--font-mono); font-size: 13px; text-align: center; color: var(--color-primary); }
+  .cm-mat .cell.tp { background: rgba(6,117,126,.14); color: var(--color-success); font-weight: 600; }
+  .cm-mat .cell.tn { background: rgba(6,117,126,.06); color: var(--color-success); }
+  .cm-mat .cell.fp { background: rgba(176,122,14,.14); color: var(--color-warning); }
+  .cm-mat .cell.fn { background: rgba(200,69,29,.14); color: var(--color-danger); }
+
+  /* Adversarial queue */
+  .adv-row {
+    display: grid; grid-template-columns: 80px 1fr 80px auto;
+    gap: var(--sp-3); align-items: center;
+    padding: 10px var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+  }
+  .adv-row:last-child { border-bottom: 0; }
+  .adv-row .att-type { font-family: var(--font-mono); font-size: 10.5px; color: var(--color-info); text-transform: uppercase; }
+  .adv-row .body .h { font-weight: 500; color: var(--color-primary); }
+  .adv-row .body .sub { font-size: 10.5px; color: var(--color-secondary); margin-top: 1px; }
+  .adv-row .conf { font-family: var(--font-mono); text-align: right; color: var(--color-secondary); }
+
+  /* Two-col layout for lower section */
+  .qa-cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4V11"/><path d="M21 7v10l-9 4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6z"/></symbol>
+    <symbol id="i-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-paint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 11h2v8H3v-8h2"/><path d="M7 7l5-5 5 5v6H7z"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 8v3M12 11l-5 5M12 11l5 5"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M8.6 10.5l6.8-4"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c4 0 7 4 7 9v6l-3-2h-8l-3 2v-6c0-5 3-9 7-9z"/><circle cx="12" cy="11" r="2"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+    <symbol id="i-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v6M12 18v.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v.5M12 11v5"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14"/><path d="M2 7l10 7L22 7"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">EH</div>
+      <div class="brand-name">Email&nbsp;Hub</div>
+    </div>
+    <div class="brand-divider"></div>
+    <nav class="crumb">
+      <span>ACME&nbsp;Co</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span>QA Engine</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span class="current">BF2026-hero-v3</span>
+    </nav>
+    <button class="designmd-chip">
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.7)"><use href="#i-paint"/></svg>
+      <span>Brand&nbsp;·&nbsp;<strong>Default</strong></span>
+      <span class="swatch">
+        <span style="background: var(--color-primary)"></span>
+        <span style="background: var(--color-secondary)"></span>
+        <span style="background: var(--color-tertiary)"></span>
+        <span style="background: var(--color-neutral); border-color: rgba(255,255,255,.3)"></span>
+      </span>
+    </button>
+
+    <nav class="page-nav">
+      <a href="index.html">Index</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="renderings.html">Renderings</a>
+      <a href="approvals-detail.html">Approval</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="qa-engine.html" class="active">QA</a>
+    </nav>
+
+    <div class="grow"></div>
+
+    <div class="save-pill">
+      <span class="dot"></span>
+      <span>Last sweep · 38s ago</span>
+      <span style="color:rgba(255,255,255,.36); margin-left:4px;">·</span>
+      <span style="font-family:var(--font-mono); color:rgba(255,255,255,.6);">14/14</span>
+    </div>
+
+    <button class="btn btn-ghost"><svg class="ico"><use href="#i-search"/></svg> <span>Search</span> <span class="kbd">⌘K</span></button>
+    <button class="btn"><svg class="ico"><use href="#i-bolt"/></svg> Run sweep</button>
+    <button class="btn btn-primary"><svg class="ico"><use href="#i-rocket"/></svg> Repair pipeline</button>
+  </header>
+
+  <aside class="rail">
+    <button class="rail-btn"        title="Dashboard"><svg class="ico ico-lg"><use href="#i-grid"/></svg></button>
+    <button class="rail-btn"        title="Workspace"><svg class="ico ico-lg"><use href="#i-folder"/></svg></button>
+    <button class="rail-btn"        title="Components"><svg class="ico ico-lg"><use href="#i-cube"/></svg></button>
+    <button class="rail-btn"        title="Approvals"><svg class="ico ico-lg"><use href="#i-check"/></svg></button>
+    <button class="rail-btn"        title="Intelligence"><svg class="ico ico-lg"><use href="#i-spark"/></svg></button>
+    <button class="rail-btn active" title="QA Engine (current)"><svg class="ico ico-lg"><use href="#i-warning"/></svg></button>
+    <button class="rail-btn"        title="Knowledge"><svg class="ico ico-lg"><use href="#i-database"/></svg></button>
+    <button class="rail-btn"        title="Connectors"><svg class="ico ico-lg"><use href="#i-share"/></svg></button>
+    <button class="rail-btn"        title="Ecosystem"><svg class="ico ico-lg"><use href="#i-network"/></svg></button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-bell"/></svg></button>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-cog"/></svg></button>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">QA Engine · BF2026-hero-v3</h1>
+        <div class="page-sub">14 deterministic checks · repair pipeline · ISP analyzer · meta-eval gate</div>
+      </div>
+      <div class="grow"></div>
+      <div class="kv-row">
+        <div class="kv"><span class="k">Score</span><span class="v" style="color:var(--color-success)">87.4%</span></div>
+        <div class="kv"><span class="k">Pass</span><span class="v">12 / 14</span></div>
+        <div class="kv"><span class="k">Repair</span><span class="v">8/8 stages</span></div>
+        <div class="kv"><span class="k">Sweep</span><span class="v">14:38:02</span></div>
+      </div>
+    </div>
+
+    <div class="designmd-strip">
+      <span><svg class="ico ico-sm" style="color:var(--color-tertiary); vertical-align:-2px"><use href="#i-paint"/></svg></span>
+      <span><span class="k">DESIGN.md</span> · v0.4.1 · brand red <code class="mono">#E4002B</code> · MSO ghost-table OK · 142 tokens</span>
+      <span class="grow"></span>
+      <span><a style="color:var(--color-tertiary)">Inspect</a></span>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active"><svg class="ico ico-sm"><use href="#i-grid"/></svg> Checks <span class="count-pill ok">12/14</span></div>
+      <div class="tab">Repair pipeline <span class="count-pill ok">8/8</span></div>
+      <div class="tab">ISP analyzer</div>
+      <div class="tab">Snapshot regression <span class="count-pill warn">1</span></div>
+      <div class="tab">Meta-eval</div>
+      <div class="tab">Adversarial <span class="count-pill ok">87%</span></div>
+      <div class="tab">History</div>
+    </div>
+
+    <div class="stripe">
+      <div class="insight success">
+        <div class="label">Gate score</div>
+        <div class="value">87.4%</div>
+        <div class="meta"><span class="delta">▲ 2.1pp</span><span>vs prior sweep</span></div>
+      </div>
+      <div class="insight">
+        <div class="label">Pass / warn / fail</div>
+        <div class="value">12 / 2 / 0</div>
+        <div class="meta">14 checks · 38s sweep · cached 6/14</div>
+      </div>
+      <div class="insight warning">
+        <div class="label">Repair pipeline</div>
+        <div class="value">8 / 8</div>
+        <div class="meta">brand stage applied 1 fix · 0 manual</div>
+      </div>
+      <div class="insight info">
+        <div class="label">Adversarial pass</div>
+        <div class="value">87%</div>
+        <div class="meta">55 cases · 7 attack types</div>
+      </div>
+    </div>
+
+    <div class="qa-pad">
+
+      <!-- 14 QA checks grid -->
+      <section class="card card-tight">
+        <div class="card-head">
+          <h4>Checks · 14</h4>
+          <div class="row gap-2">
+            <span class="pill pass dot">12 pass</span>
+            <span class="pill warn dot">2 warn</span>
+            <span class="pill fail dot">0 fail</span>
+            <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Detail</button>
+          </div>
+        </div>
+        <div class="check-grid">
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">html_validation</span><span class="pill pass">98%</span></div>
+            <div class="findings"><strong>0 errors</strong> · 2 minor warnings · DOCTYPE OK</div>
+            <div class="meta"><span>v1.4 · 412ms</span><span class="v">14 esec</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">css_support</span><span class="pill pass">94%</span></div>
+            <div class="findings"><strong>0 unsupported</strong> properties · 3 needs MSO fallback</div>
+            <div class="meta"><span>caniemail · 14 clients</span><span class="v">cached</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">css_audit</span><span class="pill pass">96%</span></div>
+            <div class="findings">Per-build CSS matrix · 2 conditional fallbacks injected</div>
+            <div class="meta"><span>1.4s</span><span class="v">142 tokens</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">file_size</span><span class="pill pass">96%</span></div>
+            <div class="findings"><strong>82.4 KB</strong> · under 100 KB Gmail clip</div>
+            <div class="meta"><span>v1.0 · 12ms</span><span class="v">+0.4 KB</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">link_validation</span><span class="pill pass">99%</span></div>
+            <div class="findings"><strong>14 / 14 reachable</strong> · UTM applied · no redirects</div>
+            <div class="meta"><span>HTTP probes · 0.8s</span><span class="v">14 links</span></div>
+          </div>
+
+          <div class="check-tile warn">
+            <div class="ch-head"><span class="status-dot warn"></span><span class="name">spam_score</span><span class="pill warn">72%</span></div>
+            <div class="findings"><strong>4.8 / 10</strong> · subject contains "%" + "FREE" · word density</div>
+            <div class="meta"><span>SpamAssassin v4</span><span class="v">+0.6 vs prior</span></div>
+          </div>
+
+          <div class="check-tile warn">
+            <div class="ch-head"><span class="status-dot warn"></span><span class="name">dark_mode</span><span class="pill warn">79%</span></div>
+            <div class="findings"><strong>2 contrast violations</strong> · Apple Mail dark hero, Gmail dark footer</div>
+            <div class="meta"><span>WCAG 4.5:1</span><span class="v">2 fixes possible</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">accessibility</span><span class="pill pass">93%</span></div>
+            <div class="findings"><strong>5/5 criteria</strong> · contrast 4.7 · alt 100% · semantic OK</div>
+            <div class="meta"><span>WCAG AA</span><span class="v">8 images</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">fallback (MSO)</span><span class="pill pass">88%</span></div>
+            <div class="findings"><strong>4 ghost tables</strong> injected · all conditionals OK</div>
+            <div class="meta"><span>Outlook 2016/19</span><span class="v">+312 bytes</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">image_optimization</span><span class="pill pass">94%</span></div>
+            <div class="findings"><strong>8 / 8 optimized</strong> · WebP fallback PNG · avg 18 KB</div>
+            <div class="meta"><span>cmsfly CDN</span><span class="v">142 KB total</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">brand_compliance</span><span class="pill pass">96%</span></div>
+            <div class="findings">Brand red <code class="mono">#E4002B</code> · ΔE max 4.2 · footer legal OK</div>
+            <div class="meta"><span>BrandRepair · stage 8</span><span class="v">1 fix applied</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">personalisation_syntax</span><span class="pill pass">94%</span></div>
+            <div class="findings"><strong>3 Liquid blocks</strong> · fallback chains complete</div>
+            <div class="meta"><span>Liquid + AMPscript</span><span class="v">3 / 3 OK</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">liquid_syntax</span><span class="pill pass">86%</span></div>
+            <div class="findings"><strong>0 syntax errors</strong> · 2 missing whitespace-strip warnings</div>
+            <div class="meta"><span>Liquid v5</span><span class="v">42 lines</span></div>
+          </div>
+
+          <div class="check-tile pass">
+            <div class="ch-head"><span class="status-dot ok"></span><span class="name">deliverability</span><span class="pill pass">91%</span></div>
+            <div class="findings">Gmail inbox 94% · MS 86% · Yahoo 91% · ISP-aware analysis</div>
+            <div class="meta"><span>3 ISP profiles</span><span class="v">healthy</span></div>
+          </div>
+
+        </div>
+        <div class="card-foot">
+          <button class="a2-btn">Open all detail</button>
+          <button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-history"/></svg> History · 7d</button>
+          <span class="grow"></span>
+          <span class="muted" style="font-size: 11px;">Cached: 6/14 · 38s sweep</span>
+        </div>
+      </section>
+
+      <!-- Repair pipeline -->
+      <section class="card card-tight">
+        <div class="card-head">
+          <h4>Repair pipeline · 8 stages</h4>
+          <div class="row gap-2">
+            <span class="pill pass">8 / 8 ran</span>
+            <span class="pill brand">1 fix applied</span>
+            <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-bolt"/></svg> Re-run</button>
+          </div>
+        </div>
+        <div class="repair-flow">
+          <div class="repair-stage">
+            <div class="ord">01</div>
+            <div class="name">Sanitize</div>
+            <div class="stat">nh3 · 1 strip · 14ms</div>
+          </div>
+          <div class="repair-stage">
+            <div class="ord">02</div>
+            <div class="name">Inline CSS</div>
+            <div class="stat">Juice · 142 props · 88ms</div>
+          </div>
+          <div class="repair-stage">
+            <div class="ord">03</div>
+            <div class="name">MSO conditionals</div>
+            <div class="stat">4 ghost tables · 22ms</div>
+          </div>
+          <div class="repair-stage skip">
+            <div class="ord">04</div>
+            <div class="name">Outlook width fix</div>
+            <div class="stat">skipped · OK</div>
+          </div>
+          <div class="repair-stage">
+            <div class="ord">05</div>
+            <div class="name">Dark mode CSS</div>
+            <div class="stat">prefers · 12 rules · 18ms</div>
+          </div>
+          <div class="repair-stage skip">
+            <div class="ord">06</div>
+            <div class="name">Personalisation</div>
+            <div class="stat">3 liquid · already OK</div>
+          </div>
+          <div class="repair-stage warn">
+            <div class="ord">07</div>
+            <div class="name">Image fallback</div>
+            <div class="stat">PNG fallback added · 11ms</div>
+          </div>
+          <div class="repair-stage">
+            <div class="ord">08</div>
+            <div class="name">Brand</div>
+            <div class="stat">1 ΔE 14 fix · footer.legal · 9ms</div>
+          </div>
+        </div>
+        <div class="card-foot">
+          <button class="a2-btn">Pipeline config</button>
+          <button class="a2-btn ghost">Diff before/after</button>
+          <span class="grow"></span>
+          <span class="muted" style="font-size: 11px;">total 184ms · cache hit 0/8</span>
+        </div>
+      </section>
+
+      <!-- ISP analyzer -->
+      <section class="card card-tight">
+        <div class="card-head"><h4>ISP analyzer · 3 profiles</h4><span class="pill info">data/isp_profiles.yaml</span></div>
+        <div style="padding: var(--sp-4);">
+          <div class="isp-grid">
+            <div class="isp-card">
+              <div class="h">
+                <div class="badge gmail">G</div>
+                <div class="name">Gmail</div>
+                <span class="pill pass">healthy</span>
+              </div>
+              <div class="grid">
+                <div class="k">Inbox</div><div class="v">94%</div>
+                <div class="k">Spam</div><div class="v">2.1%</div>
+                <div class="k">Promotions</div><div class="v">3.9%</div>
+                <div class="k">Image clip</div><div class="v">102 KB</div>
+                <div class="k">CSS support</div><div class="v">v3 partial</div>
+                <div class="k">Dark mode</div><div class="v">prefers-color-scheme</div>
+              </div>
+              <div style="margin-top: 8px; font-size: 11px; color: var(--color-secondary);">
+                <strong style="color: var(--color-primary)">Notes:</strong> strips background-image with px units; auto-truncates &gt;102 KB; treats &lt;style&gt; in &lt;head&gt; only.
+              </div>
+            </div>
+            <div class="isp-card">
+              <div class="h">
+                <div class="badge outlook">O</div>
+                <div class="name">Microsoft</div>
+                <span class="pill warn">caution</span>
+              </div>
+              <div class="grid">
+                <div class="k">Inbox</div><div class="v">86%</div>
+                <div class="k">Junk</div><div class="v">8.4%</div>
+                <div class="k">Other</div><div class="v">5.6%</div>
+                <div class="k">Image clip</div><div class="v">no limit</div>
+                <div class="k">CSS support</div><div class="v">Word engine</div>
+                <div class="k">MSO required</div><div class="v">yes</div>
+              </div>
+              <div style="margin-top: 8px; font-size: 11px; color: var(--color-secondary);">
+                <strong style="color: var(--color-primary)">Notes:</strong> requires ghost tables; ignores most modern CSS; uses MS Word HTML engine in 2016 desktop.
+              </div>
+            </div>
+            <div class="isp-card">
+              <div class="h">
+                <div class="badge yahoo">Y</div>
+                <div class="name">Yahoo</div>
+                <span class="pill pass">healthy</span>
+              </div>
+              <div class="grid">
+                <div class="k">Inbox</div><div class="v">91%</div>
+                <div class="k">Bulk</div><div class="v">5.2%</div>
+                <div class="k">Spam</div><div class="v">3.8%</div>
+                <div class="k">Image clip</div><div class="v">no limit</div>
+                <div class="k">CSS support</div><div class="v">v2 partial</div>
+                <div class="k">Dark mode</div><div class="v">no native</div>
+              </div>
+              <div style="margin-top: 8px; font-size: 11px; color: var(--color-secondary);">
+                <strong style="color: var(--color-primary)">Notes:</strong> strips px on background-image; class selectors flaky; aggressively converts CSS3 to inline.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Two-col: snapshot regression + meta-eval -->
+      <div class="qa-cols">
+
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Snapshot regression · 4 cases</h4>
+            <div class="row gap-2">
+              <span class="pill pass">3 stable</span>
+              <span class="pill warn">1 flagged</span>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Open</button>
+            </div>
+          </div>
+          <div>
+            <div class="snap-row">
+              <span class="case-id">CASE-5</span>
+              <div class="body">
+                <div class="h">MAAP · 9/13 components match</div>
+                <div class="sub">approach B · 3 sections</div>
+              </div>
+              <div class="met">95.2%</div>
+              <div class="met" style="color:var(--color-success)">▲ 0.4</div>
+              <span class="pill pass dot">stable</span>
+            </div>
+            <div class="snap-row">
+              <span class="case-id">CASE-6</span>
+              <div class="body">
+                <div class="h">Starbucks · 5/9 components</div>
+                <div class="sub">VLM hybrid · zigzag layout</div>
+              </div>
+              <div class="met">92.8%</div>
+              <div class="met" style="color:var(--color-warning)">▼ 1.2</div>
+              <span class="pill warn dot">flagged</span>
+            </div>
+            <div class="snap-row">
+              <span class="case-id">CASE-10</span>
+              <div class="body">
+                <div class="h">Mammut · 12/18 components</div>
+                <div class="sub">approach B · sibling detection</div>
+              </div>
+              <div class="met">96.4%</div>
+              <div class="met" style="color:var(--color-success)">▲ 0.2</div>
+              <span class="pill pass dot">stable</span>
+            </div>
+            <div class="snap-row">
+              <span class="case-id">CASE-12</span>
+              <div class="body">
+                <div class="h">REFRAME 2025 · reference only</div>
+                <div class="sub">ODiff vs reference · 0.8% pixel diff</div>
+              </div>
+              <div class="met">99.2%</div>
+              <div class="met">━ 0.0</div>
+              <span class="pill pass dot">stable</span>
+            </div>
+          </div>
+          <div class="card-foot"><button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg> Visual diff</button><button class="a2-btn ghost">Update baseline</button></div>
+        </section>
+
+        <section class="card card-tight">
+          <div class="card-head"><h4>Meta-eval · confusion matrix</h4><span class="pill info">html_validation · 540 labeled</span></div>
+          <div style="padding: var(--sp-4);">
+            <div class="cm-mat">
+              <div class="head first"></div>
+              <div class="head">Predicted pass</div>
+              <div class="head">Predicted fail</div>
+              <div class="head">Total</div>
+
+              <div class="row-label">Actual pass</div>
+              <div class="cell tp">412</div>
+              <div class="cell fn">9</div>
+              <div class="cell">421</div>
+
+              <div class="row-label">Actual fail</div>
+              <div class="cell fp">14</div>
+              <div class="cell tn">105</div>
+              <div class="cell">119</div>
+
+              <div class="row-label">Total</div>
+              <div class="cell">426</div>
+              <div class="cell">114</div>
+              <div class="cell" style="font-weight: 600">540</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); margin-top: var(--sp-4);">
+              <div class="insight success">
+                <div class="label">Precision</div>
+                <div class="value" style="font-size: 16px;">0.967</div>
+                <div class="meta">412 TP / 426</div>
+              </div>
+              <div class="insight">
+                <div class="label">Recall</div>
+                <div class="value" style="font-size: 16px;">0.979</div>
+                <div class="meta">412 TP / 421</div>
+              </div>
+              <div class="insight">
+                <div class="label">F1</div>
+                <div class="value" style="font-size: 16px;">0.973</div>
+                <div class="meta">harmonic</div>
+              </div>
+              <div class="insight warning">
+                <div class="label">FP rate</div>
+                <div class="value" style="font-size: 16px;">11.8%</div>
+                <div class="meta">above threshold (10%)</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-foot"><button class="a2-btn">Threshold tuner</button><button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-history"/></svg> 30d trend</button></div>
+        </section>
+
+      </div>
+
+      <!-- Adversarial queue -->
+      <section class="card card-tight">
+        <div class="card-head"><h4>Adversarial queue · 55 cases · 7 attack types</h4><span class="pill info">87% pass</span></div>
+        <div>
+          <div class="adv-row">
+            <span class="att-type">prompt-inject</span>
+            <div class="body">
+              <div class="h">Hostile brief contains base64-encoded system override</div>
+              <div class="sub">Scaffolder rejected via prompt_guard · pattern 2/5</div>
+            </div>
+            <div class="conf">0.94</div>
+            <span class="pill pass">pass</span>
+          </div>
+          <div class="adv-row">
+            <span class="att-type">jailbreak</span>
+            <div class="body">
+              <div class="h">DAN-style "ignore previous instructions" in body copy</div>
+              <div class="sub">Content agent · stripped via injection scanner</div>
+            </div>
+            <div class="conf">0.91</div>
+            <span class="pill pass">pass</span>
+          </div>
+          <div class="adv-row">
+            <span class="att-type">brand-violation</span>
+            <div class="body">
+              <div class="h">Competitor logo URL passed via image slot</div>
+              <div class="sub">Brand stage 8 caught at ΔE 12.4 · auto-replaced</div>
+            </div>
+            <div class="conf">0.87</div>
+            <span class="pill warn">warn</span>
+          </div>
+          <div class="adv-row">
+            <span class="att-type">pii-leak</span>
+            <div class="body">
+              <div class="h">SSN-formatted string in fallback chain</div>
+              <div class="sub">PII redaction caught · LOGGING__PII_REDACTION=true</div>
+            </div>
+            <div class="conf">0.96</div>
+            <span class="pill pass">pass</span>
+          </div>
+          <div class="adv-row">
+            <span class="att-type">style-override</span>
+            <div class="body">
+              <div class="h">Inline style overrides brand red with #FF00FF</div>
+              <div class="sub">Code Reviewer flagged · sweep replaced</div>
+            </div>
+            <div class="conf">0.78</div>
+            <span class="pill warn">warn</span>
+          </div>
+          <div class="adv-row">
+            <span class="att-type">hostile-html</span>
+            <div class="body">
+              <div class="h">script tag + javascript: href in CTA</div>
+              <div class="sub">nh3 stripped at sanitization stage</div>
+            </div>
+            <div class="conf">0.99</div>
+            <span class="pill pass">pass</span>
+          </div>
+          <div class="adv-row">
+            <span class="att-type">token-budget</span>
+            <div class="body">
+              <div class="h">Brief padded with 80 KB of repeated text</div>
+              <div class="sub">Truncated at 60k token cap · graceful</div>
+            </div>
+            <div class="conf">0.62</div>
+            <span class="pill warn">warn</span>
+          </div>
+        </div>
+        <div class="card-foot">
+          <button class="a2-btn">All 55 cases</button>
+          <button class="a2-btn ghost">Generate new set</button>
+          <span class="grow"></span>
+          <span class="muted" style="font-size: 11px;">Last regenerated: 2d ago · 9 agents</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

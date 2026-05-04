@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Email Hub · Intelligence</title>
+<link rel="stylesheet" href="_shell.css" />
+<style>
+  /* Page-specific layout */
+  .ix-grid {
+    display: grid; grid-template-columns: 1fr 360px;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-6);
+  }
+  .ix-main { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .ix-side { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+
+  /* Agent proposal grid */
+  .agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  .agent-tile {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 6px;
+  }
+  .agent-tile-head { display: flex; align-items: center; gap: var(--sp-2); }
+  .agent-tile-head .av {
+    width: 26px; height: 26px; font-size: 10px; font-family: var(--font-label); font-weight: 600;
+    color: #fff; background: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .agent-tile-head .av.alt { background: var(--color-tertiary); }
+  .agent-tile-head .av.info { background: var(--color-info); }
+  .agent-tile-head .av.ok { background: var(--color-success); }
+  .agent-tile-head .av.warn { background: var(--color-warning); }
+  .agent-tile-head .av.mute { background: var(--color-muted); }
+  .agent-tile-head .name { font-weight: 600; font-size: 12.5px; color: var(--color-primary); }
+  .agent-tile-head .ver { font-size: 11px; color: var(--color-muted); font-family: var(--font-mono); margin-left: auto; }
+  .metric-row { display: flex; justify-content: space-between; font-size: 11.5px; }
+  .metric-row .k { color: var(--color-muted); font-family: var(--font-label); text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
+  .metric-row .v { font-family: var(--font-mono); color: var(--color-primary); font-size: 11.5px; }
+  .metric-row .v.up { color: var(--color-success); }
+  .metric-row .v.down { color: var(--color-danger); }
+
+  .calib-bar {
+    height: 6px; background: var(--color-border); position: relative; overflow: hidden;
+  }
+  .calib-bar .p { position: absolute; left: 0; top: 0; bottom: 0; background: var(--color-success); }
+  .calib-bar .delta-mark {
+    position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--color-tertiary);
+  }
+
+  /* Failure patterns list */
+  .fp-list { display: flex; flex-direction: column; }
+  .fp-item {
+    display: grid; grid-template-columns: 32px 1fr auto;
+    gap: var(--sp-3); align-items: center;
+    padding: 10px var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .fp-item:last-child { border-bottom: 0; }
+  .fp-item:hover { background: var(--color-surface-2); }
+  .fp-rank { font-family: var(--font-mono); color: var(--color-muted); font-size: 11px; text-align: center; }
+  .fp-body .h { font-weight: 600; font-size: 12.5px; color: var(--color-primary); }
+  .fp-body .sub { font-size: 11.5px; color: var(--color-secondary); margin-top: 2px; }
+  .fp-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .fp-meta .count { font-family: var(--font-mono); font-size: 12px; color: var(--color-primary); font-weight: 600; }
+
+  /* Score trend bars */
+  .trend-row { display: flex; align-items: center; gap: var(--sp-3); padding: 8px var(--sp-4); border-bottom: 1px solid var(--color-border); font-size: 12px; }
+  .trend-row:last-child { border-bottom: 0; }
+  .trend-row .label { width: 130px; color: var(--color-secondary); display: flex; align-items: center; gap: 6px; }
+  .trend-row .bars { flex: 1; height: 28px; }
+  .trend-row .pct { width: 56px; text-align: right; font-family: var(--font-mono); font-size: 11px; color: var(--color-primary); }
+
+  /* Adversarial */
+  .adv-mat {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+  }
+  .adv-cell {
+    aspect-ratio: 1; background: var(--color-surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 10px; color: var(--color-secondary);
+    border: 1px solid var(--color-border);
+  }
+  .adv-cell.pass { background: rgba(6,117,126,.18); color: var(--color-success); border-color: rgba(6,117,126,.32); }
+  .adv-cell.warn { background: rgba(176,122,14,.18); color: var(--color-warning); border-color: rgba(176,122,14,.32); }
+  .adv-cell.fail { background: rgba(200,69,29,.18); color: var(--color-danger); border-color: rgba(200,69,29,.32); }
+
+  /* Verdict feed */
+  .vfeed-item {
+    padding: 10px var(--sp-4); border-bottom: 1px solid var(--color-border);
+    display: grid; grid-template-columns: 64px 1fr auto; gap: var(--sp-3); align-items: center;
+    font-size: 12px;
+  }
+  .vfeed-item:last-child { border-bottom: 0; }
+  .vfeed-item:hover { background: var(--color-surface-2); }
+  .vfeed-item .ts { font-family: var(--font-mono); color: var(--color-muted); font-size: 10.5px; }
+  .vfeed-item .body .h { font-weight: 500; color: var(--color-primary); font-size: 12px; }
+  .vfeed-item .body .sub { color: var(--color-secondary); font-size: 11px; margin-top: 1px; }
+
+  .knowledge-list .k-item {
+    padding: 10px var(--sp-4); border-bottom: 1px solid var(--color-border);
+    display: flex; gap: var(--sp-3); font-size: 12px;
+  }
+  .knowledge-list .k-item:last-child { border-bottom: 0; }
+  .knowledge-list .k-item .icon-wrap {
+    width: 24px; height: 24px; flex-shrink: 0;
+    background: var(--color-surface-2); border: 1px solid var(--color-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--color-warning);
+  }
+  .knowledge-list .k-item .h { font-weight: 600; font-size: 12px; color: var(--color-primary); }
+  .knowledge-list .k-item .sub { color: var(--color-secondary); font-size: 11.5px; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-grid"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-folder"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-cube"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4V11"/><path d="M21 7v10l-9 4"/></symbol>
+    <symbol id="i-check"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></symbol>
+    <symbol id="i-x"         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-bolt"      viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+    <symbol id="i-eye"       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-spark"     viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6z"/></symbol>
+    <symbol id="i-cog"       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-bell"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-search"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="i-arrow-r"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-chevron-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-history"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-paint"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 11h2v8H3v-8h2"/><path d="M7 7l5-5 5 5v6H7z"/></symbol>
+    <symbol id="i-network"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 8v3M12 11l-5 5M12 11l5 5"/></symbol>
+    <symbol id="i-share"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M8.6 10.5l6.8-4"/></symbol>
+    <symbol id="i-rocket"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c4 0 7 4 7 9v6l-3-2h-8l-3 2v-6c0-5 3-9 7-9z"/><circle cx="12" cy="11" r="2"/></symbol>
+    <symbol id="i-database"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+    <symbol id="i-warning"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v6M12 18v.5"/></symbol>
+    <symbol id="i-info"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v.5M12 11v5"/></symbol>
+    <symbol id="i-mail"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14"/><path d="M2 7l10 7L22 7"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">EH</div>
+      <div class="brand-name">Email&nbsp;Hub</div>
+    </div>
+    <div class="brand-divider"></div>
+    <nav class="crumb">
+      <span>ACME&nbsp;Co</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span class="current">Intelligence</span>
+    </nav>
+    <button class="designmd-chip" title="Brand · Default">
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.7)"><use href="#i-paint"/></svg>
+      <span>Brand&nbsp;·&nbsp;<strong>Default</strong></span>
+      <span class="swatch">
+        <span style="background: var(--color-primary)"></span>
+        <span style="background: var(--color-secondary)"></span>
+        <span style="background: var(--color-tertiary)"></span>
+        <span style="background: var(--color-neutral); border-color: rgba(255,255,255,.3)"></span>
+      </span>
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.5)"><use href="#i-chevron-d"/></svg>
+    </button>
+
+    <nav class="page-nav">
+      <a href="index.html">Index</a>
+      <a href="intelligence.html" class="active">Intelligence</a>
+      <a href="renderings.html">Renderings</a>
+      <a href="approvals-detail.html">Approval</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="qa-engine.html">QA</a>
+    </nav>
+
+    <div class="grow"></div>
+
+    <div class="save-pill">
+      <span class="dot"></span>
+      <span>Synced · 14s ago</span>
+      <span style="color:rgba(255,255,255,.36); margin-left:4px;">·</span>
+      <span style="font-family:var(--font-mono); color:rgba(255,255,255,.6);">7d window</span>
+    </div>
+
+    <button class="btn btn-ghost"><svg class="ico"><use href="#i-search"/></svg> <span>Search</span> <span class="kbd">⌘K</span></button>
+    <button class="btn"><svg class="ico"><use href="#i-history"/></svg> Refresh</button>
+    <button class="btn btn-primary"><svg class="ico"><use href="#i-rocket"/></svg> Run eval</button>
+  </header>
+
+  <!-- LEFT ICON RAIL -->
+  <aside class="rail">
+    <button class="rail-btn"        title="Dashboard"><svg class="ico ico-lg"><use href="#i-grid"/></svg></button>
+    <button class="rail-btn"        title="Workspace"><svg class="ico ico-lg"><use href="#i-folder"/></svg></button>
+    <button class="rail-btn"        title="Components"><svg class="ico ico-lg"><use href="#i-cube"/></svg></button>
+    <button class="rail-btn"        title="Approvals"><svg class="ico ico-lg"><use href="#i-check"/></svg></button>
+    <button class="rail-btn active" title="Intelligence (current)"><svg class="ico ico-lg"><use href="#i-spark"/></svg></button>
+    <button class="rail-btn"        title="Knowledge"><svg class="ico ico-lg"><use href="#i-database"/></svg></button>
+    <button class="rail-btn"        title="Connectors"><svg class="ico ico-lg"><use href="#i-share"/></svg></button>
+    <button class="rail-btn"        title="Ecosystem"><svg class="ico ico-lg"><use href="#i-network"/></svg></button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn"        title="Notifications"><svg class="ico ico-lg"><use href="#i-bell"/></svg></button>
+    <button class="rail-btn"        title="Settings"><svg class="ico ico-lg"><use href="#i-cog"/></svg></button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Intelligence</h1>
+        <div class="page-sub">9 agents · 14 QA checks · 7-day rolling window · last refresh 14s ago</div>
+      </div>
+      <div class="grow"></div>
+      <div class="kv-row">
+        <div class="kv"><span class="k">Window</span><span class="v">7d</span></div>
+        <div class="kv"><span class="k">Runs</span><span class="v">2,418</span></div>
+        <div class="kv"><span class="k">Templates</span><span class="v">312</span></div>
+      </div>
+    </div>
+
+    <!-- DESIGN.md chip strip -->
+    <div class="designmd-strip">
+      <span><svg class="ico ico-sm" style="color:var(--color-tertiary); vertical-align:-2px"><use href="#i-paint"/></svg></span>
+      <span><span class="k">DESIGN.md</span> · v0.4.1 · 142 tokens · 9 cards</span>
+      <span style="color: var(--color-border-strong)">|</span>
+      <span class="swatch">
+        <span style="background: var(--color-primary)"></span>
+        <span style="background: var(--color-tertiary)"></span>
+        <span style="background: var(--color-info)"></span>
+        <span style="background: var(--color-success)"></span>
+        <span style="background: var(--color-warning)"></span>
+        <span style="background: var(--color-danger)"></span>
+      </span>
+      <span style="color: var(--color-border-strong)">|</span>
+      <span>Catalog · A2UI v1 · 12 cards</span>
+      <span class="grow"></span>
+      <span><a style="color:var(--color-tertiary)">Inspect</a> · <a>Diff vs prod</a></span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active"><svg class="ico ico-sm"><use href="#i-spark"/></svg> Overview</div>
+      <div class="tab">Calibration <span class="count-pill warn">3</span></div>
+      <div class="tab">Failures <span class="count-pill danger">12</span></div>
+      <div class="tab">Adversarial <span class="count-pill ok">87%</span></div>
+      <div class="tab">Knowledge</div>
+      <div class="tab">Production traces</div>
+    </div>
+
+    <!-- Top stat stripe -->
+    <div class="stripe">
+      <div class="insight success">
+        <div class="label">Templates built (7d)</div>
+        <div class="value">312</div>
+        <div class="meta"><span class="delta">▲ 18%</span><span>vs prior 7d (264)</span></div>
+      </div>
+      <div class="insight">
+        <div class="label">Gate pass rate</div>
+        <div class="value">87.4%</div>
+        <div class="meta"><span class="delta">▲ 2.1pp</span><span>14 QA checks · 4,368 evals</span></div>
+      </div>
+      <div class="insight warning">
+        <div class="label">Eval pass rate</div>
+        <div class="value">82.6%</div>
+        <div class="meta"><span class="delta down">▼ 0.4pp</span><span>9 agents · 22 dimensions</span></div>
+      </div>
+      <div class="insight info">
+        <div class="label">Avg run · cost</div>
+        <div class="value">14.2s</div>
+        <div class="meta"><span class="delta">▲ 0.8s</span><span>$0.18 avg · 14.8k tokens</span></div>
+      </div>
+    </div>
+
+    <div class="ix-grid">
+      <!-- LEFT MAIN COLUMN -->
+      <div class="ix-main">
+
+        <!-- Agent proposal grid -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Agent calibration · 9</h4>
+            <div class="row gap-2">
+              <span class="pill brand">3 calibration shifts</span>
+              <span class="pill">Last: 4h ago</span>
+              <button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Detail</button>
+            </div>
+          </div>
+          <div style="padding: var(--sp-4);">
+            <div class="agent-grid">
+
+              <!-- Scaffolder -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av">SC</div>
+                  <div class="name">Scaffolder</div>
+                  <div class="ver">v0.4.2</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v up">0.92</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v up">0.88</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v">0.90 <span style="color:var(--color-success)">▲ 0.02</span></span></div>
+                <div class="calib-bar"><div class="p" style="width:90%"></div><div class="delta-mark" style="left:88%"></div></div>
+                <div class="metric-row"><span class="k">22 cases</span><span class="v">19 pass</span></div>
+              </div>
+
+              <!-- Dark Mode -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av info">DM</div>
+                  <div class="name">Dark Mode</div>
+                  <div class="ver">v0.3.1</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v up">0.86</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v down">0.79</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v">0.82 <span style="color:var(--color-danger)">▼ 0.04</span></span></div>
+                <div class="calib-bar"><div class="p" style="width:82%; background:var(--color-warning)"></div><div class="delta-mark" style="left:86%"></div></div>
+                <div class="metric-row"><span class="k">14 cases</span><span class="v" style="color:var(--color-warning)">2 regressions</span></div>
+              </div>
+
+              <!-- Content -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av warn">CN</div>
+                  <div class="name">Content</div>
+                  <div class="ver">v0.5.0</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v up">0.91</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v up">0.85</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v">0.88 <span style="color:var(--color-success)">▲ 0.01</span></span></div>
+                <div class="calib-bar"><div class="p" style="width:88%"></div><div class="delta-mark" style="left:87%"></div></div>
+                <div class="metric-row"><span class="k">18 cases</span><span class="v">16 pass</span></div>
+              </div>
+
+              <!-- Outlook Fixer -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av">OF</div>
+                  <div class="name">Outlook Fixer</div>
+                  <div class="ver">v0.6.4</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v up">0.93</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v up">0.91</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v">0.92 <span style="color:var(--color-success)">▲ 0.03</span></span></div>
+                <div class="calib-bar"><div class="p" style="width:92%"></div><div class="delta-mark" style="left:89%"></div></div>
+                <div class="metric-row"><span class="k">11 cases</span><span class="v">11 pass</span></div>
+              </div>
+
+              <!-- Accessibility -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av">AX</div>
+                  <div class="name">Accessibility</div>
+                  <div class="ver">v0.4.0</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v up">0.89</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v up">0.84</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v">0.86 ━ 0.00</span></div>
+                <div class="calib-bar"><div class="p" style="width:86%"></div><div class="delta-mark" style="left:86%"></div></div>
+                <div class="metric-row"><span class="k">15 cases</span><span class="v">13 pass</span></div>
+              </div>
+
+              <!-- Personalisation -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av ok">PR</div>
+                  <div class="name">Personalisation</div>
+                  <div class="ver">v0.3.7</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v up">0.94</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v up">0.92</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v">0.93 <span style="color:var(--color-success)">▲ 0.01</span></span></div>
+                <div class="calib-bar"><div class="p" style="width:93%"></div><div class="delta-mark" style="left:92%"></div></div>
+                <div class="metric-row"><span class="k">9 cases</span><span class="v">9 pass</span></div>
+              </div>
+
+              <!-- Code Reviewer -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av alt">CR</div>
+                  <div class="name">Code Reviewer</div>
+                  <div class="ver">v0.4.1</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v down">0.78</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v down">0.81</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v" style="color:var(--color-danger)">0.79 ▼ 0.06</span></div>
+                <div class="calib-bar"><div class="p" style="width:79%; background:var(--color-danger)"></div><div class="delta-mark" style="left:85%"></div></div>
+                <div class="metric-row"><span class="k">17 cases</span><span class="v" style="color:var(--color-danger)">4 regressions</span></div>
+              </div>
+
+              <!-- Knowledge -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av info">KN</div>
+                  <div class="name">Knowledge</div>
+                  <div class="ver">v0.5.2</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v up">0.96</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v up">0.94</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v">0.95 <span style="color:var(--color-success)">▲ 0.02</span></span></div>
+                <div class="calib-bar"><div class="p" style="width:95%"></div><div class="delta-mark" style="left:93%"></div></div>
+                <div class="metric-row"><span class="k">12 cases</span><span class="v">12 pass</span></div>
+              </div>
+
+              <!-- Innovation -->
+              <div class="agent-tile">
+                <div class="agent-tile-head">
+                  <div class="av mute">IN</div>
+                  <div class="name">Innovation</div>
+                  <div class="ver">v0.2.0</div>
+                </div>
+                <div class="metric-row"><span class="k">TPR</span><span class="v">—</span></div>
+                <div class="metric-row"><span class="k">TNR</span><span class="v">—</span></div>
+                <div class="metric-row"><span class="k">F1 · 7d</span><span class="v" style="color:var(--color-muted)">opt-in only</span></div>
+                <div class="calib-bar"><div class="p" style="width:0%"></div></div>
+                <div class="metric-row"><span class="k" style="color:var(--color-muted)">Disabled</span><span class="v">last 14d</span></div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- Score trend bars -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>QA gate · score trend (7d)</h4>
+            <div class="row gap-2">
+              <span class="pill pass dot">87.4% pass</span>
+              <span class="pill warn dot">9.1% warn</span>
+              <span class="pill fail dot">3.5% fail</span>
+            </div>
+          </div>
+          <div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot ok"></span>html_validation</div>
+              <div class="bars">
+                <div class="bar success" style="height:88%"></div><div class="bar success" style="height:90%"></div>
+                <div class="bar success" style="height:92%"></div><div class="bar success" style="height:94%"></div>
+                <div class="bar success" style="height:96%"></div><div class="bar success" style="height:97%"></div>
+                <div class="bar success" style="height:98%"></div>
+              </div>
+              <div class="pct">98.2%</div>
+            </div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot ok"></span>css_support</div>
+              <div class="bars">
+                <div class="bar success" style="height:84%"></div><div class="bar success" style="height:85%"></div>
+                <div class="bar success" style="height:88%"></div><div class="bar success" style="height:91%"></div>
+                <div class="bar success" style="height:92%"></div><div class="bar success" style="height:94%"></div>
+                <div class="bar success" style="height:94%"></div>
+              </div>
+              <div class="pct">94.1%</div>
+            </div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot warn"></span>dark_mode</div>
+              <div class="bars">
+                <div class="bar warning" style="height:74%"></div><div class="bar warning" style="height:76%"></div>
+                <div class="bar warning" style="height:72%"></div><div class="bar warning" style="height:71%"></div>
+                <div class="bar warning" style="height:75%"></div><div class="bar warning" style="height:78%"></div>
+                <div class="bar warning" style="height:79%"></div>
+              </div>
+              <div class="pct">79.4%</div>
+            </div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot ok"></span>accessibility</div>
+              <div class="bars">
+                <div class="bar success" style="height:90%"></div><div class="bar success" style="height:91%"></div>
+                <div class="bar success" style="height:91%"></div><div class="bar success" style="height:92%"></div>
+                <div class="bar success" style="height:92%"></div><div class="bar success" style="height:93%"></div>
+                <div class="bar success" style="height:93%"></div>
+              </div>
+              <div class="pct">93.0%</div>
+            </div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot fail"></span>spam_score</div>
+              <div class="bars">
+                <div class="bar warning" style="height:68%"></div><div class="bar warning" style="height:64%"></div>
+                <div class="bar" style="height:54%; background:var(--color-danger)"></div><div class="bar warning" style="height:71%"></div>
+                <div class="bar warning" style="height:76%"></div><div class="bar warning" style="height:72%"></div>
+                <div class="bar warning" style="height:72%"></div>
+              </div>
+              <div class="pct">72.4%</div>
+            </div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot ok"></span>file_size</div>
+              <div class="bars">
+                <div class="bar success" style="height:96%"></div><div class="bar success" style="height:97%"></div>
+                <div class="bar success" style="height:97%"></div><div class="bar success" style="height:95%"></div>
+                <div class="bar success" style="height:96%"></div><div class="bar success" style="height:96%"></div>
+                <div class="bar success" style="height:96%"></div>
+              </div>
+              <div class="pct">96.4%</div>
+            </div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot ok"></span>link_validation</div>
+              <div class="bars">
+                <div class="bar success" style="height:99%"></div><div class="bar success" style="height:99%"></div>
+                <div class="bar success" style="height:99%"></div><div class="bar success" style="height:99%"></div>
+                <div class="bar success" style="height:99%"></div><div class="bar success" style="height:99%"></div>
+                <div class="bar success" style="height:99%"></div>
+              </div>
+              <div class="pct">99.6%</div>
+            </div>
+            <div class="trend-row">
+              <div class="label"><span class="status-dot warn"></span>liquid_syntax</div>
+              <div class="bars">
+                <div class="bar warning" style="height:74%"></div><div class="bar warning" style="height:78%"></div>
+                <div class="bar warning" style="height:80%"></div><div class="bar warning" style="height:82%"></div>
+                <div class="bar warning" style="height:84%"></div><div class="bar warning" style="height:86%"></div>
+                <div class="bar warning" style="height:86%"></div>
+              </div>
+              <div class="pct">86.3%</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Adversarial matrix -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Adversarial pass rate · 7 attack types × 9 agents</h4>
+            <div class="row gap-2">
+              <span class="pill pass">Pass 87%</span>
+              <span class="pill warn">Warn 9%</span>
+              <span class="pill fail">Fail 4%</span>
+            </div>
+          </div>
+          <div style="padding: var(--sp-4);">
+            <div class="adv-mat">
+              <!-- header row -->
+              <div class="adv-cell" style="background:var(--color-surface); color:var(--color-muted)">SC</div>
+              <div class="adv-cell" style="background:var(--color-surface); color:var(--color-muted)">DM</div>
+              <div class="adv-cell" style="background:var(--color-surface); color:var(--color-muted)">CN</div>
+              <div class="adv-cell" style="background:var(--color-surface); color:var(--color-muted)">OF</div>
+              <div class="adv-cell" style="background:var(--color-surface); color:var(--color-muted)">AX</div>
+              <div class="adv-cell" style="background:var(--color-surface); color:var(--color-muted)">PR</div>
+              <div class="adv-cell" style="background:var(--color-surface); color:var(--color-muted)">CR</div>
+              <!-- 7 attack rows × 7 agent cols -->
+              <div class="adv-cell pass">94</div><div class="adv-cell pass">88</div><div class="adv-cell pass">92</div><div class="adv-cell pass">96</div><div class="adv-cell pass">90</div><div class="adv-cell pass">94</div><div class="adv-cell warn">78</div>
+              <div class="adv-cell pass">96</div><div class="adv-cell pass">90</div><div class="adv-cell pass">94</div><div class="adv-cell pass">98</div><div class="adv-cell pass">94</div><div class="adv-cell pass">96</div><div class="adv-cell pass">82</div>
+              <div class="adv-cell warn">76</div><div class="adv-cell fail">62</div><div class="adv-cell warn">74</div><div class="adv-cell pass">88</div><div class="adv-cell warn">78</div><div class="adv-cell pass">86</div><div class="adv-cell fail">58</div>
+              <div class="adv-cell pass">92</div><div class="adv-cell pass">86</div><div class="adv-cell pass">88</div><div class="adv-cell pass">94</div><div class="adv-cell pass">90</div><div class="adv-cell pass">92</div><div class="adv-cell warn">78</div>
+              <div class="adv-cell pass">88</div><div class="adv-cell warn">76</div><div class="adv-cell pass">86</div><div class="adv-cell pass">90</div><div class="adv-cell pass">88</div><div class="adv-cell pass">90</div><div class="adv-cell warn">72</div>
+              <div class="adv-cell pass">94</div><div class="adv-cell pass">86</div><div class="adv-cell pass">90</div><div class="adv-cell pass">92</div><div class="adv-cell pass">90</div><div class="adv-cell pass">94</div><div class="adv-cell pass">82</div>
+              <div class="adv-cell pass">90</div><div class="adv-cell pass">82</div><div class="adv-cell pass">86</div><div class="adv-cell pass">94</div><div class="adv-cell pass">86</div><div class="adv-cell pass">90</div><div class="adv-cell warn">76</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top: var(--sp-3); font-size: 11px; color: var(--color-muted);">
+              <span>Rows: prompt-injection · jailbreak · brand-violation · pii-leak · style-override · hostile-html · token-budget</span>
+              <a style="color: var(--color-tertiary)">Inspect failures →</a>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT SIDE COLUMN -->
+      <aside class="ix-side">
+
+        <!-- Calibration delta card -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Calibration delta</h4>
+            <span class="pill warn dot">3 regressions</span>
+          </div>
+          <div style="padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <div class="metric-row"><span class="k">Global F1</span><span class="v up">0.88 ▲ 0.01</span></div>
+              <div class="bars" style="margin-top: 6px; height: 28px;">
+                <div class="bar mute" style="height:80%"></div><div class="bar mute" style="height:82%"></div>
+                <div class="bar mute" style="height:84%"></div><div class="bar success" style="height:86%"></div>
+                <div class="bar success" style="height:87%"></div><div class="bar success" style="height:88%"></div>
+                <div class="bar success" style="height:88%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="metric-row"><span class="k">TPR</span><span class="v">0.91 ▲ 0.02</span></div>
+              <div class="metric-row"><span class="k">TNR</span><span class="v">0.85 ▲ 0.00</span></div>
+              <div class="metric-row"><span class="k">Tolerance</span><span class="v">±3pp · OK</span></div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-history"/></svg> 30-day</button>
+              <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Inspect</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Top failure patterns -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Top failure patterns · 7d</h4>
+            <span class="pill brand">12</span>
+          </div>
+          <div class="fp-list">
+            <div class="fp-item">
+              <div class="fp-rank">01</div>
+              <div class="fp-body">
+                <div class="h">MSO ghost-table missing on hero</div>
+                <div class="sub"><span class="agent-chip alt">Outlook Fixer</span> · 14 templates · Outlook 2016</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">38</span>
+                <span class="pill fail dot">fail</span>
+              </div>
+            </div>
+            <div class="fp-item">
+              <div class="fp-rank">02</div>
+              <div class="fp-body">
+                <div class="h">Dark-mode text contrast &lt; 4.5:1</div>
+                <div class="sub"><span class="agent-chip info">Dark Mode</span> · Apple Mail dark · 22 templates</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">31</span>
+                <span class="pill warn dot">warn</span>
+              </div>
+            </div>
+            <div class="fp-item">
+              <div class="fp-rank">03</div>
+              <div class="fp-body">
+                <div class="h">Liquid fallback chain incomplete</div>
+                <div class="sub"><span class="agent-chip ok">Personalisation</span> · 8 templates</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">19</span>
+                <span class="pill warn dot">warn</span>
+              </div>
+            </div>
+            <div class="fp-item">
+              <div class="fp-rank">04</div>
+              <div class="fp-body">
+                <div class="h">Image alt-text missing on CTA</div>
+                <div class="sub"><span class="agent-chip">Accessibility</span> · WCAG 1.1.1</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">17</span>
+                <span class="pill fail dot">fail</span>
+              </div>
+            </div>
+            <div class="fp-item">
+              <div class="fp-rank">05</div>
+              <div class="fp-body">
+                <div class="h">Spam score &gt; 5.0 (subject + body)</div>
+                <div class="sub"><span class="agent-chip">Content</span> · 6 templates</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">14</span>
+                <span class="pill warn dot">warn</span>
+              </div>
+            </div>
+            <div class="fp-item">
+              <div class="fp-rank">06</div>
+              <div class="fp-body">
+                <div class="h">Brand color drift &gt; ΔE 12</div>
+                <div class="sub"><span class="agent-chip alt">Code Reviewer</span> · 4 templates</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">11</span>
+                <span class="pill fail dot">fail</span>
+              </div>
+            </div>
+            <div class="fp-item">
+              <div class="fp-rank">07</div>
+              <div class="fp-body">
+                <div class="h">Inline style overrides token</div>
+                <div class="sub"><span class="agent-chip alt">Code Reviewer</span> · 3 templates</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">9</span>
+                <span class="pill warn dot">warn</span>
+              </div>
+            </div>
+            <div class="fp-item">
+              <div class="fp-rank">08</div>
+              <div class="fp-body">
+                <div class="h">CSS variable not converted (Outlook)</div>
+                <div class="sub"><span class="agent-chip alt">Outlook Fixer</span> · MSO conditional</div>
+              </div>
+              <div class="fp-meta">
+                <span class="count">7</span>
+                <span class="pill warn dot">warn</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-foot">
+            <button class="a2-btn">Open all</button>
+            <button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-database"/></svg> Memory</button>
+          </div>
+        </section>
+
+        <!-- Knowledge proactive warnings -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Proactive warnings <span style="font-family:var(--font-mono); color:var(--color-muted); font-size:10px; margin-left:4px;">via pgvector</span></h4>
+            <span class="pill info">4</span>
+          </div>
+          <div class="knowledge-list">
+            <div class="k-item">
+              <div class="icon-wrap"><svg class="ico ico-sm"><use href="#i-warning"/></svg></div>
+              <div>
+                <div class="h">3-col layout fails on Outlook 2016</div>
+                <div class="sub">Component <code class="mono">card-grid-3col</code> + Gmail Mobile · pattern 0.86 conf · last seen 2h ago</div>
+              </div>
+            </div>
+            <div class="k-item">
+              <div class="icon-wrap" style="color: var(--color-info)"><svg class="ico ico-sm"><use href="#i-info"/></svg></div>
+              <div>
+                <div class="h">Dark mode hero needs explicit fg color</div>
+                <div class="sub">Component <code class="mono">hero-image</code> · Apple Mail dark · 0.92 conf</div>
+              </div>
+            </div>
+            <div class="k-item">
+              <div class="icon-wrap"><svg class="ico ico-sm"><use href="#i-warning"/></svg></div>
+              <div>
+                <div class="h">Liquid syntax not whitespace-safe</div>
+                <div class="sub">SFMC AMPscript output · 0.78 conf · 3 occurrences</div>
+              </div>
+            </div>
+            <div class="k-item">
+              <div class="icon-wrap" style="color: var(--color-info)"><svg class="ico ico-sm"><use href="#i-info"/></svg></div>
+              <div>
+                <div class="h">Yahoo strips background-image with px</div>
+                <div class="sub">Use percent or omit · pattern 0.81 conf</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Production verdicts feed -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Production verdicts · live</h4>
+            <span class="pill" style="background:rgba(228,0,43,.10); color:var(--color-tertiary);"><span class="status-dot brand"></span>streaming</span>
+          </div>
+          <div>
+            <div class="vfeed-item">
+              <div class="ts">14:38:02</div>
+              <div class="body">
+                <div class="h">eval.scaffolder · template_selection_accuracy</div>
+                <div class="sub"><span class="pill pass">pass</span> · BF2026-hero-v3 · sample rate 0.10</div>
+              </div>
+              <span class="agent-chip">SCAFFOLD</span>
+            </div>
+            <div class="vfeed-item">
+              <div class="ts">14:37:54</div>
+              <div class="body">
+                <div class="h">eval.dark_mode · contrast_ratio_violations</div>
+                <div class="sub"><span class="pill warn">warn</span> · q4-newsletter-v2 · 1 violation</div>
+              </div>
+              <span class="agent-chip info">DM</span>
+            </div>
+            <div class="vfeed-item">
+              <div class="ts">14:37:31</div>
+              <div class="body">
+                <div class="h">eval.code_reviewer · brand_token_adherence</div>
+                <div class="sub"><span class="pill fail">fail</span> · welcome-flow-step3 · ΔE 14.2</div>
+              </div>
+              <span class="agent-chip alt">CR</span>
+            </div>
+            <div class="vfeed-item">
+              <div class="ts">14:37:08</div>
+              <div class="body">
+                <div class="h">eval.knowledge · proactive_warning_relevance</div>
+                <div class="sub"><span class="pill pass">pass</span> · 4/4 warnings actionable</div>
+              </div>
+              <span class="agent-chip info">KN</span>
+            </div>
+            <div class="vfeed-item">
+              <div class="ts">14:36:48</div>
+              <div class="body">
+                <div class="h">eval.content · brand_voice_adherence</div>
+                <div class="sub"><span class="pill pass">pass</span> · score 0.91</div>
+              </div>
+              <span class="agent-chip warn">CN</span>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+
+  </main>
+
+</div>
+</body>
+</html>
