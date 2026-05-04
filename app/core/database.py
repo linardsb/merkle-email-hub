@@ -21,7 +21,7 @@ engine = create_async_engine(
     pool_size=settings.database.pool_size,
     max_overflow=settings.database.pool_max_overflow,
     pool_recycle=settings.database.pool_recycle,
-    echo=settings.environment == "development",
+    echo=settings.database.echo,
 )
 
 # Create async session factory
