@@ -40,7 +40,7 @@
 - [x] ~~48.10 Synthetic adversarial email generator~~ DONE
 - [x] ~~48.11 MCP response caching and schema compression~~ DONE
 - [x] ~~48.12 Knowledge graph proactive QA pipeline~~ DONE
-- [x] ~~48.13 Agent execution hook system with profiles~~ DONE
+- [x] ~~48.13 Agent execution hook system with profiles~~ DONE (parked to `prototypes/ai-pipeline/hooks/`, see `docs/phase-48-status.md`)
 
 - [x] ~~**Phase 49 — Design-Sync Converter Structural Fidelity**~~ DONE (see below)
 
@@ -481,7 +481,7 @@
 | 48.10 Synthetic adversarial generator | `app/qa_engine/synthetic_generator.py` | None | C | DONE |
 | 48.11 MCP response cache & compression | `app/mcp/optimization.py` | None | D | DONE |
 | 48.12 Knowledge graph proactive QA | `app/knowledge/proactive_qa.py` | None | D | DONE |
-| 48.13 Agent execution hook system | `app/ai/hooks/` | 48.2 | E | DONE |
+| 48.13 Agent execution hook system | `prototypes/ai-pipeline/hooks/` | 48.2 | E | DONE (parked, F008/F009) |
 
 > **Execution:** Five independent tracks, three with internal sequencing.
 >

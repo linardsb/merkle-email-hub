@@ -14,12 +14,14 @@ The tech-debt audit (TECH_DEBT_AUDIT.md) flagged this as F008/F009. The decision
 
 The dormant tree is at `prototypes/ai-pipeline/`. See its README for re-import prerequisites.
 
-| Path before | Path after |
-|---|---|
-| `app/ai/pipeline/` | `prototypes/ai-pipeline/pipeline/` |
-| `app/ai/agents/evaluator/` | `prototypes/ai-pipeline/agents/evaluator/` |
-| `app/ai/hooks/` | `prototypes/ai-pipeline/hooks/` |
-| `app/ai/blueprints/nodes/evaluator_node.py` | `prototypes/ai-pipeline/nodes/evaluator_node.py` |
+| Subtasks | Path before | Path after |
+|---|---|---|
+| 48.1, 48.2, 48.3, 48.5 | `app/ai/pipeline/` | `prototypes/ai-pipeline/pipeline/` |
+| 48.4 | `app/ai/agents/evaluator/` | `prototypes/ai-pipeline/agents/evaluator/` |
+| **48.13** | `app/ai/hooks/` | `prototypes/ai-pipeline/hooks/` |
+| 48.4 | `app/ai/blueprints/nodes/evaluator_node.py` | `prototypes/ai-pipeline/nodes/evaluator_node.py` |
+
+All parked subtasks are tracked **DONE (parked)** in `TODO.md`. Re-import is gated on the prerequisites in the next section.
 
 ## What stayed in `app/`
 
