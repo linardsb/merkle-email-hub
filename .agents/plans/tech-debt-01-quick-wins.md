@@ -88,7 +88,7 @@ Each subsection (A/B/C/D) is independent. Revert per subsection if `make check` 
 ## Done when
 
 - [x] 16 items committed in `eddcd1ac` (PR #40).
-- [ ] F034 verification (run `git show eddcd1ac -- app/core/config.py` — look for `extra=` change or unknown-env-var warning).
+- [x] F034 verified — resolved via path B of the audit's stated fix. `_warn_unknown_nested_env_vars()` at `app/core/config/__init__.py:236` runs in `get_settings()` (line 267) and logs `config.unknown_env_var` for typos. `extra="ignore"` retained intentionally so platform-injected vars don't break startup.
 - [x] `make check` + `make check-fe` green at merge.
 - [x] PR titled `chore(tech-debt): quick wins — F006/F007/F015/F022/F023/F031/F040/F046/F047/F050/F054/F056/F058/F062/F063/F064`.
-- [ ] In `TECH_DEBT_AUDIT.md`, mark the 16 findings as **RESOLVED** with PR #40.
+- [x] In `TECH_DEBT_AUDIT.md`, the 16 findings are marked **RESOLVED** with PR #40.
