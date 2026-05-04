@@ -2949,6 +2949,19 @@ export type ResourceResponse = {
     size_bytes?: number | null;
 };
 
+export type RevokeRequest = {
+    agent_id: string;
+    reason?: string;
+    ttl_s?: number | null;
+    restore?: boolean;
+};
+
+export type RevokeResponse = {
+    agent_id: string;
+    revoked: boolean;
+    restored: boolean;
+};
+
 export type RiskMatrixEntrySchema = {
     css: string;
     unsupported_in: Array<string>;
@@ -9485,6 +9498,31 @@ export type RunVoicePipelineApiV1AiVoiceRunPostResponses = {
 };
 
 export type RunVoicePipelineApiV1AiVoiceRunPostResponse = RunVoicePipelineApiV1AiVoiceRunPostResponses[keyof RunVoicePipelineApiV1AiVoiceRunPostResponses];
+
+export type RevokeAgentCredentialsApiV1CredentialsRevokePostData = {
+    body: RevokeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/credentials/revoke';
+};
+
+export type RevokeAgentCredentialsApiV1CredentialsRevokePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeAgentCredentialsApiV1CredentialsRevokePostError = RevokeAgentCredentialsApiV1CredentialsRevokePostErrors[keyof RevokeAgentCredentialsApiV1CredentialsRevokePostErrors];
+
+export type RevokeAgentCredentialsApiV1CredentialsRevokePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: RevokeResponse;
+};
+
+export type RevokeAgentCredentialsApiV1CredentialsRevokePostResponse = RevokeAgentCredentialsApiV1CredentialsRevokePostResponses[keyof RevokeAgentCredentialsApiV1CredentialsRevokePostResponses];
 
 export type CredentialHealthApiV1CredentialsHealthGetData = {
     body?: never;
