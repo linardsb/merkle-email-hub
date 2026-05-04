@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 
@@ -68,7 +67,7 @@ describe("use-blueprint-runs", () => {
     it("includes status param when provided", async () => {
       const { useBlueprintRuns } = await import("@/hooks/use-blueprint-runs");
       renderHook(() => useBlueprintRuns(1, "completed"));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("status=completed");
     });
   });
@@ -134,7 +133,7 @@ describe("use-failure-patterns", () => {
     it("passes correct SWR key with defaults", async () => {
       const { useFailurePatterns } = await import("@/hooks/use-failure-patterns");
       renderHook(() => useFailurePatterns({}));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("/api/v1/blueprints/failure-patterns?");
       expect(key).toContain("page=1");
       expect(key).toContain("page_size=20");
@@ -143,7 +142,7 @@ describe("use-failure-patterns", () => {
     it("includes optional filters in key", async () => {
       const { useFailurePatterns } = await import("@/hooks/use-failure-patterns");
       renderHook(() => useFailurePatterns({ agentName: "scaffolder", projectId: 5 }));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("agent_name=scaffolder");
       expect(key).toContain("project_id=5");
     });
@@ -159,14 +158,14 @@ describe("use-failure-patterns", () => {
     it("passes correct key", async () => {
       const { useFailurePatternStats } = await import("@/hooks/use-failure-patterns");
       renderHook(() => useFailurePatternStats());
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("/api/v1/blueprints/failure-patterns/stats");
     });
 
     it("includes projectId when provided", async () => {
       const { useFailurePatternStats } = await import("@/hooks/use-failure-patterns");
       renderHook(() => useFailurePatternStats(7));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("project_id=7");
     });
 
@@ -313,7 +312,7 @@ describe("use-briefs", () => {
     it("includes query params when options provided", async () => {
       const { useAllBriefItems } = await import("@/hooks/use-briefs");
       renderHook(() => useAllBriefItems({ platform: "jira" as never, status: "new" as never }));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("platform=jira");
       expect(key).toContain("status=new");
     });
@@ -459,7 +458,7 @@ describe("use-ontology", () => {
     it("includes client_ids params when provided", async () => {
       const { useCompetitiveReport } = await import("@/hooks/use-ontology");
       renderHook(() => useCompetitiveReport(["gmail", "outlook"]));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("client_ids=gmail");
       expect(key).toContain("client_ids=outlook");
     });

@@ -7,7 +7,6 @@ import type {
   BuilderAction,
   HistoryEntry,
 } from "@/types/visual-builder";
-import { DEFAULT_RESPONSIVE, DEFAULT_ADVANCED } from "@/types/visual-builder";
 import { assembleEmailHtml } from "@/lib/builder/html-assembler";
 
 const MAX_HISTORY = 50;
@@ -189,27 +188,10 @@ export function useBuilderState() {
   };
 }
 
-/**
- * Memoized assembly of the complete email HTML preview from the section list.
- * Pure assembly logic lives in `lib/builder/html-assembler.ts`; this hook only
- * threads state into a `useMemo`.
- */
+/** Memoized assembly of the email HTML preview; pure logic lives in `lib/builder/html-assembler.ts`. */
 export function useBuilderPreview(
   sections: BuilderSection[],
   templateShell?: string,
 ): string | null {
   return useMemo(() => assembleEmailHtml(sections, templateShell), [sections, templateShell]);
-}
-
-/** Creates default values for new BuilderSection fields */
-export function createSectionDefaults(): Pick<
-  BuilderSection,
-  "slotDefinitions" | "defaultTokens" | "responsive" | "advanced"
-> {
-  return {
-    slotDefinitions: [],
-    defaultTokens: null,
-    responsive: { ...DEFAULT_RESPONSIVE },
-    advanced: { ...DEFAULT_ADVANCED },
-  };
 }

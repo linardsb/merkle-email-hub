@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
@@ -180,11 +179,13 @@ describe("BrandTypographyEditor", () => {
 // 3. ScoreOverviewCards
 // ---------------------------------------------------------------------------
 describe("ScoreOverviewCards", () => {
-  const metrics = {
+  const metrics: import("@/types/qa").QADashboardMetrics = {
     totalRuns: 42,
     avgScore: 0.87,
     passRate: 0.92,
     overrideCount: 3,
+    checkAverages: [],
+    scoreTrend: [],
   };
 
   it("renders all four score cards with correct values", () => {
@@ -432,7 +433,7 @@ describe("DesignTokensView", () => {
 // ---------------------------------------------------------------------------
 describe("VisualQAPanelTab", () => {
   it("renders the Visual QA panel with button", () => {
-    render(<VisualQAPanelTab html="<h1>Hello</h1>" entityType="email" entityId={1} />);
+    render(<VisualQAPanelTab html="<h1>Hello</h1>" entityType="component_version" entityId={1} />);
 
     expect(screen.getByText("Visual QA")).toBeInTheDocument();
     expect(screen.getByText("Compare screenshots across email clients")).toBeInTheDocument();
@@ -440,14 +441,14 @@ describe("VisualQAPanelTab", () => {
   });
 
   it("disables the button when html is empty", () => {
-    render(<VisualQAPanelTab html="" entityType="email" entityId={1} />);
+    render(<VisualQAPanelTab html="" entityType="component_version" entityId={1} />);
 
     const button = screen.getByRole("button", { name: /View Visual QA/i });
     expect(button).toBeDisabled();
   });
 
   it("opens dialog when button is clicked", () => {
-    render(<VisualQAPanelTab html="<h1>Hello</h1>" entityType="email" entityId={1} />);
+    render(<VisualQAPanelTab html="<h1>Hello</h1>" entityType="component_version" entityId={1} />);
 
     fireEvent.click(screen.getByText("View Visual QA"));
     expect(screen.getByTestId("visual-qa-dialog")).toBeInTheDocument();

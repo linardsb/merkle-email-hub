@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Integration tests verifying each migrated hook passes the correct POLL constant
  * to useSmartPolling and spreads the appropriate SWR_PRESETS.
@@ -9,7 +8,7 @@ import { renderHook } from "@testing-library/react";
 // ── Mock useSmartPolling to track what interval each hook passes ──
 const mockUseSmartPolling = vi.fn((base: number) => base);
 vi.mock("@/hooks/use-smart-polling", () => ({
-  useSmartPolling: (...args: unknown[]) => mockUseSmartPolling(...args),
+  useSmartPolling: (base: number) => mockUseSmartPolling(base),
 }));
 
 // ── Standard SWR / fetcher mocks ──
@@ -35,8 +34,13 @@ const mockUseSWR = vi
   .fn()
   .mockReturnValue({ data: undefined, error: undefined, isLoading: true, mutate: vi.fn() });
 const mockUseSWRMutation = vi.fn().mockReturnValue({ trigger: vi.fn(), isMutating: false });
-vi.mock("swr", () => ({ default: (...args: unknown[]) => mockUseSWR(...args) }));
-vi.mock("swr/mutation", () => ({ default: (...args: unknown[]) => mockUseSWRMutation(...args) }));
+vi.mock("swr", () => ({
+  default: (key: unknown, fetcher: unknown, options?: unknown) => mockUseSWR(key, fetcher, options),
+}));
+vi.mock("swr/mutation", () => ({
+  default: (key: unknown, fetcher: unknown, options?: unknown) =>
+    mockUseSWRMutation(key, fetcher, options),
+}));
 
 beforeEach(() => {
   mockUseSWR.mockClear();
@@ -58,7 +62,7 @@ describe("useRenderingTestPolling — smart polling migration", () => {
     mockUseSmartPolling.mockReturnValue(4_500); // simulate blurred state
     const { useRenderingTestPolling } = await import("../use-renderings");
     renderHook(() => useRenderingTestPolling(1));
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.refreshInterval({ status: "pending" })).toBe(4_500);
     expect(options.refreshInterval({ status: "completed" })).toBe(0);
   });
@@ -66,7 +70,7 @@ describe("useRenderingTestPolling — smart polling migration", () => {
   it("spreads SWR_PRESETS.polling", async () => {
     const { useRenderingTestPolling } = await import("../use-renderings");
     renderHook(() => useRenderingTestPolling(1));
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.revalidateOnFocus).toBe(false);
     expect(options.dedupingInterval).toBe(5_000);
   });
@@ -90,7 +94,7 @@ describe("useDesignImport — smart polling migration", () => {
   it("spreads SWR_PRESETS.polling", async () => {
     const { useDesignImport } = await import("../use-design-sync");
     renderHook(() => useDesignImport(1, true));
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.revalidateOnFocus).toBe(false);
   });
 });
@@ -102,7 +106,7 @@ describe("useMCPStatus — smart polling migration", () => {
     const { useMCPStatus } = await import("../use-mcp");
     renderHook(() => useMCPStatus());
     expect(mockUseSmartPolling).toHaveBeenCalledWith(30_000);
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.refreshInterval).toBe(30_000);
     expect(options.revalidateOnFocus).toBe(false);
   });
@@ -115,7 +119,7 @@ describe("useMCPConnections — smart polling migration", () => {
     const { useMCPConnections } = await import("../use-mcp");
     renderHook(() => useMCPConnections());
     expect(mockUseSmartPolling).toHaveBeenCalledWith(15_000);
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.refreshInterval).toBe(15_000);
     expect(options.revalidateOnFocus).toBe(false);
   });
@@ -128,7 +132,7 @@ describe("useOntologySyncStatus — smart polling migration", () => {
     const { useOntologySyncStatus } = await import("../use-ontology");
     renderHook(() => useOntologySyncStatus());
     expect(mockUseSmartPolling).toHaveBeenCalledWith(60_000);
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.refreshInterval).toBe(60_000);
     expect(options.revalidateOnFocus).toBe(false);
   });
@@ -141,7 +145,7 @@ describe("usePenpotConnections — smart polling migration", () => {
     const { usePenpotConnections } = await import("../use-penpot");
     renderHook(() => usePenpotConnections());
     expect(mockUseSmartPolling).toHaveBeenCalledWith(60_000);
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.refreshInterval).toBe(60_000);
     expect(options.revalidateOnFocus).toBe(false);
   });
@@ -154,7 +158,7 @@ describe("usePlugins — smart polling migration", () => {
     const { usePlugins } = await import("../use-plugins");
     renderHook(() => usePlugins());
     expect(mockUseSmartPolling).toHaveBeenCalledWith(60_000);
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.refreshInterval).toBe(60_000);
     expect(options.revalidateOnFocus).toBe(false);
   });
@@ -167,7 +171,7 @@ describe("usePluginHealthSummary — smart polling migration", () => {
     const { usePluginHealthSummary } = await import("../use-plugins");
     renderHook(() => usePluginHealthSummary());
     expect(mockUseSmartPolling).toHaveBeenCalledWith(60_000);
-    const options = mockUseSWR.mock.calls[0][2];
+    const options = mockUseSWR.mock.calls[0]![2];
     expect(options.refreshInterval).toBe(60_000);
     expect(options.revalidateOnFocus).toBe(false);
   });

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 
@@ -72,7 +71,7 @@ describe("use-projects", () => {
 
     it("passes custom params including clientOrgId and search", () => {
       renderHook(() => useProjects({ page: 2, pageSize: 25, clientOrgId: 5, search: "acme" }));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("page=2");
       expect(key).toContain("page_size=25");
       expect(key).toContain("client_org_id=5");
@@ -126,7 +125,7 @@ describe("use-templates", () => {
   describe("useTemplates", () => {
     it("passes correct key with default params", () => {
       renderHook(() => useTemplates(1));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toBe("/api/v1/projects/1/templates?page=1&page_size=50");
     });
 
@@ -139,7 +138,7 @@ describe("use-templates", () => {
       renderHook(() =>
         useTemplates(3, { page: 2, pageSize: 10, search: "promo", status: "draft" }),
       );
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("page=2");
       expect(key).toContain("page_size=10");
       expect(key).toContain("search=promo");
@@ -221,19 +220,19 @@ describe("use-templates", () => {
   describe("useUpdateTemplate", () => {
     it("passes correct mutation key for valid templateId", () => {
       renderHook(() => useUpdateTemplate(4));
-      const key = mockUseSWRMutation.mock.calls[0][0];
+      const key = mockUseSWRMutation.mock.calls[0]![0];
       expect(key).toBe("/api/v1/templates/4");
     });
 
     it("passes null key when templateId is null", () => {
       renderHook(() => useUpdateTemplate(null));
-      const key = mockUseSWRMutation.mock.calls[0][0];
+      const key = mockUseSWRMutation.mock.calls[0]![0];
       expect(key).toBeNull();
     });
 
     it("uses patchFetcher (not mutationFetcher)", () => {
       renderHook(() => useUpdateTemplate(4));
-      const fetcherArg = mockUseSWRMutation.mock.calls[0][1];
+      const fetcherArg = mockUseSWRMutation.mock.calls[0]![1];
       expect(fetcherArg).not.toBe(mockMutationFetcher);
       expect(fetcherArg).not.toBe(mockLongMutationFetcher);
     });
@@ -304,7 +303,7 @@ describe("use-qa", () => {
 
     it("includes optional filters in key", () => {
       renderHook(() => useQAResults({ page: 3, pageSize: 5, templateVersionId: 12, passed: true }));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("page=3");
       expect(key).toContain("page_size=5");
       expect(key).toContain("template_version_id=12");
@@ -469,7 +468,7 @@ describe("use-components", () => {
 
     it("includes category and search in key", () => {
       renderHook(() => useComponents({ page: 2, pageSize: 10, category: "header", search: "nav" }));
-      const key = mockUseSWR.mock.calls[0][0] as string;
+      const key = mockUseSWR.mock.calls[0]![0] as string;
       expect(key).toContain("page=2");
       expect(key).toContain("page_size=10");
       expect(key).toContain("category=header");

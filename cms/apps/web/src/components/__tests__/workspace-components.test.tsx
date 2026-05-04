@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import type { ChatMessage, AgentMode, ChatStatus } from "@/types/chat";
@@ -469,7 +468,7 @@ describe("PresencePanel", () => {
     // The close button is the button in the header
     const closeButtons = screen.getAllByRole("button");
     // First button should be the close button (in the header)
-    fireEvent.click(closeButtons[0]);
+    fireEvent.click(closeButtons[0]!);
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
 
@@ -493,7 +492,7 @@ describe("RunCheckpoints", () => {
       error: undefined,
       mutate: vi.fn(),
       isValidating: false,
-    } as ReturnType<typeof useRunCheckpoints>);
+    } as unknown as ReturnType<typeof useRunCheckpoints>);
   });
 
   it("renders the Checkpoints toggle button", () => {
@@ -513,7 +512,7 @@ describe("RunCheckpoints", () => {
       error: undefined,
       mutate: vi.fn(),
       isValidating: false,
-    } as ReturnType<typeof useRunCheckpoints>);
+    } as unknown as ReturnType<typeof useRunCheckpoints>);
 
     render(<RunCheckpoints runId="run-1" />);
     fireEvent.click(screen.getByText("Checkpoints"));
@@ -530,7 +529,7 @@ describe("RunCheckpoints", () => {
       error: undefined,
       mutate: vi.fn(),
       isValidating: false,
-    } as ReturnType<typeof useRunCheckpoints>);
+    } as unknown as ReturnType<typeof useRunCheckpoints>);
 
     render(<RunCheckpoints runId="run-1" />);
     fireEvent.click(screen.getByText("Checkpoints"));
@@ -559,7 +558,7 @@ describe("RunCheckpoints", () => {
       error: undefined,
       mutate: vi.fn(),
       isValidating: false,
-    } as ReturnType<typeof useRunCheckpoints>);
+    } as unknown as ReturnType<typeof useRunCheckpoints>);
 
     render(<RunCheckpoints runId="run-1" />);
     fireEvent.click(screen.getByText("Checkpoints"));
@@ -584,7 +583,7 @@ describe("RunCheckpoints", () => {
       error: undefined,
       mutate: vi.fn(),
       isValidating: false,
-    } as ReturnType<typeof useRunCheckpoints>);
+    } as unknown as ReturnType<typeof useRunCheckpoints>);
 
     render(<RunCheckpoints runId="run-1" resumedFromNode="scaffolder" />);
     fireEvent.click(screen.getByText("Checkpoints"));

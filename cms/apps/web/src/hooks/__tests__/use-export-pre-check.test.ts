@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 
@@ -37,7 +36,7 @@ describe("useExportPreCheck", () => {
 
   it("uses mutationFetcher", () => {
     renderHook(() => useExportPreCheck());
-    const [, fetcher] = mockUseSWRMutation.mock.calls[0];
+    const [, fetcher] = mockUseSWRMutation.mock.calls[0]!;
     expect(fetcher).toBe(mockMutationFetcher);
   });
 
