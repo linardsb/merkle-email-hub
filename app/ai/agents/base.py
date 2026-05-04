@@ -338,6 +338,7 @@ class BaseAgentService:
         # G3 — Kill switch: short-circuit before any work.
         if self.agent_name in settings.security.disabled_agents:
             logger.warning("ai.agent_disabled", agent=self.agent_name)
+            await self._revoke_credentials_on_kill(reason="kill_switch")
             log_agent_decision(**telemetry, duration_ms=0, decision="disabled")
             raise ServiceUnavailableError(f"Agent '{self.agent_name}' is disabled")
 
@@ -536,6 +537,7 @@ class BaseAgentService:
         # G3 — Kill switch
         if self.agent_name in settings.security.disabled_agents:
             logger.warning("ai.agent_disabled", agent=self.agent_name, mode="stream")
+            await self._revoke_credentials_on_kill(reason="kill_switch")
             raise ServiceUnavailableError(f"Agent '{self.agent_name}' is disabled")
 
         # G1 — injection scan (block raises; strip returns a sanitized request)
@@ -649,3 +651,25 @@ class BaseAgentService:
         Override if your skill detection signature differs from the default.
         """
         return self.detect_relevant_skills(request)
+
+    async def _revoke_credentials_on_kill(self, *, reason: str) -> None:
+        """Revoke this agent's credential leases (51.1).
+
+        Called from the G3 kill-switch paths in ``process`` and ``stream_process``
+        so an agent disabled mid-flight cannot obtain a fresh credential lease
+        even if its in-process check is bypassed. Failures are swallowed —
+        revocation is best-effort and must never mask the original 503.
+        """
+        if not self.agent_name:
+            return
+        try:
+            from app.core.credentials import revoke_for_agent
+
+            await revoke_for_agent(self.agent_name, reason)
+        except Exception as exc:  # pragma: no cover — defensive
+            logger.warning(
+                "ai.agent_revocation_failed",
+                agent=self.agent_name,
+                reason=reason,
+                error=str(exc),
+            )
