@@ -39,12 +39,12 @@ def create_access_token(user_id: int, role: str) -> str:
         Encoded JWT access token string.
     """
     settings = get_settings()
-    expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-        minutes=settings.auth.access_token_expire_minutes
-    )
+    now = datetime.datetime.now(datetime.UTC)
+    expire = now + datetime.timedelta(minutes=settings.auth.access_token_expire_minutes)
     payload: dict[str, Any] = {  # JWT payload values are heterogeneous (str, datetime, int)
         "sub": str(user_id),
         "role": role,
+        "iat": now,
         "exp": expire,
         "type": "access",
         "jti": uuid.uuid4().hex,
@@ -63,12 +63,12 @@ def create_refresh_token(user_id: int) -> str:
         Encoded JWT refresh token string.
     """
     settings = get_settings()
-    expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-        days=settings.auth.refresh_token_expire_days
-    )
+    now = datetime.datetime.now(datetime.UTC)
+    expire = now + datetime.timedelta(days=settings.auth.refresh_token_expire_days)
     payload: dict[str, Any] = {
         "sub": str(user_id),
         "role": "",  # refresh tokens don't carry role — re-fetched on refresh
+        "iat": now,
         "exp": expire,
         "type": "refresh",
         "jti": uuid.uuid4().hex,
@@ -115,12 +115,15 @@ async def is_token_revoked(jti: str) -> bool:
         redis_client = await get_redis()
         result = await redis_client.get(f"auth:revoked:{jti}")
         return result is not None
-    except Exception:
+    except Exception as exc:  # bare except — the import inside try can also raise ImportError
         logger.warning(
             "auth.token.revocation_check_degraded",
             jti=jti,
+            error=str(exc),
+            error_type=type(exc).__name__,
             detail="Redis unavailable - token revocation check skipped (fail-open)",
         )
+        # TODO follow-up: consider in-memory short-window denylist as fallback for sustained Redis outages
         return False  # Redis down = allow (fail-open for availability, logged for operators)
 
 
@@ -139,13 +142,17 @@ def decode_token(token: str) -> TokenPayload | None:
             token,
             settings.auth.jwt_secret_key,
             algorithms=[_JWT_ALGORITHM],
+            options={"require": ["exp", "iat", "type", "jti"]},
         )
+        jti = str(payload["jti"])
+        if not jti:
+            raise InvalidTokenError("missing jti")
         return TokenPayload(
             sub=int(payload["sub"]),
             role=str(payload.get("role", "")),
             exp=datetime.datetime.fromtimestamp(float(payload["exp"]), tz=datetime.UTC),
-            type=str(payload.get("type", "access")),
-            jti=str(payload.get("jti", "")),
+            type=str(payload["type"]),
+            jti=jti,
         )
     except (InvalidTokenError, KeyError, ValueError) as e:
         logger.warning("auth.token.decode_failed", error=str(e))

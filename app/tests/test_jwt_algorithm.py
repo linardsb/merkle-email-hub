@@ -34,7 +34,14 @@ def test_decode_rejects_wrong_algorithm() -> None:
 
         # Sign with HS384 instead of HS256
         token: str = pyjwt.encode(
-            {"sub": "1", "role": "admin", "type": "access", "jti": "abc", "exp": 9999999999},
+            {
+                "sub": "1",
+                "role": "admin",
+                "type": "access",
+                "jti": "abc",
+                "iat": 1,
+                "exp": 9999999999,
+            },
             "test-secret",
             algorithm="HS384",
         )
@@ -49,7 +56,14 @@ def test_decode_rejects_none_algorithm() -> None:
 
         # Sign with empty key — PyJWT will reject on decode due to key mismatch
         token: str = pyjwt.encode(
-            {"sub": "1", "role": "admin", "type": "access", "jti": "abc", "exp": 9999999999},
+            {
+                "sub": "1",
+                "role": "admin",
+                "type": "access",
+                "jti": "abc",
+                "iat": 1,
+                "exp": 9999999999,
+            },
             "",
             algorithm="HS256",
         )
