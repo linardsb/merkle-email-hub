@@ -10828,6 +10828,53 @@
         ]
       }
     },
+    "/api/v1/credentials/revoke": {
+      "post": {
+        "tags": [
+          "credentials"
+        ],
+        "summary": "Revoke Agent Credentials",
+        "description": "Revoke (or restore) an agent's credential leases. Admin-only (51.1).\n\nSetting ``restore=true`` lifts an existing revocation. Otherwise a new\nrevocation is recorded with the supplied reason and optional TTL; if\n``ttl_s`` is omitted, ``settings.security.revocation_default_ttl_s``\napplies (``None`` = permanent until restored).",
+        "operationId": "revoke_agent_credentials_api_v1_credentials_revoke_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/credentials/health": {
       "get": {
         "tags": [
@@ -20986,6 +21033,63 @@
         ],
         "title": "ResourceResponse",
         "description": "Brief resource response."
+      },
+      "RevokeRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": "manual_admin_revocation"
+          },
+          "ttl_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttl S"
+          },
+          "restore": {
+            "type": "boolean",
+            "title": "Restore",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id"
+        ],
+        "title": "RevokeRequest"
+      },
+      "RevokeResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "revoked": {
+            "type": "boolean",
+            "title": "Revoked"
+          },
+          "restored": {
+            "type": "boolean",
+            "title": "Restored"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "revoked",
+          "restored"
+        ],
+        "title": "RevokeResponse"
       },
       "RiskMatrixEntrySchema": {
         "properties": {
