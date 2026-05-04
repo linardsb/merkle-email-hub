@@ -29,6 +29,9 @@ def mock_token_settings() -> Iterator[MagicMock]:
 
 
 def _encode(payload: dict[str, Any]) -> str:
+    # nosemgrep: python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret
+    # _SECRET is a test-only constant patched into get_settings via mock_token_settings;
+    # never reaches a real auth path. Alert #157 dismissed as false positive (test code).
     return pyjwt.encode(payload, _SECRET, algorithm="HS256")
 
 
