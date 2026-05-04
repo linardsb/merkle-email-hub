@@ -17,13 +17,25 @@ from types import MappingProxyType
 from typing import Any
 
 from app.core.config import CredentialsConfig
-from app.core.exceptions import NoHealthyCredentialsError
+from app.core.exceptions import NoHealthyCredentialsError, ServiceUnavailableError
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 # Status codes that trigger immediate cooldown
 _COOLDOWN_TRIGGER_CODES: frozenset[int] = frozenset({429, 401, 403})
+
+# 51.1 — agent revocation. Redis key holds JSON {reason, revoked_at, ttl_s}.
+_REVOCATION_KEY_PREFIX = "credentials:revoked:"
+
+
+class CredentialRevokedError(ServiceUnavailableError):
+    """Agent's credentials have been revoked by an admin or kill switch (503)."""
+
+    def __init__(self, agent_id: str, reason: str) -> None:
+        self.agent_id = agent_id
+        self.reason = reason
+        super().__init__(f"Credentials revoked for agent '{agent_id}': {reason}")
 
 
 @dataclass
@@ -91,12 +103,29 @@ class CredentialPool:
         self._lock = asyncio.Lock()
         self._fallback: dict[str, _KeyState] = {}
 
-    async def get_key(self) -> CredentialLease:
+    async def get_key(self, *, agent_id: str | None = None) -> CredentialLease:
         """Return the next healthy key via round-robin.
 
+        When ``agent_id`` is provided, the agent's revocation state is checked
+        (51.1) before any round-robin selection — opt-in for callers that have
+        an agent identity. Existing call sites without an identity bypass the
+        check and behave as before.
+
         Raises:
+            CredentialRevokedError: When ``agent_id`` is set and the agent has
+                been revoked via :func:`revoke_for_agent`.
             NoHealthyCredentialsError: When no healthy keys are available.
         """
+        if agent_id is not None:
+            revocation = await _get_revocation(agent_id)
+            if revocation is not None:
+                logger.warning(
+                    "credentials.lease_blocked_revoked",
+                    service=self._service,
+                    agent_id=agent_id,
+                    reason=revocation.get("reason", ""),
+                )
+                raise CredentialRevokedError(agent_id, str(revocation.get("reason", "")))
         async with self._lock:
             n = len(self._keys)
             for _ in range(n):
@@ -236,6 +265,118 @@ class CredentialPool:
             "unhealthy": unhealthy_count,
             "keys": keys_status,
         }
+
+
+# ── Agent Revocation (51.1) ──
+#
+# Revocation is global per-agent (not per-pool): every pool's ``get_key``
+# consults the same Redis key, so a single ``revoke_for_agent`` call blocks
+# all future leases across replicas. In-flight leases that already hold a
+# key are unaffected — they complete naturally; the agent simply cannot
+# obtain a new lease until restored or the TTL elapses.
+
+_revocation_fallback: dict[str, dict[str, Any]] = {}
+
+
+async def _get_revocation(agent_id: str) -> dict[str, Any] | None:
+    """Return the revocation record for ``agent_id`` if revoked, else ``None``."""
+    try:
+        from app.core.redis import get_redis
+
+        r = await get_redis()
+        raw = await r.get(f"{_REVOCATION_KEY_PREFIX}{agent_id}")
+        if raw is None:
+            return None
+        data: dict[str, Any] = json.loads(raw)
+        return data
+    except Exception:
+        return _revocation_fallback.get(agent_id)
+
+
+async def is_revoked(agent_id: str) -> bool:
+    """Check whether ``agent_id`` is currently revoked."""
+    return (await _get_revocation(agent_id)) is not None
+
+
+async def revoke_for_agent(
+    agent_id: str,
+    reason: str,
+    *,
+    ttl: int | None = None,
+) -> None:
+    """Revoke all future credential leases for ``agent_id``.
+
+    ``ttl`` is the revocation lifetime in seconds. ``None`` means use the
+    configured default (``settings.security.revocation_default_ttl_s``); if
+    that is also ``None`` the revocation is permanent until restored via
+    :func:`restore_for_agent` or the admin endpoint.
+
+    Idempotent: a second call replaces the existing record (useful for
+    extending a TTL or updating ``reason``).
+    """
+    effective_ttl: int | None = ttl
+    if effective_ttl is None:
+        try:
+            from app.core.config import get_settings
+
+            effective_ttl = get_settings().security.revocation_default_ttl_s
+        except Exception:
+            effective_ttl = None
+
+    record: dict[str, Any] = {
+        "reason": reason,
+        "revoked_at": time.time(),
+        "ttl_s": effective_ttl,
+    }
+    payload = json.dumps(record)
+    redis_key = f"{_REVOCATION_KEY_PREFIX}{agent_id}"
+    redis_persisted = False
+    try:
+        from app.core.redis import get_redis
+
+        r = await get_redis()
+        if effective_ttl is not None and effective_ttl > 0:
+            await r.setex(redis_key, effective_ttl, payload)
+        else:
+            await r.set(redis_key, payload)
+        redis_persisted = True
+    except Exception:
+        _revocation_fallback[agent_id] = record
+
+    logger.warning(
+        "credentials.revoked_for_agent",
+        agent_id=agent_id,
+        reason=reason,
+        ttl_s=effective_ttl,
+        redis_persisted=redis_persisted,
+    )
+
+
+async def restore_for_agent(agent_id: str) -> bool:
+    """Lift a revocation. Returns ``True`` if the agent was previously revoked."""
+    was_revoked = False
+    try:
+        from app.core.redis import get_redis
+
+        r = await get_redis()
+        deleted = await r.delete(f"{_REVOCATION_KEY_PREFIX}{agent_id}")
+        was_revoked = bool(deleted)
+    except Exception as exc:
+        # Redis unreachable — fall through to in-memory fallback below.
+        logger.debug("credentials.restore_redis_unavailable", agent_id=agent_id, error=str(exc))
+
+    if agent_id in _revocation_fallback:
+        del _revocation_fallback[agent_id]
+        was_revoked = True
+
+    if was_revoked:
+        logger.info("credentials.restored_for_agent", agent_id=agent_id)
+    return was_revoked
+
+
+def reset_revocations() -> None:
+    """Clear in-memory revocation fallback. Test-only — does not touch Redis."""
+    _revocation_fallback.clear()
 
 
 # ── Singleton Pool Registry ──

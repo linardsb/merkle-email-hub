@@ -9,7 +9,12 @@ from pydantic import BaseModel
 
 from app.auth.dependencies import require_role
 from app.auth.models import User
-from app.core.credentials import get_all_pools
+from app.core.credentials import (
+    get_all_pools,
+    is_revoked,
+    restore_for_agent,
+    revoke_for_agent,
+)
 from app.core.logging import get_logger
 from app.core.rate_limit import limiter
 
@@ -41,6 +46,57 @@ class CredentialHealthResponse(BaseModel):
     healthy_total: int
     cooled_down_total: int
     unhealthy_total: int
+
+
+class RevokeRequest(BaseModel):
+    agent_id: str
+    reason: str = "manual_admin_revocation"
+    ttl_s: int | None = None
+    restore: bool = False
+
+
+class RevokeResponse(BaseModel):
+    agent_id: str
+    revoked: bool
+    restored: bool
+
+
+@router.post("/revoke", response_model=RevokeResponse)
+@limiter.limit("30/minute")
+async def revoke_agent_credentials(
+    request: Request,  # noqa: ARG001 — required by limiter
+    payload: RevokeRequest,
+    current_user: User = Depends(require_role("admin")),  # noqa: B008
+) -> RevokeResponse:
+    """Revoke (or restore) an agent's credential leases. Admin-only (51.1).
+
+    Setting ``restore=true`` lifts an existing revocation. Otherwise a new
+    revocation is recorded with the supplied reason and optional TTL; if
+    ``ttl_s`` is omitted, ``settings.security.revocation_default_ttl_s``
+    applies (``None`` = permanent until restored).
+    """
+    if payload.restore:
+        was_revoked = await restore_for_agent(payload.agent_id)
+        logger.info(
+            "credentials.restore_requested",
+            user_id=current_user.id,
+            user_email=current_user.email,
+            agent_id=payload.agent_id,
+            was_revoked=was_revoked,
+        )
+        return RevokeResponse(agent_id=payload.agent_id, revoked=False, restored=was_revoked)
+
+    await revoke_for_agent(payload.agent_id, payload.reason, ttl=payload.ttl_s)
+    revoked = await is_revoked(payload.agent_id)
+    logger.info(
+        "credentials.revoke_requested",
+        user_id=current_user.id,
+        user_email=current_user.email,
+        agent_id=payload.agent_id,
+        reason=payload.reason,
+        ttl_s=payload.ttl_s,
+    )
+    return RevokeResponse(agent_id=payload.agent_id, revoked=revoked, restored=False)
 
 
 @router.get("/health", response_model=CredentialHealthResponse)
