@@ -1,163 +1,399 @@
 <!-- Email Shell — Complete HTML document wrapper with all email client compatibility -->
-<!DOCTYPE html>
-<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-  <meta charset="utf-8">
-  <meta name="x-apple-disable-message-reformatting">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <style>
-    td,th,div,p,a,h1,h2,h3,h4,h5,h6 {font-family: "Segoe UI", sans-serif; mso-line-height-rule: exactly;}
-  </style>
-  <![endif]-->
-  <title data-slot="email_title">Email</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      supported-color-schemes: light dark;
-    }
-    /* Base resets */
-    body { margin: 0; padding: 0; width: 100%; -webkit-text-size-adjust: 100%; }
-    img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
-    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    /* Responsive utility classes */
-    @media only screen and (max-width: 599px) {
-      .column { display: block !important; max-width: 100% !important; width: 100% !important; }
-      .bannerimg { width: 100% !important; height: auto !important; }
-      .wf, .resptab { width: 100% !important; }
-      .respimg { width: 100% !important; height: auto !important; }
-      .lfloat { float: left !important; }
-      .hide { display: none !important; max-height: 0 !important; overflow: hidden !important; mso-hide: all !important; }
-      .db { display: block !important; }
-      .show { display: block !important; margin: 0 !important; overflow: visible !important; width: auto !important; max-height: inherit !important; font-size: inherit !important; line-height: inherit !important; }
-      /* Reverse table ordering */
-      .rup { display: table-header-group !important; width: 100% !important; }
-      .ldown { display: table-footer-group !important; width: 100% !important; }
-      /* Mobile padding utilities */
-      .nopad { padding: 0 !important; }
-      .padtop0 { padding-top: 0 !important; }
-      .padtop10 { padding-top: 10px !important; }
-      .padtop20 { padding-top: 20px !important; }
-      .padtop30 { padding-top: 30px !important; }
-      .padtop40 { padding-top: 40px !important; }
-      .padbot20 { padding-bottom: 20px !important; }
-      .padbot40 { padding-bottom: 40px !important; }
-      .padl20 { padding-left: 20px !important; }
-      .padr20 { padding-right: 20px !important; }
-      .padlr20 { padding-left: 20px !important; padding-right: 20px !important; }
-      .padlr30 { padding-left: 30px !important; padding-right: 30px !important; }
-      /* Mobile text alignment */
-      .textCenter { text-align: center !important; }
-      .textLeft { text-align: left !important; }
-      /* Mobile font sizes */
-      .mobfs14 { font-size: 14px !important; line-height: 21px !important; }
-      .mobfs16 { font-size: 16px !important; line-height: 24px !important; }
-      /* Center helpers */
-      .logocenter, .ctacenter { margin: 0 auto !important; display: table !important; }
-    }
-    /* Gmail centering fix */
-    @media only screen and (max-width: 480px) {
-      u ~ .resptab { min-width: 100vw; }
-      div > u ~ .resptab { min-width: 100%; }
-    }
-    /* Dark mode — base classes */
-    @media (prefers-color-scheme: dark) {
-      .dark-bg { background-color: #1a1a2e !important; }
-      .dark-text { color: #e0e0e0 !important; }
-    }
-    [data-ogsc] .dark-bg { background-color: #1a1a2e !important; }
-    [data-ogsb] .dark-text { color: #e0e0e0 !important; }
+<!doctype html>
+<html
+    lang="en"
+    xmlns:v="urn:schemas-microsoft-com:vml"
+    xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="x-apple-disable-message-reformatting" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="format-detection"
+            content="telephone=no, date=no, address=no, email=no, url=no"
+        />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="supported-color-schemes" content="light dark" />
+        <!--[if mso]>
+            <noscript>
+                <xml>
+                    <o:OfficeDocumentSettings
+                        xmlns:o="urn:schemas-microsoft-com:office:office"
+                    >
+                        <o:PixelsPerInch>96</o:PixelsPerInch>
+                    </o:OfficeDocumentSettings>
+                </xml>
+            </noscript>
+            <style>
+                td,
+                th,
+                div,
+                p,
+                a,
+                h1,
+                h2,
+                h3,
+                h4,
+                h5,
+                h6 {
+                    font-family: "Segoe UI", sans-serif;
+                    mso-line-height-rule: exactly;
+                }
+            </style>
+        <![endif]-->
+        <title data-slot="email_title">Email</title>
+        <style>
+            :root {
+                color-scheme: light dark;
+                supported-color-schemes: light dark;
+            }
+            /* Base resets */
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                -webkit-text-size-adjust: 100%;
+            }
+            img {
+                border: 0;
+                outline: none;
+                text-decoration: none;
+                -ms-interpolation-mode: bicubic;
+            }
+            table {
+                border-collapse: collapse;
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+            }
+            /* Responsive utility classes */
+            @media only screen and (max-width: 599px) {
+                .column {
+                    display: block !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
+                }
+                .bannerimg {
+                    width: 100% !important;
+                    height: auto !important;
+                }
+                .wf,
+                .resptab {
+                    width: 100% !important;
+                }
+                .respimg {
+                    width: 100% !important;
+                    height: auto !important;
+                }
+                .lfloat {
+                    float: left !important;
+                }
+                .hide {
+                    display: none !important;
+                    max-height: 0 !important;
+                    overflow: hidden !important;
+                    mso-hide: all !important;
+                }
+                .db {
+                    display: block !important;
+                }
+                .show {
+                    display: block !important;
+                    margin: 0 !important;
+                    overflow: visible !important;
+                    width: auto !important;
+                    max-height: inherit !important;
+                    font-size: inherit !important;
+                    line-height: inherit !important;
+                }
+                /* Reverse table ordering */
+                .rup {
+                    display: table-header-group !important;
+                    width: 100% !important;
+                }
+                .ldown {
+                    display: table-footer-group !important;
+                    width: 100% !important;
+                }
+                /* Mobile padding utilities */
+                .nopad {
+                    padding: 0 !important;
+                }
+                .padtop0 {
+                    padding-top: 0 !important;
+                }
+                .padtop10 {
+                    padding-top: 10px !important;
+                }
+                .padtop20 {
+                    padding-top: 20px !important;
+                }
+                .padtop30 {
+                    padding-top: 30px !important;
+                }
+                .padtop40 {
+                    padding-top: 40px !important;
+                }
+                .padbot20 {
+                    padding-bottom: 20px !important;
+                }
+                .padbot40 {
+                    padding-bottom: 40px !important;
+                }
+                .padl20 {
+                    padding-left: 20px !important;
+                }
+                .padr20 {
+                    padding-right: 20px !important;
+                }
+                .padlr20 {
+                    padding-left: 20px !important;
+                    padding-right: 20px !important;
+                }
+                .padlr30 {
+                    padding-left: 30px !important;
+                    padding-right: 30px !important;
+                }
+                /* Mobile text alignment */
+                .textCenter {
+                    text-align: center !important;
+                }
+                .textLeft {
+                    text-align: left !important;
+                }
+                /* Mobile font sizes */
+                .mobfs14 {
+                    font-size: 14px !important;
+                    line-height: 21px !important;
+                }
+                .mobfs16 {
+                    font-size: 16px !important;
+                    line-height: 24px !important;
+                }
+                /* Center helpers */
+                .logocenter,
+                .ctacenter {
+                    margin: 0 auto !important;
+                    display: table !important;
+                }
+            }
+            /* Gmail centering fix */
+            @media only screen and (max-width: 480px) {
+                u ~ .resptab {
+                    min-width: 100vw;
+                }
+                div > u ~ .resptab {
+                    min-width: 100%;
+                }
+            }
+            /* Dark mode — base classes */
+            @media (prefers-color-scheme: dark) {
+                .dark-bg {
+                    background-color: #1a1a2e !important;
+                }
+                .dark-text {
+                    color: #e0e0e0 !important;
+                }
+            }
+            [data-ogsc] .dark-bg {
+                background-color: #1a1a2e !important;
+            }
+            [data-ogsb] .dark-text {
+                color: #e0e0e0 !important;
+            }
 
-    /* ── Component dark mode overrides ── */
-    @media (prefers-color-scheme: dark) {
-      /* Structure backgrounds */
-      .header-bg, .footer-bg, .navbar-bg, .logoheader-bg,
-      .preheader-bg, .col2-bg, .col3-bg, .col4-bg,
-      .revcol-bg, .social-bg, .textblock-bg,
-      .artcard-bg { background-color: #1a1a2e !important; }
-      .product-card { background-color: #2d2d44 !important; }
+            /* ── Component dark mode overrides ── */
+            @media (prefers-color-scheme: dark) {
+                /* Structure backgrounds */
+                .header-bg,
+                .footer-bg,
+                .navbar-bg,
+                .logoheader-bg,
+                .preheader-bg,
+                .col2-bg,
+                .col3-bg,
+                .col4-bg,
+                .revcol-bg,
+                .social-bg,
+                .textblock-bg,
+                .artcard-bg {
+                    background-color: #1a1a2e !important;
+                }
+                .product-card {
+                    background-color: #2d2d44 !important;
+                }
 
-      /* Text — links */
-      .header-link, .navbar-link, .preheader-link,
-      .footer-link { color: #8ecae6 !important; }
+                /* Text — links */
+                .header-link,
+                .navbar-link,
+                .preheader-link,
+                .footer-link {
+                    color: #8ecae6 !important;
+                }
 
-      /* Text — muted */
-      .footer-text, .social-label, .imgblock-caption { color: #b0b0b0 !important; }
-      .product-desc { color: #b0b0b0 !important; }
+                /* Text — muted */
+                .footer-text,
+                .social-label,
+                .imgblock-caption {
+                    color: #b0b0b0 !important;
+                }
+                .product-desc {
+                    color: #b0b0b0 !important;
+                }
 
-      /* Text — headings */
-      .textblock-heading, .artcard-heading, .product-title,
-      .hero-title { color: #e0e0e0 !important; }
+                /* Text — headings */
+                .textblock-heading,
+                .artcard-heading,
+                .product-title,
+                .hero-title {
+                    color: #e0e0e0 !important;
+                }
 
-      /* Text — body */
-      .textblock-body, .artcard-body,
-      .hero-subtitle { color: #cccccc !important; }
-      .product-price { color: #8ecae6 !important; }
+                /* Text — body */
+                .textblock-body,
+                .artcard-body,
+                .hero-subtitle {
+                    color: #cccccc !important;
+                }
+                .product-price {
+                    color: #8ecae6 !important;
+                }
 
-      /* Interactive */
-      .cta-btn { background-color: #4895ef !important; }
-      .cta-btn a { color: #ffffff !important; }
-      .cta-ghost { border-color: #8ecae6 !important; }
-      .cta-ghost a { color: #8ecae6 !important; }
+                /* Interactive */
+                .cta-btn {
+                    background-color: #4895ef !important;
+                }
+                .cta-btn a {
+                    color: #ffffff !important;
+                }
+                .cta-ghost {
+                    border-color: #8ecae6 !important;
+                }
+                .cta-ghost a {
+                    color: #8ecae6 !important;
+                }
 
-      /* Hero */
-      .hero-overlay { background-color: rgba(0,0,0,0.7) !important; }
+                /* Hero */
+                .hero-overlay {
+                    background-color: rgba(0, 0, 0, 0.7) !important;
+                }
 
-      /* Divider */
-      .divider-line { border-top-color: #444466 !important; }
-    }
+                /* Divider */
+                .divider-line {
+                    border-top-color: #444466 !important;
+                }
+            }
 
-    /* Outlook dark mode — backgrounds */
-    [data-ogsc] .header-bg, [data-ogsc] .footer-bg, [data-ogsc] .navbar-bg,
-    [data-ogsc] .logoheader-bg, [data-ogsc] .preheader-bg,
-    [data-ogsc] .col2-bg, [data-ogsc] .col3-bg, [data-ogsc] .col4-bg,
-    [data-ogsc] .revcol-bg, [data-ogsc] .social-bg,
-    [data-ogsc] .textblock-bg, [data-ogsc] .artcard-bg { background-color: #1a1a2e !important; }
-    [data-ogsc] .product-card { background-color: #2d2d44 !important; }
+            /* Outlook dark mode — backgrounds */
+            [data-ogsc] .header-bg,
+            [data-ogsc] .footer-bg,
+            [data-ogsc] .navbar-bg,
+            [data-ogsc] .logoheader-bg,
+            [data-ogsc] .preheader-bg,
+            [data-ogsc] .col2-bg,
+            [data-ogsc] .col3-bg,
+            [data-ogsc] .col4-bg,
+            [data-ogsc] .revcol-bg,
+            [data-ogsc] .social-bg,
+            [data-ogsc] .textblock-bg,
+            [data-ogsc] .artcard-bg {
+                background-color: #1a1a2e !important;
+            }
+            [data-ogsc] .product-card {
+                background-color: #2d2d44 !important;
+            }
 
-    /* Outlook dark mode — text */
-    [data-ogsc] .header-link, [data-ogsc] .navbar-link,
-    [data-ogsc] .preheader-link, [data-ogsc] .footer-link { color: #8ecae6 !important; }
-    [data-ogsc] .footer-text, [data-ogsc] .social-label,
-    [data-ogsc] .imgblock-caption { color: #b0b0b0 !important; }
-    [data-ogsc] .textblock-heading, [data-ogsc] .artcard-heading,
-    [data-ogsc] .product-title, [data-ogsc] .hero-title { color: #e0e0e0 !important; }
-    [data-ogsb] .textblock-body, [data-ogsb] .artcard-body,
-    [data-ogsc] .hero-subtitle { color: #cccccc !important; }
-    [data-ogsc] .product-price { color: #8ecae6 !important; }
+            /* Outlook dark mode — text */
+            [data-ogsc] .header-link,
+            [data-ogsc] .navbar-link,
+            [data-ogsc] .preheader-link,
+            [data-ogsc] .footer-link {
+                color: #8ecae6 !important;
+            }
+            [data-ogsc] .footer-text,
+            [data-ogsc] .social-label,
+            [data-ogsc] .imgblock-caption {
+                color: #b0b0b0 !important;
+            }
+            [data-ogsc] .textblock-heading,
+            [data-ogsc] .artcard-heading,
+            [data-ogsc] .product-title,
+            [data-ogsc] .hero-title {
+                color: #e0e0e0 !important;
+            }
+            [data-ogsb] .textblock-body,
+            [data-ogsb] .artcard-body,
+            [data-ogsc] .hero-subtitle {
+                color: #cccccc !important;
+            }
+            [data-ogsc] .product-price {
+                color: #8ecae6 !important;
+            }
 
-    /* Outlook dark mode — interactive & decorative */
-    [data-ogsc] .cta-btn { background-color: #4895ef !important; }
-    [data-ogsc] .cta-ghost { border-color: #8ecae6 !important; }
-    [data-ogsc] .divider-line { border-top-color: #444466 !important; }
-  </style>
-  <!-- Component-specific styles injected here -->
-  <slot data-slot="head_styles"></slot>
-</head>
-<body style="margin: 0; padding: 0; width: 100%; -webkit-text-size-adjust: 100%;">
-  <div role="article" aria-roledescription="email" aria-label="Email" lang="en" style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-    <!-- Preheader (hidden inbox preview text) -->
-    <div data-slot="preheader" style="display: none; max-height: 0; overflow: hidden; mso-hide: all;">Preview text goes here</div>
-    <!--[if mso]>
+            /* Outlook dark mode — interactive & decorative */
+            [data-ogsc] .cta-btn {
+                background-color: #4895ef !important;
+            }
+            [data-ogsc] .cta-ghost {
+                border-color: #8ecae6 !important;
+            }
+            [data-ogsc] .divider-line {
+                border-top-color: #444466 !important;
+            }
+        </style>
+        <!-- Component-specific styles injected here -->
+        <slot data-slot="head_styles"></slot>
+    </head>
+    <body
+        style="
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            -webkit-text-size-adjust: 100%;
+        "
+    >
+        <div
+            role="article"
+            aria-roledescription="email"
+            aria-label="Email"
+            lang="en"
+            style="
+                font-size: 16px;
+                font-family:
+                    -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;,
+                    Roboto, sans-serif;
+            "
+        >
+            <!-- Preheader (hidden inbox preview text) -->
+            <div
+                data-slot="preheader"
+                style="
+                    display: none;
+                    max-height: 0;
+                    overflow: hidden;
+                    mso-hide: all;
+                "
+            >
+                Preview text goes here
+            </div>
+            <!--[if mso]>
     <table role="presentation" cellpadding="0" cellspacing="0" width="600" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
     <![endif]-->
-    <div class="dark-bg" data-slot="email_body" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-      <!-- Components go here: logo-header, hero-block, column-layouts, article-cards, cta-buttons, spacers, dividers, footer, etc. -->
-      <!-- Most components are <table> blocks. Some (spacer, cell, row, list, icon) are <tr> fragments meant to go inside a table. CSS-only snippets (animations, fonts) go in <style>. -->
-    </div>
-    <!--[if mso]>
+            <div
+                class="dark-bg"
+                data-slot="email_body"
+                style="
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #ffffff;
+                "
+            >
+                <!-- Components go here: logo-header, hero-block, column-layouts, article-cards, cta-buttons, spacers, dividers, footer, etc. -->
+                <!-- All components are self-contained blocks (MSO wrapper + outer table). -->
+            </div>
+            <!--[if mso]>
     </td></tr></table>
     <![endif]-->
-  </div>
-</body>
+        </div>
+    </body>
 </html>

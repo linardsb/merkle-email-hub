@@ -1,0 +1,514 @@
+<!--
+  PHASE 50 TARGET — Opus manual build using hub components. DO NOT regenerate to match converter output.
+  Companion files: visual_design.png (source design), hub_converter_build.html (frozen Phase 49 baseline, NOT a target).
+-->
+<!doctype html>
+<html
+    lang="en"
+    xmlns:v="urn:schemas-microsoft-com:vml"
+    xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="x-apple-disable-message-reformatting" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="format-detection"
+            content="telephone=no, date=no, address=no, email=no, url=no"
+        />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="supported-color-schemes" content="light dark" />
+        <!--[if mso]>
+            <noscript>
+                <xml>
+                    <o:OfficeDocumentSettings
+                        xmlns:o="urn:schemas-microsoft-com:office:office"
+                    >
+                        <o:PixelsPerInch>96</o:PixelsPerInch>
+                    </o:OfficeDocumentSettings>
+                </xml>
+            </noscript>
+            <style>
+                td,
+                th,
+                div,
+                p,
+                a,
+                h1,
+                h2,
+                h3,
+                h4,
+                h5,
+                h6 {
+                    font-family: Arial, "Segoe UI", sans-serif;
+                    mso-line-height-rule: exactly;
+                }
+            </style>
+        <![endif]-->
+        <title>SLATE — No Sweat</title>
+        <style>
+            :root {
+                color-scheme: light dark;
+                supported-color-schemes: light dark;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                background-color: #2b2b2b;
+                -webkit-text-size-adjust: 100%;
+            }
+            img {
+                border: 0;
+                outline: none;
+                text-decoration: none;
+                -ms-interpolation-mode: bicubic;
+            }
+            table {
+                border-collapse: collapse;
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+            }
+            @media only screen and (max-width: 639px) {
+                .column {
+                    display: block !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
+                }
+                .bannerimg {
+                    width: 100% !important;
+                    height: auto !important;
+                }
+                .wf {
+                    width: 100% !important;
+                }
+                .card-stack {
+                    margin-right: 0 !important;
+                    margin-bottom: 16px !important;
+                }
+                .pad-side {
+                    padding-left: 20px !important;
+                    padding-right: 20px !important;
+                }
+            }
+        </style>
+    </head>
+    <body
+        style="
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            background-color: #2b2b2b;
+            -webkit-text-size-adjust: 100%;
+        "
+    >
+        <div
+            role="article"
+            aria-roledescription="email"
+            aria-label="SLATE — No Sweat"
+            lang="en"
+            style="
+                font-size: 16px;
+                font-family: Arial, -apple-system, BlinkMacSystemFont,
+                    'Segoe UI', Roboto, sans-serif;
+                background-color: #2b2b2b;
+            "
+        >
+            <!-- Preheader (hidden inbox preview text) -->
+            <div
+                style="
+                    display: none;
+                    max-height: 0;
+                    overflow: hidden;
+                    mso-hide: all;
+                    font-size: 1px;
+                    line-height: 1px;
+                    color: #2b2b2b;
+                "
+            >
+                We dragged a Slate through the Nevada desert in 116°F heat.
+            </div>
+            <!--[if mso]>
+            <table role="presentation" cellpadding="0" cellspacing="0" width="640" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color:#2b2b2b;"><tr><td>
+            <![endif]-->
+            <div
+                style="
+                    max-width: 640px;
+                    margin: 0 auto;
+                    background-color: #2b2b2b;
+                "
+            >
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: logo-header — Dark bar with SLATE wordmark -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+                    <tr>
+                        <td style="padding: 40px 0 24px; text-align: center;">
+                            <img src="./assets/slate_logo.png" alt="SLATE" width="218" style="display: inline-block; width: 218px; height: auto; border: 0; outline: none;" />
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: full-width-image — Hero road shot with play overlay -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; max-width: 640px; margin: 0 auto;">
+                    <tr>
+                        <td style="padding: 0; text-align: center; font-size: 0; line-height: 0; background-color: #2b2b2b;">
+                            <a href="https://example.com/video" style="text-decoration: none;">
+                                <img src="./assets/hero_road.png" class="bannerimg" alt="Slate truck driving into a desert sunset on Nevada highway" width="640" height="426" style="display: block; width: 100%; max-width: 640px; height: auto; border: 0;" />
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: heading — "NO SWEAT." -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 40px 40px 20px; font-family: Arial, sans-serif; font-size: 44px; font-weight: 700; color: #f9f9f9; line-height: 1.15; mso-line-height-rule: exactly; text-align: left;">
+                            NO SWEAT.
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: column-layout-2 with bordered cards — Place / Temperature -->
+                <!-- ============================================== -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px; font-size: 0; text-align: left; mso-line-height-rule: exactly;">
+                            <!--[if mso]>
+                            <table role="presentation" width="560" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="272" valign="top">
+                            <![endif]-->
+                            <div class="column card-stack" style="display: inline-block; max-width: 272px; width: 100%; vertical-align: top; margin-right: 16px;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #545454; border-radius: 12px; border-collapse: separate;">
+                                    <tr>
+                                        <td valign="top" style="padding: 22px;">
+                                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                                <tr>
+                                                    <td width="24" valign="top" style="padding: 2px 10px 0 0; line-height: 0;">
+                                                        <img src="./assets/icon_place.png" alt="" width="24" height="24" style="display: block; width: 24px; height: 24px; border: 0;" />
+                                                    </td>
+                                                    <td valign="top" style="font-family: Arial, sans-serif; font-size: 20px; line-height: 1.3; color: #cfcfcf; mso-line-height-rule: exactly; text-align: left;">
+                                                        <span style="color: #f9f9f9; font-weight: 700;">The Place:</span><br />The Nevada desert.
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <!--[if mso]>
+                            </td><td width="16" valign="top">&nbsp;</td><td width="272" valign="top">
+                            <![endif]-->
+                            <div class="column" style="display: inline-block; max-width: 272px; width: 100%; vertical-align: top;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #545454; border-radius: 12px; border-collapse: separate;">
+                                    <tr>
+                                        <td valign="top" style="padding: 22px;">
+                                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                                <tr>
+                                                    <td width="24" valign="top" style="padding: 2px 10px 0 0; line-height: 0;">
+                                                        <img src="./assets/icon_temp.png" alt="" width="24" height="24" style="display: block; width: 24px; height: 24px; border: 0;" />
+                                                    </td>
+                                                    <td valign="top" style="font-family: Arial, sans-serif; font-size: 20px; line-height: 1.3; color: #cfcfcf; mso-line-height-rule: exactly; text-align: left;">
+                                                        <span style="color: #f9f9f9; font-weight: 700;">The Temperature:</span><br />A balmy 116&deg; F.
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <!--[if mso]>
+                            </td></tr></table>
+                            <![endif]-->
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: spacer — between two-card row and task card -->
+                <!-- ============================================== -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td style="padding: 0; font-size: 0; line-height: 0;" height="20">&nbsp;</td>
+                    </tr>
+                </table>
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: full-width bordered card — "The task..." subhead -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #545454; border-radius: 12px; border-collapse: separate;">
+                                <tr>
+                                    <td valign="top" style="padding: 22px;">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td width="24" valign="top" style="padding: 2px 10px 0 0; line-height: 0;">
+                                                    <img src="./assets/icon_task.png" alt="" width="24" height="24" style="display: block; width: 24px; height: 24px; border: 0;" />
+                                                </td>
+                                                <td valign="top" style="font-family: Arial, sans-serif; font-size: 20px; line-height: 1.3; color: #cfcfcf; mso-line-height-rule: exactly; text-align: left;">
+                                                    <span style="color: #f9f9f9; font-weight: 700;">The task:</span> Test the Slate&rsquo;s limit in the harshest environments.
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: text-block — body paragraph -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 28px 40px 24px; font-family: Arial, sans-serif; font-size: 18px; color: #cfcfcf; line-height: 1.55; mso-line-height-rule: exactly; text-align: left;">
+                            From the Davis Dam to the Vegas Strip, our team calibrated, validated, hauled&mdash;and hydrated&mdash;to prove that a Slate can take the heat. Engineers call this a &ldquo;hot trip&rdquo; and it&rsquo;s exactly what it sounds like. Sweltering. Grab your sunscreen and come along for the ride.
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: cta (filled) — WATCH THE VIDEO with arrow -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px 40px;" align="left">
+                            <table cellpadding="0" cellspacing="0" border="0" role="presentation" bgcolor="#ff5000" style="background-color: #ff5000;">
+                                <tr>
+                                    <td align="center" style="padding: 16px 24px; font-family: Arial, sans-serif; font-size: 16px; line-height: 1; font-weight: 700; color: #000000; mso-line-height-rule: exactly;">
+                                        <a href="https://example.com/video" target="_blank" style="color: #000000; text-decoration: none; font-family: Arial, sans-serif; font-size: 16px; font-weight: 700;">
+                                            WATCH THE VIDEO
+                                            &nbsp;&nbsp;<img src="./assets/arrow_filled.png" alt="" width="24" height="24" style="display: inline-block; vertical-align: middle; border: 0; width: 24px; height: 24px;" />
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: divider — full-bleed 2px line #545454 -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td style="padding: 0;">
+                            <div style="border-top: 2px solid #545454; font-size: 1px; line-height: 1px;">&nbsp;</div>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: full-width-image — Jacket product shot -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 40px 40px 0; text-align: center; font-size: 0; line-height: 0;">
+                            <a href="https://example.com/shop" style="text-decoration: none;">
+                                <img src="./assets/jacket.png" class="bannerimg" alt="Slate work jacket with embroidered oval logo" width="560" height="373" style="display: block; width: 100%; max-width: 560px; height: auto; border: 0;" />
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: heading — "HOT TRIP, COOL GEAR." -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 32px 40px 24px; font-family: Arial, sans-serif; font-size: 36px; font-weight: 700; color: #f9f9f9; line-height: 1.15; mso-line-height-rule: exactly; text-align: left;">
+                            HOT TRIP, COOL GEAR.
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: button-ghost — SHOP NOW with orange stroke -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px 40px;" align="left">
+                            <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border: 2px solid #fe5219;">
+                                <tr>
+                                    <td align="center" style="padding: 16px 24px; font-family: Arial, sans-serif; font-size: 16px; line-height: 1; font-weight: 700; color: #ffffff; mso-line-height-rule: exactly;">
+                                        <a href="https://example.com/shop" target="_blank" style="color: #ffffff; text-decoration: none; font-family: Arial, sans-serif; font-size: 16px; font-weight: 700;">
+                                            SHOP NOW
+                                            &nbsp;&nbsp;<img src="./assets/arrow_ghost.png" alt="" width="24" height="24" style="display: inline-block; vertical-align: middle; border: 0; width: 24px; height: 24px;" />
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: divider — full-bleed 2px line #545454 -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <tr>
+                        <td style="padding: 0;">
+                            <div style="border-top: 2px solid #545454; font-size: 1px; line-height: 1px;">&nbsp;</div>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+                <!-- ============================================== -->
+                <!-- COMPONENT: footer-social — FOLLOW US + 5 socials + address + links + unsub -->
+                <!-- ============================================== -->
+                <!--[if mso]>
+                <table role="presentation" width="640" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+                <![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2b2b2b;">
+                    <!-- FOLLOW US heading -->
+                    <tr>
+                        <td class="pad-side" style="padding: 36px 40px 20px; text-align: center; font-family: Arial, sans-serif; font-size: 16px; font-weight: 700; color: #f9f9f9; line-height: 1.4; mso-line-height-rule: exactly; letter-spacing: 0.5px;">
+                            FOLLOW US
+                        </td>
+                    </tr>
+                    <!-- Social icons row -->
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px 24px; text-align: center;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="padding: 0 6px;">
+                                        <a href="https://www.instagram.com/" style="text-decoration: none;">
+                                            <img src="./assets/sm_instagram.png" alt="Instagram" width="32" height="32" style="display: block; border: 0; width: 32px; height: 32px;" />
+                                        </a>
+                                    </td>
+                                    <td style="padding: 0 6px;">
+                                        <a href="https://www.tiktok.com/" style="text-decoration: none;">
+                                            <img src="./assets/sm_tiktok.png" alt="TikTok" width="32" height="32" style="display: block; border: 0; width: 32px; height: 32px;" />
+                                        </a>
+                                    </td>
+                                    <td style="padding: 0 6px;">
+                                        <a href="https://www.facebook.com/" style="text-decoration: none;">
+                                            <img src="./assets/sm_facebook.png" alt="Facebook" width="32" height="32" style="display: block; border: 0; width: 32px; height: 32px;" />
+                                        </a>
+                                    </td>
+                                    <td style="padding: 0 6px;">
+                                        <a href="https://www.youtube.com/" style="text-decoration: none;">
+                                            <img src="./assets/sm_youtube.png" alt="YouTube" width="32" height="32" style="display: block; border: 0; width: 32px; height: 32px;" />
+                                        </a>
+                                    </td>
+                                    <td style="padding: 0 6px;">
+                                        <a href="https://www.linkedin.com/" style="text-decoration: none;">
+                                            <img src="./assets/sm_linkedin.png" alt="LinkedIn" width="32" height="32" style="display: block; border: 0; width: 32px; height: 32px;" />
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Address + copyright (Figma uses blank line between) -->
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px 24px; text-align: center; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #cfcfcf; mso-line-height-rule: exactly;">
+                            2716 Daley Drive, Troy, MI 48083<br />
+                            &nbsp;<br />
+                            &copy; 2025 Slate Auto. All rights reserved.
+                        </td>
+                    </tr>
+                    <!-- Footer link bar -->
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px 20px; text-align: center; font-family: Arial, sans-serif; font-size: 13px; font-weight: 700; line-height: 1.6; color: #ffffff; mso-line-height-rule: exactly;">
+                            <a href="https://example.com/privacy" style="color: #ffffff; text-decoration: none; font-weight: 700;">Privacy Policy</a>
+                            &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <a href="https://example.com/contact" style="color: #ffffff; text-decoration: none; font-weight: 700;">Contact Us</a>
+                            &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <a href="https://example.com/preferences" style="color: #ffffff; text-decoration: none; font-weight: 700;">Preferences</a>
+                            &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <a href="https://example.com/view-in-browser" style="color: #ffffff; text-decoration: none; font-weight: 700;">View in Browser</a>
+                        </td>
+                    </tr>
+                    <!-- Unsubscribe -->
+                    <tr>
+                        <td class="pad-side" style="padding: 0 40px 40px; text-align: center; font-family: Arial, sans-serif; font-size: 13px; font-weight: 700; line-height: 1.4; color: #f9f9f9; mso-line-height-rule: exactly;">
+                            <a href="https://example.com/unsubscribe" style="color: #f9f9f9; text-decoration: underline; font-weight: 700;">Unsubscribe</a>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+            </div>
+            <!--[if mso]>
+            </td></tr></table>
+            <![endif]-->
+        </div>
+    </body>
+</html>

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Feature flag lifecycle audit (Phase 44.3).
 
-Compares feature-flags.yaml manifest against .env.example and app/core/config.py.
-Warns on flags >90 days without a removal plan, errors on >180 days.
+Compares feature-flags.yaml manifest against .env.example and the
+``app/core/config`` package. Warns on flags >90 days without a removal
+plan, errors on >180 days.
 """
 
 from __future__ import annotations
@@ -47,65 +48,74 @@ def parse_env_flags(env_path: Path) -> set[str]:
 
 
 def parse_config_flags(config_path: Path) -> set[str]:
-    """Extract feature flag env var names from config.py.
+    """Extract feature flag env var names from the config source.
+
+    Accepts either a single ``.py`` file (legacy single-module layout) or
+    a directory (current ``app/core/config`` package). For packages, every
+    ``*.py`` file is scanned; class-tracking state is reset per file so a
+    bare ``enabled: bool`` field in one module never picks up the wrong
+    class header from another.
 
     Two strategies:
     1. Explicit inline comments: ``field: bool = ...  # ENV_VAR_NAME``
     2. Derived from Settings field → config class → _enabled fields.
        Example: ``qa_chaos: QAChaosConfig`` + ``enabled: bool`` → ``QA_CHAOS__ENABLED``
     """
-    content = config_path.read_text()
-    lines = content.splitlines()
+    py_files = sorted(config_path.rglob("*.py")) if config_path.is_dir() else [config_path]
+
     flags: set[str] = set()
 
-    # Strategy 1: explicit comments
-    comment_re = re.compile(r"#\s*([A-Z][A-Z0-9_]*_ENABLED)")
-    for line in lines:
-        m = comment_re.search(line)
-        if m:
-            flags.add(m.group(1))
-
-    # Strategy 2: derive from Settings field names + config class _enabled fields
-    # Step 2a: map class names → list of _enabled field names
+    # Aggregated across all files — class definitions in domain modules,
+    # ``Settings`` field declarations in ``__init__.py``.
     class_fields: dict[str, list[str]] = {}
-    current_class = ""
+    prefix_map: dict[str, str] = {}  # class_name → ENV_PREFIX (e.g. "QA_CHAOS")
+
+    comment_re = re.compile(r"#\s*([A-Z][A-Z0-9_]*_ENABLED)")
     class_re = re.compile(r"^class\s+(\w+)\(")
     field_re = re.compile(r"^\s+(\w+_enabled)\s*:\s*bool\s*=")
     # Also match bare "enabled: bool" (master toggles like QA_CHAOS__ENABLED)
     bare_field_re = re.compile(r"^\s+enabled\s*:\s*bool\s*=")
-
-    for line in lines:
-        cm = class_re.match(line)
-        if cm:
-            current_class = cm.group(1)
-            class_fields.setdefault(current_class, [])
-            continue
-        if current_class != "":
-            fm = field_re.match(line)
-            if fm:
-                class_fields[current_class].append(fm.group(1))
-            elif bare_field_re.match(line):
-                class_fields[current_class].append("enabled")
-
-    # Step 2b: map Settings fields → (prefix, class name)
-    # Pattern: ``field_name: SomeConfig = SomeConfig()``
     settings_re = re.compile(r"^\s+(\w+)\s*:\s*(\w+Config)\s*=")
-    in_settings = False
-    prefix_map: dict[str, str] = {}  # class_name → ENV_PREFIX (e.g. "QA_CHAOS")
 
-    for line in lines:
-        if "class Settings(" in line:
-            in_settings = True
-            continue
-        if in_settings:
-            if line.startswith("class ") or (
-                line.strip() and not line.startswith(" ") and not line.startswith("#")
-            ):
-                break
-            sm = settings_re.match(line)
-            if sm:
-                field_name, class_name = sm.group(1), sm.group(2)
-                prefix_map[class_name] = field_name.upper()
+    for py_file in py_files:
+        lines = py_file.read_text().splitlines()
+
+        # Strategy 1: explicit comments
+        for line in lines:
+            m = comment_re.search(line)
+            if m:
+                flags.add(m.group(1))
+
+        # Strategy 2a: per-file class field map (current_class resets between files)
+        current_class = ""
+        for line in lines:
+            cm = class_re.match(line)
+            if cm:
+                current_class = cm.group(1)
+                class_fields.setdefault(current_class, [])
+                continue
+            if current_class != "":
+                fm = field_re.match(line)
+                if fm:
+                    class_fields[current_class].append(fm.group(1))
+                elif bare_field_re.match(line) and "enabled" not in class_fields[current_class]:
+                    class_fields[current_class].append("enabled")
+
+        # Strategy 2b: Settings field map (only present in the package's __init__.py)
+        in_settings = False
+        for line in lines:
+            if "class Settings(" in line:
+                in_settings = True
+                continue
+            if in_settings:
+                if line.startswith("class ") or (
+                    line.strip() and not line.startswith(" ") and not line.startswith("#")
+                ):
+                    break
+                sm = settings_re.match(line)
+                if sm:
+                    field_name, class_name = sm.group(1), sm.group(2)
+                    prefix_map[class_name] = field_name.upper()
 
     # Step 2c: combine to produce env var names
     for class_name, field_list in class_fields.items():
@@ -236,8 +246,8 @@ def main() -> int:
     parser.add_argument(
         "--config",
         type=Path,
-        default=_PROJECT_ROOT / "app" / "core" / "config.py",
-        help="Path to app/core/config.py",
+        default=_PROJECT_ROOT / "app" / "core" / "config",
+        help="Path to the app/core/config package (or legacy single-file module)",
     )
     parser.add_argument(
         "--warn-only",

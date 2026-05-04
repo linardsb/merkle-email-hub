@@ -97,3 +97,29 @@ class DesignSyncConfig(BaseModel):
     # Full-design PNG threading for global visual context (Phase 50.1, Gap 9)
     full_design_png_enabled: bool = True  # DESIGN_SYNC__FULL_DESIGN_PNG_ENABLED
     vlm_low_confidence_threshold: float = 0.7  # DESIGN_SYNC__VLM_LOW_CONFIDENCE_THRESHOLD
+    # Wrapper unwrap pre-pass (Phase 50.3, Gap 1) — expand coloured mj-wrappers
+    # with ≥2 section children into per-child sections so heading + cards
+    # don't collapse into one component. Gated to MJML naming convention.
+    # Default off for one release after merge per master plan risks table;
+    # flip on once the 4 regression cases re-validate in production.
+    wrapper_unwrap_enabled: bool = False  # DESIGN_SYNC__WRAPPER_UNWRAP_ENABLED
+    # Nested-card background detection (Phase 50.4, Gap 10) — detect when a
+    # section sits on a coloured wrapper but has its own card surface
+    # (e.g. white card on lime wrapper). Renderer wraps content in a ``_inner``
+    # table when ``inner_bg`` is detected.
+    nested_card_detection_enabled: bool = True  # DESIGN_SYNC__NESTED_CARD_DETECTION_ENABLED
+    # Per-channel RGB Δ above which a PNG-sampled centroid color is considered
+    # distinct from the container background (i.e. a real inner card surface).
+    nested_card_perceptual_threshold: int = 30  # DESIGN_SYNC__NESTED_CARD_PERCEPTUAL_THRESHOLD
+    # FRAME-tree rules 7/8/10/11 (Phase 50.5) — pure FRAME-tree predicates that
+    # emit alignment, per-corner radius, and dominant-image card width without
+    # PNG sampling. Disable to fall back to Phase 50.4 behaviour.
+    frame_rules_enabled: bool = True  # DESIGN_SYNC__FRAME_RULES_ENABLED
+    # Pill x-offset tolerance (px) for Rule 7 alignment classification.
+    rule_7_alignment_tolerance_px: float = 4.0  # DESIGN_SYNC__RULE_7_ALIGNMENT_TOLERANCE_PX
+    # Physical-card identity exception (Phase 50.7, Rule 9 prep) — detect
+    # FRAMEs that depict a real plastic card so Phase 52.7's dark-mode flip
+    # can opt out and keep them visually consistent across modes. Pure
+    # FRAME-tree heuristics; runs only on sections with an ``inner_bg``.
+    physical_card_detection_enabled: bool = True  # DESIGN_SYNC__PHYSICAL_CARD_DETECTION_ENABLED
+    physical_card_min_signals: int = 2  # DESIGN_SYNC__PHYSICAL_CARD_MIN_SIGNALS

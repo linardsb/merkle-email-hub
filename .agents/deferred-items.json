@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "purpose": "Track deferred/incomplete acceptance criteria and known-by-inspection gaps from shipped phases. Reference this file when a converter / agent / pipeline regression surfaces — the answer may already be cataloged here. Add an entry whenever a phase ships with a soft acceptance criterion or a speculative gap that real-fixture data would close.",
+  "items": [
+    {
+      "id": "phase-50.7-ac-4",
+      "phase": "50.7",
+      "title": "LEGO real-fixture validation of is_physical_card_surface",
+      "status": "deferred",
+      "severity": "soft",
+      "introduced": "2026-05-03",
+      "introduced_commit": "2fe898f4",
+      "summary": "50.7 plan acceptance criterion #4 ('LEGO membership card section #16 detects 3+ signals -> is_physical=True') was not mechanically verified against real LEGO data. Detector is validated end-to-end only against synthetic DesignNode fixtures (test_lego_membership_card_pattern uses a hand-shaped tree).",
+      "code_refs": [
+        "app/design_sync/figma/physical_card_detector.py:55 (detect_physical_card_surface)",
+        "app/design_sync/figma/layout_analyzer.py:397-414 (wiring; only fires when inner_bg is not None)",
+        "app/design_sync/tests/test_physical_card_detector.py::TestPhysicalThreshold::test_lego_membership_card_pattern (synthetic only)"
+      ],
+      "symptom_if_broken": "Phase 52.7's Rule 9 dark-mode flip will incorrectly invert the LEGO Insiders membership card (and other physical-card surfaces) in dark mode, because is_physical_card_surface returns False on real Figma extractions even though the card visually qualifies.",
+      "closes_when": "Either (a) Phase 53.6 promotes LEGO into data/debug/lego/ as a regression case with manifest expectation 'sections[16].is_physical_card_surface: true', OR (b) Phase 51A pulls a slim 51.0 LEGO-promotion task forward as a prereq for 51.2/51.3/51.6.",
+      "available_data": {
+        "raw_figma_cache": ".agents/figma-cache/node_2833_1869.json (228 KB, captured 2026-04-29)",
+        "design_image": "email-templates/training_HTML/for_converter_engine/Lego/lego-insiders-halloween-assets/design_visual.png",
+        "manual_reference_html": "email-templates/training_HTML/for_converter_engine/Lego/manual_component_build.html",
+        "figma_node": "2833-1869 in file VUlWjZGAEVZr3mK1EawsYR"
+      },
+      "fast_closure_path": "Parse the cached raw_figma JSON via app.design_sync.figma.adapter.figma_to_design_node(), pass through analyze_layout(), assert sections[16].is_physical_card_surface is True. ~30-line one-off script — no live Figma PAT required.",
+      "blocks": [
+        "phase-50.7-gap-2",
+        "phase-50.7-gap-3"
+      ]
+    },
+    {
+      "id": "phase-50.7-gap-2",
+      "phase": "50.7",
+      "title": "_has_logo_on_white_field walks at most 2 nesting levels",
+      "status": "deferred",
+      "severity": "speculative",
+      "introduced": "2026-05-03",
+      "introduced_commit": "2fe898f4",
+      "summary": "Detector finds a logo image only when nested as 'card -> white-frame -> image' or 'card -> white-frame' (image is the white frame itself). Real Figma exports often add a padding wrapper between the card and the white field, producing 'card -> padding-frame -> white-frame -> image'. Detector misses the logo signal in that shape.",
+      "code_refs": [
+        "app/design_sync/figma/physical_card_detector.py:122-141 (_has_logo_on_white_field)",
+        "app/design_sync/figma/physical_card_detector.py:177-178 (_iter_self_and_children — single-level walk)"
+      ],
+      "symptom_if_broken": "Physical cards with a wrapped-white logo field score one fewer signal than expected. With only 1 of 4 signals firing, is_physical=False, and Rule 9 incorrectly dark-flips them. Particularly likely on cards with explicit padding tokens applied at multiple nesting depths.",
+      "closes_when": "Either (a) AC #4 closure surfaces this empirically and the fix lands as a follow-up, OR (b) someone writes a recursive walker mirroring _walk_image_descendants but bounded by depth (e.g. 4 levels) and adds a regression test with a real fixture.",
+      "fix_sketch": "Replace the `for child in card.children` loop with a depth-bounded BFS that examines every FRAME with a white fill at any depth <=4, then checks its descendants for image children with area <= 60% of the white field's area.",
+      "blocked_by": "phase-50.7-ac-4"
+    },
+    {
+      "id": "phase-50.7-gap-3",
+      "phase": "50.7",
+      "title": "Detection gated on inner_bg being set by 50.4",
+      "status": "deferred",
+      "severity": "speculative",
+      "introduced": "2026-05-03",
+      "introduced_commit": "2fe898f4",
+      "summary": "Wiring at layout_analyzer.py:403 only runs detect_physical_card_surface when 50.4's _detect_inner_bg returns a non-None inner_bg. If the LEGO membership card is structured as a top-level section without an outer coloured wrapper (e.g. the card IS the entire footer area, not nested inside a coloured band), inner_bg=None and detection never fires — regardless of how many signals would have matched.",
+      "code_refs": [
+        "app/design_sync/figma/layout_analyzer.py:403 (gating condition)",
+        "app/design_sync/figma/layout_analyzer.py:1457-1502 (_detect_inner_bg — requires container_bg to be set)"
+      ],
+      "symptom_if_broken": "Same as Gap 2: is_physical_card_surface=False on real cards even though the detector's signal logic would have classified them correctly if invoked.",
+      "closes_when": "AC #4 closure determines whether LEGO's section #16 has inner_bg populated. If not, either (a) relax the gate to fire on any section with corner_radius >= 16 + barcode/QR descendant, OR (b) extend 50.4's _detect_inner_bg to populate inner_bg for top-level cards (section IS the card).",
+      "blocked_by": "phase-50.7-ac-4"
+    },
+    {
+      "id": "phase-50-stranded-templates",
+      "phase": "50 (cross-cutting)",
+      "title": "3 of 7 for_converter_engine templates have no structure.json — never validated",
+      "status": "deferred",
+      "severity": "soft",
+      "introduced": "2026-05-03",
+      "introduced_commit": "754625bf",
+      "summary": "email-templates/training_HTML/for_converter_engine/ holds 7 reference templates: Lego, maap, mammut, performance_reimagined, reframe_2025, slate, Starbucks. Phase 50 wired 4 of them into data/debug/ as regression cases (maap=5, Starbucks=6, mammut=10, reframe_2025=reframe). The other 3 — Lego, performance_reimagined, slate — have figma_link.txt + visual_design.png but no extracted structure.json, so they validate nothing. Phase 50 cited LEGO heavily as the visual oracle (master plan §6, §201; 50.4 plan §208/219; 50.7 AC #4) but the data needed to enforce that oracle was never captured.",
+      "code_refs": [
+        "email-templates/training_HTML/for_converter_engine/Lego/ (figma_link.txt -> node 2833-1869)",
+        "email-templates/training_HTML/for_converter_engine/performance_reimagined/ (figma_link.txt only — no manual_component_build.html)",
+        "email-templates/training_HTML/for_converter_engine/slate/ (figma_link.txt + manual_component_build.html)",
+        "data/debug/manifest.yaml (4 cases — missing 3)"
+      ],
+      "symptom_if_broken": "Any converter regression that affects LEGO / slate / performance_reimagined patterns ships without being caught. Examples: Phase 51A composite-slot work (51.2/51.3/51.6) targeting LEGO's footer membership card, or any future Rule (52.x) whose canonical example lives in one of the 3 stranded templates.",
+      "closes_when": "Phase 53.6 promotes all 3 into data/debug/ — OR a slim 51.0 task pulls LEGO forward as a Phase 51A prereq, with performance_reimagined and slate following in 53.6.",
+      "available_data": {
+        "Lego": ".agents/figma-cache/node_2833_1869.json (228 KB, captured 2026-04-29) — parseable via figma_to_design_node()",
+        "performance_reimagined": "no cached extraction — needs live Figma access",
+        "slate": "no cached extraction — needs live Figma access"
+      },
+      "fast_closure_path": "For LEGO: ~30-line script using the cached JSON (see phase-50.7-ac-4.fast_closure_path). For perf_reimagined + slate: live Figma extract via `python -m app.design_sync.diagnose.extract --connection-id <N> --node-id <NODE>` then save to data/debug/{slug}/structure.json + tokens.json + manifest.yaml.",
+      "blocks": ["phase-51-converter-fidelity-51.2", "phase-51-converter-fidelity-51.3", "phase-51-converter-fidelity-51.6"]
+    }
+  ],
+  "tooling_followups": [
+    {
+      "id": "wire-deferred-items-into-preflight",
+      "title": "Wire deferred-items.json scan into /preflight-check",
+      "trigger": "When open_items count reaches >= 5 (currently 4)",
+      "summary": "Add a step to .claude/commands/preflight-check.md that grep s .agents/deferred-items.json for entries whose phase or code_refs overlap the plan's 'Files to Create/Modify' list, and surfaces matches in the preflight report. This converts the convention from 'rule the model must remember' to 'mechanical check that runs before /be-execute'.",
+      "acceptance": "Preflight report includes a 'Deferred Items Touching This Plan' section listing matching entries with id, summary, and severity. Empty section when no matches — never silent.",
+      "current_open_items_count": 4,
+      "see": ".claude/rules/deferred-items.md (Tooling roadmap section)"
+    }
+  ],
+  "phase_50_summary": {
+    "shipped": ["50.1", "50.2", "50.3", "50.4", "50.5", "50.6", "50.7"],
+    "shipped_commits": [
+      "b347e351 (50.1)",
+      "82481356 (50.2)",
+      "e5b0bfb4 (50.3)",
+      "7271bcb9 (50.4)",
+      "6ad3deb0 (50.5)",
+      "e24773e8 (50.6)",
+      "2fe898f4 (50.7)",
+      "0e718efb (50.7 corner_radii fallback fix)"
+    ],
+    "open_items": ["phase-50.7-ac-4", "phase-50.7-gap-2", "phase-50.7-gap-3", "phase-50-stranded-templates"],
+    "regression_baseline": "make converter-data-regression -> 38 passed, 24 skipped, 0 failed (4 cases: MAAP, Starbucks, Mammut, REFRAME). LEGO + performance_reimagined + slate not in regression suite — see phase-50-stranded-templates."
+  }
+}

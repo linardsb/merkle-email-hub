@@ -121,6 +121,28 @@ _SYSTEM_ACCESS = TenantAccess(project_ids=None, org_ids=None, role="system")
 
 
 @asynccontextmanager
+async def get_scoped_db_context(user: User) -> AsyncIterator[AsyncSession]:
+    """Standalone session for background tasks spawned by an authenticated request.
+
+    Stamps the user's `TenantAccess` so repos that call :func:`scoped_access`
+    apply the same tenant filters they would on a request-bound session. Use
+    when a route accepts a request, returns 202, and continues work in an
+    `asyncio` task that opens its own session — the originating user's scope
+    must follow the work, not vanish at the request boundary.
+
+    Cross-tenant background work (cron, webhooks with no user) keeps using
+    :func:`get_system_db_context`.
+    """
+    session = AsyncSessionLocal()
+    try:
+        access = await _resolve_access(session, user)
+        session.info["tenant_access"] = access
+        yield session
+    finally:
+        await session.close()
+
+
+@asynccontextmanager
 async def get_system_db_context() -> AsyncIterator[AsyncSession]:
     """Standalone session for background jobs (no request user).
 

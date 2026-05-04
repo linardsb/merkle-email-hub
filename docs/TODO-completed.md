@@ -6239,8 +6239,8 @@ ESLint `no-restricted-syntax` rule in `eslint.config.mjs` catches `refreshInterv
 > **GROUND-TRUTH REFERENCE:** `email-templates/training_HTML/for_converter_engine/` contains the primary validation assets for all 3 active cases:
 > - **Hand-built reference HTMLs:** `mammut-duvet-day.html` (18 sections), `starbucks-pumpkin-spice.html` (9 sections), `maap-kask.html` (13 sections) — visually verified correct output
 > - **Design screenshots:** `mammut-duvet-day.png`, `starbucks-pumpkin-spice.png`, `maap-kask.png` — full-page Figma design captures for visual comparison baseline
-> - **Section-level annotations:** `CONVERTER-REFERENCE.md` — per-section component mappings, slot fills, style overrides, bgcolor values, and design reasoning for all 3 emails. Use as assertion ground truth for correction accuracy and fidelity scoring.
-> - **Figma links + node IDs:** `training_figma_links_and_screenhsots.md` — Figma URLs, node IDs (2833-1135, 2833-1424, 2833-1623), case-to-asset directory mapping, and re-export instructions
+> - **Section-level annotations:** `docs/architecture/converter-training-reference.md` (relocated from `email-templates/training_HTML/for_converter_engine/CONVERTER-REFERENCE.md`) — per-section component mappings, slot fills, style overrides, bgcolor values, and design reasoning for all 3 emails. Use as assertion ground truth for correction accuracy and fidelity scoring.
+> - **Figma links + node IDs:** per-template `figma_link.txt` files under `email-templates/training_HTML/for_converter_engine/{template}/` (replaced legacy `training_figma_links_and_screenhsots.md`) — Figma URLs, node IDs (2833-1135, 2833-1424, 2833-1623), case-to-asset directory mapping, and re-export instructions
 >
 > **ASSET LAYOUT:** Test image assets are **case-scoped** in `data/debug/{case_id}/assets/` (not the legacy `data/design-assets/` bulk dumps):
 > - Case 5 (MAAP): `data/debug/5/assets/` — 98 images (node 2833-1623 descendants)
@@ -6252,7 +6252,7 @@ ESLint `no-restricted-syntax` rule in `eslint.config.mjs` catches `refreshInterv
 **Implementation:**
 - **New:** `app/design_sync/tests/test_visual_verify.py` — loop convergence, regression detection, max iterations, ODiff pre-filter
 - **New:** `app/design_sync/tests/test_correction_applicator.py` — each correction type, section marker targeting, inline style edge cases
-- **Extend:** `test_snapshot_regression.py` — store `design_section_screenshots/` per debug case. Run verification loop with mock VLM on 3 active cases (MAAP, Starbucks, Mammut). Assert final fidelity improves vs unverified baseline. Use `CONVERTER-REFERENCE.md` per-section bgcolor/style annotations as expected values for correction assertions.
+- **Extend:** `test_snapshot_regression.py` — store `design_section_screenshots/` per debug case. Run verification loop with mock VLM on 3 active cases (MAAP, Starbucks, Mammut). Assert final fidelity improves vs unverified baseline. Use `docs/architecture/converter-training-reference.md` per-section bgcolor/style annotations as expected values for correction assertions.
 - **New snapshot data:** Per debug case, add `design_section_screenshots/{node_id}.png` for section-level Figma exports. Full-page design PNGs from `email-templates/training_HTML/for_converter_engine/` serve as the cropping source for section-level screenshots (47.1).
 **Verify:** `make test` — all pass. `make snapshot-test` — 3 cases pass with verification metadata. Correction applicator handles all 6 correction types. Loop handles VLM timeout/error gracefully.
 

@@ -6,6 +6,14 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    ignore:
+      # Pinned by cognee[graph] extra (cognee depends on gunicorn<24).
+      # Resolver fails any major-version bump until cognee relaxes its constraint.
+      - dependency-name: "gunicorn"
+        update-types: ["version-update:semver-major"]
+      # Pinned by cognee → fastapi-users (==0.0.20). Skip patch/minor bumps
+      # so Dependabot stops attempting unsatisfiable upgrades.
+      - dependency-name: "python-multipart"
 
   # Mock ESP sidecar (pip / requirements.txt)
   - package-ecosystem: "pip"

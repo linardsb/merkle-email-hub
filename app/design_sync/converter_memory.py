@@ -115,12 +115,12 @@ async def persist_conversion_quality(
 
         metadata = build_conversion_metadata(result, connection_id)
 
-        from app.core.database import get_db_context
+        from app.core.scoped_db import get_system_db_context
         from app.knowledge.embedding import get_embedding_provider
         from app.memory.schemas import MemoryCreate
         from app.memory.service import MemoryService
 
-        async with get_db_context() as db:
+        async with get_system_db_context() as db:
             embedding_provider = get_embedding_provider(settings)
             service = MemoryService(db, embedding_provider)
             await service.store(

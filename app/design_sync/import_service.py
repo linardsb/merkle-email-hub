@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Literal
 
 from app.auth.models import User
 from app.core.config import get_settings
-from app.core.database import get_db_context
 from app.core.logging import get_logger
+from app.core.scoped_db import get_scoped_db_context
 from app.design_sync.exceptions import SyncFailedError
 from app.design_sync.models import DesignConnection
 from app.design_sync.protocol import (
@@ -70,7 +70,7 @@ def _on_learning_task_done(task: asyncio.Task[None]) -> None:
 class DesignImportService:
     """Orchestrates the Figma → Scaffolder → Template conversion pipeline.
 
-    Runs as a background task with its own DB session (via get_db_context).
+    Runs as a background task with its own DB session (via get_scoped_db_context).
     Updates DesignImport status as it progresses:
     pending → converting → completed/failed
     """
@@ -95,8 +95,10 @@ class DesignImportService:
         """Background pipeline: layout analysis → asset download → Scaffolder → Template creation.
 
         Creates its own DB session to avoid sharing the request-scoped session.
+        Stamps the originating user's tenant scope so repo-level scoping holds
+        when the request boundary releases its session.
         """
-        async with get_db_context() as db:
+        async with get_scoped_db_context(self._user) as db:
             repo = DesignSyncRepository(db)
             design_service = self._service_factory(db)
 

@@ -11,6 +11,16 @@ from typing import TYPE_CHECKING
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.design_sync.figma.physical_card_detector import (
+    collect_sibling_radii,
+    detect_physical_card_surface,
+)
+from app.design_sync.frame_rules import (
+    CornerRadiusSpec,
+    rule_8_corner_radius,
+    rule_10_image_corner_radii,
+    rule_11_card_width_from_dominant_image,
+)
 from app.design_sync.protocol import DesignFileStructure, DesignNode, DesignNodeType, StyleRun
 
 if TYPE_CHECKING:
@@ -73,6 +83,9 @@ class TextBlock:
     text_decoration: str | None = None  # underline|line-through
     source_frame_id: str | None = None  # Parent frame that contains this text
     role_hint: str | None = None  # "heading" | "body" | "label" | "cta"
+    # Rule 7 (Phase 50.5) — alignment derived from x-offset against parent column.
+    # Populated only when the text was identified as a tag/pill candidate.
+    layout_align: str | None = None  # "left" | "center" | "right" | None
 
 
 @dataclass(frozen=True)
@@ -85,6 +98,8 @@ class ImagePlaceholder:
     height: float | None = None
     is_background: bool = False
     export_node_id: str | None = None  # Frame node to export (includes bg fills)
+    # Rule 10 (Phase 50.5) — per-corner radii from rectangleCornerRadii.
+    corner_radius_spec: CornerRadiusSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -102,6 +117,8 @@ class ButtonElement:
     stroke_color: str | None = None
     stroke_weight: float | None = None
     icon_node_id: str | None = None
+    # Rule 8 (Phase 50.5) — per-corner radii on tag/pill non-CTA frames.
+    corner_radius_spec: CornerRadiusSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -161,6 +178,33 @@ class EmailSection:
     vlm_confidence: float | None = None
     content_roles: tuple[str, ...] = ()
     child_content_groups: list[ContentGroup] = field(default_factory=list[ContentGroup])
+    # Section-boundary classification (Phase 50.2) — populated by
+    # ``classify_section_boundaries`` when a global design PNG is available.
+    boundary_above: str | None = None
+    boundary_below: str | None = None
+    sampled_top_color: str | None = None
+    sampled_bottom_color: str | None = None
+    # Wrapper unwrap pre-pass (Phase 50.3, Gap 1) — populated when a coloured
+    # ``mj-wrapper`` is expanded into its child sections; ``container_bg`` is
+    # the wrapper's own fill propagated to each child, and ``parent_wrapper_id``
+    # records the source wrapper node id for downstream Rule 1 logic.
+    container_bg: str | None = None
+    parent_wrapper_id: str | None = None
+    # Nested-card background (Phase 50.4, Gap 10) — when the section sits on a
+    # coloured wrapper but has its own card surface (e.g. white card on lime
+    # wrapper), ``inner_bg`` carries the card's own fill and ``inner_radius``
+    # carries its border radius. Renderer emits these on a ``_inner`` table.
+    inner_bg: str | None = None
+    inner_radius: float | None = None
+    # Rule 11 (Phase 50.5) — when all direct image children share the same
+    # max-width, the inner card pins its width to that dominant image width.
+    inner_card_fixed_width: int | None = None
+    # Physical-card identity exception (Phase 50.7, Rule 9 prep) — when the
+    # nested card visually depicts a real plastic card (membership card,
+    # boarding pass, loyalty card), Rule 9's dark-mode flip must skip it.
+    # ``physical_card_signals`` records which heuristics fired (telemetry).
+    is_physical_card_surface: bool = False
+    physical_card_signals: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -226,7 +270,7 @@ def analyze_layout(
     section_name_map: dict[str, str] | None = None,
     button_name_hints: list[str] | None = None,
     vlm_classifications: dict[str, VLMSectionClassification] | None = None,
-    global_design_image: bytes | None = None,  # noqa: ARG001  Phase 50.1 pass-through; consumed in 50.4/50.5/50.7
+    global_design_image: bytes | None = None,
 ) -> DesignLayoutDescription:
     """Analyze a design file structure and detect email sections.
 
@@ -244,24 +288,34 @@ def analyze_layout(
         return DesignLayoutDescription(file_name=structure.file_name)
 
     page = _find_primary_page(structure.pages)
-    candidates = _get_section_candidates(page)
+    raw_candidates = _get_section_candidates(page)
 
-    if not candidates:
+    if not raw_candidates:
         return DesignLayoutDescription(file_name=structure.file_name)
 
-    # Detect naming convention
+    # Detect naming convention from raw frames so the wrapper-unwrap pre-pass
+    # can gate on it. Naming detection is keyword-pattern-based and unaffected
+    # by whether wrappers have been expanded.
     if naming_convention == "auto":
-        convention = _detect_naming_convention(candidates)
+        convention = _detect_naming_convention(raw_candidates)
     elif naming_convention == "custom" and section_name_map:
         convention = NamingConvention.CUSTOM
     else:
         try:
             convention = NamingConvention(naming_convention)
         except ValueError:
-            convention = _detect_naming_convention(candidates)
+            convention = _detect_naming_convention(raw_candidates)
+
+    # Wrapper unwrap pre-pass (Phase 50.3) — expand coloured ``mj-wrapper``s
+    # with ≥2 section children into per-child sections, propagating the
+    # wrapper fill. Gated to MJML naming + ``wrapper_unwrap_enabled`` flag.
+    candidates = _expand_container_wrappers(raw_candidates, convention)
 
     # Determine overall width from the widest top-level frame
-    overall_width = max((c.width for c in candidates if c.width is not None), default=None)
+    overall_width = max(
+        (node.width for node, _, _ in candidates if node.width is not None),
+        default=None,
+    )
 
     # Build sections
     sections: list[EmailSection] = []
@@ -271,7 +325,7 @@ def analyze_layout(
         if vlm_classifications
         else 0.0
     )
-    for idx, node in enumerate(candidates):
+    for idx, (node, container_bg, parent_wrapper_id) in enumerate(candidates):
         section_type, classification_confidence = _classify_section(
             node,
             convention,
@@ -325,6 +379,40 @@ def analyze_layout(
         # Extract child content groups (preserves parent-child structure)
         child_groups = _extract_content_groups(node, button_name_hints=button_name_hints)
 
+        # Nested-card surface detection (Phase 50.4, Gap 10)
+        inner_bg, inner_radius = _detect_inner_bg(
+            node,
+            container_bg=container_bg,
+            global_design_image=global_design_image,
+        )
+
+        # Rule 11 (Phase 50.5) — pin inner card width to dominant image width.
+        # Only meaningful when a nested card was actually detected.
+        inner_card_fixed_width: int | None = None
+        if inner_bg is not None and get_settings().design_sync.frame_rules_enabled:
+            card_spec = rule_11_card_width_from_dominant_image(node)
+            if card_spec is not None:
+                inner_card_fixed_width = card_spec.fixed_width_px
+
+        # Physical-card identity exception (Phase 50.7) — runs only on sections
+        # that already carry a card surface (inner_bg). Rule 9 (Phase 52.7)
+        # reads ``is_physical_card_surface`` to skip the dark-mode flip.
+        is_physical_card_surface = False
+        physical_card_signals: tuple[str, ...] = ()
+        ds_cfg = get_settings().design_sync
+        if inner_bg is not None and ds_cfg.physical_card_detection_enabled:
+            sibling_radii = collect_sibling_radii(
+                [n for n, _, _ in candidates],
+                exclude_node_id=node.id,
+            )
+            detection = detect_physical_card_surface(
+                node,
+                sibling_radii=sibling_radii,
+                min_signals=ds_cfg.physical_card_min_signals,
+            )
+            is_physical_card_surface = detection.is_physical
+            physical_card_signals = detection.signals
+
         sections.append(
             EmailSection(
                 section_type=section_type,
@@ -350,6 +438,13 @@ def analyze_layout(
                 vlm_confidence=vlm_conf,
                 content_roles=roles,
                 child_content_groups=child_groups,
+                container_bg=container_bg,
+                parent_wrapper_id=parent_wrapper_id,
+                inner_bg=inner_bg,
+                inner_radius=inner_radius,
+                inner_card_fixed_width=inner_card_fixed_width,
+                is_physical_card_surface=is_physical_card_surface,
+                physical_card_signals=physical_card_signals,
             )
         )
 
@@ -358,6 +453,27 @@ def analyze_layout(
 
     # Calculate spacing between sections
     sections = _calculate_spacing(sections)
+
+    # Boundary classification (Phase 50.2) — needs the y-sorted sections
+    if global_design_image is not None:
+        from app.design_sync.bgcolor_propagator import classify_section_boundaries
+
+        boundaries = classify_section_boundaries(
+            sections,
+            global_design_image=global_design_image,
+        )
+        sections = [
+            dataclasses.replace(
+                s,
+                boundary_above=boundaries[s.node_id].boundary_above,
+                boundary_below=boundaries[s.node_id].boundary_below,
+                sampled_top_color=boundaries[s.node_id].sampled_top_color,
+                sampled_bottom_color=boundaries[s.node_id].sampled_bottom_color,
+            )
+            if s.node_id in boundaries
+            else s
+            for s in sections
+        ]
 
     total_text_blocks = sum(len(s.texts) for s in sections)
     total_images = sum(len(s.images) for s in sections)
@@ -390,25 +506,78 @@ def _get_section_candidates(page: DesignNode) -> list[DesignNode]:
     use its children as section candidates instead of treating the wrapper
     as one section.
     """
-    top_frames = [
-        child
-        for child in page.children
-        if child.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.GROUP)
-    ]
+    top_frames = [child for child in page.children if child.type in _FRAME_TYPES]
 
     # If there's exactly one tall frame with multiple children, unwrap it —
     # it's likely a full-email wrapper (e.g. "EmailLove" containing mj-wrappers)
     if len(top_frames) == 1:
         wrapper = top_frames[0]
-        inner = [
-            child
-            for child in wrapper.children
-            if child.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.GROUP)
-        ]
+        inner = [child for child in wrapper.children if child.type in _FRAME_TYPES]
         if len(inner) >= 2:
             return inner
 
     return top_frames
+
+
+def _expand_container_wrappers(
+    candidates: list[DesignNode],
+    naming: NamingConvention,
+) -> list[tuple[DesignNode, str | None, str | None]]:
+    """Wrapper unwrap pre-pass (Phase 50.3, Gap 1).
+
+    A ``mj-wrapper`` (or any FRAME with a coloured fill plus ≥2 ``mj-section``
+    children) is treated as one ``EmailSection`` by ``analyze_layout`` today;
+    that collapses heading + cards / heading + product rows into a single
+    component. This pass replaces such a wrapper with its children, propagating
+    the wrapper's fill as ``container_bg`` and recording the wrapper's id as
+    ``parent_wrapper_id``.
+
+    Gated to MJML-named files for now — descriptive naming is deferred to
+    Phase 51 — and behind ``DESIGN_SYNC__WRAPPER_UNWRAP_ENABLED`` so the
+    behaviour change can be rolled out per the master plan risks table.
+
+    Returns a list of ``(section_node, container_bg, parent_wrapper_id)``
+    tuples. When unchanged, ``container_bg`` and ``parent_wrapper_id`` are
+    ``None`` so existing downstream code sees the same shape it always has.
+    """
+    if naming != NamingConvention.MJML:
+        return [(node, None, None) for node in candidates]
+
+    if not get_settings().design_sync.wrapper_unwrap_enabled:
+        return [(node, None, None) for node in candidates]
+
+    expanded: list[tuple[DesignNode, str | None, str | None]] = []
+    for node in candidates:
+        if _is_container_wrapper(node):
+            wrapper_bg = node.fill_color
+            for child in node.children:
+                if _is_section_child(child):
+                    expanded.append((child, wrapper_bg, node.id))
+        else:
+            expanded.append((node, None, None))
+    return expanded
+
+
+def _is_container_wrapper(node: DesignNode) -> bool:
+    """A container wrapper has a non-default fill AND ≥2 section children."""
+    if not node.fill_color:
+        return False
+    section_children = [c for c in node.children if _is_section_child(c)]
+    return len(section_children) >= 2
+
+
+def _is_section_child(node: DesignNode) -> bool:
+    """An ``mj-section``/``mj-wrapper`` child of a container, by name or shape.
+
+    Matches name convention first (``mj-section``/``mj-wrapper`` substring).
+    Falls back to a structural check: a FRAME/GROUP/COMPONENT with at least
+    one content child of its own — that is what an MJML section looks like
+    after the Figma plugin has flattened the column layer.
+    """
+    name_lower = (node.name or "").lower()
+    if "mj-section" in name_lower or "mj-wrapper" in name_lower:
+        return True
+    return node.type in _FRAME_TYPES and bool(node.children)
 
 
 def _detect_naming_convention(candidates: list[DesignNode]) -> NamingConvention:
@@ -943,6 +1112,7 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
                 node_name=node.name,
                 width=node.width,
                 height=node.height,
+                corner_radius_spec=_corner_spec_or_none(rule_10_image_corner_radii(node)),
             )
         )
     elif node.type == DesignNodeType.FRAME and node.image_ref:
@@ -954,6 +1124,7 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
                 width=node.width,
                 height=node.height,
                 is_background=True,
+                corner_radius_spec=_corner_spec_or_none(rule_10_image_corner_radii(node)),
             )
         )
         # Still recurse into children (frame has content over the bg)
@@ -964,7 +1135,9 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
         and len(node.children) == 1
         and node.children[0].type == DesignNodeType.IMAGE
     ):
-        # Frame wrapping a single image — export the FRAME (includes bg fills)
+        # Frame wrapping a single image — export the FRAME (includes bg fills).
+        # Rule 10 reads radius from the frame (where Figma sets corner radii on
+        # the wrapper, not the inner image).
         img = node.children[0]
         results.append(
             ImagePlaceholder(
@@ -973,11 +1146,19 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
                 width=node.width,  # Use frame dimensions (includes padding/bg)
                 height=node.height,
                 export_node_id=node.id,  # Export the frame, not just the image fill
+                corner_radius_spec=_corner_spec_or_none(rule_10_image_corner_radii(node)),
             )
         )
     else:
         for child in node.children:
             _walk_for_images(child, results)
+
+
+def _corner_spec_or_none(spec: CornerRadiusSpec) -> CornerRadiusSpec | None:
+    """Drop the no-radius case so downstream callers can ``if spec:``."""
+    if spec.scalar is None and spec.per_corner is None:
+        return None
+    return spec
 
 
 def validate_image_dimensions(
@@ -1084,6 +1265,7 @@ def _walk_for_buttons(
                         stroke_color=node.stroke_color,
                         stroke_weight=node.stroke_weight,
                         icon_node_id=icon_node_id,
+                        corner_radius_spec=_corner_spec_or_none(rule_8_corner_radius(node)),
                     )
                 )
                 return  # Don't recurse into button internals
@@ -1298,3 +1480,94 @@ def _section_bottom(section: EmailSection) -> float | None:
     if section.y_position is None or section.height is None:
         return None
     return section.y_position + section.height
+
+
+# ── Nested-card surface detection (Phase 50.4, Gap 10) ──
+
+
+def _detect_inner_bg(
+    node: DesignNode,
+    *,
+    container_bg: str | None,
+    global_design_image: bytes | None,
+) -> tuple[str | None, float | None]:
+    """Detect the section's own card-surface bg + radius distinct from the wrapper.
+
+    Two paths:
+
+    * **Direct**: ``node.fill_color`` is non-default and differs from
+      ``container_bg`` — the section carries its own fill (e.g. white card on
+      lime wrapper).
+    * **Indirect (PNG-sampled)**: ``node.fill_color`` is empty but the global
+      design PNG shows a perceptually distinct color at the section's interior
+      centroid versus the wrapper bg. Used when the design tool stores the
+      card background as a child rectangle the analyzer hasn't promoted into
+      ``fill_color``.
+
+    Returns ``(inner_bg, inner_radius)`` or ``(None, None)`` when no nested
+    card is detected. Gated by ``DESIGN_SYNC__NESTED_CARD_DETECTION_ENABLED``.
+    """
+    cfg = get_settings().design_sync
+    if not cfg.nested_card_detection_enabled:
+        return None, None
+
+    # Nested-card detection is only meaningful when the section sits inside
+    # a coloured wrapper (``container_bg``). Without one, the section's own
+    # ``bg_color`` keeps the Phase 49 contract of mapping to ``_outer``.
+    if container_bg is None:
+        return None, None
+
+    # Direct: section has its own fill that differs from the container.
+    if node.fill_color and _hex_max_channel_delta(node.fill_color, container_bg) > 0:
+        return node.fill_color, _resolve_corner_radius(node)
+
+    # Indirect: PNG centroid sample — covers the case where the section's own
+    # fill is empty but the rendered design shows a distinct surface colour.
+    if global_design_image is not None:
+        sampled = _sample_section_centroid(node, global_design_image)
+        if sampled and _hex_max_channel_delta(sampled, container_bg) > (
+            cfg.nested_card_perceptual_threshold
+        ):
+            return sampled, _resolve_corner_radius(node)
+
+    return None, None
+
+
+def _resolve_corner_radius(node: DesignNode) -> float | None:
+    """Return the section's corner radius, preferring the per-corner max."""
+    if node.corner_radii:
+        return max(node.corner_radii)
+    return node.corner_radius
+
+
+def _sample_section_centroid(node: DesignNode, image_bytes: bytes) -> str | None:
+    """Sample the dominant color of a 5x5 block at the section's geometric centre."""
+    if (
+        node.x is None
+        or node.y is None
+        or node.width is None
+        or node.height is None
+        or node.width <= 0
+        or node.height <= 0
+    ):
+        return None
+    cx = int(node.x + node.width / 2)
+    cy = int(node.y + node.height / 2)
+
+    from app.design_sync.image_sampler import sample_centroid_color
+
+    return sample_centroid_color(image_bytes, cx=cx, cy=cy)
+
+
+def _hex_max_channel_delta(hex_a: str, hex_b: str) -> int:
+    """Return the maximum per-channel RGB delta between two hex colors."""
+    ar, ag, ab = _hex_to_rgb(hex_a)
+    br, bg, bb = _hex_to_rgb(hex_b)
+    return max(abs(ar - br), abs(ag - bg), abs(ab - bb))
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)

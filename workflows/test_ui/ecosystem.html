@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Email Hub · Ecosystem</title>
+<link rel="stylesheet" href="_shell.css" />
+<style>
+  .eco-pad { padding: var(--sp-4) var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-4); }
+
+  /* 4-quadrant overview row */
+  .quad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+  .quad-tile {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    padding: var(--sp-4);
+    display: flex; flex-direction: column; gap: var(--sp-3);
+    cursor: pointer;
+  }
+  .quad-tile:hover { border-color: var(--color-border-strong); }
+  .quad-tile .head { display: flex; align-items: center; gap: var(--sp-2); }
+  .quad-tile .head .ico-wrap {
+    width: 32px; height: 32px;
+    background: var(--color-tertiary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .quad-tile .head .ico-wrap.info { background: var(--color-info); }
+  .quad-tile .head .ico-wrap.success { background: var(--color-success); }
+  .quad-tile .head .ico-wrap.warning { background: var(--color-warning); }
+  .quad-tile .head .name { font-weight: 600; font-size: 14px; color: var(--color-primary); }
+  .quad-tile .head .sub { font-size: 11px; color: var(--color-muted); }
+  .quad-tile .stat { font-size: 28px; font-weight: 600; color: var(--color-primary); line-height: 1; }
+  .quad-tile .row-stats { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-secondary); }
+
+  /* Two-column main layout */
+  .eco-main { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+
+  /* Plugin grid */
+  .plugin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--color-border); }
+  .plugin-tile { background: var(--color-surface); padding: var(--sp-3) var(--sp-4); }
+  .plugin-tile .head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .plugin-tile .head .icon-box {
+    width: 26px; height: 26px;
+    background: var(--color-surface-2); border: 1px solid var(--color-border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-label); font-size: 10px; font-weight: 700;
+    color: var(--color-primary);
+  }
+  .plugin-tile .head .name { font-weight: 600; font-size: 12.5px; color: var(--color-primary); flex: 1; }
+  .plugin-tile .ver { font-family: var(--font-mono); font-size: 10px; color: var(--color-muted); }
+  .plugin-tile .desc { font-size: 11px; color: var(--color-secondary); margin-bottom: 6px; line-height: 1.4; }
+  .plugin-tile .foot { display: flex; align-items: center; gap: 6px; }
+
+  /* Workflow Gantt */
+  .gantt {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    border-top: 1px solid var(--color-border);
+  }
+  .gantt-row {
+    display: contents;
+  }
+  .gantt-row > div {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 11.5px;
+  }
+  .gantt-row .label { background: var(--color-surface); display: flex; align-items: center; gap: 6px; }
+  .gantt-row .label .name { font-weight: 500; color: var(--color-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gantt-row .track {
+    position: relative;
+    background:
+      repeating-linear-gradient(90deg, var(--color-surface) 0 calc(100% / 24), var(--color-surface-2) calc(100% / 24) calc(100% / 12)),
+      var(--color-surface);
+    min-height: 30px;
+  }
+  .gantt-bar {
+    position: absolute; top: 7px; bottom: 7px;
+    background: var(--color-tertiary); color: #fff;
+    font-family: var(--font-mono); font-size: 10px;
+    display: flex; align-items: center; padding: 0 6px;
+    border-radius: 0;
+    overflow: hidden; white-space: nowrap;
+  }
+  .gantt-bar.success { background: var(--color-success); }
+  .gantt-bar.warning { background: var(--color-warning); }
+  .gantt-bar.info    { background: var(--color-info); }
+  .gantt-bar.muted   { background: var(--color-border-strong); color: var(--color-secondary); }
+  .gantt-now {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; background: var(--color-tertiary);
+  }
+  .gantt-axis {
+    display: grid; grid-template-columns: 130px repeat(12, 1fr);
+    background: var(--color-surface-2);
+    border-bottom: 1px solid var(--color-border);
+    font-family: var(--font-mono); font-size: 10px; color: var(--color-muted);
+  }
+  .gantt-axis > div { padding: 6px 4px; border-right: 1px solid var(--color-border); }
+  .gantt-axis > div:last-child { border-right: 0; }
+
+  /* PDF preview */
+  .pdf-preview {
+    background:
+      repeating-linear-gradient(0deg, var(--color-surface-2) 0 6px, var(--color-surface) 6px 12px),
+      var(--color-surface);
+    border: 1px solid var(--color-border);
+    aspect-ratio: 8.5/11;
+    position: relative;
+  }
+  .pdf-preview::before {
+    content: ""; position: absolute; left: 18px; right: 18px; top: 18px; height: 38px;
+    background: var(--color-primary);
+  }
+  .pdf-preview::after {
+    content: "Q4 brand audit · 14 templates"; position: absolute; left: 24px; top: 26px;
+    font-family: var(--font-label); font-size: 10px; color: #fff; text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .pdf-stamp { position: absolute; bottom: 12px; right: 12px; font-family: var(--font-mono); font-size: 10px; background: var(--color-surface); border: 1px solid var(--color-border); padding: 2px 6px; }
+
+  /* Penpot browser */
+  .penpot-row {
+    display: grid; grid-template-columns: 32px 1fr auto;
+    gap: var(--sp-3); align-items: center;
+    padding: 8px var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+  }
+  .penpot-row:last-child { border-bottom: 0; }
+  .penpot-row:hover { background: var(--color-surface-2); }
+  .penpot-row .thumb {
+    width: 32px; height: 24px; flex-shrink: 0;
+    background:
+      linear-gradient(180deg, var(--color-tertiary) 0 8px, transparent 8px),
+      var(--color-surface-2);
+    border: 1px solid var(--color-border);
+  }
+  .penpot-row .body .h { font-weight: 500; color: var(--color-primary); }
+  .penpot-row .body .sub { color: var(--color-muted); font-size: 10.5px; margin-top: 1px; font-family: var(--font-mono); }
+
+  /* Cron schedule */
+  .cron-row {
+    display: grid; grid-template-columns: 110px 1fr 80px auto;
+    gap: var(--sp-3); align-items: center;
+    padding: 8px var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+  }
+  .cron-row:last-child { border-bottom: 0; }
+  .cron-row .schedule { font-family: var(--font-mono); font-size: 11px; color: var(--color-info); }
+  .cron-row .body .h { font-weight: 500; color: var(--color-primary); }
+  .cron-row .body .sub { color: var(--color-muted); font-size: 10.5px; }
+  .cron-row .next { font-family: var(--font-mono); font-size: 10.5px; color: var(--color-secondary); text-align: right; }
+
+  /* Notifications matrix */
+  .notif-mat {
+    display: grid; grid-template-columns: 140px repeat(3, 1fr);
+    border: 1px solid var(--color-border);
+  }
+  .notif-mat > div {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    font-size: 11.5px;
+  }
+  .notif-mat > div:nth-child(4n) { border-right: 0; }
+  .notif-mat > div:nth-last-child(-n+4) { border-bottom: 0; }
+  .notif-mat .head { font-family: var(--font-label); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; background: var(--color-surface-2); color: var(--color-secondary); }
+  .notif-mat .row-h { font-weight: 500; color: var(--color-primary); }
+  .notif-mat .cell { display: flex; align-items: center; gap: 6px; color: var(--color-muted); font-size: 11px; }
+  .notif-mat .cell.on { color: var(--color-success); }
+  .notif-mat .cell.off { color: var(--color-muted); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4V11"/><path d="M21 7v10l-9 4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6z"/></symbol>
+    <symbol id="i-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-paint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 11h2v8H3v-8h2"/><path d="M7 7l5-5 5 5v6H7z"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 8v3M12 11l-5 5M12 11l5 5"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M8.6 10.5l6.8-4"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c4 0 7 4 7 9v6l-3-2h-8l-3 2v-6c0-5 3-9 7-9z"/><circle cx="12" cy="11" r="2"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 2 7l10 5 10-5z"/><path d="M2 12l10 5 10-5M2 17l10 5 10-5"/></symbol>
+    <symbol id="i-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v6M12 18v.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v.5M12 11v5"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14"/><path d="M2 7l10 7L22 7"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">EH</div>
+      <div class="brand-name">Email&nbsp;Hub</div>
+    </div>
+    <div class="brand-divider"></div>
+    <nav class="crumb">
+      <span>ACME&nbsp;Co</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span class="current">Ecosystem</span>
+    </nav>
+    <button class="designmd-chip">
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.7)"><use href="#i-paint"/></svg>
+      <span>Brand&nbsp;·&nbsp;<strong>Default</strong></span>
+      <span class="swatch">
+        <span style="background: var(--color-primary)"></span>
+        <span style="background: var(--color-secondary)"></span>
+        <span style="background: var(--color-tertiary)"></span>
+        <span style="background: var(--color-neutral); border-color: rgba(255,255,255,.3)"></span>
+      </span>
+    </button>
+
+    <nav class="page-nav">
+      <a href="index.html">Index</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="renderings.html">Renderings</a>
+      <a href="approvals-detail.html">Approval</a>
+      <a href="ecosystem.html" class="active">Ecosystem</a>
+      <a href="qa-engine.html">QA</a>
+    </nav>
+
+    <div class="grow"></div>
+
+    <div class="save-pill">
+      <span class="dot"></span>
+      <span>14 services online</span>
+      <span style="color:rgba(255,255,255,.36); margin-left:4px;">·</span>
+      <span style="font-family:var(--font-mono); color:rgba(255,255,255,.6);">2 alerts</span>
+    </div>
+
+    <button class="btn btn-ghost"><svg class="ico"><use href="#i-search"/></svg> <span>Search</span> <span class="kbd">⌘K</span></button>
+    <button class="btn"><svg class="ico"><use href="#i-history"/></svg> Activity</button>
+    <button class="btn btn-primary"><svg class="ico"><use href="#i-rocket"/></svg> Deploy plugin</button>
+  </header>
+
+  <aside class="rail">
+    <button class="rail-btn"        title="Dashboard"><svg class="ico ico-lg"><use href="#i-grid"/></svg></button>
+    <button class="rail-btn"        title="Workspace"><svg class="ico ico-lg"><use href="#i-folder"/></svg></button>
+    <button class="rail-btn"        title="Components"><svg class="ico ico-lg"><use href="#i-cube"/></svg></button>
+    <button class="rail-btn"        title="Approvals"><svg class="ico ico-lg"><use href="#i-check"/></svg></button>
+    <button class="rail-btn"        title="Intelligence"><svg class="ico ico-lg"><use href="#i-spark"/></svg></button>
+    <button class="rail-btn"        title="Knowledge"><svg class="ico ico-lg"><use href="#i-database"/></svg></button>
+    <button class="rail-btn"        title="Connectors"><svg class="ico ico-lg"><use href="#i-share"/></svg></button>
+    <button class="rail-btn active" title="Ecosystem (current)"><svg class="ico ico-lg"><use href="#i-network"/></svg></button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-bell"/></svg></button>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-cog"/></svg></button>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Ecosystem</h1>
+        <div class="page-sub">Plugins · Workflows · Reports · Penpot · Cron · Notifications — unified dashboard</div>
+      </div>
+      <div class="grow"></div>
+      <div class="kv-row">
+        <div class="kv"><span class="k">Plugins</span><span class="v">14 active</span></div>
+        <div class="kv"><span class="k">Workflows</span><span class="v">6 running</span></div>
+        <div class="kv"><span class="k">Cron</span><span class="v">8 scheduled</span></div>
+      </div>
+    </div>
+
+    <div class="designmd-strip">
+      <span><svg class="ico ico-sm" style="color:var(--color-tertiary); vertical-align:-2px"><use href="#i-paint"/></svg></span>
+      <span><span class="k">DESIGN.md</span> · v0.4.1 · 142 tokens</span>
+      <span class="grow"></span>
+      <span><a style="color:var(--color-tertiary)">Inspect</a></span>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active"><svg class="ico ico-sm"><use href="#i-grid"/></svg> Overview</div>
+      <div class="tab">Plugins <span class="count-pill">14</span></div>
+      <div class="tab">Workflows <span class="count-pill warn">6</span></div>
+      <div class="tab">Reports <span class="count-pill">12</span></div>
+      <div class="tab">Penpot</div>
+      <div class="tab">Cron <span class="count-pill ok">8</span></div>
+      <div class="tab">Notifications</div>
+    </div>
+
+    <div class="eco-pad">
+
+      <!-- 4-quadrant overview -->
+      <div class="quad-grid">
+        <div class="quad-tile">
+          <div class="head">
+            <div class="ico-wrap"><svg class="ico"><use href="#i-cube"/></svg></div>
+            <div>
+              <div class="name">Plugins</div>
+              <div class="sub">Connector + sync registry</div>
+            </div>
+          </div>
+          <div class="stat">14</div>
+          <div class="row-stats">
+            <span><span class="status-dot ok"></span>12 healthy</span>
+            <span><span class="status-dot warn"></span>1 deprecated</span>
+            <span><span class="status-dot fail"></span>1 error</span>
+          </div>
+        </div>
+        <div class="quad-tile">
+          <div class="head">
+            <div class="ico-wrap info"><svg class="ico"><use href="#i-stack"/></svg></div>
+            <div>
+              <div class="name">Workflows</div>
+              <div class="sub">Kestra orchestration</div>
+            </div>
+          </div>
+          <div class="stat">6 <span style="font-size: 14px; color: var(--color-muted)">/ 12</span></div>
+          <div class="row-stats">
+            <span><span class="status-dot brand"></span>4 running</span>
+            <span><span class="status-dot info"></span>2 queued</span>
+            <span><span class="status-dot ok"></span>6 done</span>
+          </div>
+        </div>
+        <div class="quad-tile">
+          <div class="head">
+            <div class="ico-wrap success"><svg class="ico"><use href="#i-mail"/></svg></div>
+            <div>
+              <div class="name">Reports</div>
+              <div class="sub">Typst PDF · weekly</div>
+            </div>
+          </div>
+          <div class="stat">12</div>
+          <div class="row-stats">
+            <span>Latest: <span class="mono">Q4-brand-audit</span></span>
+            <span class="muted">2h ago</span>
+          </div>
+        </div>
+        <div class="quad-tile">
+          <div class="head">
+            <div class="ico-wrap warning"><svg class="ico"><use href="#i-paint"/></svg></div>
+            <div>
+              <div class="name">Penpot</div>
+              <div class="sub">Connected boards</div>
+            </div>
+          </div>
+          <div class="stat">3</div>
+          <div class="row-stats">
+            <span>34 frames</span>
+            <span class="muted">last sync 18m</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-column: plugin grid + workflow Gantt -->
+      <div class="eco-main">
+
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Plugin manager · 14</h4>
+            <div class="row gap-2">
+              <span class="pill pass">12 healthy</span>
+              <span class="pill warn">1 deprecated</span>
+              <span class="pill fail">1 error</span>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> All</button>
+            </div>
+          </div>
+          <div class="plugin-grid">
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-tertiary)">SF</div>
+                <div class="name">SFMC connector</div>
+                <span class="pill pass dot">healthy</span>
+              </div>
+              <div class="ver">v2.4.1 · @merkle/connector-sfmc</div>
+              <div class="desc">Salesforce Marketing Cloud — push templates, AMPscript fallback, 3 active credentials.</div>
+              <div class="foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg></button>
+                <button class="a2-btn ghost">Disable</button>
+              </div>
+            </div>
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-info)">BR</div>
+                <div class="name">Braze connector</div>
+                <span class="pill pass dot">healthy</span>
+              </div>
+              <div class="ver">v1.8.0 · @merkle/connector-braze</div>
+              <div class="desc">Braze — Liquid templates, content blocks, 2 keys round-robin pooled.</div>
+              <div class="foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg></button>
+                <button class="a2-btn ghost">Disable</button>
+              </div>
+            </div>
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-warning)">AC</div>
+                <div class="name">Adobe Campaign</div>
+                <span class="pill warn dot">deprecated</span>
+              </div>
+              <div class="ver">v0.9.4 · @merkle/connector-adobe</div>
+              <div class="desc">Adobe Campaign v7 — schema validated. Migrate to v8 connector by 2026-06-01.</div>
+              <div class="foot">
+                <button class="a2-btn">Migrate</button>
+                <button class="a2-btn ghost">Docs</button>
+              </div>
+            </div>
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-success)">TX</div>
+                <div class="name">Taxi for Email</div>
+                <span class="pill pass dot">healthy</span>
+              </div>
+              <div class="ver">v1.2.0 · @merkle/connector-taxi</div>
+              <div class="desc">Push to Taxi modules and design system — 1 active key.</div>
+              <div class="foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg></button>
+                <button class="a2-btn ghost">Disable</button>
+              </div>
+            </div>
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-tertiary)">FG</div>
+                <div class="name">Figma sync</div>
+                <span class="pill pass dot">healthy</span>
+              </div>
+              <div class="ver">v3.1.2 · @merkle/sync-figma</div>
+              <div class="desc">Webhook-debounced design sync · token scoping enabled · 2 frames pending.</div>
+              <div class="foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-bolt"/></svg> Sync</button>
+                <button class="a2-btn ghost">Webhook</button>
+              </div>
+            </div>
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-info)">PP</div>
+                <div class="name">Penpot bridge</div>
+                <span class="pill pass dot">healthy</span>
+              </div>
+              <div class="ver">v0.4.0 · @merkle/sync-penpot</div>
+              <div class="desc">Open-source design platform sync — 3 boards · 34 frames.</div>
+              <div class="foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-bolt"/></svg> Sync</button>
+                <button class="a2-btn ghost">Boards</button>
+              </div>
+            </div>
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-success)">TG</div>
+                <div class="name">Tolgee TMS</div>
+                <span class="pill pass dot">healthy</span>
+              </div>
+              <div class="ver">v2.1.0 · @merkle/tms-tolgee</div>
+              <div class="desc">Translation memory sync · 12 locales · in-context overlay.</div>
+              <div class="foot">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-bolt"/></svg> Sync</button>
+                <button class="a2-btn ghost">Locales</button>
+              </div>
+            </div>
+            <div class="plugin-tile">
+              <div class="head">
+                <div class="icon-box" style="color: var(--color-danger)">SE</div>
+                <div class="name">Sample ESP plugin</div>
+                <span class="pill fail dot">error</span>
+              </div>
+              <div class="ver">v0.1.0 · @sample/esp-connector</div>
+              <div class="desc">Last 4 calls returned 401 · credential pool exhausted · cooldown 8m.</div>
+              <div class="foot">
+                <button class="a2-btn danger">Reset pool</button>
+                <button class="a2-btn ghost">Logs</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-foot"><button class="a2-btn">Browse marketplace</button><button class="a2-btn ghost">Sample plugin SDK</button></div>
+        </section>
+
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Workflow Gantt · 6 running</h4>
+            <div class="row gap-2">
+              <span class="pill brand dot">live</span>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-history"/></svg> 24h</button>
+            </div>
+          </div>
+          <div>
+            <div class="gantt-axis">
+              <div></div>
+              <div>14:00</div><div>14:05</div><div>14:10</div><div>14:15</div><div>14:20</div><div>14:25</div><div>14:30</div><div>14:35</div><div>14:40</div><div>14:45</div><div>14:50</div><div>14:55</div>
+            </div>
+            <div class="gantt">
+              <div class="gantt-row">
+                <div class="label"><span class="agent-chip">SC</span><span class="name">build BF2026-hero-v3</span></div>
+                <div class="track">
+                  <div class="gantt-bar success" style="left: 8%; width: 28%;">scaffolder</div>
+                  <div class="gantt-now" style="left: 64%;"></div>
+                </div>
+              </div>
+              <div class="gantt-row">
+                <div class="label"><span class="agent-chip info">DM</span><span class="name">dark-mode pass</span></div>
+                <div class="track">
+                  <div class="gantt-bar warning" style="left: 38%; width: 18%;">dm · streaming</div>
+                  <div class="gantt-now" style="left: 64%;"></div>
+                </div>
+              </div>
+              <div class="gantt-row">
+                <div class="label"><span class="agent-chip warn">CN</span><span class="name">content drafts</span></div>
+                <div class="track">
+                  <div class="gantt-bar warning" style="left: 36%; width: 24%;">content</div>
+                  <div class="gantt-now" style="left: 64%;"></div>
+                </div>
+              </div>
+              <div class="gantt-row">
+                <div class="label"><span class="agent-chip alt">OF</span><span class="name">outlook fixer</span></div>
+                <div class="track">
+                  <div class="gantt-bar muted" style="left: 60%; width: 20%;">queued L3</div>
+                  <div class="gantt-now" style="left: 64%;"></div>
+                </div>
+              </div>
+              <div class="gantt-row">
+                <div class="label"><span class="agent-chip">AX</span><span class="name">accessibility</span></div>
+                <div class="track">
+                  <div class="gantt-bar muted" style="left: 60%; width: 16%;">queued L3</div>
+                  <div class="gantt-now" style="left: 64%;"></div>
+                </div>
+              </div>
+              <div class="gantt-row">
+                <div class="label"><span class="agent-chip mute">QA</span><span class="name">qa sweep</span></div>
+                <div class="track">
+                  <div class="gantt-bar info" style="left: 76%; width: 18%;">qa · 14 checks</div>
+                  <div class="gantt-now" style="left: 64%;"></div>
+                </div>
+              </div>
+              <div class="gantt-row">
+                <div class="label"><span class="agent-chip mute">RND</span><span class="name">rendering matrix</span></div>
+                <div class="track">
+                  <div class="gantt-bar muted" style="left: 88%; width: 8%;">14 clients</div>
+                  <div class="gantt-now" style="left: 64%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-foot">
+            <button class="a2-btn">Open Kestra</button>
+            <button class="a2-btn ghost">DAG view</button>
+            <span class="grow"></span>
+            <span class="muted" style="font-family: var(--font-mono); font-size: 11px;">avg run 14m · max 38m</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Two-column: report generator + Penpot browser -->
+      <div class="eco-main">
+
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Report generator · Q4 brand audit</h4>
+            <div class="row gap-2">
+              <span class="pill info">Typst PDF</span>
+              <span class="pill">14 templates</span>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Export</button>
+            </div>
+          </div>
+          <div style="padding: var(--sp-4); display: grid; grid-template-columns: 240px 1fr; gap: var(--sp-4);">
+            <div class="pdf-preview">
+              <span class="pdf-stamp">PDF · 4 pages</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: var(--sp-3);">
+              <div>
+                <div class="label-caps">Sections · 8</div>
+                <div style="display:flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
+                  <span class="pill">Cover</span>
+                  <span class="pill">Brand summary</span>
+                  <span class="pill">14 templates</span>
+                  <span class="pill">QA scorecards</span>
+                  <span class="pill">Rendering grid</span>
+                  <span class="pill">Calibration</span>
+                  <span class="pill">Top failures</span>
+                  <span class="pill">Action items</span>
+                </div>
+              </div>
+              <div class="kv-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                <div class="kv"><span class="k">Generated</span><span class="v">2h ago</span></div>
+                <div class="kv"><span class="k">Author</span><span class="v">Auto · system</span></div>
+                <div class="kv"><span class="k">Pages</span><span class="v">4</span></div>
+                <div class="kv"><span class="k">Bytes</span><span class="v">412 KB</span></div>
+              </div>
+              <div style="display: flex; gap: 6px; margin-top: auto;">
+                <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-eye"/></svg> Preview</button>
+                <button class="a2-btn">Download PDF</button>
+                <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-mail"/></svg> Email recipients</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-foot">
+            <span class="muted" style="font-size: 11px;">Recipients: brand-team@acme.co · legal@acme.co · 8 more</span>
+            <span class="grow"></span>
+            <button class="a2-btn ghost">Schedule</button>
+          </div>
+        </section>
+
+        <section class="card card-tight">
+          <div class="card-head"><h4>Penpot · connected boards</h4><span class="pill info">3 boards · 34 frames</span></div>
+          <div>
+            <div class="penpot-row">
+              <div class="thumb"></div>
+              <div class="body">
+                <div class="h">Black Friday 2026 · master</div>
+                <div class="sub">14 frames · last sync 18m ago · token scoped</div>
+              </div>
+              <span class="pill pass">synced</span>
+            </div>
+            <div class="penpot-row">
+              <div class="thumb" style="background: linear-gradient(180deg, var(--color-info) 0 8px, transparent 8px), var(--color-surface-2);"></div>
+              <div class="body">
+                <div class="h">Newsletter · weekly templates</div>
+                <div class="sub">12 frames · last sync 1h ago</div>
+              </div>
+              <span class="pill pass">synced</span>
+            </div>
+            <div class="penpot-row">
+              <div class="thumb" style="background: linear-gradient(180deg, var(--color-success) 0 8px, transparent 8px), var(--color-surface-2);"></div>
+              <div class="body">
+                <div class="h">Welcome flow · 3 steps</div>
+                <div class="sub">8 frames · 2 dirty · awaiting sync</div>
+              </div>
+              <span class="pill warn dot">dirty</span>
+            </div>
+            <div class="penpot-row">
+              <div class="thumb" style="background: linear-gradient(180deg, var(--color-warning) 0 8px, transparent 8px), var(--color-surface-2);"></div>
+              <div class="body">
+                <div class="h">Loyalty · referral promo</div>
+                <div class="sub">— · not connected</div>
+              </div>
+              <button class="a2-btn">Connect</button>
+            </div>
+          </div>
+          <div class="card-foot">
+            <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-bolt"/></svg> Sync all</button>
+            <button class="a2-btn ghost">Open Penpot</button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Two-column: cron + notifications -->
+      <div class="eco-main">
+
+        <section class="card card-tight">
+          <div class="card-head"><h4>Cron schedule · 8 jobs</h4><span class="pill pass">all healthy</span></div>
+          <div>
+            <div class="cron-row">
+              <span class="schedule">0 6 * * *</span>
+              <div class="body">
+                <div class="h">QA sweep · all active templates</div>
+                <div class="sub">14 checks per template · 30d Redis TTL</div>
+              </div>
+              <span class="next">in 15h 22m</span>
+              <span class="pill pass dot">on</span>
+            </div>
+            <div class="cron-row">
+              <span class="schedule">0 3 * * 0</span>
+              <div class="body">
+                <div class="h">Ontology sync · caniemail.com</div>
+                <div class="sub">Sun 03:00 UTC · 14 ESP profiles</div>
+              </div>
+              <span class="next">in 2d 12h</span>
+              <span class="pill pass dot">on</span>
+            </div>
+            <div class="cron-row">
+              <span class="schedule">0 4 1,15 * *</span>
+              <div class="body">
+                <div class="h">Rendering baselines · regenerate</div>
+                <div class="sub">1st &amp; 15th 04:00 UTC · 14 clients</div>
+              </div>
+              <span class="next">in 14d 14h</span>
+              <span class="pill pass dot">on</span>
+            </div>
+            <div class="cron-row">
+              <span class="schedule">*/15 * * * *</span>
+              <div class="body">
+                <div class="h">Eval refresh · production verdicts</div>
+                <div class="sub">Merge synthetic + production traces</div>
+              </div>
+              <span class="next">in 6m</span>
+              <span class="pill pass dot">on</span>
+            </div>
+            <div class="cron-row">
+              <span class="schedule">0 2 * * *</span>
+              <div class="body">
+                <div class="h">Calibration baseline check</div>
+                <div class="sub">±3pp tolerance per agent</div>
+              </div>
+              <span class="next">in 11h 22m</span>
+              <span class="pill pass dot">on</span>
+            </div>
+            <div class="cron-row">
+              <span class="schedule">0 1 * * *</span>
+              <div class="body">
+                <div class="h">PII redaction audit</div>
+                <div class="sub">Sample 1% of trace lines</div>
+              </div>
+              <span class="next">in 10h 22m</span>
+              <span class="pill pass dot">on</span>
+            </div>
+            <div class="cron-row">
+              <span class="schedule">0 0 * * 1</span>
+              <div class="body">
+                <div class="h">Q-report · weekly auto-email</div>
+                <div class="sub">Mon 00:00 UTC · 24 recipients</div>
+              </div>
+              <span class="next">in 4d 9h</span>
+              <span class="pill pass dot">on</span>
+            </div>
+            <div class="cron-row">
+              <span class="schedule">0 5 * * *</span>
+              <div class="body">
+                <div class="h">Knowledge embedding refresh</div>
+                <div class="sub">pgvector · 4096-dim · skill extraction</div>
+              </div>
+              <span class="next">in 14h 22m</span>
+              <span class="pill pass dot">on</span>
+            </div>
+          </div>
+          <div class="card-foot"><button class="a2-btn">New schedule</button><button class="a2-btn ghost"><svg class="ico ico-sm"><use href="#i-history"/></svg> Run history</button></div>
+        </section>
+
+        <section class="card card-tight">
+          <div class="card-head"><h4>Notifications routing</h4><span class="pill info">3 channels · 4 events</span></div>
+          <div class="notif-mat">
+            <div class="head">Event</div>
+            <div class="head">Slack</div>
+            <div class="head">Teams</div>
+            <div class="head">Email</div>
+
+            <div class="row-h">QA gate failure</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> #qa-alerts</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> Brand · QA</div>
+            <div class="cell off">—</div>
+
+            <div class="row-h">Approval requested</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> #approvals</div>
+            <div class="cell off">—</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> Reviewers</div>
+
+            <div class="row-h">Rendering regression</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> #renderings</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> Brand · QA</div>
+            <div class="cell off">—</div>
+
+            <div class="row-h">Cron job failure</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> #ops-alerts</div>
+            <div class="cell off">—</div>
+            <div class="cell on"><svg class="ico ico-sm"><use href="#i-check"/></svg> Oncall</div>
+          </div>
+          <div class="card-foot"><button class="a2-btn">Edit channels</button><button class="a2-btn ghost">Test webhook</button></div>
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1320 @@
+<!--
+  ============================================================================
+  PHASE 50 TARGET — DO NOT EDIT TO MATCH CURRENT CONVERTER OUTPUT.
+  ============================================================================
+  Status: TARGET output the converter must converge toward.
+  Author: Opus manual conversion using hub components, [Rule N]-tagged.
+  Companion files (in the same directory):
+    - viaual_design.png                       — source design (ground truth)
+    - hub_converter_phase49_baseline.html     — frozen "before" baseline
+  When in doubt about Phase 50 acceptance, this file is the answer.
+  ============================================================================
+
+  LEGO Insiders — "Frights and brick-built delights" Halloween email
+  Source: Figma node 2833:1869 (https://www.figma.com/design/VUlWjZGAEVZr3mK1EawsYR)
+  Assembly: components in /email-templates/components/ inside email-shell.html
+  Components reused (composition only — no new component files):
+    text-block / text-block-centered / cta-button / button-filled
+    full-width-image / image-block / zigzag-image-left / zigzag-image-right
+    article-card (membership cards) / column-layout-4 (footer user-info row)
+    footer-centered (footer link/legal block) / spacer
+  Notes:
+    Rows below marked "[GAP]" are real content from the Figma design that no
+    existing component slot expresses today — they're inlined as bespoke HTML
+    inside the closest component shell. See docs/architecture/opus-figma-to-html-process.md
+    for the gap inventory and converter-engine recommendations.
+
+  ────────────────────────────────────────────────────────────────────────────
+  [Rule N] tag convention — DESIGN-AGNOSTIC, NOT LEGO-SPECIFIC
+  ────────────────────────────────────────────────────────────────────────────
+  This file is a calibration reference for the 11 detection rules documented
+  in docs/architecture/opus-figma-to-html-process.md §8.3. Comments tagged
+  [Rule N] mark sections where rule N's action emitted markup for THIS design.
+
+  IMPORTANT for any reader (engineer or LLM): each [Rule N] tag describes a
+  UNIVERSAL structural rule whose inputs are read live from the current
+  design's Figma FRAME tree at conversion time. The LEGO-specific values
+  cited (px sizes, hex colours, node IDs, copy strings) are ONE worked
+  instance — applying the same rule to a different design (transactional
+  email, newsletter, onboarding flow) reads DIFFERENT inputs from THAT
+  design's nodes and emits DIFFERENT values from the same algorithm.
+
+  Tag format used below:
+    [Rule N — <abstract rule signal>] Inputs read per-design from Figma:
+              <Figma fields>. THIS LEGO instance: <emitted values> from
+              <node id>.
+
+  Do NOT copy LEGO colours, copy, dimensions, or fixed pixel values when
+  applying these rules to a new design. Read the SAME Figma fields from
+  the new design's nodes; emit values derived from THAT design's data.
+  See §8.6 of the architecture doc for the calibration-vs-template
+  contract and refusal patterns.
+  ────────────────────────────────────────────────────────────────────────────
+-->
+<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <!--[if mso]>
+      <noscript>
+        <xml>
+          <o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+          </o:OfficeDocumentSettings>
+        </xml>
+      </noscript>
+      <style>
+        td, th, div, p, a, h1, h2, h3, h4, h5, h6 {
+          font-family: "Segoe UI", sans-serif;
+          mso-line-height-rule: exactly;
+        }
+      </style>
+    <![endif]-->
+    <title>Frights and brick-built delights</title>
+    <style>
+      :root { color-scheme: light dark; supported-color-schemes: light dark; }
+      body { margin: 0; padding: 0; width: 100%; -webkit-text-size-adjust: 100%; }
+      img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+      table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      a { color: inherit; }
+
+      /* Responsive utility classes
+         [Rule 2: .bannerimg lifts the desktop max-width cap on mobile so a stacked image fills its column]
+         [Rule 6: .flip-row carries direction:rtl on desktop and is forced ltr on mobile so rtl bleed
+                  doesn't kill stack-pad's left padding when columns become block]
+         [Rule 11: .wf lets a fixed-width inner card stretch to full viewport width on mobile] */
+      .flip-row { direction: rtl; }
+      @media only screen and (max-width: 599px) {
+        .column { display: block !important; max-width: 100% !important; width: 100% !important; }
+        .bannerimg { width: 100% !important; max-width: 100% !important; height: auto !important; }
+        .wf { width: 100% !important; }
+        .hide { display: none !important; max-height: 0 !important; overflow: hidden !important; mso-hide: all !important; }
+        .db { display: block !important; }
+        .stack-pad { padding: 24px 24px 0 !important; }
+        .img-pad { padding: 0 !important; }
+        .card-img-cell { padding: 0 !important; }
+        .flip-row { direction: ltr !important; }
+      }
+
+      /* Dark mode — base
+         [Rule 9: every nested coloured surface gets its own dark-mode class. .artcard-bg flips
+                  inner white cards on the lime wrapper (membership #7/#8 + product #10–#13).
+                  .footer-strong flips Andy/0 user-info text. Anchor selectors override inline
+                  color on links. The footer Insiders white card (#16) is the identity exception:
+                  no .card-bg, stays white in dark mode.] */
+      @media (prefers-color-scheme: dark) {
+        .dark-bg        { background-color: #1a1a2e !important; }
+        .lime-bg        { background-color: #2d4a14 !important; }
+        .cream-bg       { background-color: #2d2d1a !important; }
+        .footer-bg      { background-color: #1a1a2e !important; }
+        .artcard-bg     { background-color: #1d104b !important; }
+        .textblock-heading, .artcard-heading, .hero-title, .product-title { color: #ffffff !important; }
+        .textblock-body, .artcard-body, .hero-subtitle, .product-desc      { color: #f5f5f5 !important; }
+        .product-stat-value                                                 { color: #ffffff !important; }
+        .product-stat-label                                                 { color: #e0e0e0 !important; }
+        .footer-text, .footer-link                                          { color: #cccccc !important; }
+        .footer-text a, .footer-link a                                      { color: #cccccc !important; }
+        .footer-strong                                                      { color: #ffffff !important; }
+      }
+      [data-ogsc] .dark-bg, [data-ogsc] .footer-bg  { background-color: #1a1a2e !important; }
+      [data-ogsc] .lime-bg                          { background-color: #2d4a14 !important; }
+      [data-ogsc] .artcard-bg                       { background-color: #1d104b !important; }
+      [data-ogsc] .textblock-heading,
+      [data-ogsc] .artcard-heading,
+      [data-ogsc] .hero-title,
+      [data-ogsc] .product-title                    { color: #ffffff !important; }
+      [data-ogsc] .textblock-body,
+      [data-ogsc] .artcard-body,
+      [data-ogsc] .product-desc                     { color: #f5f5f5 !important; }
+      [data-ogsc] .product-stat-value               { color: #ffffff !important; }
+      [data-ogsc] .product-stat-label               { color: #e0e0e0 !important; }
+      [data-ogsc] .footer-text, [data-ogsc] .footer-link { color: #cccccc !important; }
+      [data-ogsc] .footer-text a, [data-ogsc] .footer-link a { color: #cccccc !important; }
+      [data-ogsc] .footer-strong                    { color: #ffffff !important; }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; width: 100%; background-color: #ffffff; -webkit-text-size-adjust: 100%;">
+    <div role="article" aria-roledescription="email" aria-label="LEGO Insiders Halloween" lang="en"
+         style="font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+      <!-- Preheader (hidden) -->
+      <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all;">
+        Conjure up even more joy this scary season with new Halloween sets — exclusive Insider rewards inside.
+      </div>
+
+      <!--[if mso]>
+      <table role="presentation" cellpadding="0" cellspacing="0" width="600" align="center"
+             style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+      <![endif]-->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+
+        <!-- ───────────────────────── #1 PREHEADER LINK BAR ───────────────────────── -->
+        <!-- Component basis: text-block.html (right-aligned variant) -->
+        <tr>
+          <td class="dark-bg" style="background-color: #ffffff; padding: 8px 8px 8px 8px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="right"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 14px;
+                           color: #2c2c2c; mso-line-height-rule: exactly;">
+                  <a href="https://example.com/view-online" target="_blank"
+                     style="color: #2c2c2c; text-decoration: underline;">View online</a>
+                  &nbsp;|&nbsp;
+                  <a href="https://example.com/account" target="_blank"
+                     style="color: #2c2c2c; text-decoration: underline;">My Account</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #2 LOGO HEADER (NAVY BAND) ───────────────────────── -->
+        <!-- Component basis: full-width-image.html — Figma node 2833:1879 (600x67, navy bg) -->
+        <tr>
+          <td bgcolor="#1d104b" style="background-color: #1d104b; padding: 0; line-height: 0; font-size: 0;">
+            <a href="https://example.com" target="_blank" style="text-decoration: none;">
+              <img src="lego-insiders-halloween-assets/header-band.png"
+                   alt="LEGO Insiders" width="600" class="bannerimg"
+                   style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+            </a>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #3 HERO IMAGE ───────────────────────── -->
+        <!-- Component basis: full-width-image.html — Figma node 2833:1881 (600x400, purple) -->
+        <tr>
+          <td bgcolor="#4e3092" style="background-color: #4e3092; padding: 0; line-height: 0; font-size: 0;">
+            <img src="lego-insiders-halloween-assets/hero-image.png"
+                 alt="LEGO Stranger Things Halloween characters" width="600" class="bannerimg"
+                 style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #4 HERO TEXT + CTA (PURPLE WRAPPER) ───────────────────────── -->
+        <!-- Component basis: text-block-centered.html + button-filled.html (white-on-purple) -->
+        <!-- bgcolor matches hero image bottom edge (#4e3092) for seamless continuity -->
+        <tr>
+          <td class="hero-overlay" bgcolor="#4e3092"
+              style="background-color: #4e3092; padding: 28px 30px 32px 30px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" class="hero-title"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 30px; line-height: 36px;
+                           font-weight: 600; color: #ffffff; padding: 0 0 12px 0;
+                           mso-line-height-rule: exactly;">
+                  Frights and brick-built delights
+                </td>
+              </tr>
+              <tr>
+                <td align="center" class="hero-subtitle"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 16px; line-height: 22px;
+                           font-weight: 400; color: #ffffff; padding: 0 0 22px 0;
+                           mso-line-height-rule: exactly;">
+                  Conjure up even more joy this scary season with new Halloween sets.
+                  Whether building together or solo, they&rsquo;re sure to be a charm.
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding: 0;">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                               href="https://example.com/halloween" style="height:38px;v-text-anchor:middle;width:130px;"
+                               arcsize="50%" strokecolor="#ffffff" fillcolor="#ffffff">
+                    <w:anchorlock/>
+                    <center style="color:#000000;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">Explore now</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"
+                         class="cta-btn"
+                         style="background-color: #ffffff; border-radius: 19px;">
+                    <tr>
+                      <td style="padding: 9px 24px;">
+                        <a href="https://example.com/halloween" target="_blank"
+                           style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 20px;
+                                  font-weight: 700; color: #000000; text-decoration: none; display: inline-block;">
+                          Explore now
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #5 GREEN DECORATIVE BAND (DIVIDER) ───────────────────────── -->
+        <!-- Component basis: image-block.html (no caption) — Figma node 2833:1896 (600x40) -->
+        <!-- Image is purple-to-lime torn-paper transition; bgcolor below it switches to lime -->
+        <tr>
+          <td bgcolor="#afca01" style="background-color: #afca01; padding: 0; line-height: 0; font-size: 0;">
+            <img src="lego-insiders-halloween-assets/green-band-1.png"
+                 alt="" role="presentation" width="600" class="bannerimg"
+                 style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #6 MEMBERSHIP TIP HEADER (LIME GREEN) ───────────────────────── -->
+        <!-- Component basis: text-block-centered.html — bgcolor=#afca01 -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01"
+              style="background-color: #afca01; padding: 16px 20px 8px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" class="textblock-heading"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 30px; line-height: 36px;
+                           font-weight: 600; color: #000000; padding: 0 0 8px 0;
+                           mso-line-height-rule: exactly;">
+                  Membership Tip
+                </td>
+              </tr>
+              <tr>
+                <td align="center" class="textblock-body"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 16px; line-height: 20px;
+                           font-weight: 400; color: #000000; padding: 0 0 8px 0;
+                           mso-line-height-rule: exactly;">
+                  Your LEGO&reg; Insiders points total is: 0
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #7 MEMBERSHIP CARD 1 — Art prints ───────────────────────── -->
+        <!-- Component basis: zigzag-image-left.html WRAPPED in a white rounded inner card on lime outer.
+             [GAP] No "card-wrapper" slot exists; the white-rounded container is inlined.
+             [GAP] Tag pill slot does not exist on the article-card component today.
+
+             [Rule 1 — card with N children collapses to one container]
+                Inputs per-design: parent FRAME's fills[0].color, cornerRadius, child FRAME count.
+                Action: emit ONE wrapping <table bgcolor> with border-radius matching the FRAME's
+                cornerRadius; render each child as an inner row. THIS LEGO instance: outer table
+                bgcolor=#ffffff, border-radius:16px (read from the FRAME's cornerRadius).
+
+             [Rule 2 — responsive image overflow on stacked columns]
+                Inputs per-design: image's inline max-width vs parent column's stacked mobile width.
+                Action: add a mobile-only class (here .bannerimg) that sets width:100% !important;
+                max-width:100% !important on @media (max-width:599px). THIS LEGO instance: card
+                images carry class="bannerimg"; the rule wires mobile-stretch via the CSS block.
+
+             [Rule 3 — image padding inside non-bleed container]
+                Inputs per-design: image-Frame's absoluteBoundingBox vs parent FRAME's
+                absoluteBoundingBox; emit the visible top/right/bottom/left margins as <td>
+                padding (rounded to 4px increments). THIS LEGO instance: 14px 0 14px 14px (image
+                is inset 14px from card top/bottom/left and flush-right against content column).
+
+             [Rule 7 — pill alignment from child x-coordinate]
+                Inputs per-design: pill FRAME's absoluteBoundingBox.x vs its parent column's
+                absoluteBoundingBox.x. If |Δ| ≤ 4 → emit align="left"; if right edges align →
+                align="right"; else align="center". THIS LEGO instance: pill node 2833:1912 has
+                x=2027 = parent column.x=2027 → align="left".
+
+             [Rule 8 — pill border-radius from FRAME cornerRadius]
+                Inputs per-design: pill FRAME's cornerRadius (or rectangleCornerRadii) field —
+                missing/0 → square; scalar N → border-radius:Npx; array → per-corner longhand.
+                THIS LEGO instance: FRAME 2833:1912 has no cornerRadius field → border-radius:0.
+                Don't apply a "looks like a pill therefore round it" heuristic.
+
+             [Rule 9 — dark-mode contrast on nested cards]
+                Inputs per-design: every nested FRAME with a non-default solid fill needs its own
+                dark-mode class. Emit a dark-palette colour from the design system for each.
+                THIS LEGO instance: class="artcard-bg" on the inner white table; dark mode flips
+                it to the project's dark-purple #1d104b.
+
+             [Rule 10 — image per-corner border-radius from rectangleCornerRadii]
+                Inputs per-design: image-Frame's rectangleCornerRadii array [TL, TR, BR, BL]
+                (or scalar cornerRadius) — emit the four longhand CSS properties for legacy
+                client compatibility. THIS LEGO instance: array [6, 0, 0, 6] → emit
+                border-top-left-radius:6px + border-bottom-left-radius:6px only. -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01"
+              style="background-color: #afca01; padding: 8px 20px 8px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   bgcolor="#ffffff" class="artcard-bg"
+                   style="background-color: #ffffff; border-radius: 16px; border-collapse: separate; overflow: hidden;">
+              <tr>
+                <td style="padding: 0;">
+                  <!--[if mso]>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr><td width="250" valign="top">
+                  <![endif]-->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                         style="font-size: 0; text-align: left;">
+                    <tr>
+                      <td style="font-size: 0;">
+                        <div class="column" style="display: inline-block; max-width: 250px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td class="card-img-cell" style="padding: 14px 0 14px 14px; line-height: 0; font-size: 0;">
+                                <img src="lego-insiders-halloween-assets/card1-art-prints.png"
+                                     alt="Bundle of 6 Halloween posters" width="222" class="bannerimg"
+                                     style="display: block; width: 100%; max-width: 222px; height: auto; border: 0;
+                                            border-top-left-radius: 6px; border-bottom-left-radius: 6px;" />
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td><td width="270" valign="middle"><![endif]-->
+                        <div class="column stack-pad" style="display: inline-block; max-width: 270px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 16px 20px 12px 20px;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                  <!-- [GAP] tag pill — left-aligned above heading, sharp corners -->
+                                  <tr>
+                                    <td align="left" style="padding: 0 0 10px 0;">
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left"
+                                             bgcolor="#836eb2" style="background-color: #836eb2; border-radius: 0;">
+                                        <tr>
+                                          <td style="padding: 4px 12px;
+                                                     font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px;
+                                                     line-height: 14px; font-weight: 700; color: #ffffff;
+                                                     text-align: center; mso-line-height-rule: exactly;">
+                                            Art prints
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td class="artcard-heading"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 22px; line-height: 28px;
+                                               font-weight: 600; color: #000000; padding: 0 0 10px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      Bundle of 6 Halloween posters
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td class="artcard-body"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 20px;
+                                               font-weight: 400; color: #000000; padding: 0 0 14px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      As a member, you can make things even more mysterious with exclusive
+                                      Halloween rewards. Like our bundle of 6 posters for 3,000 points.
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td align="left" style="padding: 0;">
+                                      <!--[if mso]>
+                                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                                                   href="https://example.com/redeem-art-prints"
+                                                   style="height:38px;v-text-anchor:middle;width:160px;"
+                                                   arcsize="50%" strokecolor="#4e3092" fillcolor="#4e3092">
+                                        <w:anchorlock/>
+                                        <center style="color:#ffffff;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">Redeem reward</center>
+                                      </v:roundrect>
+                                      <![endif]-->
+                                      <!--[if !mso]><!-->
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="cta-btn"
+                                             style="background-color: #4e3092; border-radius: 19px;">
+                                        <tr>
+                                          <td style="padding: 9px 24px;">
+                                            <a href="https://example.com/redeem-art-prints" target="_blank"
+                                               style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px;
+                                                      line-height: 20px; font-weight: 700; color: #ffffff;
+                                                      text-decoration: none; display: inline-block;">
+                                              Redeem reward
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                      <!--<![endif]-->
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td></tr></table><![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #8 MEMBERSHIP CARD 2 — Stationery ───────────────────────── -->
+        <!-- Same rule set as #7 — every rule reads its inputs fresh from THIS card's Figma nodes:
+             [Rule 1] [Rule 2] [Rule 3] [Rule 7] [Rule 8] [Rule 9] [Rule 10].
+             Per-design lookup example: pill FRAME for THIS card is node 2833:1932 (Stationery)
+             vs 2833:1912 in #7 (Art prints) — same rule, different node IDs, same emitted values
+             only because both pills happen to share x-coordinate and missing cornerRadius. The
+             rule does NOT assume both pills look the same; it reads each FRAME independently. -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01"
+              style="background-color: #afca01; padding: 8px 20px 8px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   bgcolor="#ffffff" class="artcard-bg"
+                   style="background-color: #ffffff; border-radius: 16px; border-collapse: separate; overflow: hidden;">
+              <tr>
+                <td style="padding: 0;">
+                  <!--[if mso]>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr><td width="250" valign="top">
+                  <![endif]-->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                         style="font-size: 0; text-align: left;">
+                    <tr>
+                      <td style="font-size: 0;">
+                        <div class="column" style="display: inline-block; max-width: 250px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td class="card-img-cell" style="padding: 14px 0 14px 14px; line-height: 0; font-size: 0;">
+                                <img src="lego-insiders-halloween-assets/card2-stationery.png"
+                                     alt="Stranger Things Sketchbook" width="222" class="bannerimg"
+                                     style="display: block; width: 100%; max-width: 222px; height: auto; border: 0;
+                                            border-top-left-radius: 6px; border-bottom-left-radius: 6px;" />
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td><td width="270" valign="middle"><![endif]-->
+                        <div class="column stack-pad" style="display: inline-block; max-width: 270px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 16px 20px 12px 20px;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                  <tr>
+                                    <td align="left" style="padding: 0 0 10px 0;">
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left"
+                                             bgcolor="#836eb2" style="background-color: #836eb2; border-radius: 0;">
+                                        <tr>
+                                          <td style="padding: 4px 12px;
+                                                     font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px;
+                                                     line-height: 14px; font-weight: 700; color: #ffffff;
+                                                     text-align: center; mso-line-height-rule: exactly;">
+                                            Stationery
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td class="artcard-heading"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 22px; line-height: 28px;
+                                               font-weight: 600; color: #000000; padding: 0 0 10px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      Stranger Things Sketchbook
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td class="artcard-body"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 20px;
+                                               font-weight: 400; color: #000000; padding: 0 0 14px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      Get creative and relive memories of the legendary series with this member-only reward.
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td align="left" style="padding: 0;">
+                                      <!--[if mso]>
+                                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                                                   href="https://example.com/redeem-stationery"
+                                                   style="height:38px;v-text-anchor:middle;width:160px;"
+                                                   arcsize="50%" strokecolor="#4e3092" fillcolor="#4e3092">
+                                        <w:anchorlock/>
+                                        <center style="color:#ffffff;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">Redeem reward</center>
+                                      </v:roundrect>
+                                      <![endif]-->
+                                      <!--[if !mso]><!-->
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="cta-btn"
+                                             style="background-color: #4e3092; border-radius: 19px;">
+                                        <tr>
+                                          <td style="padding: 9px 24px;">
+                                            <a href="https://example.com/redeem-stationery" target="_blank"
+                                               style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px;
+                                                      line-height: 20px; font-weight: 700; color: #ffffff;
+                                                      text-decoration: none; display: inline-block;">
+                                              Redeem reward
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                      <!--<![endif]-->
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td></tr></table><![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #9 "EXPECT LOTS OF TREATS" HEADING (LIME GREEN, LEFT) ───────────────────────── -->
+        <!-- Component basis: text-block.html (left-aligned variant) — bgcolor=#afca01.
+             [GAP] Heading is left-aligned in the design; default text-block-centered would centre it. -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01"
+              style="background-color: #afca01; padding: 24px 20px 12px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="left" class="textblock-heading"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 28px; line-height: 34px;
+                           font-weight: 700; color: #000000; padding: 0;
+                           mso-line-height-rule: exactly;">
+                  Expect lots of treats this Halloween!
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!--
+          Sections #10-13 — 4 zigzag product rows (alternating).
+          Component basis: zigzag-image-right.html (rows 1, 3) and zigzag-image-left.html (rows 2, 4).
+          [GAP] Each row contains a 2-cell mini-table (icon + count) for "pieces" and "+points".
+                No zigzag slot exists for spec-rows; inlined here.
+        -->
+
+        <!-- ───────────────────────── #10 PRODUCT 1 — Halloween Wreath (text-left, image-right; mobile stacks image-first) ───────────────────────── -->
+        <!-- [Rule 1] Card wrapping text-column + image-column inside one rounded white table.
+                Inputs per-design: same as #7. THIS LEGO instance: bgcolor=#ffffff,
+                border-radius:16px.
+
+             [Rule 2] class="bannerimg" on the product image. Same per-design behaviour as #7.
+
+             [Rule 3] Image inset from card edges. Inputs per-design: image-Frame's bbox vs
+                parent card's content-area bbox. THIS LEGO instance: padding 18px 14px 18px 0
+                (14px from card right edge, flush-left against content-column boundary).
+                When the rule applies to a different design, the inset values come from THAT
+                design's measurement — could be 0, 8, 24, or any other px value.
+
+             [Rule 6 — mobile DOM order ≠ desktop visual order]
+                Inputs per-design: design's mobile reference frame (or the cross-section
+                consistency rule that all cards stack image-on-top on mobile) vs the desktop
+                visual order. When the design intends image-RIGHT on desktop AND image-on-top
+                on mobile, the rule's action is the dir-flip pattern below.
+                Action (universal): DOM order = [image][text]; parent <td> gets class="flip-row"
+                (CSS: direction:rtl on desktop, cleared to ltr on mobile via media query); each
+                child div carries dir="ltr". MSO conditional uses <table dir="rtl"> with
+                <td dir="ltr"> cells.
+                THIS LEGO instance: the design has 4 product cards alternating
+                image-LEFT/image-RIGHT on desktop; the rule fires on cards #10 and #12 (both
+                image-RIGHT) so mobile stacking matches cards #11 and #13 (image-LEFT desktop,
+                image-on-top mobile naturally). Cards 11/13 do NOT need the flip — same rule,
+                different inputs, no action emitted there. Per-side cell padding is physical
+                (top/right/bottom/left) and is mirrored vs cards #11/#13 because the divs end
+                up on the opposite physical side after the desktop flip.
+
+             [Rule 9] class="artcard-bg" on the inner white card. Same per-design behaviour. -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01" style="background-color: #afca01; padding: 8px 20px 8px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   bgcolor="#ffffff" class="artcard-bg"
+                   style="background-color: #ffffff; border-radius: 16px; border-collapse: separate; overflow: hidden;">
+              <tr>
+                <td style="padding: 0;">
+                  <!--[if mso]>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" dir="rtl">
+                    <tr><td width="240" valign="middle" dir="ltr">
+                  <![endif]-->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                         style="font-size: 0; text-align: left;">
+                    <tr>
+                      <td class="flip-row" style="font-size: 0;">
+                        <div class="column" dir="ltr" style="display: inline-block; max-width: 240px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="left" class="img-pad"
+                                  style="padding: 18px 14px 18px 0; line-height: 0; font-size: 0;">
+                                <img src="lego-insiders-halloween-assets/product1-wreath.png"
+                                     alt="Halloween Wreath LEGO set" width="220" class="bannerimg"
+                                     style="display: block; width: 100%; max-width: 220px; height: auto; border: 0;" />
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td><td width="280" valign="middle" dir="ltr"><![endif]-->
+                        <div class="column stack-pad" dir="ltr" style="display: inline-block; max-width: 280px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 18px 16px 18px 22px;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                  <tr>
+                                    <td class="product-title"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 18px; line-height: 24px;
+                                               font-weight: 700; color: #000000; padding: 0 0 14px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      Halloween Wreath
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <!-- [GAP] spec mini-table: 2 columns × (icon + bold value + small label) -->
+                                    <td style="padding: 0 0 16px 0;">
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-pieces-1.png" alt="" role="presentation"
+                                                 width="16" height="22" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top" style="padding: 0 18px 0 0;">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">617</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000;
+                                                              mso-line-height-rule: exactly;">Pieces</td></tr>
+                                            </table>
+                                          </td>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-points-1.png" alt="" role="presentation"
+                                                 width="26" height="26" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">+260</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000; max-width: 140px;
+                                                              mso-line-height-rule: exactly;">LEGO&reg; Insiders Points</td></tr>
+                                            </table>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td align="left" style="padding: 0;">
+                                      <!--[if mso]>
+                                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                                                   href="https://example.com/halloween-wreath"
+                                                   style="height:36px;v-text-anchor:middle;width:110px;"
+                                                   arcsize="50%" strokecolor="#4e3092" fillcolor="#4e3092">
+                                        <w:anchorlock/>
+                                        <center style="color:#ffffff;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">Shop now</center>
+                                      </v:roundrect>
+                                      <![endif]-->
+                                      <!--[if !mso]><!-->
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="cta-btn"
+                                             style="background-color: #4e3092; border-radius: 18px;">
+                                        <tr>
+                                          <td style="padding: 8px 22px;">
+                                            <a href="https://example.com/halloween-wreath" target="_blank"
+                                               style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px;
+                                                      line-height: 18px; font-weight: 700; color: #ffffff;
+                                                      text-decoration: none; display: inline-block;">
+                                              Shop now
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                      <!--<![endif]-->
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td></tr></table><![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #11 PRODUCT 2 — Hocus Pocus (image-left, text-right) ───────────────────────── -->
+        <!-- [Rule 1] [Rule 2] [Rule 3] [Rule 9] — same per-design lookups as cards #10 and #12.
+             [Rule 6 NOT FIRED] — the design intends image-LEFT desktop and image-on-top mobile,
+             which DOM order [image][text] satisfies natively (no flip needed). The rule reads
+             both viewports' intent per-design; when desktop and mobile DOM orders agree, the
+             rule's action is a no-op. Cards #11 and #13 fall in this branch; cards #10 and #12
+             require the dir-flip. -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01" style="background-color: #afca01; padding: 8px 20px 8px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   bgcolor="#ffffff" class="artcard-bg"
+                   style="background-color: #ffffff; border-radius: 16px; border-collapse: separate; overflow: hidden;">
+              <tr>
+                <td style="padding: 0;">
+                  <!--[if mso]>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr><td width="240" valign="middle">
+                  <![endif]-->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                         style="font-size: 0; text-align: left;">
+                    <tr>
+                      <td style="font-size: 0;">
+                        <div class="column" style="display: inline-block; max-width: 240px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="left" class="img-pad"
+                                  style="padding: 18px 0 18px 14px; line-height: 0; font-size: 0;">
+                                <img src="lego-insiders-halloween-assets/product2-hocuspocus.png"
+                                     alt="Hocus Pocus Sanderson Sisters Cottage LEGO set" width="220" class="bannerimg"
+                                     style="display: block; width: 100%; max-width: 220px; height: auto; border: 0;" />
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td><td width="280" valign="middle"><![endif]-->
+                        <div class="column stack-pad" style="display: inline-block; max-width: 280px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 18px 22px 18px 16px;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                  <tr>
+                                    <td class="product-title"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 18px; line-height: 24px;
+                                               font-weight: 700; color: #000000; padding: 0 0 14px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      Disney Hocus Pocus: The Sanderson Sisters&rsquo; Cottage
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td style="padding: 0 0 16px 0;">
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-pieces-2.png" alt="" role="presentation"
+                                                 width="16" height="22" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top" style="padding: 0 18px 0 0;">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">2316</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000;
+                                                              mso-line-height-rule: exactly;">Pieces</td></tr>
+                                            </table>
+                                          </td>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-points-2.png" alt="" role="presentation"
+                                                 width="26" height="26" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">+1495</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000; max-width: 140px;
+                                                              mso-line-height-rule: exactly;">LEGO&reg; Insiders Points</td></tr>
+                                            </table>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td align="left" style="padding: 0;">
+                                      <!--[if mso]>
+                                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                                                   href="https://example.com/hocus-pocus"
+                                                   style="height:36px;v-text-anchor:middle;width:110px;"
+                                                   arcsize="50%" strokecolor="#4e3092" fillcolor="#4e3092">
+                                        <w:anchorlock/>
+                                        <center style="color:#ffffff;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">Shop now</center>
+                                      </v:roundrect>
+                                      <![endif]-->
+                                      <!--[if !mso]><!-->
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="cta-btn"
+                                             style="background-color: #4e3092; border-radius: 18px;">
+                                        <tr>
+                                          <td style="padding: 8px 22px;">
+                                            <a href="https://example.com/hocus-pocus" target="_blank"
+                                               style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px;
+                                                      line-height: 18px; font-weight: 700; color: #ffffff;
+                                                      text-decoration: none; display: inline-block;">
+                                              Shop now
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                      <!--<![endif]-->
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td></tr></table><![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #12 PRODUCT 3 — Haunted mansion (text-left, image-right; mobile stacks image-first) ───────────────────────── -->
+        <!-- Same rule set and dir-flip pattern as card #10 — see #10's tag block for the
+             full per-design Rule 6 explanation. Per-design lookup example: image FRAME for
+             THIS card is product3-mansion (mansion render) vs product1-wreath in #10 — same
+             rule, different image asset, same emitted CSS pattern only because the design
+             puts both cards in the image-RIGHT desktop slot.
+             [Rule 1] [Rule 2] [Rule 3] [Rule 6] [Rule 9]. -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01" style="background-color: #afca01; padding: 8px 20px 8px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   bgcolor="#ffffff" class="artcard-bg"
+                   style="background-color: #ffffff; border-radius: 16px; border-collapse: separate; overflow: hidden;">
+              <tr>
+                <td style="padding: 0;">
+                  <!--[if mso]>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" dir="rtl">
+                    <tr><td width="240" valign="middle" dir="ltr">
+                  <![endif]-->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                         style="font-size: 0; text-align: left;">
+                    <tr>
+                      <td class="flip-row" style="font-size: 0;">
+                        <div class="column" dir="ltr" style="display: inline-block; max-width: 240px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="left" class="img-pad"
+                                  style="padding: 18px 14px 18px 0; line-height: 0; font-size: 0;">
+                                <img src="lego-insiders-halloween-assets/product3-mansion.png"
+                                     alt="Haunted Mansion LEGO set" width="220" class="bannerimg"
+                                     style="display: block; width: 100%; max-width: 220px; height: auto; border: 0;" />
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td><td width="280" valign="middle" dir="ltr"><![endif]-->
+                        <div class="column stack-pad" dir="ltr" style="display: inline-block; max-width: 280px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 18px 16px 18px 22px;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                  <tr>
+                                    <td class="product-title"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 18px; line-height: 24px;
+                                               font-weight: 700; color: #000000; padding: 0 0 14px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      Haunted mansion
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td style="padding: 0 0 16px 0;">
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-pieces-3.png" alt="" role="presentation"
+                                                 width="16" height="22" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top" style="padding: 0 18px 0 0;">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">736</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000;
+                                                              mso-line-height-rule: exactly;">Pieces</td></tr>
+                                            </table>
+                                          </td>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-points-3.png" alt="" role="presentation"
+                                                 width="26" height="26" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">+585</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000; max-width: 140px;
+                                                              mso-line-height-rule: exactly;">LEGO&reg; Insiders Points</td></tr>
+                                            </table>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td align="left" style="padding: 0;">
+                                      <!--[if mso]>
+                                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                                                   href="https://example.com/haunted-mansion"
+                                                   style="height:36px;v-text-anchor:middle;width:110px;"
+                                                   arcsize="50%" strokecolor="#4e3092" fillcolor="#4e3092">
+                                        <w:anchorlock/>
+                                        <center style="color:#ffffff;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">Shop now</center>
+                                      </v:roundrect>
+                                      <![endif]-->
+                                      <!--[if !mso]><!-->
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="cta-btn"
+                                             style="background-color: #4e3092; border-radius: 18px;">
+                                        <tr>
+                                          <td style="padding: 8px 22px;">
+                                            <a href="https://example.com/haunted-mansion" target="_blank"
+                                               style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px;
+                                                      line-height: 18px; font-weight: 700; color: #ffffff;
+                                                      text-decoration: none; display: inline-block;">
+                                              Shop now
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                      <!--<![endif]-->
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td></tr></table><![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #13 PRODUCT 4 — Jack-O'-Lantern (image-left, text-right) ───────────────────────── -->
+        <!-- Same shape as card #11. [Rule 1] [Rule 2] [Rule 3] [Rule 9] fire; [Rule 6] is a
+             no-op here (DOM order matches desktop visual order). -->
+        <tr>
+          <td class="lime-bg" bgcolor="#afca01" style="background-color: #afca01; padding: 8px 20px 24px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   bgcolor="#ffffff" class="artcard-bg"
+                   style="background-color: #ffffff; border-radius: 16px; border-collapse: separate; overflow: hidden;">
+              <tr>
+                <td style="padding: 0;">
+                  <!--[if mso]>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr><td width="240" valign="middle">
+                  <![endif]-->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                         style="font-size: 0; text-align: left;">
+                    <tr>
+                      <td style="font-size: 0;">
+                        <div class="column" style="display: inline-block; max-width: 240px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="left" class="img-pad"
+                                  style="padding: 18px 0 18px 14px; line-height: 0; font-size: 0;">
+                                <img src="lego-insiders-halloween-assets/product4-jackolantern.png"
+                                     alt="Jack-O'-Lantern Pickup Truck LEGO set" width="220" class="bannerimg"
+                                     style="display: block; width: 100%; max-width: 220px; height: auto; border: 0;" />
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td><td width="280" valign="middle"><![endif]-->
+                        <div class="column stack-pad" style="display: inline-block; max-width: 280px; width: 100%; vertical-align: middle;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 18px 22px 18px 16px;">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                  <tr>
+                                    <td class="product-title"
+                                        style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 18px; line-height: 24px;
+                                               font-weight: 700; color: #000000; padding: 0 0 14px 0; text-align: left;
+                                               mso-line-height-rule: exactly;">
+                                      Jack-O&rsquo;-Lantern Pickup Truck
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td style="padding: 0 0 16px 0;">
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-pieces-4.png" alt="" role="presentation"
+                                                 width="16" height="22" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top" style="padding: 0 18px 0 0;">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">177</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000;
+                                                              mso-line-height-rule: exactly;">Pieces</td></tr>
+                                            </table>
+                                          </td>
+                                          <td valign="top" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                                            <img src="lego-insiders-halloween-assets/icon-points-4.png" alt="" role="presentation"
+                                                 width="26" height="26" style="display: block; border: 0;" />
+                                          </td>
+                                          <td valign="top">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                              <tr><td class="product-stat-value" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px; line-height: 16px;
+                                                              font-weight: 700; color: #000000; padding: 0 0 2px 0;
+                                                              mso-line-height-rule: exactly;">+97</td></tr>
+                                              <tr><td class="product-stat-label" style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 10px; line-height: 12px;
+                                                              font-weight: 500; color: #000000; max-width: 140px;
+                                                              mso-line-height-rule: exactly;">LEGO&reg; Insiders Points</td></tr>
+                                            </table>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td align="left" style="padding: 0;">
+                                      <!--[if mso]>
+                                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                                                   href="https://example.com/jack-o-lantern"
+                                                   style="height:36px;v-text-anchor:middle;width:110px;"
+                                                   arcsize="50%" strokecolor="#4e3092" fillcolor="#4e3092">
+                                        <w:anchorlock/>
+                                        <center style="color:#ffffff;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">Shop now</center>
+                                      </v:roundrect>
+                                      <![endif]-->
+                                      <!--[if !mso]><!-->
+                                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="cta-btn"
+                                             style="background-color: #4e3092; border-radius: 18px;">
+                                        <tr>
+                                          <td style="padding: 8px 22px;">
+                                            <a href="https://example.com/jack-o-lantern" target="_blank"
+                                               style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 14px;
+                                                      line-height: 18px; font-weight: 700; color: #ffffff;
+                                                      text-decoration: none; display: inline-block;">
+                                              Shop now
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      </table>
+                                      <!--<![endif]-->
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        <!--[if mso]></td></tr></table><![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #14 LOWER GREEN DECORATIVE BAND ───────────────────────── -->
+        <!-- Component basis: image-block.html (no caption) — Figma node 2833:2039 (600x55).
+             Band PNG has ~4% transparency in the upper-right corner where lime should show through.
+             bgcolor=lime so the transparent notch reveals lime continuity from section #13. -->
+        <tr>
+          <td bgcolor="#afca01" style="background-color: #afca01; padding: 0; line-height: 0; font-size: 0;">
+            <img src="lego-insiders-halloween-assets/green-band-2.png"
+                 alt="" role="presentation" width="600" class="bannerimg"
+                 style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #15 FOOTER USER-INFO ROW (4 COL + PIPE DIVIDER) ───────────────────────── -->
+        <!-- Component basis: column-layout-4.html — [avatar] Andy | [points-icon] 0
+             [GAP] No "user-info" component slot exists today; the row is inlined.
+
+             [Rule 4 — visible divider absent from FRAME tree]
+                Inputs per-design: visual scan of the rendered design PNG between sibling
+                text/image columns; check if a LINE/RECTANGLE/TEXT divider node exists in the
+                FRAME tree between them. If a 1–2px line or pipe character is visible in the
+                PNG but no divider node exists, emit one in HTML.
+                Action (universal): insert a <td> between the columns containing
+                  (a) a literal `|` character with `color: <neutral>; padding: 0 14px;`,
+                  (b) a 1px-wide bgcolor <td> for a clean line, or
+                  (c) an <hr> for a horizontal divider.
+                THIS LEGO instance: the design shows a `|` between Andy and the points icon
+                that has no corresponding FRAME node — emitted as a literal pipe with
+                color:#c8c8c8 (neutral mid-grey, readable in both light and dark modes).
+
+             [Rule 9 — dark-mode contrast on a wrapper-flipped bg, sub-pattern: user-info row]
+                Inputs per-design: text cells on a wrapper-flipped dark-mode bg whose default
+                color is dark (e.g. #000) and which lack a class that flips them light.
+                Action: add a `footer-strong`-type class so name/number cells flip to the
+                dark-palette emphasis colour (typically #fff) in dark mode; leave the
+                neutral-grey divider unchanged.
+                THIS LEGO instance: "Andy" and "0" cells get class="footer-strong"; pipe
+                stays #c8c8c8. -->
+        <tr>
+          <td class="footer-bg" bgcolor="#f4f4f4"
+              style="background-color: #f4f4f4; padding: 24px 60px 14px 60px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"
+                   style="margin: 0 auto;">
+              <tr>
+                <td valign="middle" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                  <img src="lego-insiders-halloween-assets/user-avatar.png" alt="Andy avatar"
+                       width="30" height="30" style="display: block; border: 0; border-radius: 15px;" />
+                </td>
+                <td valign="middle" align="left" class="footer-strong"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 15px; line-height: 20px;
+                           font-weight: 600; color: #000000; padding: 0 14px 0 0; white-space: nowrap;
+                           mso-line-height-rule: exactly;">
+                  Andy
+                </td>
+                <td valign="middle"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 18px; line-height: 20px;
+                           font-weight: 400; color: #c8c8c8; padding: 0 14px 0 0;
+                           mso-line-height-rule: exactly;">
+                  |
+                </td>
+                <td valign="middle" style="padding: 0 8px 0 0; line-height: 0; font-size: 0;">
+                  <img src="lego-insiders-halloween-assets/user-points-icon.png" alt="Insiders points"
+                       width="30" height="30" style="display: block; border: 0;" />
+                </td>
+                <td valign="middle" align="left" class="footer-strong"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 15px; line-height: 20px;
+                           font-weight: 600; color: #000000; white-space: nowrap;
+                           mso-line-height-rule: exactly;">
+                  0
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #16 INSIDERS WHITE CARD (logo + andy/email + barcode + bottom-shape) ───────────────────────── -->
+        <!-- Component basis: card-shell with bg=#ffffff + border-radius wrapping N children
+             from the parent FRAME. [GAP] No card-with-N-children component today.
+
+             [Rule 1 — card with N children collapses to one container]
+                Inputs per-design: parent FRAME's fills, cornerRadius, child count.
+                THIS LEGO instance: parent FRAME 2833:2057 has fills[0]=#ffffff,
+                cornerRadius=24, 4 children → one wrapping table with bgcolor=#ffffff,
+                border-radius:24px wraps all 4 children as inner rows.
+
+             [Rule 5 — asset name disagrees with content]
+                Inputs per-design: each image's PNG content (perceptual hash, aspect ratio,
+                sibling order) compared against its `name` field. Trust visual content over
+                names when slot-routing.
+                THIS LEGO instance: assets `footer-card.png` (actually the Insiders header
+                logo with shapes), `footer-social.png` (actually the barcode), and
+                `footer-logo.png` (actually the bottom blue paper-cut shape) are all named
+                after the designer's intended *role* in the card, not the visual content.
+                A name-based slot matcher would route the barcode into a social-icon slot
+                and produce visibly wrong output.
+
+             [Rule 9 — IDENTITY EXCEPTION: physical-card representation stays light]
+                Inputs per-design: card aspect ratio, presence of barcode/QR/strip-of-numbers,
+                logo on white field, distinct cornerRadius. When 2+ of these signals fire,
+                the card is a physical-identity element (membership card, boarding pass,
+                credit-card-style coupon) and should opt OUT of the dark-mode flip.
+                THIS LEGO instance: 440×369 white card with LEGO Insiders logo on white +
+                EAN barcode + 24px cornerRadius — three signals fire → no class="card-bg",
+                stays white in dark mode by design. The text inside stays dark, readable
+                against the unflipped white surface.
+
+             [Rule 11 — inner card width matches its image children's max-width]
+                Inputs per-design: every direct child <img> inside this card has the same
+                inline max-width (the dominant Figma image native width); the inner card's
+                <table> width must match that value (not 100%) or a horizontal gap appears
+                where the card extends past the imagery.
+                Action (universal): set the card's <table width="<NATIVE_PX>"> + align="center"
+                + class="wf" so desktop pixel-aligns and mobile stretches via the responsive
+                .wf rule.
+                THIS LEGO instance: 4 image children (440×114, text row, 440×90, 440×44) all
+                share native width 440px — card emits width="440" align="center" class="wf".
+                For a different design the value comes from THAT design's dominant image. -->
+        <tr>
+          <td bgcolor="#f4f4f4" class="footer-bg" align="center"
+              style="background-color: #f4f4f4; padding: 6px 16px 6px 16px;">
+            <table role="presentation" width="440" align="center" cellpadding="0" cellspacing="0" border="0"
+                   bgcolor="#ffffff" class="wf"
+                   style="background-color: #ffffff; border-radius: 24px; border-collapse: separate; overflow: hidden;">
+              <tr>
+                <td style="padding: 0; line-height: 0; font-size: 0;">
+                  <img src="lego-insiders-halloween-assets/footer-card.png"
+                       alt="LEGO Insiders" width="440" class="bannerimg"
+                       style="display: block; width: 100%; max-width: 440px; height: auto; border: 0;" />
+                </td>
+              </tr>
+              <tr>
+                <td align="center"
+                    style="background-color: #ffffff; padding: 4px 24px 8px 24px;
+                           font-family: 'Noto Sans', Arial, sans-serif; font-size: 16px; line-height: 22px;
+                           font-weight: 700; color: #000000;
+                           mso-line-height-rule: exactly;">
+                  Andy<br />
+                  <span style="font-weight: 400;">email@brand.emaillove.com</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 0; line-height: 0; font-size: 0;">
+                  <img src="lego-insiders-halloween-assets/footer-social.png"
+                       alt="Membership barcode 820209814" width="440" class="bannerimg"
+                       style="display: block; width: 100%; max-width: 440px; height: auto; border: 0;" />
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 0; line-height: 0; font-size: 0;">
+                  <img src="lego-insiders-halloween-assets/footer-logo.png"
+                       alt="" role="presentation" width="440" class="bannerimg"
+                       style="display: block; width: 100%; max-width: 440px; height: auto; border: 0;" />
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ───────────────────────── #20 FOOTER LINKS + LEGAL ───────────────────────── -->
+        <!-- Component basis: footer-centered.html (links + copyright slots) -->
+        <tr>
+          <td class="footer-bg" bgcolor="#f4f4f4"
+              style="background-color: #f4f4f4; padding: 8px 24px 24px 24px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" class="footer-link"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 12px; line-height: 18px;
+                           font-weight: 500; color: #000000; padding: 0 0 12px 0;
+                           mso-line-height-rule: exactly;">
+                  <a href="https://example.com/unsubscribe" target="_blank"
+                     style="color: #000000; text-decoration: underline;">Unsubscribe</a>
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  <a href="https://example.com/privacy" target="_blank"
+                     style="color: #000000; text-decoration: underline;">Privacy Policy</a>
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  <a href="https://example.com/cookies" target="_blank"
+                     style="color: #000000; text-decoration: underline;">Cookies Policy</a>
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  <a href="https://example.com/preferences" target="_blank"
+                     style="color: #000000; text-decoration: underline;">Preferences</a>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" class="footer-text"
+                    style="font-family: 'Noto Sans', Arial, sans-serif; font-size: 11px; line-height: 16px;
+                           font-weight: 500; color: #000000; padding: 8px 20px 0 20px;
+                           mso-line-height-rule: exactly;">
+                  *For full Terms &amp; Conditions,
+                  <a href="https://example.com/terms" target="_blank"
+                     style="color: #000000; text-decoration: underline;">click here</a>.
+                  <br />
+                  This email was sent to: email@brand.emaillove.com.
+                  <br />
+                  LEGO Aastvej 1, Billund, Denmark.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </div>
+  </body>
+</html>

@@ -5,6 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+import httpx
+from sqlalchemy.orm.attributes import flag_modified
+
 from app.core.logging import get_logger
 from app.design_sync.assets import DesignAssetService
 from app.design_sync.crypto import decrypt_token
@@ -24,12 +27,14 @@ from app.design_sync.schemas import (
 )
 from app.design_sync.services._serialization import (
     cached_dict_to_node,
+    collect_top_frame_ids,
     deserialize_node,
     node_to_response,
 )
 
 if TYPE_CHECKING:
     from app.auth.models import User
+    from app.design_sync.models import DesignConnection, DesignTokenSnapshot
     from app.design_sync.services._context import DesignSyncContext
 
 
@@ -64,6 +69,10 @@ class AssetsService:
                     list[dict[str, Any]],
                     [p for p in cached.get("pages", []) if isinstance(p, dict)],
                 )
+                if thumbs:
+                    thumbs = await self._refresh_thumbnails_if_stale(
+                        conn, snapshot, thumbs, cached_pages
+                    )
                 return FileStructureResponse(
                     connection_id=connection_id,
                     file_name=str(cached.get("file_name", "")),
@@ -80,6 +89,72 @@ class AssetsService:
             file_name=structure.file_name,
             pages=[node_to_response(p) for p in structure.pages],
         )
+
+    async def _refresh_thumbnails_if_stale(
+        self,
+        conn: DesignConnection,
+        snapshot: DesignTokenSnapshot,
+        thumbs: dict[str, str],
+        cached_pages: list[dict[str, Any]],
+    ) -> dict[str, str]:
+        """HEAD-check one cached thumbnail; re-export & persist all if expired.
+
+        Provider signed URLs (Figma S3, Penpot CDN) expire after weeks. Cached
+        snapshot URLs surface as broken images in the UI. On a single 4xx we
+        re-export every top frame and update the snapshot in place. Best-effort
+        — any failure returns the original thumbs so the request still succeeds.
+        """
+        sentinel_url = next(iter(thumbs.values()), None)
+        if sentinel_url is None:
+            return thumbs
+        try:
+            async with httpx.AsyncClient(timeout=5.0, follow_redirects=False) as client:
+                head_resp = await client.head(sentinel_url)
+            if head_resp.status_code < 400:
+                return thumbs
+        except httpx.HTTPError:
+            return thumbs
+
+        top_frame_ids = collect_top_frame_ids(cached_pages)
+        if not top_frame_ids:
+            return thumbs
+
+        try:
+            provider = self._ctx.get_provider(conn.provider)
+            access_token = decrypt_token(conn.encrypted_token)
+            images = await provider.export_images(
+                conn.file_ref, access_token, top_frame_ids, format="png", scale=1.0
+            )
+        except Exception:
+            logger.warning(
+                "design_sync.thumbnail_refresh_failed",
+                connection_id=conn.id,
+                exc_info=True,
+            )
+            return thumbs
+
+        refreshed = {img.node_id: img.url for img in images}
+        if not refreshed:
+            return thumbs
+
+        snapshot.tokens_json["_thumbnails"] = refreshed
+        flag_modified(snapshot, "tokens_json")
+        try:
+            await self._ctx.db.commit()
+        except Exception:
+            logger.warning(
+                "design_sync.thumbnail_refresh_persist_failed",
+                connection_id=conn.id,
+                exc_info=True,
+            )
+            await self._ctx.db.rollback()
+            return refreshed
+        logger.info(
+            "design_sync.thumbnails_refreshed",
+            connection_id=conn.id,
+            count=len(refreshed),
+        )
+        return refreshed
 
     async def list_components(self, connection_id: int, user: User) -> ComponentListResponse:
         """List components for a connection."""

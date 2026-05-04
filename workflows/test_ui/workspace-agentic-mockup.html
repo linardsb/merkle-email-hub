@@ -1,0 +1,1607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Email Hub · Workspace Mockup</title>
+<!--
+  Email Hub Workspace — Agentic UX mockup.
+  All visible text is Email-Hub-branded; this is a static preview of the
+  workspace shell with the brand inspector, agent crew rail, live activity
+  log, and inline insight cards.
+-->
+<style>
+  /* ─────────────────────────────────────────────────────────────────────
+     DESIGN TOKENS — Email Hub product brand (locked, mirrors tokens.css)
+     The production app reads these from cms/packages/ui/src/tokens.css.
+     Brand red #E4002B, teal #06757E, navy #12295D, purple-gray neutrals
+     (hue 270), sharp corners, Proxima Nova font stack.
+     ───────────────────────────────────────────────────────────────────── */
+  :root {
+    /* Tier 2 semantic — Email Hub product brand */
+    --color-primary:    #1F1E26;   /* deep purple-gray ink (foreground text) */
+    --color-secondary:  #5F5E6C;   /* mid purple-gray (muted foreground) */
+    --color-tertiary:   #E4002B;   /* Brand brand red — interactive accent */
+    --color-neutral:    #FBFBFC;   /* near-white, hue 270 (background) */
+    --color-on-tertiary:#ffffff;
+    --color-surface:    #ffffff;
+    --color-surface-2:  #F4F4F6;
+    --color-border:     #E5E4EA;
+    --color-border-strong:#CFCED5;
+    --color-muted:      #94939F;
+    --color-success:    #06757E;   /* Brand brand teal */
+    --color-warning:    #B07A0E;   /* hue 75 amber */
+    --color-danger:     #C8451D;   /* hue 40 orange-red, distinguished from brand red */
+    --color-info:       #12295D;   /* navy */
+
+    /* Chrome — Brand navy backdrop for topbar + rail */
+    --color-chrome-bg:  #12295D;
+    --color-chrome-bg-2:#0E1F45;
+
+    /* Typography — Proxima Nova primary, Space Grotesk secondary, JetBrains mono */
+    --font-sans:  "Proxima Nova", "proxima-nova", "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono:  "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --font-label: "Proxima Nova", "Space Grotesk", system-ui, sans-serif;
+
+    /* Sharp corners — locked Brand brand requirement */
+    --rad-sm: 0;
+    --rad-md: 0;
+
+    /* spacing */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 20px;
+    --sp-6: 24px;
+    --sp-8: 32px;
+    --sp-10: 40px;
+
+    /* layout */
+    --top-h: 56px;
+    --rail-w: 56px;
+    --crew-w: 312px;
+    --convo-w: 408px;
+    --bottom-h: 268px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--color-neutral); color: var(--color-primary); font-family: var(--font-sans); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+  body { overflow: hidden; }
+
+  a { color: inherit; text-decoration: none; }
+  button { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+  code, pre { font-family: var(--font-mono); }
+  .label-caps { font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; font-weight: 500; color: var(--color-secondary); }
+  .mono { font-family: var(--font-mono); }
+  .row { display: flex; align-items: center; }
+  .gap-1 { gap: 4px; } .gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; } .gap-6 { gap: 24px; }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .nowrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     ICONS — minimal inline SVG sprites
+     ───────────────────────────────────────────────────────────────────── */
+  .ico { display: inline-block; width: 16px; height: 16px; vertical-align: middle; flex-shrink: 0; }
+  .ico-lg { width: 20px; height: 20px; }
+  .ico-sm { width: 12px; height: 12px; }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     APP SHELL
+     ───────────────────────────────────────────────────────────────────── */
+  .app {
+    display: grid;
+    grid-template-rows: var(--top-h) 1fr var(--bottom-h);
+    grid-template-columns: var(--rail-w) var(--crew-w) 1fr var(--convo-w);
+    grid-template-areas:
+      "top  top   top    top"
+      "rail crew  canvas convo"
+      "bot  bot   bot    bot";
+    height: 100vh;
+    background: var(--color-neutral);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     TOP BAR
+     ───────────────────────────────────────────────────────────────────── */
+  .topbar {
+    grid-area: top;
+    background: var(--color-chrome-bg);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--sp-4) 0 var(--sp-3);
+    gap: var(--sp-4);
+    border-bottom: 1px solid var(--color-chrome-bg-2);
+  }
+  .brand { display: flex; align-items: center; gap: var(--sp-3); }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: var(--color-tertiary); color: var(--color-on-tertiary);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-label); font-weight: 600; font-size: 12px;
+  }
+  .brand-name { font-family: var(--font-label); text-transform: uppercase; font-size: 12px; letter-spacing: 0.14em; opacity: 0.92; }
+  .brand-divider { width: 1px; height: 24px; background: rgba(255,255,255,.16); margin: 0 var(--sp-2); }
+
+  .crumb { display: flex; align-items: center; gap: var(--sp-2); color: rgba(255,255,255,.84); font-size: 13px; }
+  .crumb .sep { opacity: 0.4; }
+  .crumb .current { color: #fff; font-weight: 500; }
+
+  .designmd-chip {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+    color: rgba(255,255,255,.84);
+    padding: 4px var(--sp-3); border-radius: var(--rad-sm);
+    font-family: var(--font-mono); font-size: 11px;
+    cursor: pointer;
+  }
+  .designmd-chip strong { color: #fff; font-weight: 500; }
+  .designmd-chip .swatch { display: inline-flex; gap: 2px; }
+  .designmd-chip .swatch span { display: inline-block; width: 10px; height: 10px; border: 1px solid rgba(255,255,255,.12); }
+
+  .save-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: rgba(255,255,255,.78);
+    background: rgba(255,255,255,.06);
+    padding: 4px 10px; border-radius: var(--rad-sm);
+    font-size: 12px;
+  }
+  .save-pill .dot { width: 6px; height: 6px; background: var(--color-success); border-radius: 50%; }
+
+  .avatars { display: flex; align-items: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--color-chrome-bg); margin-left: -8px; display:inline-flex; align-items:center; justify-content:center; font-family: var(--font-label); font-size: 10px; color: #fff; font-weight: 600; }
+  .avatar:first-child { margin-left: 0; }
+  .avatar.a1 { background: var(--color-info); }
+  .avatar.a2 { background: var(--color-tertiary); }
+  .avatar.a3 { background: var(--color-success); }
+  .avatar.a4 { background: var(--color-secondary); }
+  .avatar.live::after { content: ""; position: absolute; }
+
+  .top-actions { display: flex; align-items: center; gap: var(--sp-2); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--rad-sm);
+    font-size: 12px; font-weight: 500;
+    background: rgba(255,255,255,.08); color: #fff; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .btn:hover { background: rgba(255,255,255,.14); }
+  .btn-primary {
+    background: var(--color-tertiary); border-color: var(--color-tertiary); color: var(--color-on-tertiary);
+  }
+  .btn-primary:hover { background: color-mix(in srgb, var(--color-tertiary), black 12%); }
+  .btn-ghost { background: transparent; border-color: transparent; }
+
+  .kbd {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: rgba(255,255,255,.08); padding: 2px 6px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 3px;
+    font-family: var(--font-mono); font-size: 10px;
+    color: rgba(255,255,255,.78);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     LEFT ICON RAIL
+     ───────────────────────────────────────────────────────────────────── */
+  .rail {
+    grid-area: rail;
+    background: var(--color-chrome-bg-2);
+    color: #ffffff;
+    display: flex; flex-direction: column; align-items: center;
+    padding: var(--sp-3) 0;
+    gap: var(--sp-1);
+    border-right: 1px solid var(--color-chrome-bg-2);
+  }
+  .rail-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.56);
+    border-radius: var(--rad-sm);
+    cursor: pointer;
+    position: relative;
+  }
+  .rail-btn:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .rail-btn.active { color: #fff; background: rgba(184,66,46,.18); }
+  .rail-btn.active::before { content: ""; position: absolute; left: -8px; top: 8px; bottom: 8px; width: 3px; background: var(--color-tertiary); border-radius: 0 2px 2px 0; }
+  .rail-spacer { flex: 1; }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     AGENT CREW (left main panel)
+     ───────────────────────────────────────────────────────────────────── */
+  .crew {
+    grid-area: crew;
+    background: var(--color-surface-2);
+    border-right: 1px solid var(--color-border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+  }
+  .panel-title { font-family: var(--font-label); text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; color: var(--color-primary); font-weight: 600; }
+  .panel-sub { font-size: 11px; color: var(--color-secondary); }
+
+  .crew-runtime {
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .runtime-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .runtime-row + .runtime-row { margin-top: 6px; }
+  .runtime-row .key { color: var(--color-secondary); }
+  .runtime-row .val { font-family: var(--font-mono); font-size: 11px; color: var(--color-primary); }
+  .runtime-progress { margin-top: var(--sp-3); }
+  .progress-track { height: 4px; background: var(--color-border); position: relative; overflow: hidden; }
+  .progress-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--color-tertiary); }
+  .progress-fill.active { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+  .crew-list {
+    flex: 1; overflow-y: auto;
+    padding: var(--sp-2);
+  }
+
+  .agent-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--rad-sm);
+    padding: var(--sp-3);
+    display: flex; gap: var(--sp-3);
+    margin-bottom: 6px;
+    cursor: pointer;
+    position: relative;
+  }
+  .agent-card:hover { border-color: var(--color-border-strong); }
+  .agent-card.is-active { border-color: var(--color-tertiary); box-shadow: 0 0 0 1px var(--color-tertiary) inset; }
+  .agent-card.is-running { background: linear-gradient(180deg, var(--color-surface) 0%, color-mix(in srgb, var(--color-tertiary) 4%, white) 100%); }
+
+  .agent-avatar {
+    width: 28px; height: 28px; flex-shrink: 0;
+    background: var(--color-primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-label); font-weight: 600; font-size: 11px;
+    border-radius: var(--rad-sm);
+    position: relative;
+  }
+  .agent-avatar .status-dot {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 9px; height: 9px; border-radius: 50%;
+    border: 2px solid var(--color-surface);
+  }
+  .status-dot.idle    { background: var(--color-muted); }
+  .status-dot.run     { background: var(--color-warning); }
+  .status-dot.ok      { background: var(--color-success); }
+  .status-dot.fail    { background: var(--color-danger); }
+  .status-dot.review  { background: var(--color-info); }
+
+  .agent-meta { flex: 1; min-width: 0; }
+  .agent-name { font-weight: 600; font-size: 13px; color: var(--color-primary); display: flex; align-items: center; gap: 6px; }
+  .agent-name .ver { color: var(--color-muted); font-weight: 400; font-size: 11px; }
+  .agent-action { font-size: 11.5px; color: var(--color-secondary); margin-top: 2px; line-height: 1.35; }
+  .agent-foot { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--color-muted); }
+
+  .conf-bar {
+    height: 3px; background: var(--color-border); margin-top: 6px;
+    position: relative;
+  }
+  .conf-bar::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--w, 0%); background: var(--c, var(--color-success)); }
+
+  .agent-card .badge {
+    position: absolute; top: 6px; right: 6px;
+    font-size: 9px; font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 2px 6px;
+    background: var(--color-tertiary); color: #fff;
+    border-radius: 2px;
+  }
+  .badge-info { background: var(--color-info); }
+  .badge-ok { background: var(--color-success); }
+  .badge-mute { background: var(--color-secondary); }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     CANVAS (center)
+     ───────────────────────────────────────────────────────────────────── */
+  .canvas {
+    grid-area: canvas;
+    background: var(--color-neutral);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--color-border);
+  }
+  .canvas-toolbar {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .seg {
+    display: inline-flex; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--rad-sm); padding: 2px;
+  }
+  .seg button {
+    padding: 4px 10px; font-size: 12px; font-weight: 500; color: var(--color-secondary);
+    border-radius: 2px;
+  }
+  .seg button.active { background: var(--color-surface); color: var(--color-primary); box-shadow: 0 1px 2px rgba(26,28,30,.04); }
+
+  .vp-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--color-surface-2);
+    padding: 4px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--rad-sm);
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--color-secondary);
+  }
+  .vp-pill .ico { width: 12px; height: 12px; }
+
+  .lock-state {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--color-muted); font-size: 11px;
+    margin-left: auto;
+  }
+
+  /* center stage */
+  .stage {
+    flex: 1; overflow: auto;
+    padding: var(--sp-6);
+    background: var(--color-neutral);
+    display: flex; justify-content: center;
+  }
+
+  .canvas-frame {
+    width: 640px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 10px 30px -8px rgba(26,28,30,.12);
+    position: relative;
+  }
+  .canvas-frame::before {
+    content: "BF2026-hero-v3 · 640px";
+    position: absolute; top: -22px; left: 0;
+    font-family: var(--font-mono); font-size: 10px; color: var(--color-muted);
+  }
+
+  /* email sections */
+  .esec {
+    position: relative;
+    padding: 0;
+    border-bottom: 1px dashed transparent;
+    transition: outline-color 120ms;
+  }
+  .esec:hover { outline: 2px solid rgba(184,66,46,.32); outline-offset: -2px; }
+  .esec.is-selected { outline: 2px solid var(--color-tertiary); outline-offset: -2px; }
+  .esec-tag {
+    position: absolute; top: 0; left: 0;
+    display: inline-flex; align-items: center; gap: 4px;
+    transform: translateY(-100%);
+    background: var(--color-tertiary); color: #fff;
+    font-family: var(--font-label); text-transform: uppercase; font-size: 9px; letter-spacing: 0.08em;
+    padding: 3px 6px;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .esec.is-selected .esec-tag, .esec:hover .esec-tag { opacity: 1; }
+
+  .esec-actions {
+    position: absolute; top: 6px; right: 6px;
+    display: none; gap: 4px;
+  }
+  .esec.is-selected .esec-actions { display: flex; }
+  .esec-actions button {
+    background: rgba(26,28,30,.92); color: #fff;
+    padding: 4px 8px; border-radius: var(--rad-sm);
+    font-size: 11px; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .esec-actions button:hover { background: var(--color-primary); }
+  .esec-actions button.accent { background: var(--color-tertiary); }
+
+  /* fake email content */
+  .e-header {
+    background: var(--color-primary); color: var(--color-neutral);
+    padding: 18px 28px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .e-header .logo { font-family: var(--font-label); font-size: 12px; letter-spacing: 0.18em; }
+  .e-hero {
+    background: var(--color-tertiary); color: #fff;
+    padding: 56px 32px 64px;
+    text-align: center;
+  }
+  .e-hero .eyebrow { font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px; opacity: 0.84; }
+  .e-hero .h1 { font-family: var(--font-sans); font-size: 36px; font-weight: 600; line-height: 1.1; margin: 12px 0 8px; letter-spacing: -0.01em; }
+  .e-hero .lede { font-size: 14px; opacity: 0.88; max-width: 360px; margin: 0 auto; }
+  .e-hero .cta { display: inline-block; margin-top: 22px; background: #fff; color: var(--color-tertiary); font-weight: 600; padding: 10px 22px; border-radius: var(--rad-sm); font-size: 13px; }
+
+  .e-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--color-border); }
+  .e-grid > div { background: var(--color-surface); padding: 22px 18px; }
+  .e-card-eyebrow { font-family: var(--font-label); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-tertiary); }
+  .e-card-h { font-size: 16px; font-weight: 600; margin: 6px 0 4px; line-height: 1.25; }
+  .e-card-p { font-size: 12.5px; color: var(--color-secondary); line-height: 1.5; }
+  .e-card-link { font-size: 12px; color: var(--color-tertiary); margin-top: 8px; display: inline-block; font-weight: 600; }
+
+  .e-cta-band {
+    background: var(--color-surface-2); padding: 28px;
+    text-align: center;
+  }
+  .e-cta-band .h { font-size: 18px; font-weight: 600; margin: 0 0 10px; }
+  .e-cta-band .b { display: inline-block; background: var(--color-primary); color: #fff; padding: 10px 18px; border-radius: var(--rad-sm); font-size: 13px; font-weight: 500; }
+
+  .e-footer {
+    padding: 22px 28px; font-size: 11px; color: var(--color-muted); text-align: center;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* tokens overlay */
+  .token-overlay {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(26,28,30,.92); color: #fff;
+    padding: 4px 8px; font-family: var(--font-mono); font-size: 10px;
+    display: none;
+  }
+  .esec.is-selected .token-overlay { display: inline-block; }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     RIGHT CONVERSATION + LIVE ACTIVITY
+     ───────────────────────────────────────────────────────────────────── */
+  .convo {
+    grid-area: convo;
+    background: var(--color-surface);
+    display: grid; grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+  }
+  .convo-tabs {
+    display: flex; border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+  }
+  .convo-tab {
+    flex: 1; padding: 10px var(--sp-3);
+    text-align: center; font-size: 12px; font-weight: 500;
+    color: var(--color-secondary);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .convo-tab.active { color: var(--color-primary); border-bottom-color: var(--color-tertiary); background: var(--color-surface); }
+
+  .convo-body { overflow-y: auto; padding: var(--sp-3) var(--sp-4); }
+
+  /* Live activity event log block */
+  .stream-block {
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--rad-sm);
+    margin-bottom: var(--sp-4);
+    overflow: hidden;
+  }
+  .stream-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    font-size: 11px;
+  }
+  .stream-head .lbl { font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-secondary); }
+  .stream-head .live {
+    display: inline-flex; align-items: center; gap: 5px;
+    color: var(--color-tertiary);
+    font-family: var(--font-label); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .stream-head .live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--color-tertiary); animation: pulse 1s ease-in-out infinite; }
+
+  .stream-events {
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-secondary);
+    line-height: 1.7;
+    max-height: 248px; overflow-y: auto;
+  }
+  .stream-events .ev { display: grid; grid-template-columns: 56px 86px 14px 1fr; gap: 6px; padding: 1px 0; align-items: baseline; }
+  .stream-events .ts { color: var(--color-muted); }
+  .stream-events .src { color: var(--color-info); }
+  .stream-events .ev .name { color: var(--color-primary); }
+  .stream-events .ev.warn .name { color: var(--color-warning); }
+  .stream-events .ev.fail .name { color: var(--color-danger); }
+  .stream-events .ev.ok .name { color: var(--color-success); }
+  .stream-events .ev .arr { color: var(--color-muted); }
+  .stream-events .ev .arg { color: var(--color-secondary); }
+  .stream-events .ev .arg .v { color: var(--color-primary); }
+
+  /* chat messages */
+  .msg { margin-bottom: var(--sp-4); }
+  .msg-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--color-secondary); margin-bottom: 4px; }
+  .msg-meta .who { font-weight: 600; color: var(--color-primary); font-size: 12px; }
+  .msg-meta .role { font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; padding: 1px 5px; background: var(--color-surface-2); border: 1px solid var(--color-border); }
+  .msg-meta .ts { color: var(--color-muted); margin-left: auto; font-family: var(--font-mono); }
+
+  .msg-body { font-size: 13px; color: var(--color-primary); line-height: 1.55; }
+  .msg-body p { margin: 0 0 6px; }
+  .msg-body code { background: var(--color-surface-2); padding: 1px 4px; border-radius: 2px; font-size: 11.5px; }
+
+  /* Declarative insight card embedded in chat */
+  .a2-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--rad-sm);
+    background: var(--color-surface);
+    margin: 10px 0 4px;
+    overflow: hidden;
+  }
+  .a2-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--color-surface-2);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .a2-card-name {
+    font-family: var(--font-mono); font-size: 11px; color: var(--color-info);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .a2-card-name::before { content: "{"; color: var(--color-tertiary); font-weight: 600; }
+  .a2-card-name::after { content: "}"; color: var(--color-tertiary); font-weight: 600; }
+  .a2-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    padding: 2px 6px; border-radius: 2px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--color-secondary);
+    cursor: pointer;
+  }
+  .a2-pill:hover { color: var(--color-primary); border-color: var(--color-border-strong); }
+
+  .a2-card-body { padding: var(--sp-3) var(--sp-4); }
+  .a2-prop {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--color-secondary);
+    display: flex; gap: 8px;
+    padding: 1px 0;
+  }
+  .a2-prop .k { color: var(--color-info); width: 110px; flex-shrink: 0; }
+  .a2-prop .v { color: var(--color-primary); }
+  .a2-prop .v.string { color: var(--color-success); }
+  .a2-prop .v.tok { color: var(--color-tertiary); }
+
+  .a2-render {
+    margin-top: var(--sp-3);
+    padding: var(--sp-3);
+    background: var(--color-neutral);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--rad-sm);
+  }
+  .a2-render .render-h { font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em; font-size: 9px; color: var(--color-muted); margin-bottom: 6px; }
+
+  /* InsightCard demo (rendered output) */
+  .insight {
+    background: var(--color-surface);
+    border-left: 3px solid var(--color-tertiary);
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .insight .h { font-weight: 600; font-size: 13px; margin-bottom: 2px; color: var(--color-primary); }
+  .insight .row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; color: var(--color-secondary); }
+  .insight .delta { color: var(--color-success); font-weight: 600; }
+
+  .a2-card-actions { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--color-border); background: var(--color-surface-2); }
+  .a2-btn {
+    padding: 5px 10px; font-size: 11px; font-weight: 500;
+    border-radius: var(--rad-sm);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-surface); color: var(--color-primary);
+  }
+  .a2-btn:hover { background: var(--color-surface-2); }
+  .a2-btn.primary { background: var(--color-tertiary); color: var(--color-on-tertiary); border-color: var(--color-tertiary); }
+  .a2-btn.primary:hover { background: color-mix(in srgb, var(--color-tertiary), black 12%); }
+
+  /* Awaiting-review pause card */
+  .hitl {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-tertiary) 4%, white) 0%, #fff 100%);
+    border: 1px solid var(--color-tertiary);
+    border-radius: var(--rad-sm);
+    padding: var(--sp-3) var(--sp-4);
+    margin: var(--sp-3) 0;
+  }
+  .hitl-h { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; color: var(--color-tertiary); margin-bottom: 4px; font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em; }
+  .hitl-body { font-size: 12.5px; color: var(--color-primary); line-height: 1.5; }
+
+  /* chat input */
+  .chat-input {
+    border-top: 1px solid var(--color-border);
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--color-surface);
+  }
+  .chat-input .ctx-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .ctx-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--rad-sm);
+    padding: 2px 6px; font-size: 11px; color: var(--color-secondary);
+  }
+  .ctx-chip .x { color: var(--color-muted); cursor: pointer; }
+  .chat-input textarea {
+    width: 100%; resize: none;
+    border: 1px solid var(--color-border-strong); border-radius: var(--rad-sm);
+    padding: 10px 12px;
+    font: 13px var(--font-sans); color: var(--color-primary);
+    background: var(--color-surface);
+    min-height: 56px;
+  }
+  .chat-input textarea:focus { outline: none; border-color: var(--color-tertiary); }
+  .chat-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--color-muted); }
+  .chat-foot .btn-send { background: var(--color-primary); color: #fff; padding: 6px 14px; border-radius: var(--rad-sm); font-size: 12px; font-weight: 500; }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     BOTTOM PANEL (QA / Rendering / Approval / Eval)
+     ───────────────────────────────────────────────────────────────────── */
+  .bot {
+    grid-area: bot;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: grid; grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+  .bot-tabs {
+    display: flex; align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+    padding-right: var(--sp-3);
+  }
+  .bot-tab {
+    padding: 10px 16px; font-size: 12px; font-weight: 500; color: var(--color-secondary);
+    cursor: pointer; border-right: 1px solid var(--color-border);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .bot-tab.active { background: var(--color-surface); color: var(--color-primary); border-bottom: 2px solid var(--color-tertiary); margin-bottom: -1px; }
+  .count-pill { background: var(--color-primary); color: #fff; font-size: 10px; padding: 0 6px; border-radius: 8px; font-family: var(--font-mono); }
+  .count-pill.ok { background: var(--color-success); }
+  .count-pill.warn { background: var(--color-warning); }
+  .count-pill.danger { background: var(--color-danger); }
+  .bot-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+
+  /* QA gate grid */
+  .qa-wrap {
+    overflow: hidden;
+    display: grid; grid-template-columns: 1fr 320px;
+    height: 100%;
+  }
+  .qa-list { overflow-y: auto; padding: 0; }
+  .qa-list table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .qa-list th {
+    text-align: left; font-weight: 500; color: var(--color-muted);
+    padding: 7px 12px; background: var(--color-surface-2);
+    border-bottom: 1px solid var(--color-border);
+    font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px;
+    position: sticky; top: 0;
+  }
+  .qa-list td {
+    padding: 8px 12px; border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+  .qa-list tr:hover td { background: var(--color-surface-2); }
+  .qa-list tr.fail td:first-child { box-shadow: inset 3px 0 0 var(--color-danger); }
+  .qa-list tr.warn td:first-child { box-shadow: inset 3px 0 0 var(--color-warning); }
+  .qa-list tr.pass td:first-child { box-shadow: inset 3px 0 0 var(--color-success); }
+
+  .check-name { font-weight: 500; color: var(--color-primary); }
+  .check-sub { font-size: 11px; color: var(--color-muted); margin-top: 2px; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: var(--rad-sm);
+    font-size: 11px; font-weight: 500;
+    background: var(--color-surface-2); color: var(--color-secondary);
+  }
+  .pill.pass { background: rgba(47,107,74,.12); color: var(--color-success); }
+  .pill.warn { background: rgba(192,138,22,.14); color: var(--color-warning); }
+  .pill.fail { background: rgba(184,66,46,.14); color: var(--color-danger); }
+  .pill.info { background: rgba(42,74,107,.12); color: var(--color-info); }
+
+  .agent-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 6px; border-radius: 2px;
+    background: var(--color-primary); color: #fff;
+    font-size: 10px; font-weight: 500;
+    font-family: var(--font-label); letter-spacing: 0.04em;
+  }
+  .agent-chip.alt { background: var(--color-tertiary); }
+  .agent-chip.mute { background: var(--color-secondary); }
+
+  .qa-detail {
+    border-left: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+    padding: var(--sp-4);
+    overflow-y: auto;
+    font-size: 12px;
+  }
+  .qa-detail h4 { margin: 0 0 8px; font-size: 12px; }
+  .qa-detail .reason {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-danger);
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--color-primary);
+    margin-bottom: 10px;
+  }
+  .qa-detail .reason .label-caps { display: block; margin-bottom: 4px; }
+  .qa-detail .actions { display: flex; gap: 6px; margin-top: 12px; }
+  .qa-detail .actions .a2-btn { font-size: 11px; }
+
+  .design-tokens-strip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--rad-sm);
+    margin-top: 12px;
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--color-secondary);
+  }
+  .design-tokens-strip .k { color: var(--color-tertiary); }
+
+  /* legend */
+  .legend {
+    position: fixed; bottom: 16px; right: 16px;
+    background: var(--color-chrome-bg); color: #fff;
+    padding: 8px 12px;
+    font-family: var(--font-mono); font-size: 10px;
+    border-radius: var(--rad-sm);
+    opacity: 0.86;
+    z-index: 50;
+    pointer-events: none;
+  }
+  .legend strong { color: var(--color-tertiary); font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; font-size: 9px; display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<!--
+─────────────────────────────────────────────────────────────────────────
+  DEFINE INLINE SVG ICON SPRITES
+─────────────────────────────────────────────────────────────────────────
+-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-grid"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-folder"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-cube"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4V11"/><path d="M21 7v10l-9 4"/></symbol>
+    <symbol id="i-check"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></symbol>
+    <symbol id="i-x"         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-bolt"      viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+    <symbol id="i-eye"       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-code"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></symbol>
+    <symbol id="i-layout"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18M3 9h18"/></symbol>
+    <symbol id="i-spark"     viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6z"/></symbol>
+    <symbol id="i-cog"       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h0a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v0a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-bell"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-search"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="i-arrow-r"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-chevron-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-monitor"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="13"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-mobile"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-history"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-star"      viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.9L22 10l-5.5 5 1.6 7.5L12 18.6 5.9 22.5 7.5 15 2 10l7.1-1.1z"/></symbol>
+    <symbol id="i-paint"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 11h2v8H3v-8h2"/><path d="M7 7l5-5 5 5v6H7z"/></symbol>
+    <symbol id="i-network"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 8v3M12 11l-5 5M12 11l5 5"/></symbol>
+    <symbol id="i-lock"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-pause"     viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></symbol>
+    <symbol id="i-play"      viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></symbol>
+    <symbol id="i-undo"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/></symbol>
+    <symbol id="i-share"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M8.6 10.5l6.8-4"/></symbol>
+    <symbol id="i-rocket"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c4 0 7 4 7 9v6l-3-2h-8l-3 2v-6c0-5 3-9 7-9z"/><circle cx="12" cy="11" r="2"/></symbol>
+    <symbol id="i-database"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+    <symbol id="i-stack"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 2 7l10 5 10-5z"/><path d="M2 12l10 5 10-5M2 17l10 5 10-5"/></symbol>
+    <symbol id="i-warning"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v6M12 18v.5"/></symbol>
+    <symbol id="i-info"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v.5M12 11v5"/></symbol>
+    <symbol id="i-mail"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14"/><path d="M2 7l10 7L22 7"/></symbol>
+    <symbol id="i-sparkles2" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3v4M3 5h4M19 14v6M16 17h6M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6z"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       TOP BAR
+       ═════════════════════════════════════════════════════════════════ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">EH</div>
+      <div class="brand-name">Email&nbsp;Hub</div>
+    </div>
+    <div class="brand-divider"></div>
+    <nav class="crumb">
+      <span>ACME&nbsp;Co</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span>Black&nbsp;Friday&nbsp;2026</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span class="current">BF2026-hero-v3</span>
+      <span style="margin-left:6px; color:rgba(255,255,255,.36); font-family:var(--font-mono); font-size:11px;">v3 · draft</span>
+    </nav>
+
+    <!-- Brand chip — opens brand inspector drawer -->
+    <button class="designmd-chip" title="Brand · Default · click to inspect">
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.7)"><use href="#i-paint"/></svg>
+      <span>Brand&nbsp;·&nbsp;<strong>Default</strong></span>
+      <span class="swatch">
+        <span style="background: var(--color-primary)"></span>
+        <span style="background: var(--color-secondary)"></span>
+        <span style="background: var(--color-tertiary)"></span>
+        <span style="background: var(--color-neutral); border-color: rgba(255,255,255,.3)"></span>
+      </span>
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.5)"><use href="#i-chevron-d"/></svg>
+    </button>
+
+    <div class="grow"></div>
+
+    <div class="save-pill">
+      <span class="dot"></span>
+      <span>Saved · 2s ago</span>
+      <span style="color:rgba(255,255,255,.36); margin-left:4px;">·</span>
+      <span style="font-family:var(--font-mono); color:rgba(255,255,255,.6);">v3.14</span>
+    </div>
+
+    <div class="avatars" title="3 collaborators online">
+      <div class="avatar a1">LB</div>
+      <div class="avatar a2">MR</div>
+      <div class="avatar a3">JK</div>
+      <div class="avatar a4" style="background: var(--color-muted); color:#fff;">+2</div>
+    </div>
+
+    <button class="btn btn-ghost"><svg class="ico"><use href="#i-search"/></svg> <span>Search</span> <span class="kbd">⌘K</span></button>
+    <button class="btn"><svg class="ico"><use href="#i-bolt"/></svg> Run QA <span class="kbd">⌘⇧Q</span></button>
+    <button class="btn btn-primary"><svg class="ico"><use href="#i-rocket"/></svg> Generate <span class="kbd" style="background:rgba(0,0,0,.18);border-color:rgba(0,0,0,.18);">⌘⇧G</span></button>
+  </header>
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       LEFT ICON RAIL
+       ═════════════════════════════════════════════════════════════════ -->
+  <aside class="rail">
+    <button class="rail-btn"        title="Dashboard"><svg class="ico ico-lg"><use href="#i-grid"/></svg></button>
+    <button class="rail-btn active" title="Workspace (current)"><svg class="ico ico-lg"><use href="#i-folder"/></svg></button>
+    <button class="rail-btn"        title="Components"><svg class="ico ico-lg"><use href="#i-cube"/></svg></button>
+    <button class="rail-btn"        title="Approvals"><svg class="ico ico-lg"><use href="#i-check"/></svg></button>
+    <button class="rail-btn"        title="Intelligence"><svg class="ico ico-lg"><use href="#i-spark"/></svg></button>
+    <button class="rail-btn"        title="Knowledge"><svg class="ico ico-lg"><use href="#i-database"/></svg></button>
+    <button class="rail-btn"        title="Connectors"><svg class="ico ico-lg"><use href="#i-share"/></svg></button>
+    <button class="rail-btn"        title="Ecosystem"><svg class="ico ico-lg"><use href="#i-network"/></svg></button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn"        title="Notifications"><svg class="ico ico-lg"><use href="#i-bell"/></svg></button>
+    <button class="rail-btn"        title="Settings"><svg class="ico ico-lg"><use href="#i-cog"/></svg></button>
+  </aside>
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       AGENT CREW (left main panel) — 9 agents as first-class citizens
+       ═════════════════════════════════════════════════════════════════ -->
+  <section class="crew">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Agent Crew</div>
+        <div class="panel-sub">9 agents · 4 active · pipeline <span class="mono">full-build</span></div>
+      </div>
+      <button class="btn btn-ghost" style="color:var(--color-secondary); border:1px solid var(--color-border); background:var(--color-surface); padding:4px 8px; font-size:11px;">
+        <svg class="ico ico-sm"><use href="#i-stack"/></svg> Pipeline
+      </button>
+    </div>
+
+    <!-- Pipeline runtime status -->
+    <div class="crew-runtime">
+      <div class="runtime-row">
+        <span class="key">Run</span>
+        <span class="val">#bp_412 · iter 2/3</span>
+      </div>
+      <div class="runtime-row">
+        <span class="key">Stage</span>
+        <span class="val" style="color:var(--color-warning)">Level 2/4 — content + design</span>
+      </div>
+      <div class="runtime-row">
+        <span class="key">Tokens</span>
+        <span class="val">14,820 / 60k · $0.18</span>
+      </div>
+      <div class="runtime-progress">
+        <div class="progress-track"><div class="progress-fill active" style="width:42%"></div></div>
+      </div>
+    </div>
+
+    <div class="crew-list">
+
+      <!-- 1. Scaffolder -->
+      <div class="agent-card">
+        <div class="agent-avatar">SC<span class="status-dot ok"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Scaffolder <span class="ver">v0.4.2</span></div>
+          <div class="agent-action">Built layout from 7 components · 3 manifest hits</div>
+          <div class="conf-bar" style="--w:94%; --c:var(--color-success);"></div>
+          <div class="agent-foot">
+            <span>conf 0.94 · 3.4s</span>
+            <span class="mono">L1 done</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Dark Mode -->
+      <div class="agent-card is-active is-running">
+        <span class="badge">running</span>
+        <div class="agent-avatar" style="background: var(--color-info)">DM<span class="status-dot run"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Dark Mode <span class="ver">v0.3.1</span></div>
+          <div class="agent-action">Inverting 4 hero/footer color pairs · MSO fallback OK</div>
+          <div class="conf-bar" style="--w:62%; --c:var(--color-warning);"></div>
+          <div class="agent-foot">
+            <span>conf 0.62 · streaming</span>
+            <span class="mono" style="color:var(--color-warning);">L2 · 1.8s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Content -->
+      <div class="agent-card is-running">
+        <span class="badge">running</span>
+        <div class="agent-avatar" style="background: var(--color-warning)">CN<span class="status-dot run"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Content <span class="ver">v0.5.0</span></div>
+          <div class="agent-action">Drafting 3 article cards · brand voice → "concise"</div>
+          <div class="conf-bar" style="--w:78%; --c:var(--color-success);"></div>
+          <div class="agent-foot">
+            <span>conf 0.78 · streaming</span>
+            <span class="mono" style="color:var(--color-warning);">L2 · 2.1s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Outlook Fixer -->
+      <div class="agent-card">
+        <span class="badge badge-info">queued</span>
+        <div class="agent-avatar" style="background: var(--color-muted)">OF<span class="status-dot idle"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Outlook Fixer <span class="ver">v0.6.4</span></div>
+          <div class="agent-action">Awaiting L2 → MSO ghost-table sweep</div>
+          <div class="conf-bar" style="--w:0%; --c:var(--color-muted);"></div>
+          <div class="agent-foot">
+            <span>last run: 8m ago</span>
+            <span class="mono" style="color:var(--color-muted);">L3 queued</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Accessibility -->
+      <div class="agent-card">
+        <span class="badge badge-info">queued</span>
+        <div class="agent-avatar" style="background: var(--color-muted)">AX<span class="status-dot idle"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Accessibility <span class="ver">v0.4.0</span></div>
+          <div class="agent-action">Awaiting L2 → alt-text + WCAG sweep</div>
+          <div class="conf-bar" style="--w:0%; --c:var(--color-muted);"></div>
+          <div class="agent-foot">
+            <span>last: 0.91 conf</span>
+            <span class="mono" style="color:var(--color-muted);">L3 queued</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Personalisation -->
+      <div class="agent-card">
+        <div class="agent-avatar" style="background: var(--color-success)">PR<span class="status-dot ok"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Personalisation <span class="ver">v0.3.7</span></div>
+          <div class="agent-action">Detected 3 Liquid blocks · injected fallback chains</div>
+          <div class="conf-bar" style="--w:88%; --c:var(--color-success);"></div>
+          <div class="agent-foot">
+            <span>conf 0.88 · 1.1s</span>
+            <span class="mono">L1 done</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Code Reviewer (REVIEW REQUIRED) -->
+      <div class="agent-card">
+        <span class="badge" style="background:var(--color-info);">review</span>
+        <div class="agent-avatar" style="background: var(--color-tertiary)">CR<span class="status-dot review"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Code Reviewer <span class="ver">v0.4.1</span></div>
+          <div class="agent-action">Flagged 1 inline-style override conflicting with token</div>
+          <div class="conf-bar" style="--w:54%; --c:var(--color-info);"></div>
+          <div class="agent-foot">
+            <span>conf 0.54 · needs human</span>
+            <span class="mono" style="color:var(--color-info);">Review · 12s ago</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Knowledge -->
+      <div class="agent-card">
+        <div class="agent-avatar" style="background: var(--color-info)">KN<span class="status-dot ok"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Knowledge <span class="ver">v0.5.2</span></div>
+          <div class="agent-action">Injected 4 proactive warnings (Gmail Mobile, Outlook 2016)</div>
+          <div class="conf-bar" style="--w:96%; --c:var(--color-success);"></div>
+          <div class="agent-foot">
+            <span>conf 0.96 · 0.4s</span>
+            <span class="mono">L0 done</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. Innovation -->
+      <div class="agent-card">
+        <span class="badge badge-mute">opt-in</span>
+        <div class="agent-avatar" style="background: var(--color-muted)">IN<span class="status-dot idle"></span></div>
+        <div class="agent-meta">
+          <div class="agent-name">Innovation <span class="ver">v0.2.0</span></div>
+          <div class="agent-action">Suggest novel layouts · disabled for this run</div>
+          <div class="conf-bar" style="--w:0%; --c:var(--color-muted);"></div>
+          <div class="agent-foot">
+            <span>off</span>
+            <span class="mono" style="color:var(--color-muted);">opt-in only</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       CANVAS (center)
+       ═════════════════════════════════════════════════════════════════ -->
+  <main class="canvas">
+    <div class="canvas-toolbar">
+      <div class="seg">
+        <button><svg class="ico ico-sm"><use href="#i-eye"/></svg> Preview</button>
+        <button class="active"><svg class="ico ico-sm"><use href="#i-layout"/></svg> Builder</button>
+        <button><svg class="ico ico-sm"><use href="#i-code"/></svg> Code</button>
+      </div>
+
+      <div class="vp-pill" title="Viewport"><svg class="ico ico-sm"><use href="#i-monitor"/></svg> 640 px · desktop</div>
+      <div class="vp-pill"><svg class="ico ico-sm"><use href="#i-mobile"/></svg> Apple Mail iOS</div>
+
+      <span style="font-size:11px; color:var(--color-muted); margin-left:6px;">Persona:&nbsp;<strong style="color:var(--color-primary); font-weight:500;">Loyal · EN-US</strong></span>
+
+      <div class="grow"></div>
+
+      <button class="btn" style="background:transparent; color:var(--color-secondary); border:1px solid var(--color-border);"><svg class="ico ico-sm"><use href="#i-history"/></svg> v3.14</button>
+      <span class="lock-state"><svg class="ico ico-sm"><use href="#i-lock"/></svg> Section locked by Code Reviewer</span>
+    </div>
+
+    <div class="stage">
+      <!-- the email canvas -->
+      <div class="canvas-frame">
+
+        <!-- HEADER -->
+        <div class="esec">
+          <div class="esec-tag">HEADER · Scaffolder</div>
+          <div class="e-header">
+            <div class="logo">ACME · Black Friday</div>
+            <div style="font-size:11px; opacity:0.7;">View in browser</div>
+          </div>
+        </div>
+
+        <!-- HERO (selected, agent-aware actions visible) -->
+        <div class="esec is-selected">
+          <div class="esec-tag">HERO · Scaffolder + Content</div>
+          <div class="token-overlay">bg = {colors.tertiary} · text = {colors.on-tertiary}</div>
+          <div class="esec-actions">
+            <button><svg class="ico ico-sm"><use href="#i-spark"/></svg> Ask agent…</button>
+            <button class="accent"><svg class="ico ico-sm"><use href="#i-bolt"/></svg> Outlook Fixer</button>
+          </div>
+          <div class="e-hero">
+            <div class="eyebrow">Members get 24h early access</div>
+            <div class="h1">Up to 50% off,<br/>three days only.</div>
+            <div class="lede">Curated picks across home, kitchen, and outdoor — refreshed every 12 hours through Sunday.</div>
+            <a class="cta">Shop the drop</a>
+          </div>
+        </div>
+
+        <!-- ARTICLE GRID -->
+        <div class="esec">
+          <div class="esec-tag">CARD GRID 2-COL · Content</div>
+          <div class="e-grid">
+            <div>
+              <div class="e-card-eyebrow">Featured</div>
+              <div class="e-card-h">Heritage cast-iron, re-issued.</div>
+              <div class="e-card-p">Hand-cast in Wales, seasoned with grass-fed beef tallow. Limited to 220 pieces.</div>
+              <a class="e-card-link">See the set →</a>
+            </div>
+            <div>
+              <div class="e-card-eyebrow">Restock</div>
+              <div class="e-card-h">The 14oz Mug, in Boston Clay.</div>
+              <div class="e-card-p">Our customer-favorite glaze is back for 72 hours. Set of 4, dishwasher-safe.</div>
+              <a class="e-card-link">Add to cart →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA BAND -->
+        <div class="esec">
+          <div class="esec-tag">CTA BAND · Scaffolder</div>
+          <div class="e-cta-band">
+            <div class="h">Members save an extra 10%.</div>
+            <a class="b">Use code HERITAGE10</a>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="esec">
+          <div class="esec-tag">FOOTER · Personalisation</div>
+          <div class="e-footer">
+            ACME Co · 71 Bond St, Brooklyn NY 11211 · <a style="color:var(--color-tertiary)">Unsubscribe</a> · <a style="color:var(--color-tertiary)">Update preferences</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       CONVERSATION + LIVE ACTIVITY (right)
+       ═════════════════════════════════════════════════════════════════ -->
+  <aside class="convo">
+    <div class="convo-tabs">
+      <div class="convo-tab active">Conversation</div>
+      <div class="convo-tab">Event Log <span class="count-pill" style="background:var(--color-tertiary)">42</span></div>
+      <div class="convo-tab">Eval Trace</div>
+      <div class="convo-tab">History</div>
+    </div>
+
+    <div class="convo-body">
+
+      <!-- Live activity event stream block -->
+      <div class="stream-block">
+        <div class="stream-head">
+          <span class="lbl">Pipeline activity · #bp_412</span>
+          <span class="live">live</span>
+        </div>
+        <div class="stream-events">
+          <div class="ev"><span class="ts">09:42:01</span><span class="src">knowledge</span><span class="arr">▸</span><span class="arg"><span class="name">artifact.stored</span> proactive_warnings <span class="v">×4</span></span></div>
+          <div class="ev"><span class="ts">09:42:02</span><span class="src">pipeline </span><span class="arr">▸</span><span class="arg"><span class="name">level.start</span> level=<span class="v">1</span> agents=<span class="v">[scaffolder, personalisation]</span></span></div>
+          <div class="ev ok"><span class="ts">09:42:05</span><span class="src">scaffolder</span><span class="arr">▸</span><span class="arg"><span class="name">agent.complete</span> components=<span class="v">7</span> conf=<span class="v">0.94</span></span></div>
+          <div class="ev ok"><span class="ts">09:42:05</span><span class="src">personalis.</span><span class="arr">▸</span><span class="arg"><span class="name">agent.complete</span> liquid_blocks=<span class="v">3</span> conf=<span class="v">0.88</span></span></div>
+          <div class="ev"><span class="ts">09:42:06</span><span class="src">contracts</span><span class="arr">▸</span><span class="arg"><span class="name">contract.passed</span> html_valid · table_layout · no_xss</span></div>
+          <div class="ev"><span class="ts">09:42:06</span><span class="src">pipeline </span><span class="arr">▸</span><span class="arg"><span class="name">level.complete</span> level=<span class="v">1</span> elapsed=<span class="v">3.4s</span></span></div>
+          <div class="ev"><span class="ts">09:42:07</span><span class="src">pipeline </span><span class="arr">▸</span><span class="arg"><span class="name">level.start</span> level=<span class="v">2</span> agents=<span class="v">[dark_mode, content]</span></span></div>
+          <div class="ev"><span class="ts">09:42:08</span><span class="src">dark_mode </span><span class="arr">▸</span><span class="arg"><span class="name">component.proposed</span> hero_inverted_dark · conf=<span class="v">0.62</span></span></div>
+          <div class="ev warn"><span class="ts">09:42:09</span><span class="src">code_rev. </span><span class="arr">▸</span><span class="arg"><span class="name">contract.failed</span> token_drift in <span class="v">section[2].cta</span></span></div>
+          <div class="ev fail"><span class="ts">09:42:09</span><span class="src">pipeline </span><span class="arr">▸</span><span class="arg"><span class="name">hitl.requested</span> reviewer=<span class="v">human</span> reason=<span class="v">"token_override"</span></span></div>
+        </div>
+      </div>
+
+      <!-- Awaiting-review pause card -->
+      <div class="hitl">
+        <div class="hitl-h"><svg class="ico ico-sm"><use href="#i-pause"/></svg> Human-in-the-loop · pipeline paused</div>
+        <div class="hitl-body">
+          <strong>Code&nbsp;Reviewer</strong> wants confirmation before continuing. The hero CTA uses a hex value
+          (<code class="mono">#FA3045</code>) that doesn't resolve to any brand token. Closest match is
+          <code class="mono">{colors.tertiary}</code> ↔ <code class="mono">#E4002B</code> (ΔE 4.2).
+        </div>
+        <div style="display:flex; gap:6px; margin-top:8px;">
+          <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-check"/></svg> Replace with token</button>
+          <button class="a2-btn">Keep override</button>
+          <button class="a2-btn">Ask Brand agent</button>
+        </div>
+      </div>
+
+      <!-- chat: user message -->
+      <div class="msg">
+        <div class="msg-meta">
+          <div class="avatar a1" style="width:18px;height:18px;border:0;font-size:8px;">LB</div>
+          <span class="who">Linards</span>
+          <span class="role">prompt</span>
+          <span class="ts">09:41:58</span>
+        </div>
+        <div class="msg-body">
+          <p>Build a Black Friday hero campaign. Brand voice = "concise, premium". Use the
+          <code>BF2026</code> component family. Lock the footer to the legal preset.</p>
+        </div>
+      </div>
+
+      <!-- agent reply with insight card -->
+      <div class="msg">
+        <div class="msg-meta">
+          <div class="avatar" style="width:18px;height:18px;border:0;background:var(--color-primary);font-size:8px;">SC</div>
+          <span class="who">Scaffolder</span>
+          <span class="role" style="background:rgba(184,66,46,.1); border-color:rgba(184,66,46,.3); color:var(--color-tertiary);">L1 · agent</span>
+          <span class="ts">09:42:05</span>
+        </div>
+        <div class="msg-body">
+          <p>Selected <strong>7 components</strong> from the 150-component manifest. Layout matches the
+          <em>"editorial-with-hero"</em> family with confidence <strong>0.94</strong>. Here's the build summary:</p>
+        </div>
+
+        <!-- Insight card #1 — structured payload visible to admins -->
+        <div class="a2-card">
+          <div class="a2-card-head">
+            <span class="a2-card-name">"name": "BuildSummaryCard"</span>
+            <button class="a2-pill" title="View structured data (admin)"><svg class="ico ico-sm"><use href="#i-code"/></svg> Inspect</button>
+          </div>
+          <div class="a2-card-body">
+            <div class="a2-prop"><span class="k">title</span><span class="v string">"7 components selected"</span></div>
+            <div class="a2-prop"><span class="k">subtitle</span><span class="v string">"editorial-with-hero · 0.94 conf"</span></div>
+            <div class="a2-prop"><span class="k">tokens.bg</span><span class="v tok">{colors.neutral}</span></div>
+            <div class="a2-prop"><span class="k">children[0]</span><span class="v">InsightCard</span></div>
+            <div class="a2-prop"><span class="k">children[1]</span><span class="v">ComponentList</span></div>
+
+            <!-- the rendered card output -->
+            <div class="a2-render">
+              <div class="render-h">↓ rendered by frontend library</div>
+              <div class="insight">
+                <div class="h">Layout chosen: editorial-with-hero</div>
+                <div style="color:var(--color-secondary); font-size:11px; line-height:1.5;">Hero, 2-column card grid, CTA band, footer. 3 manifest hits at &gt;0.85 conf.</div>
+                <div class="row"><span>Slot fills</span><span class="delta">14 / 14</span></div>
+                <div class="row"><span>Default tokens applied</span><span class="delta">12</span></div>
+                <div class="row"><span>Brand violations</span><span style="color:var(--color-success); font-weight:600;">0</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="a2-card-actions">
+            <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-check"/></svg> Apply to canvas</button>
+            <button class="a2-btn">Show alternatives (2)</button>
+            <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-history"/></svg> Snapshot</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- second insight card showing dark mode preview -->
+      <div class="msg">
+        <div class="msg-meta">
+          <div class="avatar" style="width:18px;height:18px;border:0;background: var(--color-info);font-size:8px;">DM</div>
+          <span class="who">Dark Mode</span>
+          <span class="role" style="background:rgba(42,74,107,.1); border-color:rgba(42,74,107,.3); color:var(--color-info);">L2 · agent</span>
+          <span class="ts">09:42:08</span>
+        </div>
+        <div class="msg-body">
+          <p>Proposing inverted color pairs for the hero and footer. Confidence is moderate
+          (<strong>0.62</strong>) — the hero's Boston Clay accent has only one acceptable inverse.</p>
+        </div>
+
+        <!-- Insight card #2 — light/dark preview pair -->
+        <div class="a2-card">
+          <div class="a2-card-head">
+            <span class="a2-card-name">"name": "ColorPairPreview"</span>
+            <button class="a2-pill" title="View structured data (admin)"><svg class="ico ico-sm"><use href="#i-code"/></svg> Inspect</button>
+          </div>
+          <div class="a2-card-body">
+            <div class="a2-prop"><span class="k">section</span><span class="v string">"hero"</span></div>
+            <div class="a2-prop"><span class="k">light.bg</span><span class="v tok">{colors.tertiary}</span></div>
+            <div class="a2-prop"><span class="k">light.text</span><span class="v tok">{colors.on-tertiary}</span></div>
+            <div class="a2-prop"><span class="k">dark.bg</span><span class="v tok">{colors.dark-surface}</span></div>
+            <div class="a2-prop"><span class="k">dark.text</span><span class="v tok">{colors.dark-on-surface}</span></div>
+
+            <div class="a2-render" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="background: var(--color-tertiary); color:#fff; padding:14px; text-align:center;">
+                <div style="font-family:var(--font-label); font-size:9px; text-transform:uppercase; letter-spacing:0.1em; opacity:.8;">Light</div>
+                <div style="font-weight:600; font-size:14px; margin-top:4px;">Up to 50% off</div>
+              </div>
+              <div style="background: var(--color-chrome-bg); color: #fff; padding:14px; text-align:center;">
+                <div style="font-family:var(--font-label); font-size:9px; text-transform:uppercase; letter-spacing:0.1em; opacity:.7;">Dark</div>
+                <div style="font-weight:600; font-size:14px; margin-top:4px;">Up to 50% off</div>
+              </div>
+            </div>
+          </div>
+          <div class="a2-card-actions">
+            <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-check"/></svg> Accept pair</button>
+            <button class="a2-btn">Try alt (1)</button>
+            <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-x"/></svg> Reject</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- chat input -->
+    <div class="chat-input">
+      <div class="ctx-row">
+        <span class="label-caps" style="font-size:10px;">Context:</span>
+        <span class="ctx-chip"><svg class="ico ico-sm"><use href="#i-mail"/></svg> BF2026-hero-v3 <span class="x">×</span></span>
+        <span class="ctx-chip"><svg class="ico ico-sm"><use href="#i-paint"/></svg> Heritage <span class="x">×</span></span>
+        <span class="ctx-chip"><svg class="ico ico-sm"><use href="#i-spark"/></svg> All 9 agents <span class="x">×</span></span>
+        <span class="ctx-chip" style="border-style:dashed; color:var(--color-tertiary);">+ add</span>
+      </div>
+      <textarea placeholder="Ask any agent — or @Scaffolder, @DarkMode, @OutlookFixer…">Try the dark variant on Outlook 2016, then re-run the rendering gate.</textarea>
+      <div class="chat-foot">
+        <span><span class="kbd" style="background:var(--color-surface-2); color:var(--color-secondary); border-color:var(--color-border);">⌘</span> + <span class="kbd" style="background:var(--color-surface-2); color:var(--color-secondary); border-color:var(--color-border);">↵</span> to send · <span class="kbd" style="background:var(--color-surface-2); color:var(--color-secondary); border-color:var(--color-border);">/</span> for commands</span>
+        <button class="btn-send"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Send</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       BOTTOM PANEL — QA Gate / Rendering / Approval / Eval
+       ═════════════════════════════════════════════════════════════════ -->
+  <section class="bot">
+    <div class="bot-tabs">
+      <div class="bot-tab active">
+        <svg class="ico ico-sm"><use href="#i-bolt"/></svg> QA Gate
+        <span class="count-pill warn">11/14</span>
+      </div>
+      <div class="bot-tab">
+        <svg class="ico ico-sm"><use href="#i-monitor"/></svg> Rendering
+        <span class="count-pill ok">12/14</span>
+      </div>
+      <div class="bot-tab">
+        <svg class="ico ico-sm"><use href="#i-check"/></svg> Approval
+        <span class="count-pill" style="background:var(--color-info)">pending</span>
+      </div>
+      <div class="bot-tab">
+        <svg class="ico ico-sm"><use href="#i-spark"/></svg> Eval Trace
+        <span class="count-pill ok">0.91</span>
+      </div>
+      <div class="bot-tab">
+        <svg class="ico ico-sm"><use href="#i-database"/></svg> Knowledge Hits
+        <span class="count-pill">4</span>
+      </div>
+      <div class="bot-actions">
+        <span style="color:var(--color-muted); font-size:11px; font-family:var(--font-mono);">last run · 09:42:09 · 4.1s</span>
+        <button class="btn" style="background:var(--color-surface); color:var(--color-primary); border-color:var(--color-border-strong);"><svg class="ico ico-sm"><use href="#i-undo"/></svg> Re-run</button>
+        <button class="btn btn-primary"><svg class="ico ico-sm"><use href="#i-rocket"/></svg> Push to ESP</button>
+      </div>
+    </div>
+
+    <div class="qa-wrap">
+
+      <!-- QA check list (left) -->
+      <div class="qa-list">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:30px;"></th>
+              <th>Check</th>
+              <th style="width:96px;">Status</th>
+              <th style="width:140px;">Owned by</th>
+              <th style="width:96px;">Score</th>
+              <th style="width:120px;">Last fix</th>
+              <th style="width:30px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">html_validation</div>
+                <div class="check-sub">DOCTYPE present, well-formed, 0 parse errors</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip">Scaffolder</span></td>
+              <td><span class="mono">100 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">css_support</div>
+                <div class="check-sub">14 properties checked across 14 clients</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip">Scaffolder</span></td>
+              <td><span class="mono">98 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="warn">
+              <td><svg class="ico ico-sm" style="color:var(--color-warning)"><use href="#i-warning"/></svg></td>
+              <td>
+                <div class="check-name">css_audit</div>
+                <div class="check-sub">2 properties degrade in Outlook 2016 (gradient, transform)</div>
+              </td>
+              <td><span class="pill warn">warn</span></td>
+              <td><span class="agent-chip alt">Outlook&nbsp;Fixer</span></td>
+              <td><span class="mono">82 / 100</span></td>
+              <td><span class="mono">queued</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">file_size</div>
+                <div class="check-sub">62.3 KB total · within 102 KB Gmail clip threshold</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip mute">system</span></td>
+              <td><span class="mono">100 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">link_validation</div>
+                <div class="check-sub">8 links · 0 broken · 0 redirect chains</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip mute">system</span></td>
+              <td><span class="mono">100 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">spam_score</div>
+                <div class="check-sub">SpamAssassin: 0.4 · ALL_TRUSTED · no triggers</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip">Knowledge</span></td>
+              <td><span class="mono">96 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="fail">
+              <td><svg class="ico ico-sm" style="color:var(--color-danger)"><use href="#i-x"/></svg></td>
+              <td>
+                <div class="check-name">dark_mode</div>
+                <div class="check-sub">Hero CTA contrast 3.1:1 in dark variant — needs ≥4.5:1</div>
+              </td>
+              <td><span class="pill fail">fail</span></td>
+              <td><span class="agent-chip alt">Dark&nbsp;Mode</span></td>
+              <td><span class="mono">42 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-warning)">in&nbsp;progress</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-tertiary)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="warn">
+              <td><svg class="ico ico-sm" style="color:var(--color-warning)"><use href="#i-warning"/></svg></td>
+              <td>
+                <div class="check-name">accessibility</div>
+                <div class="check-sub">2 images missing alt text · 1 anchor below 44×44 tap target</div>
+              </td>
+              <td><span class="pill warn">warn</span></td>
+              <td><span class="agent-chip alt">Accessibility</span></td>
+              <td><span class="mono">76 / 100</span></td>
+              <td><span class="mono">queued</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">fallback (MSO)</div>
+                <div class="check-sub">Ghost-table wrappers present on 4 sections</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip alt">Outlook&nbsp;Fixer</span></td>
+              <td><span class="mono">100 / 100</span></td>
+              <td><span class="mono">3m ago</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="warn">
+              <td><svg class="ico ico-sm" style="color:var(--color-warning)"><use href="#i-warning"/></svg></td>
+              <td>
+                <div class="check-name">image_optimization</div>
+                <div class="check-sub">3 images &gt; 200KB · suggested AVIF + retina swap</div>
+              </td>
+              <td><span class="pill warn">warn</span></td>
+              <td><span class="agent-chip mute">system</span></td>
+              <td><span class="mono">68 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="fail">
+              <td><svg class="ico ico-sm" style="color:var(--color-danger)"><use href="#i-x"/></svg></td>
+              <td>
+                <div class="check-name">brand_compliance</div>
+                <div class="check-sub">1 inline style overrides brand palette: <code>#FA3045</code> off-token</div>
+              </td>
+              <td><span class="pill fail">fail</span></td>
+              <td><span class="agent-chip">Code&nbsp;Reviewer</span></td>
+              <td><span class="mono">82 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-info)">Review</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-tertiary)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">personalisation_syntax</div>
+                <div class="check-sub">3 Liquid blocks · all have fallback chains</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip">Personalisation</span></td>
+              <td><span class="mono">100 / 100</span></td>
+              <td><span class="mono">1m ago</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">liquid_syntax</div>
+                <div class="check-sub">No unbalanced tags · no unsupported filters</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip">Personalisation</span></td>
+              <td><span class="mono">100 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+            <tr class="pass">
+              <td><svg class="ico ico-sm" style="color:var(--color-success)"><use href="#i-check"/></svg></td>
+              <td>
+                <div class="check-name">deliverability (ISP-aware)</div>
+                <div class="check-sub">Gmail Clip-OK · Microsoft tabbed-bypass safe · Yahoo image-loaded</div>
+              </td>
+              <td><span class="pill pass">pass</span></td>
+              <td><span class="agent-chip">Knowledge</span></td>
+              <td><span class="mono">94 / 100</span></td>
+              <td><span class="mono" style="color:var(--color-muted)">—</span></td>
+              <td><svg class="ico ico-sm" style="color:var(--color-muted)"><use href="#i-chevron-r"/></svg></td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- detail / inspector for the selected check (right) -->
+      <div class="qa-detail">
+        <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+          <h4>brand_compliance · failure</h4>
+          <span class="pill fail">fail</span>
+        </div>
+
+        <div class="reason">
+          <span class="label-caps">Code Reviewer · 09:42:09</span>
+          The hero CTA section uses the inline color <code class="mono">#FA3045</code>. This value
+          does not resolve to any defined token in the project's <strong>Heritage</strong>
+          the brand. The closest defined token is <code class="mono">{colors.tertiary}</code>
+          (<code class="mono">#E4002B</code>) at perceptual distance ΔE 4.2. The token contains
+          the design intent ("Boston Clay — sole driver for interaction"); the override loses
+          that semantic.
+        </div>
+
+        <div class="label-caps" style="font-size:10px; margin-bottom:4px;">Auto-suggestion</div>
+        <div class="reason" style="border-left-color:var(--color-tertiary); margin-bottom:0;">
+          Replace <code class="mono">#FA3045</code> → <code class="mono">{colors.tertiary}</code>.
+          This change applies cleanly across all 14 client renderings.
+        </div>
+
+        <div class="design-tokens-strip" title="Live brand tokens">
+          <svg class="ico ico-sm" style="color:var(--color-tertiary)"><use href="#i-paint"/></svg>
+          <span class="k">colors.tertiary</span><span>= "#E4002B"</span>
+        </div>
+        <div class="design-tokens-strip">
+          <svg class="ico ico-sm" style="color:var(--color-tertiary)"><use href="#i-paint"/></svg>
+          <span class="k">components.button-primary.backgroundColor</span><span>= {colors.tertiary}</span>
+        </div>
+
+        <div class="actions">
+          <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-check"/></svg> Apply fix</button>
+          <button class="a2-btn">Override</button>
+          <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-spark"/></svg> Ask agent why</button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--color-border); margin:12px 0;"/>
+
+        <div class="label-caps" style="font-size:10px; margin-bottom:6px;">Knowledge hits (4)</div>
+        <ul style="margin:0; padding:0; list-style:none; font-size:11.5px; color:var(--color-secondary);">
+          <li style="padding:4px 0; border-bottom:1px solid var(--color-border);"><strong style="color:var(--color-primary)">Outlook 2016</strong> · gradient → solid fallback (3 prior failures)</li>
+          <li style="padding:4px 0; border-bottom:1px solid var(--color-border);"><strong style="color:var(--color-primary)">Gmail iOS</strong> · 14oz Mug image alt: "Boston Clay 14oz mug, set of 4"</li>
+          <li style="padding:4px 0; border-bottom:1px solid var(--color-border);"><strong style="color:var(--color-primary)">Hero pattern</strong> · CTA pad ≥ 18×40 across 12 clients</li>
+          <li style="padding:4px 0;"><strong style="color:var(--color-primary)">Heritage</strong> · brand voice: avoid superlatives, never "huge"</li>
+        </ul>
+
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- mockup legend (Email-Hub-branded only) -->
+<div class="legend">
+  <strong>Workspace</strong>
+  <div>↑ Top:&nbsp;<span style="color: rgba(255,255,255,.85)">Brand inspector</span></div>
+  <div>← Left:&nbsp;<span style="color: rgba(255,255,255,.95)">9 AI agents</span></div>
+  <div>→ Right:&nbsp;<span style="color: rgba(255,255,255,.85)">Live activity</span> · <span style="color: rgba(255,255,255,.85)">Insight cards</span></div>
+  <div>↓ Bottom: QA gate · agent attribution per check</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Email Hub · Renderings</title>
+<link rel="stylesheet" href="_shell.css" />
+<style>
+  .rg-grid {
+    display: grid; grid-template-columns: 1fr 360px;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-6);
+  }
+  .rg-main { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .rg-side { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+  /* 14 client preview grid */
+  .client-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+  .client-tile {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .client-tile.fail { border-color: var(--color-danger); }
+  .client-tile.warn { border-color: var(--color-warning); }
+  .client-tile-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+    font-size: 11.5px;
+  }
+  .client-tile-head .label { font-weight: 600; color: var(--color-primary); flex: 1; min-width: 0; }
+  .client-tile-head .v { font-family: var(--font-mono); color: var(--color-muted); font-size: 10px; }
+  .client-tile .preview {
+    aspect-ratio: 16/22;
+    background:
+      linear-gradient(180deg, var(--color-primary) 0 24px, transparent 24px),
+      linear-gradient(180deg, var(--color-tertiary) 24px, var(--color-tertiary) 110px, transparent 110px),
+      repeating-linear-gradient(0deg, var(--color-surface-2) 0 12px, var(--color-surface) 12px 24px),
+      var(--color-surface);
+    background-repeat: no-repeat;
+    position: relative;
+  }
+  .client-tile .preview::after {
+    content: ""; position: absolute; left: 14px; right: 14px; top: 56px; height: 24px;
+    background: rgba(255,255,255,.36);
+  }
+  .client-tile .preview .stamp {
+    position: absolute; top: 6px; right: 6px;
+    font-family: var(--font-mono); font-size: 9px;
+    background: rgba(26,28,30,.78); color:#fff;
+    padding: 2px 6px;
+  }
+  .client-tile-foot {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 6px; align-items: center;
+    padding: 8px 10px;
+    border-top: 1px solid var(--color-border);
+    font-size: 11px;
+    background: var(--color-surface);
+  }
+  .client-tile-foot .conf { display: flex; flex-direction: column; gap: 4px; }
+  .client-tile-foot .conf .pct { font-family: var(--font-mono); color: var(--color-primary); font-weight: 600; font-size: 11.5px; }
+
+  /* per-client confidence breakdown */
+  .conf-tbl tr td:first-child { font-weight: 500; }
+  .conf-tbl .bar {
+    display: inline-block; width: 80px; height: 4px;
+    background: var(--color-border);
+    position: relative; vertical-align: middle;
+  }
+  .conf-tbl .bar::after {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+    width: var(--w, 0%); background: var(--color-success);
+  }
+  .conf-tbl .bar.warn::after { background: var(--color-warning); }
+  .conf-tbl .bar.fail::after { background: var(--color-danger); }
+
+  /* ODiff diff inspector */
+  .diff-pair { display: grid; grid-template-columns: 1fr 8px 1fr; gap: 0; }
+  .diff-pair .pane { aspect-ratio: 16/22;
+    background:
+      linear-gradient(180deg, var(--color-primary) 0 22px, transparent 22px),
+      linear-gradient(180deg, var(--color-tertiary) 22px, var(--color-tertiary) 90px, transparent 90px),
+      repeating-linear-gradient(0deg, var(--color-surface-2) 0 10px, var(--color-surface) 10px 20px),
+      var(--color-surface);
+    border: 1px solid var(--color-border);
+    position: relative;
+  }
+  .diff-pair .pane.diff::after {
+    content: ""; position: absolute; left: 18%; top: 28%; width: 50%; height: 18%;
+    background: rgba(228,0,43,.32); outline: 1px dashed var(--color-tertiary);
+  }
+  .diff-pair .splitter { background: var(--color-border-strong); }
+  .diff-meta { display: flex; gap: 12px; padding: var(--sp-3) var(--sp-4); font-size: 11px; color: var(--color-secondary); border-top: 1px solid var(--color-border); background: var(--color-surface-2); }
+  .diff-meta .k { color: var(--color-muted); font-family: var(--font-label); text-transform: uppercase; font-size: 10px; }
+  .diff-meta .v { color: var(--color-primary); font-family: var(--font-mono); }
+
+  /* ISP profile sidebar */
+  .isp-tile {
+    padding: 10px var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .isp-tile:last-child { border-bottom: 0; }
+  .isp-tile .h { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 12px; }
+  .isp-tile .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; font-size: 11px; color: var(--color-secondary); }
+  .isp-tile .stats span.v { display: block; font-family: var(--font-mono); font-size: 13px; color: var(--color-primary); margin-top: 1px; }
+  .isp-flag {
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--color-info); color: #fff; font-family: var(--font-label); font-weight: 700; font-size: 9px;
+  }
+  .isp-flag.gmail { background: var(--color-tertiary); }
+  .isp-flag.outlook { background: var(--color-info); }
+  .isp-flag.yahoo { background: #6001D2; }
+  .isp-flag.apple { background: var(--color-primary); }
+
+  /* Gate-blocking client list */
+  .gate-row {
+    display: grid; grid-template-columns: 28px 1fr auto;
+    gap: var(--sp-2); align-items: center;
+    padding: 8px var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+  }
+  .gate-row:last-child { border-bottom: 0; }
+  .gate-row .body .h { font-weight: 500; color: var(--color-primary); }
+  .gate-row .body .sub { color: var(--color-muted); font-size: 10.5px; margin-top: 1px; font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4V11"/><path d="M21 7v10l-9 4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6z"/></symbol>
+    <symbol id="i-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-chevron-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="13"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-mobile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-paint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 11h2v8H3v-8h2"/><path d="M7 7l5-5 5 5v6H7z"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 8v3M12 11l-5 5M12 11l5 5"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M8.6 10.5l6.8-4"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c4 0 7 4 7 9v6l-3-2h-8l-3 2v-6c0-5 3-9 7-9z"/><circle cx="12" cy="11" r="2"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+    <symbol id="i-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v6M12 18v.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v.5M12 11v5"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14"/><path d="M2 7l10 7L22 7"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">EH</div>
+      <div class="brand-name">Email&nbsp;Hub</div>
+    </div>
+    <div class="brand-divider"></div>
+    <nav class="crumb">
+      <span>ACME&nbsp;Co</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span>Black&nbsp;Friday&nbsp;2026</span>
+      <svg class="ico ico-sm sep"><use href="#i-chevron-r"/></svg>
+      <span class="current">BF2026-hero-v3</span>
+      <span style="margin-left:6px; color:rgba(255,255,255,.36); font-family:var(--font-mono); font-size:11px;">v3 · rendering gate</span>
+    </nav>
+    <button class="designmd-chip">
+      <svg class="ico ico-sm" style="color:rgba(255,255,255,.7)"><use href="#i-paint"/></svg>
+      <span>Brand&nbsp;·&nbsp;<strong>Default</strong></span>
+      <span class="swatch">
+        <span style="background: var(--color-primary)"></span>
+        <span style="background: var(--color-secondary)"></span>
+        <span style="background: var(--color-tertiary)"></span>
+        <span style="background: var(--color-neutral); border-color: rgba(255,255,255,.3)"></span>
+      </span>
+    </button>
+
+    <nav class="page-nav">
+      <a href="index.html">Index</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="renderings.html" class="active">Renderings</a>
+      <a href="approvals-detail.html">Approval</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="qa-engine.html">QA</a>
+    </nav>
+
+    <div class="grow"></div>
+
+    <div class="save-pill">
+      <span class="dot"></span>
+      <span>Last render · 38s ago</span>
+      <span style="color:rgba(255,255,255,.36); margin-left:4px;">·</span>
+      <span style="font-family:var(--font-mono); color:rgba(255,255,255,.6);">14/14 clients</span>
+    </div>
+
+    <button class="btn btn-ghost"><svg class="ico"><use href="#i-search"/></svg> <span>Search</span> <span class="kbd">⌘K</span></button>
+    <button class="btn"><svg class="ico"><use href="#i-history"/></svg> Re-render</button>
+    <button class="btn btn-primary"><svg class="ico"><use href="#i-rocket"/></svg> Push to ESP</button>
+  </header>
+
+  <aside class="rail">
+    <button class="rail-btn"        title="Dashboard"><svg class="ico ico-lg"><use href="#i-grid"/></svg></button>
+    <button class="rail-btn"        title="Workspace"><svg class="ico ico-lg"><use href="#i-folder"/></svg></button>
+    <button class="rail-btn"        title="Components"><svg class="ico ico-lg"><use href="#i-cube"/></svg></button>
+    <button class="rail-btn"        title="Approvals"><svg class="ico ico-lg"><use href="#i-check"/></svg></button>
+    <button class="rail-btn"        title="Intelligence"><svg class="ico ico-lg"><use href="#i-spark"/></svg></button>
+    <button class="rail-btn active" title="Renderings (current)"><svg class="ico ico-lg"><use href="#i-eye"/></svg></button>
+    <button class="rail-btn"        title="Knowledge"><svg class="ico ico-lg"><use href="#i-database"/></svg></button>
+    <button class="rail-btn"        title="Connectors"><svg class="ico ico-lg"><use href="#i-share"/></svg></button>
+    <button class="rail-btn"        title="Ecosystem"><svg class="ico ico-lg"><use href="#i-network"/></svg></button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-bell"/></svg></button>
+    <button class="rail-btn"><svg class="ico ico-lg"><use href="#i-cog"/></svg></button>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Renderings · BF2026-hero-v3</h1>
+        <div class="page-sub">Pre-send rendering gate · 14 clients · ODiff visual regression</div>
+      </div>
+      <div class="grow"></div>
+      <div class="kv-row">
+        <div class="kv"><span class="k">Provider</span><span class="v">Litmus + ODiff</span></div>
+        <div class="kv"><span class="k">Build</span><span class="v">v3.14</span></div>
+        <div class="kv"><span class="k">Bytes</span><span class="v">82.4 KB</span></div>
+      </div>
+    </div>
+
+    <div class="designmd-strip">
+      <span><svg class="ico ico-sm" style="color:var(--color-tertiary); vertical-align:-2px"><use href="#i-paint"/></svg></span>
+      <span><span class="k">DESIGN.md</span> · v0.4.1 · brand red <code class="mono">#E4002B</code> · MSO ghost-table OK · 142 tokens</span>
+      <span class="grow"></span>
+      <span><a style="color:var(--color-tertiary)">Inspect</a></span>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active"><svg class="ico ico-sm"><use href="#i-grid"/></svg> Client matrix <span class="count-pill ok">14</span></div>
+      <div class="tab"><svg class="ico ico-sm"><use href="#i-eye"/></svg> Visual diff <span class="count-pill warn">3</span></div>
+      <div class="tab"><svg class="ico ico-sm"><use href="#i-warning"/></svg> Gate <span class="count-pill danger">2</span></div>
+      <div class="tab">Calibration</div>
+      <div class="tab">ISP profiles</div>
+      <div class="tab">History</div>
+    </div>
+
+    <div class="stripe">
+      <div class="insight success">
+        <div class="label">Clients tested</div>
+        <div class="value">14 / 14</div>
+        <div class="meta"><span class="delta">▲ Apple Mail dark added</span></div>
+      </div>
+      <div class="insight">
+        <div class="label">Avg confidence</div>
+        <div class="value">91.3%</div>
+        <div class="meta"><span class="delta">▲ 1.4pp</span><span>vs prior render</span></div>
+      </div>
+      <div class="insight warning">
+        <div class="label">Visual regressions</div>
+        <div class="value">3</div>
+        <div class="meta"><span class="delta down">▲ 2</span><span>Outlook 2016, Gmail Mobile dark, Yahoo</span></div>
+      </div>
+      <div class="insight danger">
+        <div class="label">Gate-blocking</div>
+        <div class="value">2</div>
+        <div class="meta"><span class="delta down">▲ 1</span><span>Outlook 2016 · O365 conditional fail</span></div>
+      </div>
+    </div>
+
+    <div class="rg-grid">
+
+      <!-- LEFT: 14-client preview grid + diff inspector -->
+      <div class="rg-main">
+
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Client matrix · 14</h4>
+            <div class="row gap-2">
+              <span class="pill pass dot">9 pass</span>
+              <span class="pill warn dot">3 warn</span>
+              <span class="pill fail dot">2 fail</span>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-monitor"/></svg> Filter</button>
+            </div>
+          </div>
+          <div style="padding: var(--sp-4);">
+            <div class="client-grid">
+
+              <!-- Apple Mail macOS -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag apple">A</span>
+                  <span class="label">Apple Mail · macOS</span>
+                  <span class="v">15.6</span>
+                </div>
+                <div class="preview"><span class="stamp">1280×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">96%</span><div class="conf-bar"><div class="p" style="width:96%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Apple Mail iOS -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag apple">A</span>
+                  <span class="label">Apple Mail · iOS</span>
+                  <span class="v">17</span>
+                </div>
+                <div class="preview"><span class="stamp">390×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">94%</span><div class="conf-bar"><div class="p" style="width:94%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Apple Mail dark -->
+              <div class="client-tile warn">
+                <div class="client-tile-head">
+                  <span class="isp-flag apple">A</span>
+                  <span class="label">Apple Mail · iOS dark</span>
+                  <span class="v">17</span>
+                </div>
+                <div class="preview" style="filter: invert(0.92) hue-rotate(180deg);"><span class="stamp">390×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">82%</span><div class="conf-bar"><div class="p" style="width:82%; background:var(--color-warning)"></div></div></div>
+                  <span class="pill warn">warn</span>
+                </div>
+              </div>
+
+              <!-- Gmail Web -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag gmail">G</span>
+                  <span class="label">Gmail · Web</span>
+                  <span class="v">latest</span>
+                </div>
+                <div class="preview"><span class="stamp">1024×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">96%</span><div class="conf-bar"><div class="p" style="width:96%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Gmail Mobile -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag gmail">G</span>
+                  <span class="label">Gmail · Mobile</span>
+                  <span class="v">Android 14</span>
+                </div>
+                <div class="preview"><span class="stamp">390×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">93%</span><div class="conf-bar"><div class="p" style="width:93%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Gmail Mobile dark -->
+              <div class="client-tile warn">
+                <div class="client-tile-head">
+                  <span class="isp-flag gmail">G</span>
+                  <span class="label">Gmail · Mobile dark</span>
+                  <span class="v">Android 14</span>
+                </div>
+                <div class="preview" style="filter: invert(0.92) hue-rotate(180deg);"><span class="stamp">390×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">79%</span><div class="conf-bar"><div class="p" style="width:79%; background:var(--color-warning)"></div></div></div>
+                  <span class="pill warn">warn</span>
+                </div>
+              </div>
+
+              <!-- Outlook 2016 -->
+              <div class="client-tile fail">
+                <div class="client-tile-head">
+                  <span class="isp-flag outlook">O</span>
+                  <span class="label">Outlook · 2016</span>
+                  <span class="v">Win10</span>
+                </div>
+                <div class="preview"><span class="stamp">FAIL</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">61%</span><div class="conf-bar"><div class="p" style="width:61%; background:var(--color-danger)"></div></div></div>
+                  <span class="pill fail">fail</span>
+                </div>
+              </div>
+
+              <!-- Outlook 2019 -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag outlook">O</span>
+                  <span class="label">Outlook · 2019</span>
+                  <span class="v">Win11</span>
+                </div>
+                <div class="preview"><span class="stamp">1280×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">88%</span><div class="conf-bar"><div class="p" style="width:88%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Outlook Web -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag outlook">O</span>
+                  <span class="label">Outlook · Web</span>
+                  <span class="v">O365</span>
+                </div>
+                <div class="preview"><span class="stamp">1280×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">94%</span><div class="conf-bar"><div class="p" style="width:94%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Outlook Mobile -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag outlook">O</span>
+                  <span class="label">Outlook · Mobile</span>
+                  <span class="v">iOS</span>
+                </div>
+                <div class="preview"><span class="stamp">390×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">90%</span><div class="conf-bar"><div class="p" style="width:90%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Outlook O365 -->
+              <div class="client-tile fail">
+                <div class="client-tile-head">
+                  <span class="isp-flag outlook">O</span>
+                  <span class="label">Outlook · O365 conditional</span>
+                  <span class="v">desktop</span>
+                </div>
+                <div class="preview"><span class="stamp">FAIL</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">68%</span><div class="conf-bar"><div class="p" style="width:68%; background:var(--color-danger)"></div></div></div>
+                  <span class="pill fail">fail</span>
+                </div>
+              </div>
+
+              <!-- Yahoo -->
+              <div class="client-tile warn">
+                <div class="client-tile-head">
+                  <span class="isp-flag yahoo">Y</span>
+                  <span class="label">Yahoo Mail</span>
+                  <span class="v">Web</span>
+                </div>
+                <div class="preview"><span class="stamp">1024×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">85%</span><div class="conf-bar"><div class="p" style="width:85%; background:var(--color-warning)"></div></div></div>
+                  <span class="pill warn">warn</span>
+                </div>
+              </div>
+
+              <!-- AOL -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag yahoo">A</span>
+                  <span class="label">AOL · Web</span>
+                  <span class="v">latest</span>
+                </div>
+                <div class="preview"><span class="stamp">1024×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">91%</span><div class="conf-bar"><div class="p" style="width:91%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+              <!-- Samsung Mail -->
+              <div class="client-tile">
+                <div class="client-tile-head">
+                  <span class="isp-flag" style="background: var(--color-info)">S</span>
+                  <span class="label">Samsung Mail</span>
+                  <span class="v">Galaxy S23</span>
+                </div>
+                <div class="preview"><span class="stamp">412×</span></div>
+                <div class="client-tile-foot">
+                  <div class="conf"><span class="pct">89%</span><div class="conf-bar"><div class="p" style="width:89%; background:var(--color-success)"></div></div></div>
+                  <span class="pill pass">pass</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- Visual diff inspector -->
+        <section class="card card-tight">
+          <div class="card-head">
+            <h4>Visual diff inspector · Outlook 2016 vs reference</h4>
+            <div class="row gap-2">
+              <span class="pill fail dot">4.7% pixel diff</span>
+              <span class="pill">ODiff threshold 1.5%</span>
+              <button class="a2-btn"><svg class="ico ico-sm"><use href="#i-arrow-r"/></svg> Slot</button>
+            </div>
+          </div>
+          <div class="diff-pair" style="padding: var(--sp-4);">
+            <div class="pane">
+              <div style="position:absolute; top:6px; left:6px; font-family:var(--font-mono); font-size:9px; background:var(--color-surface); padding:2px 4px; border:1px solid var(--color-border)">REFERENCE</div>
+            </div>
+            <div class="splitter"></div>
+            <div class="pane diff">
+              <div style="position:absolute; top:6px; left:6px; font-family:var(--font-mono); font-size:9px; background:var(--color-surface); padding:2px 4px; border:1px solid var(--color-border)">OUTLOOK 2016</div>
+              <div style="position:absolute; bottom:6px; right:6px; font-family:var(--font-mono); font-size:9px; background:rgba(228,0,43,.92); color:#fff; padding:2px 4px;">DIFF</div>
+            </div>
+          </div>
+          <div class="diff-meta">
+            <span><span class="k">Section</span> <span class="v">e-grid · 2-col</span></span>
+            <span><span class="k">Cause</span> <span class="v">MSO ghost-table missing</span></span>
+            <span><span class="k">Bytes Δ</span> <span class="v">+412</span></span>
+            <span><span class="k">Render time</span> <span class="v">1.42s</span></span>
+            <span class="grow"></span>
+            <button class="a2-btn primary"><svg class="ico ico-sm"><use href="#i-bolt"/></svg> Auto-fix via Outlook Fixer</button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT: calibration + ISP profiles + gate-blocking -->
+      <aside class="rg-side">
+
+        <!-- Calibration health -->
+        <section class="card card-tight">
+          <div class="card-head"><h4>Calibration health</h4><span class="pill pass dot">Stable</span></div>
+          <div style="padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 8px;">
+            <div class="metric-row" style="display:flex; justify-content:space-between; font-size: 12px;">
+              <span style="color: var(--color-secondary)">Per-client confidence</span>
+              <span class="mono" style="color: var(--color-success); font-size: 11px;">▲ 1.4pp · 7d</span>
+            </div>
+            <table class="tbl conf-tbl">
+              <tr><td>Apple Mail</td><td><span class="bar" style="--w:96%"></span></td><td class="mono">96%</td></tr>
+              <tr><td>Gmail</td><td><span class="bar" style="--w:94%"></span></td><td class="mono">94%</td></tr>
+              <tr><td>Gmail dark</td><td><span class="bar warn" style="--w:79%"></span></td><td class="mono">79%</td></tr>
+              <tr><td>Outlook 2016</td><td><span class="bar fail" style="--w:61%"></span></td><td class="mono">61%</td></tr>
+              <tr><td>Outlook Web</td><td><span class="bar" style="--w:94%"></span></td><td class="mono">94%</td></tr>
+              <tr><td>Yahoo</td><td><span class="bar warn" style="--w:85%"></span></td><td class="mono">85%</td></tr>
+            </table>
+          </div>
+        </section>
+
+        <!-- Gate-blocking client list -->
+        <section class="card card-tight">
+          <div class="card-head"><h4>Gate-blocking · 2</h4><span class="pill fail">2</span></div>
+          <div>
+            <div class="gate-row">
+              <span class="status-dot fail"></span>
+              <div class="body">
+                <div class="h">Outlook 2016 · ghost-table missing on hero</div>
+                <div class="sub">esec=hero · ODiff 4.7% · pattern 0.92 conf</div>
+              </div>
+              <button class="a2-btn">Fix</button>
+            </div>
+            <div class="gate-row">
+              <span class="status-dot fail"></span>
+              <div class="body">
+                <div class="h">Outlook O365 conditional · CSS variable not converted</div>
+                <div class="sub">--color-tertiary unresolved · MSO mode</div>
+              </div>
+              <button class="a2-btn">Fix</button>
+            </div>
+            <div class="gate-row">
+              <span class="status-dot warn"></span>
+              <div class="body">
+                <div class="h">Apple Mail dark · contrast 3.9:1</div>
+                <div class="sub">hero text on tertiary (override-ok)</div>
+              </div>
+              <button class="a2-btn ghost">Override</button>
+            </div>
+            <div class="gate-row">
+              <span class="status-dot warn"></span>
+              <div class="body">
+                <div class="h">Gmail Mobile dark · footer text washed</div>
+                <div class="sub">muted-on-dark fallback needed</div>
+              </div>
+              <button class="a2-btn ghost">Override</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ISP profiles -->
+        <section class="card card-tight">
+          <div class="card-head"><h4>ISP profiles</h4><span class="pill info">3</span></div>
+          <div>
+            <div class="isp-tile">
+              <div class="h">
+                <span class="isp-flag gmail">G</span>
+                <span class="grow">Gmail</span>
+                <span class="pill pass">healthy</span>
+              </div>
+              <div class="stats">
+                <div>Inbox <span class="v">94%</span></div>
+                <div>Spam <span class="v">2.1%</span></div>
+                <div>Promo <span class="v">3.9%</span></div>
+              </div>
+            </div>
+            <div class="isp-tile">
+              <div class="h">
+                <span class="isp-flag outlook">O</span>
+                <span class="grow">Microsoft</span>
+                <span class="pill warn">caution</span>
+              </div>
+              <div class="stats">
+                <div>Inbox <span class="v">86%</span></div>
+                <div>Junk <span class="v">8.4%</span></div>
+                <div>Other <span class="v">5.6%</span></div>
+              </div>
+            </div>
+            <div class="isp-tile">
+              <div class="h">
+                <span class="isp-flag yahoo">Y</span>
+                <span class="grow">Yahoo</span>
+                <span class="pill pass">healthy</span>
+              </div>
+              <div class="stats">
+                <div>Inbox <span class="v">91%</span></div>
+                <div>Bulk <span class="v">5.2%</span></div>
+                <div>Spam <span class="v">3.8%</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

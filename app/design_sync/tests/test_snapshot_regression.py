@@ -151,7 +151,7 @@ _CONVERTER_BGCOLOR_EXPECTATIONS: dict[str, dict[int, str]] = {
     "5": {},  # MAAP — white backgrounds, no continuity (negative test)
 }
 
-# Expected bgcolors for reference HTMLs (from CONVERTER-REFERENCE.md).
+# Expected bgcolors for reference HTMLs (from docs/architecture/converter-training-reference.md).
 # Indices are positional within 600px resptab tables.
 _REFERENCE_BGCOLOR_EXPECTATIONS: dict[str, list[str]] = {
     "10": [
