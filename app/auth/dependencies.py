@@ -4,7 +4,7 @@
 from collections.abc import Callable, Coroutine
 from typing import Any
 
-from cachetools import TTLCache  # pyright: ignore[reportMissingTypeStubs]
+from cachetools import TTLCache
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,7 @@ security = HTTPBearer(auto_error=False)
 # eagerly loaded columns — no lazy-loaded relationships. If relationships are
 # added to User in the future, they must be eagerly loaded or this cache will
 # raise DetachedInstanceError.
-_user_cache: TTLCache[int, User] = TTLCache(maxsize=200, ttl=30)
+_user_cache: TTLCache[int, User] = TTLCache[int, User](maxsize=200, ttl=30)
 
 
 def invalidate_user_cache(user_id: int) -> None:

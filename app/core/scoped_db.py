@@ -23,7 +23,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Annotated
 
-from cachetools import TTLCache  # pyright: ignore[reportMissingTypeStubs]
+from cachetools import TTLCache
 from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,7 +51,7 @@ class TenantAccess:
 # app/auth/dependencies.py. Membership changes (add_member / project delete /
 # user role change) become visible after at most one TTL window. That's
 # acceptable: this scope is defense-in-depth on top of explicit access checks.
-_membership_cache: TTLCache[int, TenantAccess] = TTLCache(maxsize=200, ttl=30)
+_membership_cache: TTLCache[int, TenantAccess] = TTLCache[int, TenantAccess](maxsize=200, ttl=30)
 
 
 def invalidate_membership_cache(user_id: int) -> None:
@@ -76,7 +76,7 @@ async def _resolve_access(db: AsyncSession, user: User) -> TenantAccess:
     """
     cached = _membership_cache.get(user.id)
     if cached is not None:
-        return cached  # type: ignore[no-any-return]  # TTLCache lacks stubs; pyright narrows correctly
+        return cached
 
     if user.role == "admin":
         access = TenantAccess(project_ids=None, org_ids=None, role=user.role)
