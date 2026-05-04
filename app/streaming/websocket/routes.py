@@ -159,9 +159,9 @@ async def ws_collab(
     # Initialize CRDT document for this room (Phase 24.2)
     sync = get_sync_handler()
     if sync is not None and settings.collab_ws.crdt_enabled:
-        from app.core.database import AsyncSessionLocal
+        from app.core.scoped_db import get_scoped_db_context
 
-        async with AsyncSessionLocal() as db:
+        async with get_scoped_db_context(user) as db:
             await sync.init_room(db, room_id)
             await db.commit()
 
@@ -199,9 +199,9 @@ async def ws_collab(
                         and data[0] == 0
                         and data[1] == 0
                     ):
-                        from app.core.database import AsyncSessionLocal
+                        from app.core.scoped_db import get_scoped_db_context
 
-                        async with AsyncSessionLocal() as db:
+                        async with get_scoped_db_context(user) as db:
                             replies, _ = await sync.handle_sync_message(
                                 db,
                                 room_id,
@@ -219,10 +219,10 @@ async def ws_collab(
                 # CRDT sync protocol (Phase 24.2)
                 sync = get_sync_handler()
                 if sync is not None and settings.collab_ws.crdt_enabled:
-                    from app.core.database import AsyncSessionLocal
+                    from app.core.scoped_db import get_scoped_db_context
 
                     try:
-                        async with AsyncSessionLocal() as db:
+                        async with get_scoped_db_context(user) as db:
                             replies, broadcasts = await sync.handle_sync_message(
                                 db,
                                 room_id,

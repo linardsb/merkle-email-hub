@@ -12,9 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import require_role
 from app.auth.models import User
 from app.core.config import get_settings
-from app.core.database import get_db
 from app.core.exceptions import DomainValidationError, NotFoundError
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.templates.upload.schemas import (
     AnalysisPreview,
     ConfirmRequest,
@@ -25,7 +25,7 @@ from app.templates.upload.service import TemplateUploadService
 router = APIRouter(prefix="/api/v1/templates/upload", tags=["template-upload"])
 
 
-def _get_service(db: AsyncSession = Depends(get_db)) -> TemplateUploadService:
+def _get_service(db: AsyncSession = Depends(get_scoped_db)) -> TemplateUploadService:
     return TemplateUploadService(db)
 
 

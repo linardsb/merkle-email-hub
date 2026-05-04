@@ -52,6 +52,8 @@ Optional fields: `available_data` (where related data lives), `fast_closure_path
 
 Change `status` from `deferred` to `closed` and add a `closed_commit` field when the `closes_when` condition is genuinely met — i.e. the symptom-if-broken can no longer occur. Don't delete closed entries; their history is useful for future debugging.
 
-## Tooling roadmap
+## Tooling
 
-This convention is currently enforced manually. When `.agents/deferred-items.json` reaches **~5 open entries**, wire a scan into `/preflight-check` so plan files are automatically cross-referenced against the ledger. See `.agents/deferred-items.json#tooling_followups[0]` for the trigger.
+The deferred-items grep is wired into `/preflight-check` as **Step 2** (`.claude/commands/preflight-check.md`) — every preflight run cross-references the plan's "Files to Create/Modify" list and matching phase against `.agents/deferred-items.json` and prints a "Deferred Items Touching This Plan" table (empty table if no matches — never silent). The agent or user must decide per match whether to **close**, **avoid**, or **carry forward** each one.
+
+If the table consistently surfaces noise (entries that match but are not relevant), tighten the `code_refs` on the noisy entry rather than weakening the grep.

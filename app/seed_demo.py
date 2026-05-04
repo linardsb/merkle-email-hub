@@ -22,8 +22,9 @@ from app.auth.service import AuthService
 from app.components.data.seeds import COMPONENT_SEEDS
 from app.components.models import Component, ComponentVersion
 from app.core.config import get_settings
-from app.core.database import AsyncSessionLocal, engine
+from app.core.database import engine
 from app.core.logging import get_logger
+from app.core.scoped_db import get_system_db_context
 from app.design_sync.crypto import encrypt_token
 from app.design_sync.models import DesignConnection, DesignTokenSnapshot
 from app.projects.models import ClientOrg, Project, ProjectMember
@@ -332,7 +333,7 @@ async def seed_all() -> None:
         print(f"Seed skipped: environment is '{settings.environment}'")
         return
 
-    async with AsyncSessionLocal() as db:
+    async with get_system_db_context() as db:
         try:
             user = await _seed_user(db)
             org = await _seed_client_org(db)

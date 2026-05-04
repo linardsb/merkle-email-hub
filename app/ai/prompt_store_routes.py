@@ -22,10 +22,10 @@ from app.ai.prompt_store_schemas import (
 )
 from app.auth.dependencies import require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 logger = get_logger(__name__)
 
@@ -44,7 +44,7 @@ def _validate_agent_id(agent_id: str) -> None:
 @limiter.limit("30/minute")
 async def list_agents(
     request: Request,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_scoped_db),  # noqa: B008
     _current_user: User = Depends(require_role("developer")),  # noqa: B008
 ) -> dict[str, list[str]]:
     """List all agents with prompt store entries."""
@@ -60,7 +60,7 @@ async def get_active_prompt(
     request: Request,
     agent_id: str,
     variant: str = "default",
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_scoped_db),  # noqa: B008
     _current_user: User = Depends(require_role("developer")),  # noqa: B008
 ) -> PromptTemplateResponse:
     """Get the active prompt for an agent+variant."""
@@ -80,7 +80,7 @@ async def list_versions(
     agent_id: str,
     variant: str = "default",
     limit: int = 20,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_scoped_db),  # noqa: B008
     _current_user: User = Depends(require_role("developer")),  # noqa: B008
 ) -> PromptTemplateListResponse:
     """List version history for an agent+variant."""
@@ -99,7 +99,7 @@ async def list_versions(
 async def create_prompt(
     request: Request,
     body: PromptTemplateCreate,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_scoped_db),  # noqa: B008
     current_user: User = Depends(require_role("admin")),  # noqa: B008
 ) -> PromptTemplateResponse:
     """Create a new prompt version for an agent."""
@@ -129,7 +129,7 @@ async def create_prompt(
 async def activate_prompt(
     request: Request,
     body: PromptActivateRequest,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_scoped_db),  # noqa: B008
     _current_user: User = Depends(require_role("admin")),  # noqa: B008
 ) -> PromptTemplateResponse:
     """Activate a specific prompt version."""
@@ -155,7 +155,7 @@ async def rollback_prompt(
     request: Request,
     agent_id: str,
     variant: str = "default",
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_scoped_db),  # noqa: B008
     _current_user: User = Depends(require_role("admin")),  # noqa: B008
 ) -> PromptTemplateResponse:
     """Rollback to the previous prompt version."""
@@ -180,7 +180,7 @@ async def rollback_prompt(
 @limiter.limit("2/minute")
 async def seed_prompts(
     request: Request,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_scoped_db),  # noqa: B008
     _current_user: User = Depends(require_role("admin")),  # noqa: B008
 ) -> PromptSeedResponse:
     """Seed prompt store from SKILL.md files."""

@@ -139,8 +139,8 @@ class TestListRunCheckpointsRoute:
     async def test_list_checkpoints_empty_run(self) -> None:
         """Unknown run_id returns empty list."""
         from app.auth.dependencies import get_current_user
-        from app.core.database import get_db
         from app.core.rate_limit import limiter
+        from app.core.scoped_db import get_scoped_db
         from app.main import app
 
         limiter.enabled = False
@@ -157,7 +157,7 @@ class TestListRunCheckpointsRoute:
         mock_db.execute = AsyncMock(return_value=mock_result)
 
         app.dependency_overrides[get_current_user] = lambda: mock_user
-        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_scoped_db] = lambda: mock_db
 
         try:
             async with AsyncClient(
@@ -173,15 +173,15 @@ class TestListRunCheckpointsRoute:
             assert data["count"] == 0
         finally:
             app.dependency_overrides.pop(get_current_user, None)
-            app.dependency_overrides.pop(get_db, None)
+            app.dependency_overrides.pop(get_scoped_db, None)
             limiter.enabled = True
 
     @pytest.mark.asyncio
     async def test_list_checkpoints_success(self) -> None:
         """Returns checkpoint list with correct fields."""
         from app.auth.dependencies import get_current_user
-        from app.core.database import get_db
         from app.core.rate_limit import limiter
+        from app.core.scoped_db import get_scoped_db
         from app.main import app
 
         limiter.enabled = False
@@ -206,7 +206,7 @@ class TestListRunCheckpointsRoute:
         mock_db.execute = AsyncMock(return_value=mock_result)
 
         app.dependency_overrides[get_current_user] = lambda: mock_user
-        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_scoped_db] = lambda: mock_db
 
         try:
             async with AsyncClient(
@@ -225,15 +225,15 @@ class TestListRunCheckpointsRoute:
             assert cp["html_hash"] == "abc123"
         finally:
             app.dependency_overrides.pop(get_current_user, None)
-            app.dependency_overrides.pop(get_db, None)
+            app.dependency_overrides.pop(get_scoped_db, None)
             limiter.enabled = True
 
     @pytest.mark.asyncio
     async def test_list_checkpoints_viewer_denied(self) -> None:
         """Viewer role gets 403."""
         from app.auth.dependencies import get_current_user
-        from app.core.database import get_db
         from app.core.rate_limit import limiter
+        from app.core.scoped_db import get_scoped_db
         from app.main import app
 
         limiter.enabled = False
@@ -245,7 +245,7 @@ class TestListRunCheckpointsRoute:
         mock_db = AsyncMock()
 
         app.dependency_overrides[get_current_user] = lambda: mock_user
-        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_scoped_db] = lambda: mock_db
 
         try:
             async with AsyncClient(
@@ -257,7 +257,7 @@ class TestListRunCheckpointsRoute:
             assert resp.status_code == 403
         finally:
             app.dependency_overrides.pop(get_current_user, None)
-            app.dependency_overrides.pop(get_db, None)
+            app.dependency_overrides.pop(get_scoped_db, None)
             limiter.enabled = True
 
 

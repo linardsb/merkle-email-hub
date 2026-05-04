@@ -38,7 +38,9 @@ def _refresh_ttl_seconds() -> int:
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> AuthService:
+def get_service(
+    db: AsyncSession = Depends(get_db),
+) -> AuthService:  # tenant-exempt: pre-auth (login/refresh/bootstrap have no user yet); /users/* admin endpoints use require_role("admin")
     """Dependency to create AuthService with request-scoped session."""
     return AuthService(db)
 

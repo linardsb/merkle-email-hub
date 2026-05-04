@@ -17,14 +17,14 @@ from app.components.schemas import (
     VersionResponse,
 )
 from app.components.service import ComponentService
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.shared.schemas import PaginatedResponse, PaginationParams
 
 router = APIRouter(prefix="/api/v1/components", tags=["components"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ComponentService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> ComponentService:
     return ComponentService(db)
 
 

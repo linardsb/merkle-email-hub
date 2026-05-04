@@ -26,9 +26,9 @@ from app.ai.blueprints.schemas import (
 from app.ai.blueprints.service import get_blueprint_service
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.logging import get_logger
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.memory.models import MemoryEntry
 
 logger = get_logger(__name__)
@@ -46,7 +46,7 @@ async def run_blueprint(
     request: Request,
     body: BlueprintRunRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> BlueprintRunResponse:
     """Execute a named blueprint and return the full run result.
 
@@ -66,7 +66,7 @@ async def resume_blueprint(
     request: Request,
     body: BlueprintResumeRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> BlueprintRunResponse:
     """Resume a blueprint run from its latest checkpoint."""
     service = get_blueprint_service()
@@ -114,7 +114,7 @@ async def get_failure_pattern_stats(
     agent_name: str | None = None,
     qa_check: str | None = None,
     client_id: str | None = None,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     _current_user: User = Depends(get_current_user),
 ) -> FailurePatternStats:
     """Aggregated failure pattern statistics with optional filters."""
@@ -192,7 +192,7 @@ async def list_failure_patterns(
     client_id: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     _current_user: User = Depends(get_current_user),
 ) -> FailurePatternListResponse:
     """List failure patterns from blueprint runs with optional filters."""
@@ -259,7 +259,7 @@ async def list_run_checkpoints(
     request: Request,
     run_id: str,
     _current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> CheckpointListResponse:
     """List all checkpoints for a blueprint run, ordered by node_index."""
     stmt = (
@@ -345,7 +345,7 @@ async def list_blueprint_runs(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> BlueprintRunListResponse:
     """List blueprint runs for a project, derived from checkpoint data."""
     from app.projects.service import ProjectService
@@ -407,7 +407,7 @@ async def get_blueprint_run(
     request: Request,
     run_id: int,
     _current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> BlueprintRunRecord:
     """Get a single blueprint run detail by checkpoint ID."""
     # The frontend uses a numeric ID (first checkpoint ID for the run)

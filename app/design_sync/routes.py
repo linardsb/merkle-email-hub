@@ -15,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.scoped_db import get_scoped_db
 from app.design_sync.diagnose.schemas import DiagnosticReportResponse
@@ -516,7 +515,7 @@ async def convert_import(
 async def get_fidelity(
     import_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     current_user: User = Depends(require_role("developer")),
 ) -> FidelityResponse:
     """Get visual fidelity scoring results for a design import."""
@@ -545,7 +544,7 @@ async def get_fidelity(
 async def trigger_fidelity_scoring(
     import_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     current_user: User = Depends(require_role("developer")),
 ) -> FidelityResponse:
     """Validate that an import is eligible for fidelity scoring and return current scores.
@@ -575,7 +574,7 @@ async def trigger_fidelity_scoring(
 async def get_diff_image(
     import_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     current_user: User = Depends(require_role("developer")),
 ) -> Response:
     """Get the visual diff overlay image for a fidelity-scored import."""
@@ -717,7 +716,7 @@ _webhook_tasks: set[asyncio.Task[None]] = set()
 @limiter.limit("60/minute")
 async def handle_figma_webhook(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> dict[str, str]:
     """Receive Figma FILE_UPDATE webhook. Must respond < 5s."""
     from app.core.config import get_settings

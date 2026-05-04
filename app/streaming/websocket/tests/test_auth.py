@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -40,20 +40,28 @@ async def test_authenticate_revoked_token(mock_decode: AsyncMock, mock_revoked: 
     assert result is None
 
 
+def _mock_db_ctx() -> MagicMock:
+    """Build a sync callable that returns an async context manager yielding a db mock.
+
+    `get_system_db_context` / `get_scoped_db_context` are `@asynccontextmanager` —
+    the call itself is sync, only `__aenter__`/`__aexit__` are awaited.
+    """
+    cm = MagicMock()
+    cm.return_value.__aenter__ = AsyncMock(return_value=AsyncMock())
+    cm.return_value.__aexit__ = AsyncMock(return_value=False)
+    return cm
+
+
 @pytest.mark.anyio
-@patch("app.streaming.websocket.auth.AsyncSessionLocal")
+@patch("app.streaming.websocket.auth.get_system_db_context", new_callable=_mock_db_ctx)
 @patch("app.streaming.websocket.auth.is_token_revoked", new_callable=AsyncMock, return_value=False)
 @patch("app.streaming.websocket.auth.decode_token")
 async def test_authenticate_user_not_found(
     mock_decode: AsyncMock,
     mock_revoked: AsyncMock,
-    mock_session_cls: AsyncMock,
+    mock_session_ctx: AsyncMock,
 ) -> None:
     mock_decode.return_value = _make_payload()
-
-    mock_db = AsyncMock()
-    mock_session_cls.return_value.__aenter__ = AsyncMock(return_value=mock_db)
-    mock_session_cls.return_value.__aexit__ = AsyncMock(return_value=False)
 
     with patch("app.streaming.websocket.auth.UserRepository") as mock_repo_cls:
         mock_repo_cls.return_value.find_by_id = AsyncMock(return_value=None)
@@ -63,20 +71,16 @@ async def test_authenticate_user_not_found(
 
 
 @pytest.mark.anyio
-@patch("app.streaming.websocket.auth.AsyncSessionLocal")
+@patch("app.streaming.websocket.auth.get_system_db_context", new_callable=_mock_db_ctx)
 @patch("app.streaming.websocket.auth.is_token_revoked", new_callable=AsyncMock, return_value=False)
 @patch("app.streaming.websocket.auth.decode_token")
 async def test_authenticate_success_admin(
     mock_decode: AsyncMock,
     mock_revoked: AsyncMock,
-    mock_session_cls: AsyncMock,
+    mock_session_ctx: AsyncMock,
 ) -> None:
     mock_decode.return_value = _make_payload()
     user = _make_user(role="admin")
-
-    mock_db = AsyncMock()
-    mock_session_cls.return_value.__aenter__ = AsyncMock(return_value=mock_db)
-    mock_session_cls.return_value.__aexit__ = AsyncMock(return_value=False)
 
     with patch("app.streaming.websocket.auth.UserRepository") as mock_repo_cls:
         mock_repo_cls.return_value.find_by_id = AsyncMock(return_value=user)
@@ -88,20 +92,16 @@ async def test_authenticate_success_admin(
 
 
 @pytest.mark.anyio
-@patch("app.streaming.websocket.auth.AsyncSessionLocal")
+@patch("app.streaming.websocket.auth.get_system_db_context", new_callable=_mock_db_ctx)
 @patch("app.streaming.websocket.auth.is_token_revoked", new_callable=AsyncMock, return_value=False)
 @patch("app.streaming.websocket.auth.decode_token")
 async def test_authenticate_success_viewer(
     mock_decode: AsyncMock,
     mock_revoked: AsyncMock,
-    mock_session_cls: AsyncMock,
+    mock_session_ctx: AsyncMock,
 ) -> None:
     mock_decode.return_value = _make_payload()
     user = _make_user(role="viewer")
-
-    mock_db = AsyncMock()
-    mock_session_cls.return_value.__aenter__ = AsyncMock(return_value=mock_db)
-    mock_session_cls.return_value.__aexit__ = AsyncMock(return_value=False)
 
     with patch("app.streaming.websocket.auth.UserRepository") as mock_repo_cls:
         mock_repo_cls.return_value.find_by_id = AsyncMock(return_value=user)
@@ -112,12 +112,9 @@ async def test_authenticate_success_viewer(
 
 
 @pytest.mark.anyio
-@patch("app.streaming.websocket.auth.AsyncSessionLocal")
-async def test_verify_room_access_valid(mock_session_cls: AsyncMock) -> None:
+@patch("app.streaming.websocket.auth.get_scoped_db_context", new_callable=_mock_db_ctx)
+async def test_verify_room_access_valid(mock_session_ctx: AsyncMock) -> None:
     user = _make_user()
-    mock_db = AsyncMock()
-    mock_session_cls.return_value.__aenter__ = AsyncMock(return_value=mock_db)
-    mock_session_cls.return_value.__aexit__ = AsyncMock(return_value=False)
 
     with patch("app.streaming.websocket.auth.ProjectService") as mock_svc_cls:
         mock_svc_cls.return_value.verify_project_access = AsyncMock()
@@ -127,12 +124,9 @@ async def test_verify_room_access_valid(mock_session_cls: AsyncMock) -> None:
 
 
 @pytest.mark.anyio
-@patch("app.streaming.websocket.auth.AsyncSessionLocal")
-async def test_verify_room_access_denied(mock_session_cls: AsyncMock) -> None:
+@patch("app.streaming.websocket.auth.get_scoped_db_context", new_callable=_mock_db_ctx)
+async def test_verify_room_access_denied(mock_session_ctx: AsyncMock) -> None:
     user = _make_user()
-    mock_db = AsyncMock()
-    mock_session_cls.return_value.__aenter__ = AsyncMock(return_value=mock_db)
-    mock_session_cls.return_value.__aexit__ = AsyncMock(return_value=False)
 
     with patch("app.streaming.websocket.auth.ProjectService") as mock_svc_cls:
         mock_svc_cls.return_value.verify_project_access = AsyncMock(

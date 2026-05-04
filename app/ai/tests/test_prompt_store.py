@@ -26,8 +26,8 @@ from app.ai.prompt_store import (
 )
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.main import app
 
 # ── Helpers ──
@@ -501,9 +501,9 @@ def _mock_db() -> Generator[AsyncMock]:
     async def override_get_db():
         yield db
 
-    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_scoped_db] = override_get_db
     yield db
-    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_scoped_db, None)
 
 
 class TestPromptRoutes:

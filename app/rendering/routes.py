@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.rendering.calibration.schemas import (
     CalibrationHistoryResponse,
     CalibrationSummaryListResponse,
@@ -47,7 +47,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1/rendering", tags=["rendering"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> RenderingService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> RenderingService:
     return RenderingService(db)
 
 

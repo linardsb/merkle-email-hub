@@ -18,13 +18,13 @@ from app.briefs.schemas import (
     ImportResponse,
 )
 from app.briefs.service import BriefService
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 router = APIRouter(prefix="/api/v1/briefs", tags=["briefs"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> BriefService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> BriefService:
     return BriefService(db)
 
 

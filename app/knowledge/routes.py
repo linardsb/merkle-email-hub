@@ -18,8 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.knowledge.exceptions import DuplicateTagError
 from app.knowledge.proactive_qa_routes import router as proactive_qa_router
 from app.knowledge.schemas import (
@@ -47,7 +47,7 @@ router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 router.include_router(proactive_qa_router)
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> KnowledgeService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> KnowledgeService:
     """Dependency to create KnowledgeService with request-scoped session."""
     return KnowledgeService(db)
 
@@ -385,7 +385,7 @@ async def search_graph(
     request: Request,
     body: GraphSearchRequest,
     _current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> GraphSearchResponse:
     """Search the knowledge graph for entity-relationship results."""
     _ = request

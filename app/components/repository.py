@@ -1,4 +1,11 @@
-"""Data access layer for email components."""
+"""Data access layer for email components.
+
+Tenant-exempt by design — components are a global library shared across
+all tenants. The `Component` table has no `client_org_id` column. Tenant
+scoping, where applicable, is enforced on `Project ↔ Component`
+associations elsewhere, not on the `Component` table itself. See
+`.agents/plans/tech-debt-03-multi-tenant-isolation.md` §A2.
+"""
 
 from __future__ import annotations
 

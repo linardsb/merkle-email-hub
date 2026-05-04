@@ -5,8 +5,8 @@ from __future__ import annotations
 from app.auth.models import User
 from app.auth.repository import UserRepository
 from app.auth.token import decode_token, is_token_revoked
-from app.core.database import AsyncSessionLocal
 from app.core.logging import get_logger
+from app.core.scoped_db import get_scoped_db_context, get_system_db_context
 from app.projects.service import ProjectService
 
 logger = get_logger(__name__)
@@ -44,7 +44,8 @@ async def authenticate_websocket(
         logger.info("collab.ws.auth_failed", reason="token_revoked", user_id=payload.sub)
         return None
 
-    async with AsyncSessionLocal() as db:
+    # System-scoped: pre-auth resolver, no user yet. UserRepository is tenant-exempt.
+    async with get_system_db_context() as db:
         user_repo = UserRepository(db)
         user = await user_repo.find_by_id(payload.sub)
 
@@ -72,7 +73,7 @@ async def verify_room_access(user: User, room_id: str) -> bool:
         return False
 
     try:
-        async with AsyncSessionLocal() as db:
+        async with get_scoped_db_context(user) as db:
             project_service = ProjectService(db)
             await project_service.verify_project_access(project_id, user)
         return True

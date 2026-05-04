@@ -17,8 +17,8 @@ from app.ai.voice.schemas import (
 )
 from app.ai.voice.service import VoiceBriefService, get_voice_service
 from app.auth.dependencies import get_current_user
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.main import app
 
 # ── Fixtures ──
@@ -174,7 +174,7 @@ class TestRunRoute:
             return_value=(_make_transcript(), _make_brief(), 0.85, mock_run_response)
         )
         _override_auth_and_service(mock_service)
-        app.dependency_overrides[get_db] = lambda: AsyncMock()
+        app.dependency_overrides[get_scoped_db] = lambda: AsyncMock()
 
         payload = {**_valid_audio_payload(), "blueprint_name": "campaign"}
         resp = client.post("/api/v1/ai/voice/run", json=payload)
