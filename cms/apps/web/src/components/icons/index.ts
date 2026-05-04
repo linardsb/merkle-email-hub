@@ -33,6 +33,7 @@ export { Eye } from "./generated/Eye";
 export { FileCode } from "./generated/FileCode";
 export { FileSpreadsheet } from "./generated/FileSpreadsheet";
 export { FileText } from "./generated/FileText";
+export { Figma } from "./generated/Figma";
 export { FlaskConical } from "./generated/FlaskConical";
 export { FolderOpen } from "./generated/FolderOpen";
 export { GitBranch } from "./generated/GitBranch";
@@ -109,7 +110,6 @@ export {
   Copy,
   ExternalLink,
   EyeOff,
-  Figma,
   FileSearch,
   Filter,
   Frame,
