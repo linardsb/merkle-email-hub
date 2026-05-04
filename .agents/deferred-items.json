@@ -66,6 +66,27 @@
       "blocked_by": "phase-50.7-ac-4"
     },
     {
+      "id": "phase-deps-pyright-asynccontextmanager-deprecation",
+      "phase": "deps (cross-cutting)",
+      "title": "pyright reportDeprecated demoted to warning to absorb @asynccontextmanager false-positive in 1.1.409",
+      "status": "deferred",
+      "severity": "speculative",
+      "introduced": "2026-05-04",
+      "introduced_commit": "0907e059",
+      "summary": "pyright 1.1.409's bundled typeshed marks contextlib.asynccontextmanager / contextmanager as deprecated. Under strict mode (typeCheckingMode='strict') this fires reportDeprecated=error on every decorated generator and breaks `make types`. Workaround: pyproject.toml sets `reportDeprecated = 'warning'` instead of patching every call site or pinning pyright back. The narrower fix is to annotate each decorated function as `-> AsyncGenerator[T]` / `-> Generator[T]` (the typeshed deprecation only fires when the return type is a bare generator), which sidesteps the deprecation entirely without weakening the project-wide rule.",
+      "code_refs": [
+        "pyproject.toml:324 ([tool.pyright].reportDeprecated)",
+        "app/core/database.py:41 (@asynccontextmanager)",
+        "app/core/scoped_db.py:123 (@asynccontextmanager)",
+        "app/core/scoped_db.py:145 (@asynccontextmanager)",
+        "app/main.py:71 (@asynccontextmanager — FastAPI lifespan)",
+        "app/knowledge/graph/tests/test_seed_graph.py:36 (@contextmanager)"
+      ],
+      "symptom_if_broken": "A genuinely deprecated API (e.g. a Pydantic v3 / SQLAlchemy 2.x removal) lands in a future bump and pyright now logs it as a warning instead of failing `make types` — the regression slips through CI. Less severe but possible: another false-positive deprecation upstream goes unnoticed because the project-wide demote masks it.",
+      "closes_when": "The 5 cited @asynccontextmanager / @contextmanager call sites annotate their return types as `AsyncGenerator[Foo]` / `Generator[Foo]` (or upstream typeshed reverts the deprecation marker), AND `reportDeprecated` returns to its strict-mode default (`error`).",
+      "fix_sketch": "For each cited site, change `async def lifespan(app):` -> `async def lifespan(app) -> AsyncGenerator[None]:` and `def fixture():` -> `def fixture() -> Generator[Foo]:`. Then drop `reportDeprecated = 'warning'` from pyproject.toml:324 and re-run `make types` to confirm green under the strict default."
+    },
+    {
       "id": "phase-50-stranded-templates",
       "phase": "50 (cross-cutting)",
       "title": "3 of 7 for_converter_engine templates have no structure.json — never validated",
@@ -95,10 +116,10 @@
     {
       "id": "wire-deferred-items-into-preflight",
       "title": "Wire deferred-items.json scan into /preflight-check",
-      "trigger": "When open_items count reaches >= 5 (currently 4)",
+      "trigger": "When open_items count reaches >= 5 (currently 5 — threshold met, ready to wire)",
       "summary": "Add a step to .claude/commands/preflight-check.md that grep s .agents/deferred-items.json for entries whose phase or code_refs overlap the plan's 'Files to Create/Modify' list, and surfaces matches in the preflight report. This converts the convention from 'rule the model must remember' to 'mechanical check that runs before /be-execute'.",
       "acceptance": "Preflight report includes a 'Deferred Items Touching This Plan' section listing matching entries with id, summary, and severity. Empty section when no matches — never silent.",
-      "current_open_items_count": 4,
+      "current_open_items_count": 5,
       "see": ".claude/rules/deferred-items.md (Tooling roadmap section)"
     }
   ],
