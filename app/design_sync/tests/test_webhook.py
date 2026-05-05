@@ -507,7 +507,7 @@ class TestDebouncedSyncWorker:
             ),
             patch("app.design_sync.webhook.asyncio.sleep", new_callable=AsyncMock),
             patch("app.core.database.get_db_context", return_value=mock_db),
-            patch("app.design_sync.service.DesignSyncService", return_value=mock_service),
+            patch("app.design_sync.services.WebhookService", return_value=mock_service),
             patch(
                 "app.design_sync.webhook._broadcast_update", new_callable=AsyncMock
             ) as mock_broadcast,
@@ -547,7 +547,7 @@ class TestDebouncedSyncWorker:
             ),
             patch("app.design_sync.webhook.asyncio.sleep", new_callable=AsyncMock),
             patch("app.core.database.get_db_context", return_value=mock_db),
-            patch("app.design_sync.service.DesignSyncService", return_value=mock_service),
+            patch("app.design_sync.services.WebhookService", return_value=mock_service),
             patch(
                 "app.design_sync.webhook._broadcast_update", new_callable=AsyncMock
             ) as mock_broadcast,
@@ -579,7 +579,7 @@ class TestDebouncedSyncWorker:
             ),
             patch("app.design_sync.webhook.asyncio.sleep", new_callable=AsyncMock),
             patch("app.core.database.get_db_context", return_value=mock_db),
-            patch("app.design_sync.service.DesignSyncService", return_value=mock_service),
+            patch("app.design_sync.services.WebhookService", return_value=mock_service),
             patch(
                 "app.design_sync.webhook._broadcast_update", new_callable=AsyncMock
             ) as mock_broadcast,

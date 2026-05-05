@@ -49,7 +49,7 @@ async def debounced_sync_worker(
 ) -> None:
     """Wait for debounce window, then run sync + broadcast if no new events arrived."""
     from app.core.scoped_db import get_system_db_context
-    from app.design_sync.service import DesignSyncService
+    from app.design_sync.services import DesignSyncContext, WebhookService
 
     settings = get_settings()
     ttl = settings.design_sync.webhook_debounce_seconds
@@ -61,8 +61,8 @@ async def debounced_sync_worker(
         return
 
     async with get_system_db_context() as db:
-        service = DesignSyncService(db)
-        msg = await service.handle_webhook_sync(connection_id)
+        ctx = DesignSyncContext(db)
+        msg = await WebhookService(ctx).handle_webhook_sync(connection_id)
 
     if msg is None:
         return
