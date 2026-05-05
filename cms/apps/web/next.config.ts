@@ -1,9 +1,13 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: ["@email-hub/ui", "@email-hub/sdk"],
   skipTrailingSlashRedirect: true,
+  turbopack: {
+    root: path.join(__dirname, "..", ".."),
+  },
   async headers() {
     return [
       {
