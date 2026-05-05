@@ -24,8 +24,6 @@ class DesignSyncConfig(BaseModel):
     fidelity_critical_threshold: float = 0.70  # SSIM < 0.70 = critical
     fidelity_warning_threshold: float = 0.85  # SSIM < 0.85 = warning
     fidelity_figma_scale: float = 2.0  # Figma export scale factor
-    # W3C Design Tokens & caniemail.com
-    w3c_tokens_enabled: bool = True  # DESIGN_SYNC__W3C_TOKENS_ENABLED
     # Figma webhooks (live preview sync)
     figma_webhook_enabled: bool = False  # DESIGN_SYNC__FIGMA_WEBHOOK_ENABLED
     figma_webhook_passcode: str = ""  # DESIGN_SYNC__FIGMA_WEBHOOK_PASSCODE (HMAC secret)

@@ -187,6 +187,22 @@ flags:
     status: ga
     permanent_reason: "Default-on capability; flag kept for emergency rollback"
 
+  - name: RENDERING__SANDBOX__ENABLED
+    description: Headless email sandbox (Mailpit/Roundcube via Playwright) for in-house render snapshots
+    owner: platform-team
+    created: "2026-05-04"
+    removal_date: null
+    status: beta
+    permanent_reason: "Opt-in dev/local capability; sandbox infrastructure not provisioned in shared envs"
+
+  - name: RENDERING__CALIBRATION__ENABLED
+    description: Emulator calibration loop — periodic real-client rendering to recalibrate emulator confidence
+    owner: platform-team
+    created: "2026-05-04"
+    removal_date: null
+    status: beta
+    permanent_reason: "Opt-in capability gated on Litmus/EOA budget; off by default until quota approved"
+
   # ── Cognee ──────────────────────────────────────────────────────────────────
   - name: COGNEE__ENABLED
     description: Cognee knowledge graph integration
@@ -249,14 +265,6 @@ flags:
     created: "2026-03-27"
     removal_date: "2026-06-15"
     status: beta
-
-  - name: DESIGN_SYNC__W3C_TOKENS_ENABLED
-    description: W3C Design Tokens + caniemail.com CSS support integration
-    owner: design-team
-    created: "2026-03-27"
-    removal_date: null
-    status: ga
-    permanent_reason: "Default-on capability; flag kept for emergency rollback"
 
   - name: DESIGN_SYNC__FIGMA_WEBHOOK_ENABLED
     description: Figma webhook listener for live preview sync
@@ -359,6 +367,54 @@ flags:
     created: "2026-04-06"
     removal_date: "2026-07-26"
     status: alpha
+
+  - name: DESIGN_SYNC__FRAME_RULES_ENABLED
+    description: Frame-rule layout heuristics for converter (Phase 50 frame ruleset)
+    owner: design-team
+    created: "2026-05-04"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__FULL_DESIGN_PNG_ENABLED
+    description: Capture and persist full-design PNG for visual diff/regression
+    owner: design-team
+    created: "2026-05-04"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__NESTED_CARD_DETECTION_ENABLED
+    description: Detect nested card containers within converter layout pass (Phase 50.4)
+    owner: design-team
+    created: "2026-05-04"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__PHYSICAL_CARD_DETECTION_ENABLED
+    description: Physical-card surface detection for LEGO-style template families (Phase 50.7)
+    owner: design-team
+    created: "2026-05-04"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__WRAPPER_UNWRAP_ENABLED
+    description: Unwrap redundant single-child wrapper containers in converter output
+    owner: design-team
+    created: "2026-05-04"
+    removal_date: "2026-08-04"
+    status: beta
+
+  # ── Observability ───────────────────────────────────────────────────────────
+  - name: OTEL__ENABLED
+    description: OpenTelemetry instrumentation (FastAPI, SQLAlchemy, httpx) with OTLP export
+    owner: platform-team
+    created: "2026-05-04"
+    removal_date: null
+    status: beta
+    permanent_reason: "Opt-in observability; disabled by default so tests run without an OTEL collector"
 
   # ── Voice ───────────────────────────────────────────────────────────────────
   - name: VOICE__ENABLED

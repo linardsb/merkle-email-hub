@@ -194,11 +194,7 @@ validate-overlays: ## Validate per-client skill overlay files
 	uv run python scripts/validate-overlays.py
 
 flag-audit: ## Audit feature flag lifecycle (warns >90d, errors >180d)
-	# --warn-only is a catch-up: the script was crashing since the config
-	# package split (commit 38b643e1) and surfaced 8 unregistered flags
-	# once fixed. Errors still print to stderr; remove this flag once the
-	# backlog is registered in feature-flags.yaml by their owning teams.
-	uv run python scripts/flag-audit.py --warn-only
+	uv run python scripts/flag-audit.py
 
 list-overlays: ## List all client skill overlays
 	@find data/clients -name "*.md" -path "*/agents/*/skills/*" 2>/dev/null | sort
