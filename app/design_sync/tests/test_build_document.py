@@ -30,7 +30,8 @@ from app.design_sync.protocol import (
     ExtractedTypography,
 )
 from app.design_sync.schemas import ConnectionResponse
-from app.design_sync.service import DesignSyncService
+from app.design_sync.services._context import DesignSyncContext
+from app.design_sync.services.connection_service import ConnectionService
 
 # ── Factories ──
 
@@ -307,21 +308,21 @@ class TestPenpotBuildDocument:
 
 
 def _sync_patches(
-    service: DesignSyncService,
+    ctx: DesignSyncContext,
     conn: MagicMock,
     mock_provider: AsyncMock | MagicMock,
     mock_save: AsyncMock | None = None,
 ) -> tuple[Any, ...]:
     """Return a tuple of context managers for sync_connection mocking."""
     return (
-        patch.object(service._repo, "get_connection", new_callable=AsyncMock, return_value=conn),
-        patch.object(service._repo, "update_status", new_callable=AsyncMock),
+        patch.object(ctx.repo, "get_connection", new_callable=AsyncMock, return_value=conn),
+        patch.object(ctx.repo, "update_status", new_callable=AsyncMock),
         patch.object(
-            service._repo,
+            ctx.repo,
             "save_snapshot",
             mock_save if mock_save is not None else AsyncMock(),
         ),
-        patch.object(service._ctx, "get_provider", return_value=mock_provider),
+        patch.object(ctx, "get_provider", return_value=mock_provider),
         patch(
             "app.design_sync.services.connection_service.decrypt_token",
             return_value="token123",
@@ -331,7 +332,7 @@ def _sync_patches(
             new_callable=AsyncMock,
             return_value=None,
         ),
-        patch.object(service._ctx, "get_project_name", new_callable=AsyncMock, return_value="Test"),
+        patch.object(ctx, "get_project_name", new_callable=AsyncMock, return_value="Test"),
         patch.object(ConnectionResponse, "from_model", return_value=MagicMock()),
     )
 
@@ -342,11 +343,17 @@ class TestSyncConnectionBuildDocument:
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, mock_db: AsyncMock) -> DesignSyncService:
-        return DesignSyncService(mock_db)
+    def ctx(self, mock_db: AsyncMock) -> DesignSyncContext:
+        return DesignSyncContext(mock_db)
+
+    @pytest.fixture
+    def service(self, ctx: DesignSyncContext) -> ConnectionService:
+        return ConnectionService(ctx)
 
     @pytest.mark.asyncio
-    async def test_uses_build_document_when_available(self, service: DesignSyncService) -> None:
+    async def test_uses_build_document_when_available(
+        self, ctx: DesignSyncContext, service: ConnectionService
+    ) -> None:
         """sync_connection delegates to build_document when provider supports it."""
         conn = _make_connection(provider="figma")
         tokens = _make_tokens()
@@ -358,7 +365,7 @@ class TestSyncConnectionBuildDocument:
         mock_provider.export_images = AsyncMock(return_value=[])
 
         mock_save = AsyncMock()
-        patches = _sync_patches(service, conn, mock_provider, mock_save)
+        patches = _sync_patches(ctx, conn, mock_provider, mock_save)
 
         with (
             patches[0],
@@ -380,7 +387,9 @@ class TestSyncConnectionBuildDocument:
         assert doc_json is not None
 
     @pytest.mark.asyncio
-    async def test_fallback_without_build_document(self, service: DesignSyncService) -> None:
+    async def test_fallback_without_build_document(
+        self, ctx: DesignSyncContext, service: ConnectionService
+    ) -> None:
         """Stub providers without build_document use legacy path."""
         conn = _make_connection(provider="sketch")
         tokens = _make_tokens()
@@ -391,7 +400,7 @@ class TestSyncConnectionBuildDocument:
         mock_provider.sync_tokens_and_structure = AsyncMock(return_value=(tokens, structure))
         mock_provider.export_images = AsyncMock(return_value=[])
 
-        patches = _sync_patches(service, conn, mock_provider)
+        patches = _sync_patches(ctx, conn, mock_provider)
 
         with (
             patches[0],
@@ -408,7 +417,9 @@ class TestSyncConnectionBuildDocument:
         mock_provider.sync_tokens_and_structure.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_document_validates_schema(self, service: DesignSyncService) -> None:
+    async def test_document_validates_schema(
+        self, ctx: DesignSyncContext, service: ConnectionService
+    ) -> None:
         """Stored document_json passes EmailDesignDocument schema validation."""
         conn = _make_connection(provider="figma")
         tokens = _make_tokens()
@@ -431,7 +442,7 @@ class TestSyncConnectionBuildDocument:
             return MagicMock()
 
         mock_save = AsyncMock(side_effect=capture_save)
-        patches = _sync_patches(service, conn, mock_provider, mock_save)
+        patches = _sync_patches(ctx, conn, mock_provider, mock_save)
 
         with (
             patches[0],

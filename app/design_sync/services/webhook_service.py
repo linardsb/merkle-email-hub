@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -27,23 +27,10 @@ logger = get_logger(__name__)
 
 
 class WebhookService:
-    """Figma webhook registration + sync triggered by webhook events.
+    """Figma webhook registration + sync triggered by webhook events."""
 
-    ``handle_webhook_sync`` invokes ``sync_connection`` / ``get_token_diff`` via
-    a back-reference to the facade so existing tests that patch those methods
-    on ``DesignSyncService`` instances still take effect. When no facade is
-    attached (e.g. carved-service consumers that bypass the facade), falls back
-    to fresh sub-service instances over the same context.
-    """
-
-    def __init__(
-        self,
-        ctx: DesignSyncContext,
-        *,
-        facade: object | None = None,
-    ) -> None:
+    def __init__(self, ctx: DesignSyncContext) -> None:
         self._ctx = ctx
-        self._facade = facade
 
     async def register_figma_webhook(self, connection_id: int, *, team_id: str, user: User) -> str:
         """Register a Figma FILE_UPDATE webhook for a connection."""
@@ -105,12 +92,8 @@ class WebhookService:
         if conn is None:
             return None
 
-        facade = cast(Any, self._facade)
         try:
-            if facade is not None:
-                await facade.sync_connection(connection_id, user=None)
-            else:
-                await ConnectionService(self._ctx).sync_connection(connection_id, user=None)
+            await ConnectionService(self._ctx).sync_connection(connection_id, user=None)
         except Exception:
             logger.warning(
                 "design_sync.webhook_sync_failed",
@@ -119,10 +102,7 @@ class WebhookService:
             )
             return None
 
-        if facade is not None:
-            diff = await facade.get_token_diff(connection_id)
-        else:
-            diff = await TokenConversionService(self._ctx).get_token_diff(connection_id)
+        diff = await TokenConversionService(self._ctx).get_token_diff(connection_id)
         if not diff.entries:
             return None
 

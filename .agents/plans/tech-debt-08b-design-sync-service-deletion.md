@@ -137,9 +137,9 @@ make check
 
 ## Done when
 
-- [ ] `app/design_sync/service.py` no longer defines `DesignSyncService`.
-- [ ] No production code path constructs `DesignSyncService(...)`.
-- [ ] All 2159+ design_sync tests still green.
-- [ ] `rg -n "DesignSyncService" app/ tests/ --type py` returns only the carved-class definitions and references in this plan / the audit doc.
-- [ ] `TECH_DEBT_AUDIT.md` F012 entry updated from "facade in place" to "fully resolved".
+- [x] `app/design_sync/service.py` no longer defines `DesignSyncService`.
+- [x] No production code path constructs `DesignSyncService(...)`.
+- [x] All 2264 design_sync tests still green.
+- [x] `rg -n "DesignSyncService" app/ --type py` returns only docstring mentions + provider-named classes (`FigmaDesignSyncService` etc.); no live references to a `DesignSyncService` symbol.
+- [x] `TECH_DEBT_AUDIT.md` F012 entry updated from "facade in place" to "fully resolved".
 - [ ] Single PR title: `refactor(design_sync): delete DesignSyncService facade (08b)`.

@@ -26,7 +26,12 @@ from app.design_sync.schemas import (
     LayoutAnalysisResponse,
     StoredAssetResponse,
 )
-from app.design_sync.service import DesignSyncService
+from app.design_sync.services import (
+    AssetsService,
+    ConnectionService,
+    ImportRequestService,
+    TokenConversionService,
+)
 from app.main import app
 
 # ── Helpers ──
@@ -211,7 +216,7 @@ def test_list_connections_200(client: TestClient) -> None:
     mock_conn = _make_connection_response()
 
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "list_connections",
         new_callable=AsyncMock,
         return_value=[mock_conn],
@@ -234,7 +239,7 @@ def test_get_connection_200(client: TestClient) -> None:
     mock_conn = _make_connection_response()
 
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "get_connection",
         new_callable=AsyncMock,
         return_value=mock_conn,
@@ -255,7 +260,7 @@ def test_get_tokens_200(client: TestClient) -> None:
     mock_tokens = _make_tokens_response()
 
     with patch.object(
-        DesignSyncService,
+        TokenConversionService,
         "get_tokens",
         new_callable=AsyncMock,
         return_value=mock_tokens,
@@ -279,7 +284,7 @@ def test_create_connection_201(client: TestClient) -> None:
     mock_conn = _make_connection_response()
 
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "create_connection",
         new_callable=AsyncMock,
         return_value=mock_conn,
@@ -307,7 +312,7 @@ def test_create_connection_201(client: TestClient) -> None:
 def test_delete_connection_200(client: TestClient) -> None:
     """POST /connections/delete returns 200 with success flag."""
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "delete_connection",
         new_callable=AsyncMock,
         return_value=True,
@@ -330,7 +335,7 @@ def test_sync_connection_200(client: TestClient) -> None:
     mock_conn = _make_connection_response()
 
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "sync_connection",
         new_callable=AsyncMock,
         return_value=mock_conn,
@@ -353,7 +358,7 @@ def test_get_file_structure_200(client: TestClient) -> None:
     mock_fs = _make_file_structure_response()
 
     with patch.object(
-        DesignSyncService,
+        AssetsService,
         "get_file_structure",
         new_callable=AsyncMock,
         return_value=mock_fs,
@@ -376,7 +381,7 @@ def test_list_components_200(client: TestClient) -> None:
     mock_cl = _make_component_list_response()
 
     with patch.object(
-        DesignSyncService,
+        AssetsService,
         "list_components",
         new_callable=AsyncMock,
         return_value=mock_cl,
@@ -398,7 +403,7 @@ def test_export_images_200(client: TestClient) -> None:
     mock_export = _make_image_export_response()
 
     with patch.object(
-        DesignSyncService,
+        AssetsService,
         "export_images",
         new_callable=AsyncMock,
         return_value=mock_export,
@@ -428,7 +433,7 @@ def test_download_assets_200(client: TestClient) -> None:
     mock_dl = _make_download_assets_response()
 
     with patch.object(
-        DesignSyncService,
+        AssetsService,
         "download_assets",
         new_callable=AsyncMock,
         return_value=mock_dl,
@@ -463,13 +468,13 @@ def test_serve_asset_200(client: TestClient, tmp_path: Path) -> None:
 
     with (
         patch.object(
-            DesignSyncService,
+            ConnectionService,
             "get_connection",
             new_callable=AsyncMock,
             return_value=mock_conn,
         ),
         patch.object(
-            DesignSyncService,
+            AssetsService,
             "get_asset_path",
             return_value=asset_file,
         ),
@@ -491,7 +496,7 @@ def test_analyze_layout_200(client: TestClient) -> None:
     mock_layout = _make_layout_analysis_response()
 
     with patch.object(
-        DesignSyncService,
+        TokenConversionService,
         "analyze_layout",
         new_callable=AsyncMock,
         return_value=mock_layout,
@@ -517,7 +522,7 @@ def test_generate_brief_200(client: TestClient) -> None:
     mock_brief = _make_brief_response()
 
     with patch.object(
-        DesignSyncService,
+        TokenConversionService,
         "generate_brief",
         new_callable=AsyncMock,
         return_value=mock_brief,
@@ -547,7 +552,7 @@ def test_extract_components_202(client: TestClient) -> None:
     mock_extract = _make_extract_components_response()
 
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "extract_components",
         new_callable=AsyncMock,
         return_value=mock_extract,
@@ -572,7 +577,7 @@ def test_create_import_201(client: TestClient) -> None:
     mock_import = _make_import_response()
 
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "create_design_import",
         new_callable=AsyncMock,
         return_value=mock_import,
@@ -602,7 +607,7 @@ def test_get_import_200(client: TestClient) -> None:
     mock_import = _make_import_response()
 
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "get_design_import",
         new_callable=AsyncMock,
         return_value=mock_import,
@@ -623,7 +628,7 @@ def test_get_import_by_template_200(client: TestClient) -> None:
     mock_import = _make_import_response(status="completed", result_template_id=42)
 
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "get_import_by_template",
         new_callable=AsyncMock,
         return_value=mock_import,
@@ -638,7 +643,7 @@ def test_get_import_by_template_200(client: TestClient) -> None:
 def test_get_import_by_template_null(client: TestClient) -> None:
     """GET /imports/by-template/{template_id} returns 200 null when no import exists."""
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "get_import_by_template",
         new_callable=AsyncMock,
         return_value=None,
@@ -658,7 +663,7 @@ def test_update_import_brief_200(client: TestClient) -> None:
     mock_import = _make_import_response()
 
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "update_import_brief",
         new_callable=AsyncMock,
         return_value=mock_import,
@@ -681,7 +686,7 @@ def test_convert_import_202(client: TestClient) -> None:
     mock_import = _make_import_response(status="converting")
 
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "start_conversion",
         new_callable=AsyncMock,
         return_value=mock_import,
@@ -829,7 +834,7 @@ def test_viewer_allowed_on_list_connections(client: TestClient) -> None:
     mock_conn = _make_connection_response()
 
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "list_connections",
         new_callable=AsyncMock,
         return_value=[mock_conn],
@@ -845,7 +850,7 @@ def test_viewer_allowed_on_get_connection(client: TestClient) -> None:
     mock_conn = _make_connection_response()
 
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "get_connection",
         new_callable=AsyncMock,
         return_value=mock_conn,
@@ -861,7 +866,7 @@ def test_viewer_allowed_on_get_tokens(client: TestClient) -> None:
     mock_tokens = _make_tokens_response()
 
     with patch.object(
-        DesignSyncService,
+        TokenConversionService,
         "get_tokens",
         new_callable=AsyncMock,
         return_value=mock_tokens,
@@ -877,7 +882,7 @@ def test_viewer_allowed_on_get_import(client: TestClient) -> None:
     mock_import = _make_import_response()
 
     with patch.object(
-        DesignSyncService,
+        ImportRequestService,
         "get_design_import",
         new_callable=AsyncMock,
         return_value=mock_import,
@@ -893,7 +898,7 @@ def test_viewer_allowed_on_analyze_layout(client: TestClient) -> None:
     mock_layout = _make_layout_analysis_response()
 
     with patch.object(
-        DesignSyncService,
+        TokenConversionService,
         "analyze_layout",
         new_callable=AsyncMock,
         return_value=mock_layout,
@@ -915,7 +920,7 @@ def test_refresh_connection_token(client: TestClient) -> None:
     mock_conn = _make_connection_response(id=1)
 
     with patch.object(
-        DesignSyncService,
+        ConnectionService,
         "refresh_token",
         new_callable=AsyncMock,
         return_value=mock_conn,
