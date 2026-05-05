@@ -211,8 +211,9 @@ jobs:
 
       - name: Install squawk
         run: |
-          curl -L https://github.com/sbdchd/squawk/releases/latest/download/squawk-linux-x86_64 -o /usr/local/bin/squawk
+          curl -fL https://github.com/sbdchd/squawk/releases/latest/download/squawk-linux-x64 -o /usr/local/bin/squawk
           chmod +x /usr/local/bin/squawk
+          squawk --version
 
       - name: Lint changed migrations
         env:
@@ -221,7 +222,7 @@ jobs:
           CHANGED=$(git diff --name-only "origin/$BASE_REF...HEAD" -- 'alembic/versions/*.py' || true)
           if [ -n "$CHANGED" ]; then
             echo "Linting migrations: $CHANGED"
-            echo "$CHANGED" | xargs squawk --reporter=compact
+            echo "$CHANGED" | xargs squawk --reporter=tty
           else
             echo "No migration changes detected."
           fi
