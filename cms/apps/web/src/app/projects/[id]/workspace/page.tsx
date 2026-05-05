@@ -192,10 +192,13 @@ export default function WorkspacePage() {
     });
   }, []);
 
-  const handleDesignRefToggle = useCallback((open: boolean) => {
-    setDesignRefOpen(open);
-    if (open) qa.setQaPanelOpen(false);
-  }, [qa]);
+  const handleDesignRefToggle = useCallback(
+    (open: boolean) => {
+      setDesignRefOpen(open);
+      if (open) qa.setQaPanelOpen(false);
+    },
+    [qa],
+  );
 
   const openBlueprint = useCallback(() => dialogs.setBlueprintOpen(true), [dialogs]);
   const openImageGen = useCallback(() => dialogs.setImageGenOpen(true), [dialogs]);
