@@ -29,7 +29,12 @@ from app.design_sync.schemas import (
 if TYPE_CHECKING:
     from app.ai.agents.scaffolder.schemas import ScaffolderResponse
     from app.design_sync.converter_service import ConversionResult
-    from app.design_sync.service import DesignSyncService
+
+from app.design_sync.services import (
+    AssetsService,
+    DesignSyncContext,
+    TokenConversionService,
+)
 
 logger = get_logger(__name__)
 
@@ -75,12 +80,7 @@ class DesignImportService:
     pending → converting → completed/failed
     """
 
-    def __init__(
-        self,
-        design_service_factory: type[DesignSyncService],
-        user: User,
-    ) -> None:
-        self._service_factory = design_service_factory
+    def __init__(self, *, user: User) -> None:
         self._user = user
 
     async def run_conversion(
@@ -100,7 +100,9 @@ class DesignImportService:
         """
         async with get_scoped_db_context(self._user) as db:
             repo = DesignSyncRepository(db)
-            design_service = self._service_factory(db)
+            ctx = DesignSyncContext(db)
+            tokens_service = TokenConversionService(ctx)
+            assets_service = AssetsService(ctx)
 
             design_import = await repo.get_import_with_assets(import_id)
             if design_import is None:
@@ -131,7 +133,7 @@ class DesignImportService:
                 target_clients = await fetch_target_clients(db, conn.project_id)
 
                 # 2. Analyze layout
-                layout_response = await design_service.analyze_layout(
+                layout_response = await tokens_service.analyze_layout(
                     design_import.connection_id,
                     self._user,
                     selected_node_ids=design_import.selected_node_ids or None,
@@ -150,7 +152,7 @@ class DesignImportService:
                     if asset_response is None:
                         # 3b. Download from provider (best-effort)
                         try:
-                            asset_response = await design_service.download_assets(
+                            asset_response = await assets_service.download_assets(
                                 design_import.connection_id,
                                 self._user,
                                 image_node_ids,
@@ -165,7 +167,7 @@ class DesignImportService:
                 # 4. Get design tokens (best-effort — skip on provider errors)
                 tokens = None
                 try:
-                    tokens = await design_service.get_tokens(
+                    tokens = await tokens_service.get_tokens(
                         design_import.connection_id, self._user
                     )
                 except (SyncFailedError, ConnectionError):
@@ -236,7 +238,7 @@ class DesignImportService:
 
                         # Legacy path: fetch full tree + extract tokens
                         if conversion is None:
-                            structure = await design_service.get_design_structure(
+                            structure = await assets_service.get_design_structure(
                                 design_import.connection_id,
                                 self._user,
                                 selected_node_ids=design_import.selected_node_ids or None,

@@ -329,7 +329,7 @@ class TestDesignImportServiceOrchestrator:
         assert DesignImportService._derive_template_name("   \n  \n  ") == "Imported from Figma"
 
     def test_collect_image_node_ids(self) -> None:
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         img1 = MagicMock()
@@ -348,7 +348,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_collect_image_node_ids_fallback_to_section_frames(self) -> None:
         """When no IMAGE nodes exist, fall back to section frame node IDs."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         section = MagicMock()
@@ -362,7 +362,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_collect_image_node_ids_appends_selected(self) -> None:
         """Selected top-level nodes are appended (deduped) for full-email renders."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         img = MagicMock()
@@ -464,7 +464,7 @@ class TestDesignImportServiceOrchestrator:
         assert fixed.html == html
 
     def test_build_design_context(self) -> None:
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
         conn = _make_connection(conn_id=5)
 
         layout = MagicMock()
@@ -555,9 +555,7 @@ class TestDesignImportServiceOrchestrator:
             qa_passed=True,
         )
 
-        # Mock the factory to return our mock service
-        mock_factory = MagicMock(return_value=mock_design_service)
-        svc = DesignImportService(design_service_factory=mock_factory, user=user)
+        svc = DesignImportService(user=user)
 
         # Mock get_db_context to yield our mock session
         mock_ctx = AsyncMock()
@@ -569,6 +567,14 @@ class TestDesignImportServiceOrchestrator:
             patch(
                 "app.design_sync.import_service.DesignSyncRepository",
                 return_value=mock_repo,
+            ),
+            patch(
+                "app.design_sync.import_service.TokenConversionService",
+                return_value=mock_design_service,
+            ),
+            patch(
+                "app.design_sync.import_service.AssetsService",
+                return_value=mock_design_service,
             ),
             patch.object(svc, "_call_scaffolder", return_value=scaffolder_resp),
             patch.object(svc, "_create_template", return_value=42),
@@ -600,8 +606,7 @@ class TestDesignImportServiceOrchestrator:
         # Layout analysis throws
         mock_design_service.analyze_layout.side_effect = RuntimeError("API down")
 
-        mock_factory = MagicMock(return_value=mock_design_service)
-        svc = DesignImportService(design_service_factory=mock_factory, user=user)
+        svc = DesignImportService(user=user)
 
         mock_ctx = AsyncMock()
         mock_ctx.__aenter__ = AsyncMock(return_value=mock_db)
@@ -612,6 +617,14 @@ class TestDesignImportServiceOrchestrator:
             patch(
                 "app.design_sync.import_service.DesignSyncRepository",
                 return_value=mock_repo,
+            ),
+            patch(
+                "app.design_sync.import_service.TokenConversionService",
+                return_value=mock_design_service,
+            ),
+            patch(
+                "app.design_sync.import_service.AssetsService",
+                return_value=mock_design_service,
             ),
         ):
             await svc.run_conversion(design_import.id)
@@ -632,8 +645,7 @@ class TestDesignImportServiceOrchestrator:
         """Missing import should return early without error."""
         mock_repo.get_import_with_assets.return_value = None
 
-        mock_factory = MagicMock(return_value=mock_design_service)
-        svc = DesignImportService(design_service_factory=mock_factory, user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         mock_ctx = AsyncMock()
         mock_ctx.__aenter__ = AsyncMock(return_value=mock_db)
@@ -721,7 +733,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_build_design_context_includes_typography_fields(self) -> None:
         """Typography entries include line_height, letter_spacing, text_transform."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
         conn = _make_connection(conn_id=5)
 
         layout = MagicMock()
@@ -755,7 +767,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_layout_to_design_nodes_with_text(self) -> None:
         """TEXT children are created from section.texts with typography data."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
         layout = LayoutAnalysisResponse(
             connection_id=1,
             file_name="Test.fig",

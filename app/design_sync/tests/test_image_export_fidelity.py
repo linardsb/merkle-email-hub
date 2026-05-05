@@ -10,7 +10,6 @@ Validates:
 
 from __future__ import annotations
 
-from typing import Any, cast
 from unittest.mock import MagicMock
 
 from app.design_sync.figma.layout_analyzer import (
@@ -148,7 +147,7 @@ class TestCollectImageNodeIdsExportPreference:
     """_collect_image_node_ids prefers export_node_id for Figma API calls."""
 
     def test_prefers_export_node_id(self) -> None:
-        svc = DesignImportService(design_service_factory=cast(Any, MagicMock()), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         img = MagicMock()
@@ -163,7 +162,7 @@ class TestCollectImageNodeIdsExportPreference:
         assert mapping == {"frame:1": "img:1"}
 
     def test_falls_back_to_node_id_when_no_export(self) -> None:
-        svc = DesignImportService(design_service_factory=cast(Any, MagicMock()), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         img = MagicMock()
@@ -178,7 +177,7 @@ class TestCollectImageNodeIdsExportPreference:
         assert mapping == {}
 
     def test_mixed_export_and_direct(self) -> None:
-        svc = DesignImportService(design_service_factory=cast(Any, MagicMock()), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         img1 = MagicMock()
