@@ -1,9 +1,8 @@
-"""Carved sub-services for design sync (Tech Debt 08 / F012).
+"""Carved sub-services for design sync (Tech Debt 08 / F012, 08b deletion).
 
-DesignSyncService remains the public facade in ``app.design_sync.service``.
-Each sub-service in this package owns a slice of its former responsibilities.
-The follow-up plan ``tech-debt-08b-design-sync-service-deletion.md`` tracks
-migrating callers from the facade to direct injection of these services.
+Each sub-service owns a slice of the former monolithic ``DesignSyncService``
+facade (deleted in 08b). All routes, MCP entry points, and tests inject these
+services directly via FastAPI ``Depends`` or per-test fixtures.
 """
 
 from app.design_sync.services._context import DesignSyncContext

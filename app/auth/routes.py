@@ -29,13 +29,18 @@ from app.shared.schemas import PaginatedResponse
 
 logger = get_logger(__name__)
 
-# Refresh token lifetime in seconds (7 days) — used for revocation TTL
-REFRESH_TOKEN_TTL_SECONDS = 604800
+
+def _refresh_ttl_seconds() -> int:
+    """Compute refresh-token revocation TTL from auth config."""
+    return get_settings().auth.refresh_token_expire_days * 86400
+
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> AuthService:
+def get_service(
+    db: AsyncSession = Depends(get_db),
+) -> AuthService:  # tenant-exempt: pre-auth (login/refresh/bootstrap have no user yet); /users/* admin endpoints use require_role("admin")
     """Dependency to create AuthService with request-scoped session."""
     return AuthService(db)
 
@@ -88,7 +93,7 @@ async def refresh_token(
 
     access_token = await service.refresh_access_token(payload.sub)
     # Revoke the used refresh token to prevent replay attacks
-    await revoke_token(payload.jti, ttl_seconds=REFRESH_TOKEN_TTL_SECONDS)
+    await revoke_token(payload.jti, ttl_seconds=_refresh_ttl_seconds())
     logger.info("auth.token.refresh_completed", user_id=payload.sub)
     return RefreshResponse(access_token=access_token)
 

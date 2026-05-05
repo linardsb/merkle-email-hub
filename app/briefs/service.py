@@ -78,9 +78,14 @@ class BriefService:
 
     # ── Connections ──
 
-    async def list_connections(self, user: User) -> list[ConnectionResponse]:
-        """List connections visible to the user."""
-        connections = await self._repo.list_connections(user.id, user.role)
+    async def list_connections(self, user: User) -> list[ConnectionResponse]:  # noqa: ARG002
+        """List connections visible to the user.
+
+        `user` is retained in the signature so call sites stay symmetric with
+        sibling service methods; tenant scoping reads from `session.info` set
+        by `get_scoped_db`, not from the parameter.
+        """
+        connections = await self._repo.list_connections()
         return [ConnectionResponse.from_model(c) for c in connections]
 
     async def create_connection(
@@ -193,16 +198,18 @@ class BriefService:
 
     async def list_items(
         self,
-        user: User,
+        user: User,  # noqa: ARG002
         *,
         platform: str | None = None,
         status: str | None = None,
         search: str | None = None,
     ) -> list[BriefItemResponse]:
-        """List all items scoped to the user's accessible connections."""
-        items = await self._repo.list_items(
-            user_id=user.id, role=user.role, platform=platform, status=status, search=search
-        )
+        """List all items scoped to the user's accessible connections.
+
+        `user` is retained for API symmetry; scoping reads from
+        `session.info` set by `get_scoped_db`.
+        """
+        items = await self._repo.list_items(platform=platform, status=status, search=search)
         return [BriefItemResponse.model_validate(item, from_attributes=True) for item in items]
 
     async def get_item_detail(self, item_id: int, user: User) -> BriefDetailResponse:

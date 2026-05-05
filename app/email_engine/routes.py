@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.core.config import get_settings
-from app.core.database import get_db
 from app.core.exceptions import ForbiddenError
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.email_engine.schemas import (
     BuildRequest,
     BuildResponse,
@@ -28,7 +28,7 @@ from app.email_engine.service import EmailEngineService
 router = APIRouter(prefix="/api/v1/email", tags=["email-engine"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> EmailEngineService:
+def get_service(db: AsyncSession = Depends(get_scoped_db)) -> EmailEngineService:
     return EmailEngineService(db)
 
 

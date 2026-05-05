@@ -1,155 +1,61 @@
 # Tech Debt 02 — Public-API Security
 
 **Source:** `TECH_DEBT_AUDIT.md`
-**Scope:** Close two Critical security holes on the public API surface, plus auth-token quick wins that were dropped from Plan 01.
-**Goal:** Prompt-injection guard runs on every agent code path; MCP per-user scopes are enforced; JWT decode is strict.
-**Estimated effort:** ½ day, single PR.
-**Prerequisite:** ✅ Plan 01 landed (`eddcd1ac` / PR #40).
+**Scope (remaining):** Auth-token strictness — JWT decode requires `exp`/`iat`/`type`/`jti`, refresh TTL flows from `AuthConfig`, Redis fail-open on the revocation check is observable.
+**Estimated effort:** ¼ day, single PR.
+**Prerequisites:**
+- ✅ Plan 01 landed (`eddcd1ac` / PR #40).
+- ✅ Parts A (F004) and B (F005) landed via `d38be734` / PR #41 — see "Already shipped" below.
 
-## Findings addressed
+## Findings addressed (this PR)
 
-F004 (prompt-injection bypass on structured-output path) — Critical
-F005 (MCP role scopes computed but not enforced) — Critical
 F027 (JWT `decode_token` does not require `exp`/`iat`/`type`/`jti`) — High
 F028 (`REFRESH_TOKEN_TTL_SECONDS` hardcoded, decoupled from `AuthConfig`) — High
 F029 (token revocation Redis fail-open silent) — High
 
+## Already shipped — do NOT re-execute
+
+- **Part A — F004 (prompt-injection guard on structured path).** Shipped `d38be734`. `_secure_user_message` was split into `_scan_request` / `_wrap_user_message` / `_apply_sanitized_input` on `BaseAgentService`; the scan now runs once at the top of `_process_impl` so structured mode is covered. Regression test: `app/ai/agents/tests/test_injection_guard_coverage.py` (parametrized over the 7 agents × `html`/`structured`).
+- **Part B — F005 (MCP per-user scope enforcement).** Shipped `d38be734`. `require_scope` decorator in `app/mcp/auth.py`; all 27 `@mcp.tool` decorators annotated (26 in `app/mcp/tools/*.py` + `mcp_batch_execute` in `app/mcp/server.py`); startup check in `_register_schemas` fails closed if any tool lacks `_mcp_required_scope`. Regression test: `app/mcp/tests/test_scope_enforcement.py`.
+
+If `/be-execute` finds itself touching `app/ai/agents/base.py`, `app/mcp/auth.py`, `app/mcp/server.py`, or any `app/mcp/tools/*.py`, **stop** — that is shipped work and should not be re-derived.
+
 ## Pre-flight
 
 ```bash
-git checkout -b sec/tech-debt-02-api-guards
+git checkout -b sec/tech-debt-02-auth-strictness
 make check  # baseline green
 ```
 
-## Part A — F004: Move `scan_for_injection` into the base agent
+## Part C — Auth token strictness
 
-### Current state
-
-- The scan is invoked via `_secure_user_message()` in `app/ai/agents/base.py:223`, which does **two things**: (a) calls `scan_for_injection`, (b) wraps in `<USER_INPUT>` delimiter.
-- HTML branch calls `_secure_user_message` at `:374`. Streaming path also calls it at `:509`.
-- Structured branch (`_process_structured` in 7 services) dispatches at `:353` and does NOT call `_secure_user_message` — so the scan never runs in structured mode.
-- `app/ai/agents/scaffolder/routes.py` accepts `output_mode="structured"` — publicly reachable.
-- `pipeline.py:90` only calls `sanitize_prompt` (PII), not the injection guard.
-
-### Steps
-
-1. **Split `_secure_user_message` into two helpers** in `app/ai/agents/base.py`:
-   ```python
-   def _scan_request(self, request: Any) -> Any:
-       """Scan injection-bearing fields on the request. May mutate (strip mode) or raise (block mode)."""
-       settings = get_settings()
-       if not settings.security.prompt_guard_enabled:
-           return request
-       # Scan whatever the agent considers user input (delegate to subclass hook).
-       raw = self._build_user_message(request)
-       scan = scan_for_injection(raw, mode=settings.security.prompt_guard_mode)
-       # block mode: scan_for_injection already raises PromptInjectionError
-       # strip mode: subclass override re-applies sanitized text to its request schema (e.g. brief, html)
-       if scan.sanitized is not None and scan.sanitized != raw:
-           request = self._apply_sanitized_input(request, scan.sanitized)
-       return request
-
-   def _wrap_user_message(self, raw: str) -> str:
-       """Delimiter wrap only — no scan (already done upstream)."""
-       return f"<USER_INPUT agent={self.agent_name!r}>\n{raw}\n</USER_INPUT>"
-   ```
-2. **Call `_scan_request` once at the top of `_process_impl`** (before the `output_mode` dispatch at `:351`) so structured mode is also covered:
-   ```python
-   request = self._scan_request(request)
-   output_mode = self._get_output_mode(request)
-   ```
-3. **Replace `_secure_user_message` callsites** at `:374` and `:509` with `_wrap_user_message` (scan no longer redundant).
-4. **Add `_apply_sanitized_input` hook** on `BaseAgentService` with a default that uses `dataclasses.replace`/`model_copy` to set the agent's primary input field. Override per-agent only if multiple fields need scanning (e.g. Dark Mode scans `html`, Knowledge scans `question`).
-5. **Audit the 7 `_process_structured` overrides** — confirm none are reached without going through `_process_impl`. The only direct callers are unit tests that bypass intentionally:
-   - `app/ai/agents/scaffolder/service.py:134`
-   - `app/ai/agents/dark_mode/service.py:126`
-   - `app/ai/agents/content/service.py:201`
-   - `app/ai/agents/accessibility/service.py:115`
-   - `app/ai/agents/code_reviewer/service.py:179`
-   - `app/ai/agents/personalisation/service.py:137`
-   - `app/ai/agents/outlook_fixer/service.py:105`
-6. **Pipeline path** (`app/ai/agents/scaffolder/pipeline.py:90`): keep `sanitize_prompt(brief)` (PII redaction is orthogonal). Verify guard reaches the pipeline through `ScaffolderService._process_structured` → `pipeline.execute()` → guard already ran in `_process_impl`. Add a docstring comment noting "G1 injection guard runs upstream in `BaseAgentService._process_impl`".
-
-### Tests
-
-Add `app/ai/agents/tests/test_injection_guard_coverage.py`:
-```python
-@pytest.mark.parametrize("output_mode", ["html", "structured"])
-async def test_injection_guard_runs_on_both_modes(output_mode, ...):
-    # known injection payload; assert PromptInjectionError raised
-```
-Parametrize over all 7 agents.
-
-## Part B — F005: Enforce MCP per-user scopes
-
-### Current state
-
-- `app/mcp/auth.py:35-43` builds `_role_to_scopes` (admin → read+write+admin, developer → read+write, viewer → read).
-- `app/mcp/server.py` only checks "auth result non-None". No tool reads scopes.
-- **27 `@mcp.tool` decorators total**: 26 across `app/mcp/tools/*.py` + `mcp_batch_execute` meta-tool at `app/mcp/server.py:167`.
-
-### Tool inventory & scope classification
-
-| File | Tools | Suggested scope |
-|------|-------|-----------------|
-| `tools/agents.py` (9) | `agent_scaffold`, `agent_dark_mode`, `agent_content`, `agent_outlook_fix`, `agent_accessibility`, `agent_code_review`, `agent_personalise`, `agent_innovate`, `agent_knowledge` | `write` (LLM calls) |
-| `tools/qa.py` (5) | `qa_check`, `email_production_readiness`, `outlook_analyze`, `gmail_predict` | `read` |
-|  | `chaos_test` | `write` (LLM-driven generation) |
-| `tools/knowledge.py` (3) | `knowledge_search`, `css_support_check`, `safe_css_alternatives` | `read` |
-| `tools/ai.py` (3) | `ai_cost_status`, `deliverability_score`, `bimi_check` | `read` |
-| `tools/email.py` (2) | `css_optimize`, `inject_schema_markup` | `read` (deterministic transforms) |
-| `tools/rendering.py` (2) | `email_visual_check`, `visual_diff` | `read` |
-| `tools/templates.py` (2) | `list_templates`, `search_components` | `read` |
-| `server.py` (1 meta) | `mcp_batch_execute` | `write` (can dispatch to write tools) |
-
-Cross-check the 14 read tools against `CACHEABLE_TOOLS` in `app/mcp/optimization.py` — they should match (cacheable ⇔ read-only).
-
-### Steps
-
-1. **Pass scopes through the MCP request context.** In `app/mcp/server.py`, store the resolved `scopes` set on the FastMCP context object (per FastMCP's session/context pattern — see existing usage of `ctx`).
-2. **Add a scope-gate decorator** in `app/mcp/auth.py`:
-   ```python
-   def require_scope(scope: Literal["read", "write", "admin"]):
-       def decorator(fn):
-           @functools.wraps(fn)
-           async def wrapper(*args, ctx, **kwargs):
-               if scope not in ctx.session.scopes:
-                   raise PermissionError(f"tool requires scope: {scope}")
-               return await fn(*args, ctx=ctx, **kwargs)
-           return wrapper
-       return decorator
-   ```
-3. **Apply `@require_scope` to every tool** per the classification table above. Concretely:
-   - `app/mcp/tools/agents.py` — all 9 `agent_*` tools → `@require_scope("write")`.
-   - `app/mcp/tools/qa.py` — `chaos_test` → `write`; `qa_check`, `email_production_readiness`, `outlook_analyze`, `gmail_predict` → `read`.
-   - `app/mcp/tools/knowledge.py` — `knowledge_search`, `css_support_check`, `safe_css_alternatives` → `read`.
-   - `app/mcp/tools/ai.py` — `ai_cost_status`, `deliverability_score`, `bimi_check` → `read`.
-   - `app/mcp/tools/email.py` — `css_optimize`, `inject_schema_markup` → `read`.
-   - `app/mcp/tools/rendering.py` — `email_visual_check`, `visual_diff` → `read`.
-   - `app/mcp/tools/templates.py` — `list_templates`, `search_components` → `read`.
-   - `app/mcp/server.py:167` — `mcp_batch_execute` → `@require_scope("write")` (can dispatch to write tools; per-call scope is also enforced by the inner tool's own decorator).
-4. **Default-deny new tools.** Add a runtime check in `_register_schemas` (in `app/mcp/server.py`) that fails server startup if a tool has no `@require_scope` decorator (use a registry sentinel attribute set on the wrapper, e.g. `wrapper._mcp_required_scope = scope`). Failing closed at boot is safer than warn-only.
-
-### Tests
-
-Add `app/mcp/tests/test_scope_enforcement.py`:
-```python
-@pytest.mark.parametrize("role,tool,expected", [
-    ("viewer",    "agent_scaffold",   "denied"),
-    ("developer", "agent_scaffold",   "allowed"),
-    ("viewer",    "knowledge_search", "allowed"),
-    ("admin",     "mcp_batch_execute","allowed"),
-    ...
-])
-```
-
-## Part C — Auth token quick wins (rolled in from Plan 01 backlog)
-
-These three items are Quick Wins per `TECH_DEBT_AUDIT.md` line 170 but were not scoped into Plan 01's step list. Bundled here because the reviewer set (`app/auth/`) is the same as Part B's MCP auth changes.
+These three items are Quick Wins per `TECH_DEBT_AUDIT.md` line 170 but were dropped from Plan 01. Originally bundled with Parts A+B because all touch `app/auth/`; A+B have since shipped (PR #41), so this is the only remaining work.
 
 ### C1. F027 — Strict required claims in `decode_token`
 
 `app/auth/token.py:127-152`. Currently `jwt.decode(...)` does not pass `options={"require": [...]}`, and `payload.get("jti", "")` lets JTI-less tokens through `is_token_revoked("")` → False.
+
+**Order matters:** the require list will include `iat`, but neither `create_access_token` (`:31-53`) nor `create_refresh_token` (`:56-77`) currently emit it (`rg '"iat"' app/auth/` returns zero matches). Decode strictness must land in the *same change* as `iat` emission, otherwise every freshly issued token is rejected on first use.
+
+#### C1a. Emit `iat` in both token creators
+
+```python
+# app/auth/token.py — create_access_token
+now = datetime.datetime.now(datetime.UTC)
+expire = now + datetime.timedelta(minutes=settings.auth.access_token_expire_minutes)
+payload: dict[str, Any] = {
+    "sub": str(user_id),
+    "role": role,
+    "iat": now,        # NEW — required by decode_token after C1b
+    "exp": expire,
+    "type": "access",
+    "jti": uuid.uuid4().hex,
+}
+```
+
+Apply the same `iat = now` pattern to `create_refresh_token`. Reuse one `now` per call so `iat` and `exp` agree on the same instant (avoids the off-by-microsecond skew that bites token-age telemetry).
+
+#### C1b. Strictness in `decode_token`
 
 ```python
 # app/auth/token.py — decode_token
@@ -164,37 +70,56 @@ if not jti:
     raise InvalidTokenError("missing jti")
 ```
 
-Add a test in `app/auth/tests/test_token.py` (create file if absent) that asserts a hand-rolled token without `jti` is rejected.
+Drop the permissive defaults at `:145-148` (`payload.get("role", "")`, `payload.get("type", "access")`, `payload.get("jti", "")`) — `type` and `jti` are now in the require list, and `role` stays optional only for refresh tokens (which carry `"role": ""`).
+
+#### C1c. Update existing JWT test fixtures
+
+`app/tests/test_jwt_algorithm.py:37` and `:52` hand-craft tokens missing `iat`. After C1b, these tokens are rejected on the require check *before* the algorithm logic runs, so the tests still pass but no longer exercise what they claim to. Add `"iat": 1` to both payloads to keep the algorithm-rejection assertion meaningful.
+
+#### C1d. New tests
+
+Add to `app/auth/tests/test_token.py` (create file if absent):
+- `test_decode_rejects_token_without_jti`
+- `test_decode_rejects_token_without_exp`
+- `test_decode_rejects_token_without_iat` — hand-rolled token with `{sub, exp, type, jti}` but no `iat`; expect `decode_token` returns `None`.
+- `test_create_access_token_emits_iat` — decode (skip-verify) the freshly minted token and assert `iat` is present and within ±2 s of `datetime.now(UTC)`.
+- `test_create_refresh_token_emits_iat` — same shape for refresh.
 
 ### C2. F028 — Refresh TTL computed from config
 
-`app/auth/routes.py:32`. Replace the hardcoded `REFRESH_TOKEN_TTL_SECONDS = 604800` with:
+`app/auth/routes.py:33`. Replace the hardcoded `REFRESH_TOKEN_TTL_SECONDS = 604800` with:
 
 ```python
 def _refresh_ttl_seconds() -> int:
     return get_settings().auth.refresh_token_expire_days * 86400
 ```
 
-Update the two callsites in `routes.py` (refresh issue + revocation denylist TTL). Verify nothing else imports the old constant: `rg "REFRESH_TOKEN_TTL_SECONDS" app/`.
+Update the **single** callsite at `app/auth/routes.py:91` (`revoke_token(payload.jti, ttl_seconds=REFRESH_TOKEN_TTL_SECONDS)`). Verify nothing else imports the old constant: `rg "REFRESH_TOKEN_TTL_SECONDS" /Users/Berzins/Desktop/merkle-email-hub` — preflight already confirmed only this one match.
 
-### C3. F029 — Metric on Redis fail-open in revocation check
+### C3. F029 — Enrich existing Redis fail-open log
 
-`app/auth/token.py:118-124`. The `is_token_revoked` Redis call swallows exceptions and returns `False`. Add a structured-log + counter:
+`app/auth/token.py:118-124`. The `is_token_revoked` exception handler already emits `logger.warning("auth.token.revocation_check_degraded", jti=jti, detail=...)` and returns `False`. The remaining gaps from the audit are: (a) the captured exception isn't logged, (b) there's no follow-up note about the in-memory denylist alternative.
+
+**Pin the existing log key** — `auth.token.revocation_check_degraded` is the deployed event name; renaming to `auth.token_revocation_check_unavailable` (the prior draft of this plan) would silently break any operator dashboard or alert that watches it. Enrich in place instead:
 
 ```python
-except (redis.ConnectionError, redis.TimeoutError) as exc:
-    logger.warning("auth.token_revocation_check_unavailable", error=str(exc), jti=jti[:8])
-    # TODO follow-up: consider in-memory short-window denylist as fallback (audit comment)
-    return False
+except Exception as exc:  # bare except stays — the import inside try can also raise ImportError
+    logger.warning(
+        "auth.token.revocation_check_degraded",
+        jti=jti,
+        error=str(exc),
+        error_type=type(exc).__name__,
+        detail="Redis unavailable - token revocation check skipped (fail-open)",
+    )
+    # TODO follow-up: consider in-memory short-window denylist as fallback for sustained Redis outages
+    return False  # fail-open for availability
 ```
 
-Plus an optional Prometheus counter if the project exposes one (check `app/core/metrics.py`); if not, structured-log only.
+Skip the Prometheus counter — `app/core/metrics.py` does not exist (`rg "metrics" app/core/` returns no module); structured-log enrichment is sufficient.
 
-### C4. Tests
+### C4. Tests for C2 and C3
 
-Add to `app/auth/tests/test_token.py`:
-- `test_decode_rejects_token_without_jti`
-- `test_decode_rejects_token_without_exp`
+Add to `app/auth/tests/test_token.py` (alongside the C1d tests):
 - `test_refresh_ttl_follows_config` (parametrize over `refresh_token_expire_days = 1, 7, 30`)
 - `test_revocation_check_fails_open_emits_warning` (mock Redis, assert log captured)
 
@@ -203,36 +128,32 @@ Add to `app/auth/tests/test_token.py`:
 ```bash
 make check
 make test
-# Manual MCP probe (server running):
-curl -s -X POST http://localhost:8891/mcp/tools/agent_scaffold \
-  -H "Authorization: Bearer <viewer_token>" -d '{...}' | jq .  # 403 expected
-# Manual JWT probe — hand-craft token without jti, expect 401:
-python -c "import jwt; print(jwt.encode({'sub':'1','exp':9999999999,'iat':1,'type':'access'}, 'CHANGE-ME-IN-PRODUCTION-this-is-not-a-real-secret', algorithm='HS256'))" \
-  | xargs -I{} curl -s -H "Authorization: Bearer {}" http://localhost:8891/api/v1/projects | head -c 200
+# Manual JWT probe — hand-craft token missing iat (or jti, or type, or exp); expect 401:
+python -c "import jwt; print(jwt.encode({'sub':'1','exp':9999999999,'type':'access','jti':'x'}, 'CHANGE-ME-IN-PRODUCTION-this-is-not-a-real-secret', algorithm='HS256'))" \
+  | xargs -I{} curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer {}" http://localhost:8891/api/v1/projects
+# Expect: 401. Repeat after dropping jti / type / exp from the payload — all 401.
+# Then issue a real token via /api/v1/auth/login and confirm 200 — sanity-check that iat emission lands.
 ```
 
 ## Rollback
 
-Three independent reverts:
-- Part A: revert the `base.py` change; the HTML path's original guard at `:374` reactivates.
-- Part B: revert per-tool decorators; behaviour returns to "any auth'd user can call any tool".
-- Part C: each of C1/C2/C3 is a single-file revert (`app/auth/token.py` or `app/auth/routes.py`).
+Each of C1 / C2 / C3 is an independent single-file revert (`app/auth/token.py` for C1+C3, `app/auth/routes.py` for C2). C1's `iat` emission and decode strictness should revert together — leaving emission without strictness is harmless, but reverting strictness without removing emission means newly issued tokens carry an unused `iat`. Acceptable, but cleaner to revert as a pair.
 
 ## Risk notes
 
-- **F004 — direct `_process_structured` callers** (`app/ai/agents/scaffolder/tests/test_tree_builder.py:363` and `:418`) intentionally bypass the security envelope. Inputs there are benign, so leave them — but document via comment that direct calls skip the guard.
-- **F004 — `_secure_user_message` is split, not deleted.** The delimiter wrap (`<USER_INPUT>`) is still required at the LLM-message boundary; only the scan moves upstream. Keep `_wrap_user_message()` callers at `:374` and `:509`.
-- **F005 — decorator ordering**: `@mcp.tool()` must remain outermost so FastMCP sees the wrapped function; `@require_scope` sits below it. Then the cache wrapper from `app/mcp/optimization.py:_wrap_cacheable_tools` runs *inside* the scope check (deny before cache lookup) — verify by reading order of `_wrap_cacheable_tools` application in `_register_schemas`.
-- **F005 — context shape**: confirm the resolved `scopes` reach the tool wrapper. FastMCP exposes session state via `ctx.session` or `ctx.request_context`; pick whichever is consistent with the existing `auth.py:authenticate` return path.
+- **C1 ordering — emission must precede strictness in the same commit.** If decode strictness lands first, every previously issued (still-valid) access/refresh token in users' clients fails on its next request because they were minted without `iat`. C1a + C1b in the same change is non-negotiable.
+- **C1 — short-window token churn during deploy.** Even with C1a+C1b co-deployed, tokens minted by an old replica during a rolling deploy lack `iat` and fail decode against a new replica. Mitigate by accepting brief 401s during the rollout window, or by adding a transitional `iat` fallback (issue token with `iat=now()` if missing) — recommend the former; it's a single-deploy bump, not ongoing breakage.
+- **C2 — only one callsite.** Plan-text drafts implied two; `rg` confirms one. Don't grep-and-replace beyond `app/auth/routes.py:91`.
+- **C3 — keep the existing log key.** `auth.token.revocation_check_degraded` is already the deployed event name. Operator dashboards may key off it. Enrich the payload (`error`, `error_type`); do not rename.
 
 ## Done when
 
-- [ ] Both modes (`html`, `structured`) guarded for all 7 agents — regression test green.
-- [ ] All 27 MCP tools annotated with `@require_scope` (26 in `tools/*.py` + `mcp_batch_execute` in `server.py`).
-- [ ] `_register_schemas` startup check fails closed if any tool lacks `_mcp_required_scope`.
-- [ ] Viewer token cannot call `agent_scaffold` — manual curl confirms 403.
-- [ ] `decode_token` rejects tokens missing `exp`/`iat`/`type`/`jti` — test green.
-- [ ] Refresh TTL follows `AuthConfig.refresh_token_expire_days` — test green.
-- [ ] Revocation Redis fail-open emits structured-log warning — test green.
-- [ ] PR titled `sec(api): prompt-injection guard + MCP scopes + auth-token strictness (F004 F005 F027 F028 F029)`.
-- [ ] Mark F004, F005, F027, F028, F029 as **RESOLVED** in `TECH_DEBT_AUDIT.md`.
+- [ ] `create_access_token` and `create_refresh_token` emit `iat` (verified by C1d's `test_create_*_token_emits_iat`).
+- [ ] `decode_token` rejects tokens missing any of `exp` / `iat` / `type` / `jti` — three new C1d tests green.
+- [ ] `app/tests/test_jwt_algorithm.py` updated so its hand-crafted tokens carry `iat` and continue to exercise algorithm rejection.
+- [ ] Refresh TTL follows `AuthConfig.refresh_token_expire_days` — `test_refresh_ttl_follows_config` green; `rg "REFRESH_TOKEN_TTL_SECONDS" /Users/Berzins/Desktop/merkle-email-hub` returns no matches after the rename.
+- [ ] Revocation Redis fail-open emits enriched warning under the existing `auth.token.revocation_check_degraded` key — `test_revocation_check_fails_open_emits_warning` green.
+- [ ] `make check-full` green; pyright still 0 errors on `app/auth/token.py` + `app/auth/routes.py` + new `app/auth/tests/test_token.py` (preflight baseline was 0).
+- [ ] Manual JWT probe (Verification block) returns 401 for tokens missing any required claim; 200 for a real `/auth/login` token.
+- [ ] PR titled `sec(auth): JWT decode strictness + refresh TTL from config + revocation log enrichment (F027 F028 F029)`.
+- [ ] Mark F027, F028, F029 as **RESOLVED** in `TECH_DEBT_AUDIT.md`. (F004, F005 were resolved by PR #41 / `d38be734` — verify they're already marked there; if not, this PR can flip those flags too.)

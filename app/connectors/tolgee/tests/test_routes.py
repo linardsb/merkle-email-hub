@@ -13,7 +13,6 @@ from fastapi.testclient import TestClient
 
 from app.auth.dependencies import get_current_user
 from app.connectors.tolgee.routes import router
-from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.scoped_db import TenantAccess, get_scoped_db
 
@@ -44,7 +43,6 @@ def app() -> FastAPI:
 def _setup(app: FastAPI) -> Generator[None]:
     limiter.enabled = False
     app.dependency_overrides[get_current_user] = lambda: _make_user()
-    app.dependency_overrides[get_db] = lambda: AsyncMock()
     app.dependency_overrides[get_scoped_db] = lambda: _scoped_db_mock()
     yield
     app.dependency_overrides.clear()

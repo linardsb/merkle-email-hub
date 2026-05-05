@@ -1,4 +1,13 @@
-"""Database repository for user operations."""
+"""Database repository for user operations.
+
+Tenant-exempt by design — `User` has no `client_org_id` column; users are
+flat global entities with a `role`. Authorization on user-management
+endpoints is enforced at the route layer via `Depends(require_role("admin"))`
+on every `/users/...` endpoint in `app/auth/routes.py`. The auth `get_service`
+factory keeps `Depends(get_db)` (allowlisted pre-auth, see plan §B), so
+`scoped_access` would `RuntimeError` on every login / refresh / bootstrap
+call. See `.agents/plans/tech-debt-03-multi-tenant-isolation.md` §A1.
+"""
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession

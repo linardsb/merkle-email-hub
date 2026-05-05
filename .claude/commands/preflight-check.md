@@ -10,7 +10,38 @@ Extract:
 - All function/class names being added or modified
 - What changes each function/file is getting (new parameters, new return fields, new items)
 
-## Step 2: Scan & Fix Hardcoded Assertions in Related Tests
+## Step 2: Deferred-Items Cross-Reference
+
+Grep `.agents/deferred-items.json` for entries that overlap the plan. The convention (`.claude/rules/deferred-items.md`) requires this before any new plan or execution touching an existing phase or file — entries cataloged here often point to real bugs that haven't surfaced yet.
+
+### 2a: Match by phase
+
+If the plan name or content references a phase id (e.g. `tech-debt-03`, `phase-50.7`):
+
+```bash
+jq -r --arg phase "<plan-phase-or-prefix>" '.items[] | select(.status == "deferred" and (.phase | startswith($phase))) | "\(.id) — \(.title)"' .agents/deferred-items.json
+```
+
+### 2b: Match by code_refs overlap
+
+For each file in the plan's "Files to Create/Modify" list:
+
+```bash
+jq -r --arg file "<file-path>" '.items[] | select(.status == "deferred" and (.code_refs[]? | contains($file))) | "\(.id) — \(.title) [refs: \(.code_refs | join(", "))]"' .agents/deferred-items.json
+```
+
+Run once per target file; dedupe matches by `id`.
+
+### 2c: Surface in the report
+
+Every match goes into the "Deferred Items Touching This Plan" table in Step 6 — including `id`, `severity`, `summary` (one-line), and `closes_when`. Empty section when no matches — never silent. The agent (or user) must decide per match whether the new work should:
+- **close** the entry (do the fix as part of this plan; flip `status` to `closed` after `/be-execute`),
+- **avoid** it (leave alone but note the constraint), or
+- **carry forward** (add a note linking the new plan to the existing entry).
+
+This step is informational — it does NOT auto-fix. Surfacing is the deliverable.
+
+## Step 3: Scan & Fix Hardcoded Assertions in Related Tests
 
 For each target file `app/{feature}/{file}.py`, find its test files:
 
@@ -19,7 +50,7 @@ find app/{feature}/tests/ -name "test_*.py" -type f 2>/dev/null
 find tests/ -name "test_{file}*.py" -type f 2>/dev/null
 ```
 
-### 2a: Hardcoded Count Assertions
+### 3a: Hardcoded Count Assertions
 ```
 Grep pattern: "== \d+|len\(.+\) == \d+|assert.*count.*== \d+|assert.*\.count\("
 ```
@@ -29,7 +60,7 @@ Grep pattern: "== \d+|len\(.+\) == \d+|assert.*count.*== \d+|assert.*\.count\("
 - `assert len(results) == 14` → `assert len(results) >= 14`
 - `assert result.count("<td") == 5` → `assert result.count("<td") >= 5`
 
-### 2b: Tuple Unpacking
+### 3b: Tuple Unpacking
 ```
 Grep pattern: "^\s+\w+,\s*\w+.*=\s*\w+\("
 ```
@@ -38,7 +69,7 @@ Grep pattern: "^\s+\w+,\s*\w+.*=\s*\w+\("
 **Auto-fix if affected:** Add the new variable to the unpacking:
 - `a, b, c, d = _parse_variables(...)` → `a, b, c, d, e = _parse_variables(...)` (matching the new return signature from the plan)
 
-### 2c: Hardcoded String Assertions
+### 3c: Hardcoded String Assertions
 ```
 Grep pattern: 'assert.*==.*"[^"]{20,}"'
 ```
@@ -47,16 +78,16 @@ Grep pattern: 'assert.*==.*"[^"]{20,}"'
 **Auto-fix if affected:** Replace with `in` check on the critical substring:
 - `assert result == "long exact string..."` → `assert "critical_part" in result`
 
-## Step 3: Scan & Fix Target Files for Fragile Patterns
+## Step 4: Scan & Fix Target Files for Fragile Patterns
 
 For each file being **modified** (not created):
 
-### 3a: New Parameter Propagation
+### 4a: New Parameter Propagation
 For any function whose signature is changing (new parameter added by the plan), `Grep` for all callsites across the codebase.
 
 **Auto-fix:** If the new parameter has a default value (e.g., `slot_counter: dict | None = None`), no callsite changes needed — just verify. If it does NOT have a default, add the parameter with a sensible default to each callsite, or add a default to the function signature itself.
 
-### 3b: Return Tuple Expansion
+### 4b: Return Tuple Expansion
 ```
 Grep pattern: "-> tuple\[|return \w+, \w+"
 ```
@@ -64,13 +95,13 @@ If the plan adds fields to a return tuple, find all callers.
 
 **Auto-fix:** Update the unpacking at each callsite to include the new field with an appropriate variable name. Add `_ =` for unused fields if the caller doesn't need the new value.
 
-### 3c: Pydantic Field Defaults Without Type Annotations
+### 4c: Pydantic Field Defaults Without Type Annotations
 ```
 Grep pattern: "Field\(default_factory="
 ```
 **Auto-fix:** If the plan adds new `Field(default_factory=...)`, ensure explicit type annotation is present (required for pyright strict). Add the annotation if missing.
 
-## Step 4: Pyright Baseline
+## Step 5: Pyright Baseline
 
 Run pyright on only the target files to capture the **before** error count:
 
@@ -80,12 +111,20 @@ uv run pyright {space-separated target files} 2>&1 | tail -5
 
 Save the error count. After `/be-execute`, compare against this baseline to distinguish pre-existing errors from newly introduced ones.
 
-## Step 5: Report
+## Step 6: Report
 
 Output a preflight report as a markdown table:
 
 ```
 ## Preflight Report for {plan name}
+
+### Deferred Items Touching This Plan
+
+| ID | Severity | Title | Closes-When | Action |
+|----|----------|-------|-------------|--------|
+| tech-debt-03-tenant-isolation-regression-harness | soft | Cross-entity tenant-isolation regression test self-skips | A db: AsyncSession fixture lands and the test runs without TEST_DATABASE__URL gating | Carry forward — outside this plan's scope |
+
+(Empty table if no matches — print "No deferred items touch the files in this plan." Never silent.)
 
 ### Fixes Applied
 

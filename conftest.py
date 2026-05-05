@@ -25,6 +25,7 @@ from app.main import app
 # through `get_scoped_db` and are unaffected.
 _SCOPED_ACCESS_IMPORTERS = (
     "app.approval.repository",
+    "app.briefs.repository",
     "app.memory.repository",
     "app.memory.service",
     "app.projects.repository",
@@ -84,8 +85,15 @@ async def _mock_scoped_db() -> AsyncGenerator[AsyncMock, None]:
 
 
 @pytest.fixture(autouse=True)
-def _override_scoped_db() -> Generator[None, None, None]:
-    """Patch the FastAPI dependency override so route tests don't hit Postgres."""
+def _override_scoped_db(request: pytest.FixtureRequest) -> Generator[None, None, None]:
+    """Patch the FastAPI dependency override so route tests don't hit Postgres.
+
+    Tests marked ``tenant_isolation`` opt out — they need the real
+    ``get_scoped_db`` to exercise per-user scope resolution against a real DB.
+    """
+    if request.node.get_closest_marker("tenant_isolation") is not None:
+        yield
+        return
     app.dependency_overrides[get_scoped_db] = _mock_scoped_db
     yield
     app.dependency_overrides.pop(get_scoped_db, None)

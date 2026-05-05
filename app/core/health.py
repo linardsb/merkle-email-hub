@@ -38,7 +38,7 @@ async def health_check(request: Request) -> dict[str, str]:
 @limiter.limit("60/minute")
 async def database_health_check(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # tenant-exempt: /health has no caller identity
 ) -> dict[str, str]:
     """Database connectivity health check with 10s result caching."""
     global _db_health_cache, _db_health_cache_time
@@ -91,7 +91,7 @@ async def health_redis(request: Request) -> dict[str, str]:
 @limiter.limit("60/minute")
 async def readiness_check(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # tenant-exempt: /health/ready has no caller identity
 ) -> dict[str, str]:
     """Readiness check for all application dependencies."""
     settings = get_settings()

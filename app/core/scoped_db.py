@@ -38,13 +38,20 @@ from app.projects.models import Project, ProjectMember
 class TenantAccess:
     """Per-request tenant scope.
 
-    ``None`` is the admin sentinel: repositories treat it as "no filter".
-    Regular users get a concrete `frozenset` (possibly empty).
+    ``None`` on ``project_ids`` / ``org_ids`` is the admin sentinel:
+    repositories treat it as "no filter". Regular users get a concrete
+    `frozenset` (possibly empty).
+
+    ``user_id`` carries the originating user's id for repos that scope by
+    `created_by_id` (BOLA-style) rather than org membership — primarily
+    `briefs`, where rows have no `client_org_id` column. ``None`` in
+    `_SYSTEM_ACCESS` (cron / webhook contexts with no user).
     """
 
     project_ids: frozenset[int] | None
     org_ids: frozenset[int] | None
     role: str
+    user_id: int | None = None
 
 
 # 30s TTL, 200 entries — mirrors the existing _user_cache in
@@ -79,7 +86,7 @@ async def _resolve_access(db: AsyncSession, user: User) -> TenantAccess:
         return cached
 
     if user.role == "admin":
-        access = TenantAccess(project_ids=None, org_ids=None, role=user.role)
+        access = TenantAccess(project_ids=None, org_ids=None, role=user.role, user_id=user.id)
         _membership_cache[user.id] = access
         return access
 
@@ -95,7 +102,7 @@ async def _resolve_access(db: AsyncSession, user: User) -> TenantAccess:
     project_ids = frozenset(int(r[0]) for r in rows)
     org_ids = frozenset(int(r[1]) for r in rows)
 
-    access = TenantAccess(project_ids=project_ids, org_ids=org_ids, role=user.role)
+    access = TenantAccess(project_ids=project_ids, org_ids=org_ids, role=user.role, user_id=user.id)
     _membership_cache[user.id] = access
     # Detach to mirror the user-cache safety pattern: nothing ORM here, but
     # downstream reads of `project_ids` / `org_ids` are pure Python sets, so

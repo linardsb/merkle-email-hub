@@ -15,10 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.scoped_db import get_scoped_db
 from app.design_sync.diagnose.schemas import DiagnosticReportResponse
+from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import (
     AnalyzeLayoutRequest,
     BrowseFilesRequest,
@@ -57,13 +57,45 @@ from app.design_sync.schemas import (
     UpdateImportBriefRequest,
     W3cImportResponse,
 )
-from app.design_sync.service import DesignSyncService
+from app.design_sync.services import (
+    AccessService,
+    AssetsService,
+    ConnectionService,
+    DesignSyncContext,
+    ImportRequestService,
+    TokenConversionService,
+    WebhookService,
+)
 
 router = APIRouter(prefix="/api/v1/design-sync", tags=["design-sync"])
 
 
-def get_service(db: AsyncSession = Depends(get_scoped_db)) -> DesignSyncService:
-    return DesignSyncService(db)
+def _ctx(db: AsyncSession = Depends(get_scoped_db)) -> DesignSyncContext:
+    return DesignSyncContext(db)
+
+
+def get_connection_service(ctx: DesignSyncContext = Depends(_ctx)) -> ConnectionService:
+    return ConnectionService(ctx)
+
+
+def get_assets_service(ctx: DesignSyncContext = Depends(_ctx)) -> AssetsService:
+    return AssetsService(ctx)
+
+
+def get_token_service(ctx: DesignSyncContext = Depends(_ctx)) -> TokenConversionService:
+    return TokenConversionService(ctx)
+
+
+def get_import_service(ctx: DesignSyncContext = Depends(_ctx)) -> ImportRequestService:
+    return ImportRequestService(ctx)
+
+
+def get_webhook_service(ctx: DesignSyncContext = Depends(_ctx)) -> WebhookService:
+    return WebhookService(ctx)
+
+
+def get_access_service(ctx: DesignSyncContext = Depends(_ctx)) -> AccessService:
+    return AccessService(ctx)
 
 
 @router.post("/browse-files", response_model=BrowseFilesResponse)
@@ -71,7 +103,7 @@ def get_service(db: AsyncSession = Depends(get_scoped_db)) -> DesignSyncService:
 async def browse_files(
     request: Request,
     data: BrowseFilesRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("developer")),
 ) -> BrowseFilesResponse:
     """Browse design files from a provider before creating a connection.
@@ -87,7 +119,7 @@ async def browse_files(
 @limiter.limit("30/minute")
 async def list_connections(
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> list[ConnectionResponse]:
     """List all design tool connections."""
@@ -100,7 +132,7 @@ async def list_connections(
 async def get_connection(
     connection_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> ConnectionResponse:
     """Get a single design connection."""
@@ -113,7 +145,7 @@ async def get_connection(
 async def get_tokens(
     connection_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: TokenConversionService = Depends(get_token_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> DesignTokensResponse:
     """Get design tokens for a connection."""
@@ -126,7 +158,7 @@ async def get_tokens(
 async def get_token_diff(
     connection_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: TokenConversionService = Depends(get_token_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> TokenDiffResponse:
     """Compare current token snapshot with previous sync."""
@@ -142,7 +174,7 @@ async def get_token_diff(
 async def import_w3c_tokens(
     request: Request,
     body: ImportW3cTokensRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: TokenConversionService = Depends(get_token_service),
     current_user: User = Depends(require_role("developer")),
 ) -> W3cImportResponse:
     """Import tokens from W3C Design Tokens v1.0 JSON format."""
@@ -155,7 +187,7 @@ async def import_w3c_tokens(
 async def export_w3c_tokens_endpoint(
     connection_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: TokenConversionService = Depends(get_token_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> dict[str, object]:
     """Export tokens in W3C Design Tokens v1.0 JSON format."""
@@ -168,7 +200,7 @@ async def export_w3c_tokens_endpoint(
 async def create_connection(
     request: Request,
     data: ConnectionCreateRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ConnectionResponse:
     """Create a new design tool connection."""
@@ -181,7 +213,7 @@ async def create_connection(
 async def delete_connection(
     request: Request,
     data: ConnectionDeleteRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("developer")),
 ) -> dict[str, bool]:
     """Delete a design connection."""
@@ -195,7 +227,7 @@ async def delete_connection(
 async def sync_connection(
     request: Request,
     data: ConnectionSyncRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ConnectionResponse:
     """Trigger a design token sync."""
@@ -212,7 +244,7 @@ async def refresh_connection_token(
     connection_id: int,
     request: Request,
     data: ConnectionUpdateTokenRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ConnectionResponse:
     """Refresh the access token for a design connection."""
@@ -229,7 +261,7 @@ async def link_connection_to_project(
     connection_id: int,
     request: Request,
     data: ConnectionLinkProjectRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ConnectionResponse:
     """Link or unlink a design connection to a project."""
@@ -249,7 +281,7 @@ async def get_file_structure(
     connection_id: int,
     request: Request,
     depth: int | None = Query(default=2, ge=1, description="Max tree depth (None = unlimited)"),
-    service: DesignSyncService = Depends(get_service),
+    service: AssetsService = Depends(get_assets_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> FileStructureResponse:
     """Get the hierarchical file structure of a design file."""
@@ -265,7 +297,7 @@ async def get_file_structure(
 async def list_components(
     connection_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: AssetsService = Depends(get_assets_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> ComponentListResponse:
     """List reusable components defined in the design file."""
@@ -281,7 +313,7 @@ async def list_components(
 async def export_images(
     request: Request,
     data: ExportImageRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: AssetsService = Depends(get_assets_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ImageExportResponse:
     """Export design nodes as images."""
@@ -306,7 +338,7 @@ async def export_images(
 async def download_assets(
     request: Request,
     data: DownloadAssetsRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: AssetsService = Depends(get_assets_service),
     current_user: User = Depends(require_role("developer")),
 ) -> DownloadAssetsResponse:
     """Export and download design assets to local storage."""
@@ -328,13 +360,14 @@ async def serve_asset(
     connection_id: int,
     filename: str,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: AssetsService = Depends(get_assets_service),
+    connections: ConnectionService = Depends(get_connection_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> FileResponse:
     """Serve a stored design asset file."""
     _ = request
     # BOLA check: verify user can access this connection
-    await service.get_connection(connection_id, current_user)
+    await connections.get_connection(connection_id, current_user)
     # Get validated path
     path = service.get_asset_path(connection_id, filename)
     # Determine media type from extension
@@ -363,7 +396,7 @@ async def serve_asset(
 async def analyze_layout(
     request: Request,
     data: AnalyzeLayoutRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: TokenConversionService = Depends(get_token_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> LayoutAnalysisResponse:
     """Analyze design file layout and detect email sections (preview)."""
@@ -383,7 +416,7 @@ async def analyze_layout(
 async def generate_brief(
     request: Request,
     data: GenerateBriefRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: TokenConversionService = Depends(get_token_service),
     current_user: User = Depends(require_role("developer")),
 ) -> GenerateBriefResponse:
     """Generate a Scaffolder-compatible campaign brief from design analysis."""
@@ -409,7 +442,7 @@ async def extract_components(
     connection_id: int,
     request: Request,
     body: ExtractComponentsRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ImportRequestService = Depends(get_import_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ExtractComponentsResponse:
     """Extract Figma components into Hub components with AI-generated HTML.
@@ -434,7 +467,7 @@ async def extract_components(
 async def create_import(
     request: Request,
     data: StartImportRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ImportRequestService = Depends(get_import_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ImportResponse:
     """Create a design import job with a brief for Scaffolder conversion."""
@@ -448,7 +481,7 @@ async def get_import_by_template(
     template_id: int,
     request: Request,
     project_id: int = Query(..., description="Project ID for BOLA check"),
-    service: DesignSyncService = Depends(get_service),
+    service: ImportRequestService = Depends(get_import_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> ImportResponse | None:
     """Get the design import that produced a template (for design reference panel)."""
@@ -461,7 +494,7 @@ async def get_import_by_template(
 async def get_import(
     import_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: ImportRequestService = Depends(get_import_service),
     current_user: User = Depends(require_role("viewer")),
 ) -> ImportResponse:
     """Get import status and result (poll this until completed/failed)."""
@@ -475,7 +508,7 @@ async def update_import_brief(
     import_id: int,
     request: Request,
     data: UpdateImportBriefRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ImportRequestService = Depends(get_import_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ImportResponse:
     """Edit the brief before triggering conversion. Only works in 'pending' state."""
@@ -493,7 +526,7 @@ async def convert_import(
     import_id: int,
     request: Request,
     body: ConvertImportRequest,
-    service: DesignSyncService = Depends(get_service),
+    service: ImportRequestService = Depends(get_import_service),
     current_user: User = Depends(require_role("developer")),
 ) -> ImportResponse:
     """Trigger the Scaffolder conversion pipeline. Returns immediately; poll GET /imports/{id}."""
@@ -516,7 +549,7 @@ async def convert_import(
 async def get_fidelity(
     import_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     current_user: User = Depends(require_role("developer")),
 ) -> FidelityResponse:
     """Get visual fidelity scoring results for a design import."""
@@ -528,8 +561,7 @@ async def get_fidelity(
     design_import = await repo.get_import(import_id)
     if design_import is None:
         raise ImportNotFoundError(f"Import {import_id} not found")
-    service = DesignSyncService(db)
-    await service._verify_access(design_import.project_id, current_user)
+    await AccessService(DesignSyncContext(db)).verify_access(design_import.project_id, current_user)
     fidelity = None
     if design_import.fidelity_json:
         fidelity = FidelityResult(**design_import.fidelity_json)
@@ -545,7 +577,7 @@ async def get_fidelity(
 async def trigger_fidelity_scoring(
     import_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     current_user: User = Depends(require_role("developer")),
 ) -> FidelityResponse:
     """Validate that an import is eligible for fidelity scoring and return current scores.
@@ -560,8 +592,7 @@ async def trigger_fidelity_scoring(
     design_import = await repo.get_import(import_id)
     if design_import is None:
         raise ImportNotFoundError(f"Import {import_id} not found")
-    service = DesignSyncService(db)
-    await service._verify_access(design_import.project_id, current_user)
+    await AccessService(DesignSyncContext(db)).verify_access(design_import.project_id, current_user)
     if design_import.status != "completed":
         raise ImportStateError("Fidelity scoring requires a completed import")
     fidelity = None
@@ -575,7 +606,7 @@ async def trigger_fidelity_scoring(
 async def get_diff_image(
     import_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     current_user: User = Depends(require_role("developer")),
 ) -> Response:
     """Get the visual diff overlay image for a fidelity-scored import."""
@@ -589,8 +620,7 @@ async def get_diff_image(
     design_import = await repo.get_import(import_id)
     if design_import is None:
         raise ImportNotFoundError(f"Import {import_id} not found")
-    service = DesignSyncService(db)
-    await service._verify_access(design_import.project_id, current_user)
+    await AccessService(DesignSyncContext(db)).verify_access(design_import.project_id, current_user)
     if not design_import.fidelity_json:
         raise NotFoundError("No fidelity scores available for this import")
 
@@ -619,7 +649,7 @@ async def get_diff_image(
 async def diagnose_connection(
     connection_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: TokenConversionService = Depends(get_token_service),
     current_user: User = Depends(require_role("developer")),
 ) -> DiagnosticReportResponse:
     """Run conversion diagnostics on a design connection.
@@ -717,7 +747,7 @@ _webhook_tasks: set[asyncio.Task[None]] = set()
 @limiter.limit("60/minute")
 async def handle_figma_webhook(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
 ) -> dict[str, str]:
     """Receive Figma FILE_UPDATE webhook. Must respond < 5s."""
     from app.core.config import get_settings
@@ -752,7 +782,7 @@ async def handle_figma_webhook(
     if payload.event_type != "FILE_UPDATE":
         return {"status": "ignored"}
 
-    repo = DesignSyncService(db)._repo
+    repo = DesignSyncRepository(db)
     conn = await repo.get_connection_by_file_ref("figma", payload.file_key)
     if conn is None:
         log.info("design_sync.webhook_no_connection", file_key=payload.file_key)
@@ -776,7 +806,7 @@ async def register_webhook(
     connection_id: int,
     request: Request,
     team_id: str = Query(..., description="Figma team ID for webhook scope"),
-    service: DesignSyncService = Depends(get_service),
+    service: WebhookService = Depends(get_webhook_service),
     current_user: User = Depends(require_role("admin")),
 ) -> dict[str, str]:
     """Register a Figma webhook for live sync. Admin only."""
@@ -795,7 +825,7 @@ async def register_webhook(
 async def unregister_webhook(
     connection_id: int,
     request: Request,
-    service: DesignSyncService = Depends(get_service),
+    service: WebhookService = Depends(get_webhook_service),
     current_user: User = Depends(require_role("admin")),
 ) -> Response:
     """Remove a Figma webhook. Admin only."""

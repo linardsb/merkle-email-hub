@@ -365,12 +365,12 @@ class TestRunConversionFidelity:
         assert req_enabled.score_fidelity is True
 
     def test_start_conversion_accepts_score_fidelity(self) -> None:
-        """DesignSyncService.start_conversion should accept score_fidelity kwarg."""
+        """ImportRequestService.start_conversion should accept score_fidelity kwarg."""
         import inspect
 
-        from app.design_sync.service import DesignSyncService
+        from app.design_sync.services.import_service import ImportRequestService
 
-        sig = inspect.signature(DesignSyncService.start_conversion)
+        sig = inspect.signature(ImportRequestService.start_conversion)
         assert "score_fidelity" in sig.parameters
         param = sig.parameters["score_fidelity"]
         assert param.default is False

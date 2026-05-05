@@ -91,7 +91,7 @@ class TestListConnections:
             result = await service.list_connections(user)
 
         assert len(result) == 1
-        service._repo.list_connections.assert_awaited_once_with(user.id, user.role)
+        service._repo.list_connections.assert_awaited_once_with()
 
 
 class TestCreateConnection:

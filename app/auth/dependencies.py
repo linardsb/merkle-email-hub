@@ -44,7 +44,7 @@ def clear_user_cache() -> None:
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),  # noqa: B008
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008  # tenant-exempt: this resolver produces the user that scope depends on
 ) -> User:
     """Decode JWT access token, fetch user from DB, return User model.
 

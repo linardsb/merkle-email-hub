@@ -1,4 +1,10 @@
-"""Database operations for briefs."""
+"""Database operations for briefs.
+
+Briefs scope by `created_by_id` (BOLA-style) rather than `client_org_id` —
+the `BriefConnection` table has no org column. Filters use
+`scoped_access(self.db).user_id`; admin / system bypass via the standard
+sentinel (`access.project_ids is None`).
+"""
 
 from __future__ import annotations
 
@@ -10,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.briefs.models import BriefAttachment, BriefConnection, BriefItem, BriefResource
+from app.core.scoped_db import scoped_access
 
 
 class BriefRepository:
@@ -49,16 +56,19 @@ class BriefRepository:
         return conn
 
     async def get_connection(self, connection_id: int) -> BriefConnection | None:
-        result = await self.db.execute(
-            select(BriefConnection).where(BriefConnection.id == connection_id)
-        )
+        access = scoped_access(self.db)
+        stmt = select(BriefConnection).where(BriefConnection.id == connection_id)
+        if access.project_ids is not None:
+            stmt = stmt.where(BriefConnection.created_by_id == access.user_id)
+        result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_connections(self, user_id: int, role: str) -> list[BriefConnection]:
+    async def list_connections(self) -> list[BriefConnection]:
         """List connections. Admins see all, others see own only."""
+        access = scoped_access(self.db)
         stmt = select(BriefConnection).order_by(BriefConnection.created_at.desc())
-        if role != "admin":
-            stmt = stmt.where(BriefConnection.created_by_id == user_id)
+        if access.project_ids is not None:
+            stmt = stmt.where(BriefConnection.created_by_id == access.user_id)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -77,6 +87,12 @@ class BriefRepository:
         *,
         error_message: str | None = None,
     ) -> None:
+        # Defense-in-depth: callers must pass a connection they fetched via
+        # `get_connection()` (already scope-checked). Re-assert here so a
+        # future caller that hands us a foreign connection can't escape scope.
+        access = scoped_access(self.db)
+        if access.project_ids is not None and connection.created_by_id != access.user_id:
+            raise PermissionError("connection out of scope")
         connection.status = status
         connection.error_message = error_message
         if status == "connected":
@@ -152,18 +168,17 @@ class BriefRepository:
     async def list_items(
         self,
         *,
-        user_id: int,
-        role: str,
         platform: str | None = None,
         status: str | None = None,
         search: str | None = None,
     ) -> list[BriefItem]:
         """List items scoped to connections the user can access."""
+        access = scoped_access(self.db)
         stmt = select(BriefItem).join(BriefConnection)
 
         # BOLA: non-admins only see items from their own connections
-        if role != "admin":
-            stmt = stmt.where(BriefConnection.created_by_id == user_id)
+        if access.project_ids is not None:
+            stmt = stmt.where(BriefConnection.created_by_id == access.user_id)
 
         if platform is not None:
             stmt = stmt.where(BriefConnection.platform == platform)
@@ -235,20 +250,3 @@ class BriefRepository:
                 )
             )
         await self.db.flush()
-
-    # ── Project lookups ──
-
-    async def get_accessible_project_ids(self, user_id: int, role: str) -> list[int]:
-        """Get IDs of projects the user can access."""
-        if role == "admin":
-            from app.projects.models import Project
-
-            result = await self.db.execute(select(Project.id))
-            return [row[0] for row in result.all()]
-
-        from app.projects.models import ProjectMember
-
-        result = await self.db.execute(
-            select(ProjectMember.project_id).where(ProjectMember.user_id == user_id)
-        )
-        return [row[0] for row in result.all()]

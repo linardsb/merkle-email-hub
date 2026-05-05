@@ -1,5 +1,13 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
-"""Data access layer for knowledge base with pgvector hybrid search."""
+"""Data access layer for knowledge base with pgvector hybrid search.
+
+Tenant-exempt by design — knowledge documents are a global corpus shared
+across all tenants. The `Document` table has no `client_org_id` column;
+the scoping axis is `domain` (e.g. "marketing", "support") + `language`,
+not tenant. Vector and full-text search return matches from the whole
+corpus on purpose. See `.agents/plans/tech-debt-03-multi-tenant-isolation.md`
+§A3.
+"""
 
 from sqlalchemy import delete, distinct, func, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert

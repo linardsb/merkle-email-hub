@@ -25,7 +25,8 @@ from app.design_sync.schemas import (
     StartImportRequest,
     TextBlockResponse,
 )
-from app.design_sync.service import DesignSyncService
+from app.design_sync.services._context import DesignSyncContext
+from app.design_sync.services.import_service import ImportRequestService
 
 
 def _make_user(user_id: int = 1, role: str = "developer") -> MagicMock:
@@ -158,27 +159,37 @@ class TestDesignContextPrompt:
 # ── Service Method Tests ──
 
 
-class TestDesignSyncServiceImport:
+class TestImportRequestService:
     @pytest.fixture
     def mock_db(self) -> AsyncMock:
         return AsyncMock(spec=AsyncSession)
 
     @pytest.fixture
-    def service(self, mock_db: AsyncMock) -> DesignSyncService:
-        return DesignSyncService(mock_db)
+    def mock_repo(self) -> AsyncMock:
+        return AsyncMock(spec=DesignSyncRepository)
+
+    @pytest.fixture
+    def ctx(self, mock_db: AsyncMock, mock_repo: AsyncMock) -> DesignSyncContext:
+        ctx = DesignSyncContext(mock_db)
+        ctx._repo_default = mock_repo
+        ctx.verify_access = AsyncMock()  # type: ignore[method-assign]
+        return ctx
+
+    @pytest.fixture
+    def service(self, ctx: DesignSyncContext) -> ImportRequestService:
+        return ImportRequestService(ctx)
 
     @pytest.mark.asyncio
-    async def test_create_design_import(self, service: DesignSyncService) -> None:
+    async def test_create_design_import(
+        self, mock_repo: AsyncMock, service: ImportRequestService
+    ) -> None:
         user = _make_user()
         conn = _make_connection()
         design_import = _make_import()
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_connection = AsyncMock(return_value=conn)
-        service._repo.create_import = AsyncMock(return_value=design_import)
-        service._repo.update_import_status = AsyncMock()
-        service._repo.get_import = AsyncMock(return_value=design_import)
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_connection.return_value = conn
+        mock_repo.create_import.return_value = design_import
+        mock_repo.get_import.return_value = design_import
 
         data = StartImportRequest(
             connection_id=1,
@@ -188,72 +199,70 @@ class TestDesignSyncServiceImport:
 
         assert result.id == 1
         assert result.status == "pending"
-        service._repo.create_import.assert_awaited_once()
-        service._repo.update_import_status.assert_awaited_once()
+        mock_repo.create_import.assert_awaited_once()
+        mock_repo.update_import_status.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_get_design_import(self, service: DesignSyncService) -> None:
+    async def test_get_design_import(
+        self, mock_repo: AsyncMock, service: ImportRequestService
+    ) -> None:
         user = _make_user()
         design_import = _make_import()
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import_with_assets = AsyncMock(return_value=design_import)
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_import_with_assets.return_value = design_import
 
         result = await service.get_design_import(1, user)
         assert result.id == 1
 
     @pytest.mark.asyncio
-    async def test_get_design_import_not_found(self, service: DesignSyncService) -> None:
+    async def test_get_design_import_not_found(
+        self, mock_repo: AsyncMock, service: ImportRequestService
+    ) -> None:
         user = _make_user()
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import_with_assets = AsyncMock(return_value=None)
+        mock_repo.get_import_with_assets.return_value = None
 
         with pytest.raises(ImportNotFoundError):
             await service.get_design_import(999, user)
 
     @pytest.mark.asyncio
-    async def test_update_import_brief_pending(self, service: DesignSyncService) -> None:
+    async def test_update_import_brief_pending(
+        self, mock_repo: AsyncMock, service: ImportRequestService
+    ) -> None:
         user = _make_user()
         design_import = _make_import(status="pending")
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import = AsyncMock(return_value=design_import)
-        service._repo.update_import_status = AsyncMock()
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_import.return_value = design_import
 
         result = await service.update_import_brief(
             1, "Updated brief content for the campaign", user
         )
         assert result.id == 1
-        service._repo.update_import_status.assert_awaited_once()
+        mock_repo.update_import_status.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_update_import_brief_converting_rejected(
-        self, service: DesignSyncService
+        self, mock_repo: AsyncMock, service: ImportRequestService
     ) -> None:
         user = _make_user()
         design_import = _make_import(status="converting")
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import = AsyncMock(return_value=design_import)
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_import.return_value = design_import
 
         with pytest.raises(ImportStateError, match="converting"):
             await service.update_import_brief(1, "Updated brief", user)
 
     @pytest.mark.asyncio
-    async def test_start_conversion_pending(self, service: DesignSyncService) -> None:
+    async def test_start_conversion_pending(
+        self, mock_repo: AsyncMock, service: ImportRequestService
+    ) -> None:
         user = _make_user()
         design_import = _make_import(status="pending")
 
         async def _update_status(imp: object, status: str, **kwargs: object) -> None:
             imp.status = status  # type: ignore[attr-defined]
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import = AsyncMock(return_value=design_import)
-        service._repo.update_import_status = AsyncMock(side_effect=_update_status)
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_import.return_value = design_import
+        mock_repo.update_import_status.side_effect = _update_status
 
         with patch("app.design_sync.services.import_service.asyncio.create_task"):
             result = await service.start_conversion(1, user)
@@ -262,28 +271,25 @@ class TestDesignSyncServiceImport:
 
     @pytest.mark.asyncio
     async def test_start_conversion_already_converting_rejected(
-        self, service: DesignSyncService
+        self, mock_repo: AsyncMock, service: ImportRequestService
     ) -> None:
         user = _make_user()
         design_import = _make_import(status="converting")
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import = AsyncMock(return_value=design_import)
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_import.return_value = design_import
 
         with pytest.raises(ImportStateError, match="converting"):
             await service.start_conversion(1, user)
 
     @pytest.mark.asyncio
-    async def test_start_conversion_failed_allowed(self, service: DesignSyncService) -> None:
+    async def test_start_conversion_failed_allowed(
+        self, mock_repo: AsyncMock, service: ImportRequestService
+    ) -> None:
         """Failed imports can be re-converted."""
         user = _make_user()
         design_import = _make_import(status="failed")
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import = AsyncMock(return_value=design_import)
-        service._repo.update_import_status = AsyncMock()
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_import.return_value = design_import
 
         with patch("app.design_sync.services.import_service.asyncio.create_task"):
             result = await service.start_conversion(1, user)
@@ -292,13 +298,13 @@ class TestDesignSyncServiceImport:
         assert result.id == 1
 
     @pytest.mark.asyncio
-    async def test_start_conversion_no_brief_rejected(self, service: DesignSyncService) -> None:
+    async def test_start_conversion_no_brief_rejected(
+        self, mock_repo: AsyncMock, service: ImportRequestService
+    ) -> None:
         user = _make_user()
         design_import = _make_import(status="pending", brief=None)
 
-        service._repo = AsyncMock(spec=DesignSyncRepository)
-        service._repo.get_import = AsyncMock(return_value=design_import)
-        service._verify_access = AsyncMock()  # type: ignore[method-assign]
+        mock_repo.get_import.return_value = design_import
 
         from app.core.exceptions import DomainValidationError
 
@@ -320,7 +326,7 @@ class TestDesignImportServiceOrchestrator:
 
     @pytest.fixture
     def mock_design_service(self) -> AsyncMock:
-        return AsyncMock(spec=DesignSyncService)
+        return AsyncMock()
 
     def test_derive_template_name_from_brief(self) -> None:
         assert DesignImportService._derive_template_name("# My Campaign\nDetails") == "My Campaign"
@@ -329,7 +335,7 @@ class TestDesignImportServiceOrchestrator:
         assert DesignImportService._derive_template_name("   \n  \n  ") == "Imported from Figma"
 
     def test_collect_image_node_ids(self) -> None:
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         img1 = MagicMock()
@@ -348,7 +354,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_collect_image_node_ids_fallback_to_section_frames(self) -> None:
         """When no IMAGE nodes exist, fall back to section frame node IDs."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         section = MagicMock()
@@ -362,7 +368,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_collect_image_node_ids_appends_selected(self) -> None:
         """Selected top-level nodes are appended (deduped) for full-email renders."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         layout = MagicMock(spec=["sections"])
         img = MagicMock()
@@ -464,7 +470,7 @@ class TestDesignImportServiceOrchestrator:
         assert fixed.html == html
 
     def test_build_design_context(self) -> None:
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
         conn = _make_connection(conn_id=5)
 
         layout = MagicMock()
@@ -555,9 +561,7 @@ class TestDesignImportServiceOrchestrator:
             qa_passed=True,
         )
 
-        # Mock the factory to return our mock service
-        mock_factory = MagicMock(return_value=mock_design_service)
-        svc = DesignImportService(design_service_factory=mock_factory, user=user)
+        svc = DesignImportService(user=user)
 
         # Mock get_db_context to yield our mock session
         mock_ctx = AsyncMock()
@@ -569,6 +573,14 @@ class TestDesignImportServiceOrchestrator:
             patch(
                 "app.design_sync.import_service.DesignSyncRepository",
                 return_value=mock_repo,
+            ),
+            patch(
+                "app.design_sync.import_service.TokenConversionService",
+                return_value=mock_design_service,
+            ),
+            patch(
+                "app.design_sync.import_service.AssetsService",
+                return_value=mock_design_service,
             ),
             patch.object(svc, "_call_scaffolder", return_value=scaffolder_resp),
             patch.object(svc, "_create_template", return_value=42),
@@ -600,8 +612,7 @@ class TestDesignImportServiceOrchestrator:
         # Layout analysis throws
         mock_design_service.analyze_layout.side_effect = RuntimeError("API down")
 
-        mock_factory = MagicMock(return_value=mock_design_service)
-        svc = DesignImportService(design_service_factory=mock_factory, user=user)
+        svc = DesignImportService(user=user)
 
         mock_ctx = AsyncMock()
         mock_ctx.__aenter__ = AsyncMock(return_value=mock_db)
@@ -612,6 +623,14 @@ class TestDesignImportServiceOrchestrator:
             patch(
                 "app.design_sync.import_service.DesignSyncRepository",
                 return_value=mock_repo,
+            ),
+            patch(
+                "app.design_sync.import_service.TokenConversionService",
+                return_value=mock_design_service,
+            ),
+            patch(
+                "app.design_sync.import_service.AssetsService",
+                return_value=mock_design_service,
             ),
         ):
             await svc.run_conversion(design_import.id)
@@ -632,8 +651,7 @@ class TestDesignImportServiceOrchestrator:
         """Missing import should return early without error."""
         mock_repo.get_import_with_assets.return_value = None
 
-        mock_factory = MagicMock(return_value=mock_design_service)
-        svc = DesignImportService(design_service_factory=mock_factory, user=_make_user())
+        svc = DesignImportService(user=_make_user())
 
         mock_ctx = AsyncMock()
         mock_ctx.__aenter__ = AsyncMock(return_value=mock_db)
@@ -721,7 +739,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_build_design_context_includes_typography_fields(self) -> None:
         """Typography entries include line_height, letter_spacing, text_transform."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
         conn = _make_connection(conn_id=5)
 
         layout = MagicMock()
@@ -755,7 +773,7 @@ class TestDesignImportServiceOrchestrator:
 
     def test_layout_to_design_nodes_with_text(self) -> None:
         """TEXT children are created from section.texts with typography data."""
-        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        svc = DesignImportService(user=_make_user())
         layout = LayoutAnalysisResponse(
             connection_id=1,
             file_name="Test.fig",

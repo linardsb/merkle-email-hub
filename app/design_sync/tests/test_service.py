@@ -34,7 +34,9 @@ from app.design_sync.protocol import (
 )
 from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import ConnectionResponse
-from app.design_sync.service import SUPPORTED_PROVIDERS, DesignSyncService
+from app.design_sync.service import SUPPORTED_PROVIDERS
+from app.design_sync.services._context import DesignSyncContext
+from app.design_sync.services.connection_service import ConnectionService
 
 # ── Crypto Tests ──
 
@@ -91,37 +93,39 @@ class TestProtocol:
 # ── Service Tests ──
 
 
-class TestDesignSyncService:
+class TestDesignSyncContext:
     @pytest.fixture
     def mock_db(self) -> AsyncMock:
         db = AsyncMock(spec=AsyncSession)
         return db
 
     @pytest.fixture
-    def service(self, mock_db: AsyncMock) -> DesignSyncService:
-        return DesignSyncService(mock_db)
+    def ctx(self, mock_db: AsyncMock) -> DesignSyncContext:
+        return DesignSyncContext(mock_db)
 
-    def test_unsupported_provider(self, service: DesignSyncService) -> None:
+    def test_unsupported_provider(self, ctx: DesignSyncContext) -> None:
         with pytest.raises(UnsupportedProviderError, match="not supported"):
-            service._get_provider("adobe_xd")
+            ctx.get_provider("adobe_xd")
 
-    def test_supported_providers(self, service: DesignSyncService) -> None:
+    def test_supported_providers(self, ctx: DesignSyncContext) -> None:
         for name in ("figma", "sketch", "canva"):
-            provider = service._get_provider(name)
+            provider = ctx.get_provider(name)
             assert isinstance(provider, DesignSyncProvider)
 
-    def test_provider_caching(self, service: DesignSyncService) -> None:
-        p1 = service._get_provider("figma")
-        p2 = service._get_provider("figma")
+    def test_provider_caching(self, ctx: DesignSyncContext) -> None:
+        p1 = ctx.get_provider("figma")
+        p2 = ctx.get_provider("figma")
         assert p1 is p2
 
-    def test_extract_file_ref_figma(self, service: DesignSyncService) -> None:
-        ref = service._extract_file_ref("figma", "https://www.figma.com/design/abc123/My-File")
+    def test_extract_file_ref_figma(self) -> None:
+        ref = DesignSyncContext.extract_file_ref(
+            "figma", "https://www.figma.com/design/abc123/My-File"
+        )
         assert ref == "abc123"
 
-    def test_extract_file_ref_stub(self, service: DesignSyncService) -> None:
+    def test_extract_file_ref_stub(self) -> None:
         url = "https://sketch.cloud/s/something"
-        ref = service._extract_file_ref("sketch", url)
+        ref = DesignSyncContext.extract_file_ref("sketch", url)
         assert ref == url
 
 
@@ -792,12 +796,16 @@ class TestDuplicateConnectionGuard:
         return AsyncMock(spec=AsyncSession)
 
     @pytest.fixture
-    def service(self, mock_db: AsyncMock) -> DesignSyncService:
-        return DesignSyncService(mock_db)
+    def ctx(self, mock_db: AsyncMock) -> DesignSyncContext:
+        return DesignSyncContext(mock_db)
+
+    @pytest.fixture
+    def service(self, ctx: DesignSyncContext) -> ConnectionService:
+        return ConnectionService(ctx)
 
     @pytest.mark.asyncio
     async def test_create_connection_duplicate_raises_conflict(
-        self, service: DesignSyncService
+        self, ctx: DesignSyncContext, service: ConnectionService
     ) -> None:
         from app.core.exceptions import ConflictError
         from app.design_sync.schemas import ConnectionCreateRequest
@@ -808,7 +816,7 @@ class TestDuplicateConnectionGuard:
         existing.id = 42
 
         with patch.object(
-            service._repo,
+            ctx.repo,
             "get_connection_by_file_ref",
             new_callable=AsyncMock,
             return_value=existing,
@@ -832,11 +840,17 @@ class TestTokenDecryptionFailure:
         return AsyncMock(spec=AsyncSession)
 
     @pytest.fixture
-    def service(self, mock_db: AsyncMock) -> DesignSyncService:
-        return DesignSyncService(mock_db)
+    def ctx(self, mock_db: AsyncMock) -> DesignSyncContext:
+        return DesignSyncContext(mock_db)
+
+    @pytest.fixture
+    def service(self, ctx: DesignSyncContext) -> ConnectionService:
+        return ConnectionService(ctx)
 
     @pytest.mark.asyncio
-    async def test_sync_connection_token_decrypt_failure(self, service: DesignSyncService) -> None:
+    async def test_sync_connection_token_decrypt_failure(
+        self, ctx: DesignSyncContext, service: ConnectionService
+    ) -> None:
         from app.design_sync.exceptions import TokenDecryptionError
 
         mock_conn = MagicMock()
@@ -849,12 +863,12 @@ class TestTokenDecryptionFailure:
         mock_update_status = AsyncMock()
         with (
             patch.object(
-                service._repo,
+                ctx.repo,
                 "get_connection",
                 new_callable=AsyncMock,
                 return_value=mock_conn,
             ),
-            patch.object(service._repo, "update_status", mock_update_status),
+            patch.object(ctx.repo, "update_status", mock_update_status),
             patch(
                 "app.design_sync.services.connection_service.decrypt_token",
                 side_effect=Exception("Invalid token"),
@@ -880,11 +894,17 @@ class TestTokenRefresh:
         return AsyncMock(spec=AsyncSession)
 
     @pytest.fixture
-    def service(self, mock_db: AsyncMock) -> DesignSyncService:
-        return DesignSyncService(mock_db)
+    def ctx(self, mock_db: AsyncMock) -> DesignSyncContext:
+        return DesignSyncContext(mock_db)
+
+    @pytest.fixture
+    def service(self, ctx: DesignSyncContext) -> ConnectionService:
+        return ConnectionService(ctx)
 
     @pytest.mark.asyncio
-    async def test_refresh_token_success(self, service: DesignSyncService) -> None:
+    async def test_refresh_token_success(
+        self, ctx: DesignSyncContext, service: ConnectionService
+    ) -> None:
         mock_conn = MagicMock()
         mock_conn.id = 1
         mock_conn.name = "Test"
@@ -907,20 +927,20 @@ class TestTokenRefresh:
 
         with (
             patch.object(
-                service._repo,
+                ctx.repo,
                 "get_connection",
                 new_callable=AsyncMock,
                 return_value=mock_conn,
             ),
-            patch.object(service._repo, "update_connection_token", mock_update_token),
-            patch.object(service._repo, "update_status", mock_update_status),
+            patch.object(ctx.repo, "update_connection_token", mock_update_token),
+            patch.object(ctx.repo, "update_status", mock_update_status),
             patch.object(
-                service._repo,
+                ctx.repo,
                 "get_project_name",
                 new_callable=AsyncMock,
                 return_value=None,
             ),
-            patch.object(service._ctx, "get_provider", return_value=mock_provider),
+            patch.object(ctx, "get_provider", return_value=mock_provider),
             patch(
                 "app.design_sync.services.connection_service.encrypt_token",
                 return_value="new_encrypted",
@@ -1455,7 +1475,7 @@ class TestTokenDiff:
 
     def test_compute_token_diff_detects_added_color(self) -> None:
         """Token diff detects added colors between snapshots."""
-        from app.design_sync.service import DesignSyncService
+        from app.design_sync.services.conversion_service import compute_token_diff
 
         prev_json: dict[str, Any] = {
             "colors": [{"name": "Primary", "hex": "#538FE4", "opacity": 1.0}]
@@ -1466,7 +1486,7 @@ class TestTokenDiff:
                 {"name": "Secondary", "hex": "#FF6B35", "opacity": 1.0},
             ]
         }
-        entries = DesignSyncService._compute_token_diff(cur_json, prev_json)
+        entries = compute_token_diff(cur_json, prev_json)
         added = [e for e in entries if e.change == "added"]
         assert len(added) == 1
         assert added[0].name == "Secondary"
@@ -1474,7 +1494,7 @@ class TestTokenDiff:
 
     def test_compute_token_diff_detects_removed_color(self) -> None:
         """Token diff detects removed colors."""
-        from app.design_sync.service import DesignSyncService
+        from app.design_sync.services.conversion_service import compute_token_diff
 
         prev_json: dict[str, Any] = {
             "colors": [
@@ -1485,19 +1505,19 @@ class TestTokenDiff:
         cur_json: dict[str, Any] = {
             "colors": [{"name": "Primary", "hex": "#538FE4", "opacity": 1.0}]
         }
-        entries = DesignSyncService._compute_token_diff(cur_json, prev_json)
+        entries = compute_token_diff(cur_json, prev_json)
         removed = [e for e in entries if e.change == "removed"]
         assert len(removed) == 1
         assert removed[0].name == "Old"
 
     def test_compute_token_diff_empty_previous(self) -> None:
         """All tokens are 'added' when previous snapshot is empty."""
-        from app.design_sync.service import DesignSyncService
+        from app.design_sync.services.conversion_service import compute_token_diff
 
         cur_json: dict[str, Any] = {
             "colors": [{"name": "Primary", "hex": "#538FE4", "opacity": 1.0}],
             "typography": [{"name": "H1", "family": "Inter", "size": 32}],
         }
-        entries = DesignSyncService._compute_token_diff(cur_json, {})
+        entries = compute_token_diff(cur_json, {})
         assert len(entries) == 2
         assert all(e.change == "added" for e in entries)

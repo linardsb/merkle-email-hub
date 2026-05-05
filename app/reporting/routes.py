@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 from app.reporting.schemas import (
     ApprovalPackageRequest,
     QAReportRequest,
@@ -23,7 +23,7 @@ from app.reporting.service import ReportingService
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
 
-def _get_service(db: AsyncSession = Depends(get_db)) -> ReportingService:
+def _get_service(db: AsyncSession = Depends(get_scoped_db)) -> ReportingService:
     return ReportingService(db)
 
 

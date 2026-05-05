@@ -1,227 +1,262 @@
-# Tech Debt 03 — Multi-Tenant Isolation
+# Tech Debt 03 — Multi-Tenant Isolation (revised 2026-05-04)
 
-**Source:** `TECH_DEBT_AUDIT.md`
-**Scope:** Close the cross-tenant data leak across 8 repositories. **Largest single piece of remediation work in the audit.**
-**Goal:** Every list/get/update/delete query is scoped by `client_org_id`, enforced uniformly, with a regression test that proves no cross-org leakage.
-**Estimated effort:** 1–2 full sessions. Don't bundle with refactors.
-**Prerequisite:** ✅ Plan 01 landed (`eddcd1ac` / PR #40 — `app/example/` and `/ws/stream` deleted, F054 query clamp in `knowledge` already done). ⏳ Plan 02 not strictly required but ideal — its agent/MCP scope work is in different files, so safe to run in parallel with this plan.
+**Source:** `TECH_DEBT_AUDIT.md` — F001 (RLS inert), F002 (8 repos don't filter by `client_org_id`), F003 (`/projects?client_org_id=` accepts any value).
 
-## Findings addressed
+**Goal:** Every list/get/update/delete query is scoped by tenant access, enforced uniformly, with a regression test that proves no cross-org leakage. F001/F002/F003 marked **RESOLVED** when the regression test is green.
 
-F001 (RLS inert) — Critical
-F002 (8 repos don't filter by `client_org_id`) — Critical
-F003 (`/projects?client_org_id=` accepts any value) — Critical
+**Approach:** **B (app-layer scoping)** was chosen and shipped. RLS removed in `sec03_disable_rls_for_app_layer_scoping.py`. Defense-in-depth comes from `scoped_access(session)` raising `RuntimeError` when the session lacks tenant scope — fail-loud instead of silent leak.
 
-## Decision gate (do this first)
+## Status snapshot
 
-Pick one approach. **Do not attempt both half-built.**
+The original plan is partially landed. This revision reflects the actual codebase and lists only remaining work.
 
-| Approach | Pros | Cons |
-|---|---|---|
-| **A. RLS + non-superuser DB role** | DB enforces; impossible to bypass via app bug. | DB role migration; needs `set_config` middleware; harder to debug. Postgres-only. |
-| **B. Repo-layer filter only; revert RLS migrations** | Easier to debug, faster to land. | App-only enforcement; one missed repo call leaks. |
+**Shipped (commit `db953681` + follow-ups `c2061ed2`, `9f15c209`, `6988c349`):**
+- `app/core/scoped_db.py` — `TenantAccess` dataclass (`project_ids` / `org_ids` frozensets, admin sentinel `None`), 30s `TTLCache`, three entry points (`get_scoped_db`, `get_scoped_db_context`, `get_system_db_context`), `scoped_access(session)` accessor.
+- 5 of 8 repos use `scoped_access`: `projects`, `templates`, `memory`, `approval`, `qa_engine`.
+- 9 routes on `get_scoped_db`: `qa_engine`, `approval`, `templates`, `memory`, `projects`, `design_sync`, `connectors{,/sync,/tolgee}`.
+- F003 closed in `app/projects/routes.py:88-91` (admin-only cross-org query param now access-checked against `scoped_access`).
+- RLS revert migration `sec03_disable_rls_for_app_layer_scoping.py`.
+- `conftest.py` `tenant_isolation` pytest marker — autouse bypass keeps existing tests green; opt-in with `@pytest.mark.tenant_isolation`.
+- Contract tests for the helper itself: `app/core/tests/test_scoped_db.py`.
+- BOLA tests for projects: `app/projects/tests/test_bola.py`.
 
-**Recommended default: B.** RLS as defense-in-depth is valuable but only if it's actually live; in this repo it's a comment. Pick B unless you have a strong reason for A. The plan below assumes B; deviations for A are noted in `### Approach A delta` blocks.
+**Remaining (this revision covers):**
+1. Tenant-scope **4 repos**: `auth`, `components` (verify global-vs-tenant first), `knowledge`, `briefs`.
+2. Swap **14 routes** still on `get_db` to `get_scoped_db`, with documented allowlist for the 3 legitimate exceptions.
+3. Write **`app/tests/test_tenant_isolation.py`** — the parametrized cross-entity regression. Without this, F001/F002/F003 cannot be marked resolved.
 
-## Pre-flight
+## The canonical pattern (do not invent a parallel one)
 
-```bash
-git checkout -b sec/tech-debt-03-tenant-isolation
-make check
-# Identify every repository:
-find app -name "repository.py" | xargs grep -l "class.*Repository"
+The implementation reads tenant scope from `session.info["tenant_access"]`, not a method kwarg. Repos look like:
+
+```python
+from app.core.scoped_db import scoped_access
+
+class FooRepository:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    async def list(self, ...) -> Sequence[Foo]:
+        access = scoped_access(self.db)            # raises if session is unscoped
+        stmt = select(Foo)
+        if access.org_ids is not None:             # None = admin/system → no filter
+            stmt = stmt.where(Foo.client_org_id.in_(access.org_ids))
+        return (await self.db.execute(stmt)).scalars().all()
 ```
 
-Expected list: `auth`, `projects`, `components`, `templates`, `qa_engine`, `knowledge`, `memory`, `briefs`, `approval`. (Plus any sub-repos.)
+For project-scoped tables (rows tied to a `project_id` rather than `client_org_id` directly), filter on `access.project_ids` instead and join through `Project` if needed.
 
-## Part A — Plumb `client_org_id` through the stack
+**Why this beats the original plan's required-kwarg shape:** routes don't need to know about `client_org_id`; service signatures don't change; background jobs share the pattern via `get_scoped_db_context`; missing scope fails loudly via `scoped_access` rather than silently when a kwarg defaults to `None`. The static-typing safety the kwarg form would have given is replaced by the universal `scoped_access` runtime check, which has the additional virtue of catching the case where a route forgot to swap `get_db` → `get_scoped_db`.
 
-### A1. Auth dependency exposes the org
+## Part A — Repo sweep (4 remaining)
 
-Already exposed via `current_user.client_org_id`. Verify at `app/auth/dependencies.py`. No change.
+For each repo, every read/mutate of a tenant-owned table calls `scoped_access(self.db)` and applies the corresponding filter. Per-repo notes below capture the special cases.
 
-### A2. Add a scoped session helper
+### A1. `app/auth/repository.py`
 
-**New file:** `app/core/scoped_db.py`:
+| Method | Action | Notes |
+|---|---|---|
+| `find_by_email(email)` | **EXEMPT — leave unscoped** | Pre-auth login resolver. Document with `# pragma: tenant-exempt — pre-auth login` so the audit grep can ignore it. |
+| `find_by_id(user_id)` | Scope: filter `User.client_org_id.in_(access.org_ids)` when not admin. | Raise `NotFoundError` for cross-org reads (don't 403 — leaks existence). |
+| `create(user)` | Validate caller's role can create in target org (handled at service); repo unchanged. | — |
+| `update(user)` / `delete(user)` | Repo accepts a User instance — caller-owned. Add an assertion: caller's `access.org_ids` must contain `user.client_org_id`. | Mutating another org's user is the leak path. |
+| `list(...)` / `count_filtered(...)` / `count()` | Scope on `client_org_id`. Admin (`access.org_ids is None`) sees all. | `count()` becomes per-org count for non-admins. |
+| Audit-log queries | Scope on actor's `client_org_id` (or target's, depending on schema). | Verify schema before applying. |
+
+### A2. `app/components/repository.py`
+
+⚠️ **Investigate first.** The `Component` model may be a **global library entity** shared across all tenants (the architecture doc references "89 → 150 components" as a system-wide library). If `Component` has no `client_org_id` column and components are intentionally global, **mark the repo exempt** with a docstring at the top:
+
 ```python
-from typing import Annotated
-from fastapi import Depends
+"""Components are a global library — intentionally cross-tenant.
+Tenant scoping is enforced on Project↔Component associations, not on the
+Component table itself."""
+```
+
+If components are tenant-scoped (some tenants have private components), apply the canonical pattern to `get`, `get_by_slug`, `list`, `count`, `update`, `delete`, `get_versions`, `get_version`, `search_with_compatibility`, `search_by_embedding`. Cross-version JOINs filter on the parent component's org.
+
+**Decision needed before code touches this file.** Capture the answer at the top of the repo and in this plan's PR description.
+
+### A3. `app/knowledge/repository.py`
+
+Largest repo (30+ methods). Tenant entities: `Document`, `DocumentChunk`. Likely-global: `Tag`, `domains` listing. Verify each.
+
+| Method | Action |
+|---|---|
+| `create_document` | Caller-supplied `client_org_id` → assert it's in `access.org_ids` (or admin). |
+| `get_document`, `update_document*`, `delete_document` | Filter via `Document.client_org_id`. |
+| `list_documents`, `count_documents` | Scope. |
+| `get_chunks_by_document`, `bulk_create_chunks` | Join → `Document.client_org_id`. |
+| `search_vector`, `search_fulltext` | **Critical.** Filter MUST be in SQL `WHERE` clause (post-fetch filtering on pgvector results is pathological — `LIMIT k` returns the wrong rows). F054 (query-text clamp) is independent and already done. |
+| `list_tags`, `get_tag_by_name`, `create_tag`, `delete_tag`, `get_or_create_tag` | Tags appear global. Confirm and document. If per-org, scope. |
+| `add_tags_to_document`, `remove_tag_from_document`, `get_tags_for_document(s)` | Document filter applies via the join. |
+
+### A4. `app/briefs/repository.py`
+
+Currently passes `user_id, role` explicitly to `list_connections`, `get_accessible_project_ids`. **Migrate to `scoped_access`** for consistency — keeps tenant logic in one place. The current `(user_id, role)` API is a parallel scoping mechanism that future maintainers will get wrong.
+
+| Method | Action |
+|---|---|
+| `create_connection` | Service-layer asserts caller's project access; repo unchanged. |
+| `get_connection(id)` | Scope: filter `BriefConnection.client_org_id`. |
+| `list_connections(user_id, role)` | **Refactor signature** → `list_connections()`. Read scope from session. |
+| `delete_connection`, `update_connection_status` | Scope. |
+| `upsert_item`, `list_items`, `list_items_for_connection`, `get_item*`, `get_items_by_ids`, `replace_resources`, `replace_attachments` | Filter via `BriefConnection.client_org_id` join. **Watch for `brief_connections` metadata leaks** — even with encrypted creds, listing connection names cross-org is a leak. |
+| `get_accessible_project_ids(user_id, role)` | Becomes redundant (use `access.project_ids`). Remove or deprecate. |
+
+Sweep service callsites in the same commit: `rg "(briefs_repo|brief_repo)\.(list_connections|get_accessible_project_ids)" app/`.
+
+### A5. Repo test sweep (per-repo)
+
+The `tenant_isolation` autouse bypass means existing AsyncMock-based tests stay green without changes. Two cases need attention:
+
+- Tests in the changed repo that previously asserted `repo.list()` returned the synthetic seed list — if they relied on no filtering happening, they'll still pass under the bypass. Mark new isolation behaviour with `@pytest.mark.tenant_isolation` rather than retrofitting old tests.
+- Service-layer tests that mocked the repo with a positional `(user_id, role)` arg (`briefs` only) need their mocks updated when A4 changes the signature. `rg "list_connections\(" app/briefs/tests app/briefs/service.py` to find them.
+
+## Part B — Route sweep (14 routes)
+
+For every router still on `Depends(get_db)`, swap to `Depends(get_scoped_db)` unless the route is on the **explicit allowlist**. Background-task code spawned from a request uses `get_scoped_db_context(user)`.
+
+### Routes to swap
+
+| File | Callsites |
+|---|---|
+| `app/components/routes.py:27` | 1 (service factory) |
+| `app/briefs/routes.py:27` | 1 (service factory) |
+| `app/knowledge/routes.py:50, 388` | 2 |
+| `app/rendering/routes.py:50` | 1 |
+| `app/personas/routes.py:18` | 1 |
+| `app/email_engine/routes.py:31` | 1 |
+| `app/templates/upload/routes.py:28` | 1 |
+| `app/reporting/routes.py:26` | 1 |
+| `app/ai/skills/routes.py:30` | 1 |
+| `app/ai/blueprints/routes.py:49,69,117,195,262,348,410` | **7 — all in one diff** |
+| `app/ai/voice/routes.py` | scan + swap |
+| `app/ai/prompt_store_routes.py` | scan + swap |
+| `app/ai/routes.py` | scan + swap |
+
+After the sweep:
+
+```bash
+rg "Depends\(get_db\)" app/ --type py
+```
+
+Result must match the allowlist exactly.
+
+### Allowlist (verified — these MUST keep `get_db`)
+
+| File:line | Reason |
+|---|---|
+| `app/auth/routes.py:41` (`get_service`) | Pre-auth (login, refresh, password reset). No user yet → no scope to apply. |
+| `app/auth/dependencies.py:47` (`get_current_user`) | The resolver itself must run pre-auth to produce the user that scope depends on. Circular otherwise. |
+| `app/core/health.py:41, 94` | `/health` endpoints — no caller identity, intentional. |
+
+Document each with an inline `# tenant-exempt: <reason>` comment so future sweeps don't false-flag them.
+
+### Background work spawned from routes
+
+Anywhere a route returns 202 and continues work in an `asyncio` task that opens its own `AsyncSessionLocal()`, swap to `async with get_scoped_db_context(user):`. Audit candidates:
+
+```bash
+rg "AsyncSessionLocal\(\)" app/ --type py
+```
+
+Anything in cron / blueprint workers / MCP tools / webhook handlers that has no originating user uses `get_system_db_context()` (admin-equivalent scope, intentional cross-tenant).
+
+## Part C — Regression test (load-bearing)
+
+**New file:** `app/tests/test_tenant_isolation.py`. This is the test that closes F001/F002/F003.
+
+Constraints:
+- **Real DB** — the test asserts SQL-level isolation, not mock behaviour. Use the existing integration test fixtures (`@pytest.mark.integration`, real `db` session per `conftest.py`).
+- **Mark `@pytest.mark.tenant_isolation`** so the autouse bypass does NOT kick in. Without this marker, every assertion silently passes.
+- **Per-test fixture, not module-scoped** — transaction rollback per test or each test creates its own orgs. Module-scoped state masks cross-test bleed.
+
+Skeleton:
+
+```python
+# pyright: reportUnknownMemberType=false
+"""Cross-entity tenant isolation regression. Closes F001/F002/F003."""
+from __future__ import annotations
+
+import pytest
+import pytest_asyncio
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.auth.models import User
-from app.auth.dependencies import get_current_user
-from app.core.database import AsyncSessionLocal
 
-async def get_scoped_db(
-    user: Annotated[User, Depends(get_current_user)],
-) -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as session:
-        # admin role gets cross-org reads (audit log via list_projects route)
-        session.info["client_org_id"] = user.client_org_id
-        session.info["role"] = user.role
-        yield session
-```
+from app.tests.factories import seed_org, seed_user, auth_header
 
-### Approach A delta
-Add inside the `async with` block:
-```python
-await session.execute(text("SELECT set_config('app.current_client_id', :id, true)"),
-                      {"id": str(user.client_org_id)})
-await session.execute(text("SELECT set_config('app.current_role', :r, true)"),
-                      {"r": user.role})
-```
-Plus DB role migration (see Part D).
+pytestmark = [pytest.mark.integration, pytest.mark.tenant_isolation]
 
-### A3. Update each route to use `get_scoped_db`
 
-For every router that currently uses `get_db`:
-```bash
-rg "Depends\(get_db\)" app/ --type py -l
-```
-Replace with `Depends(get_scoped_db)`. Routes that genuinely need cross-tenant access (admin tools) keep `get_db` — verified pre-auth allowlist (preflight scan):
-- `app/auth/routes.py:38` — `get_service` for login/refresh (pre-auth, no user yet)
-- `app/auth/dependencies.py:47` — `get_current_user` itself resolves the session (pre-auth)
-- `app/core/health.py` — `/health` endpoint
-- (audit remaining 22 callers in `rg "Depends\\(get_db\\)"`; default to `get_scoped_db`)
-
-## Part B — Add the filter to every repository
-
-For each repository in the list, every method that lists/gets/updates/deletes rows for tenant-owned tables adds the filter.
-
-### B0. Signature decision (do this first)
-
-Pick one. Affects every repo callsite (services + ~62 method definitions across 8 repos).
-
-| Option | Shape | Trade-off |
-|---|---|---|
-| **Required kwarg** | `*, client_org_id: int` | Strict — pyright catches every missed callsite. Breaks all existing service callsites and AsyncMock tests at once (large diff, single PR). |
-| **Optional with boundary check** | `*, client_org_id: int \| None = None` + `raise if None` in body | Smaller diff, incremental migration possible. Loses static guarantee — a missed kwarg fails at runtime, not type-check. |
-
-**Recommended: required kwarg.** The whole point of this plan is to make leakage impossible. Defaulting `None` reintroduces the F002 footgun.
-
-Existing `app/projects/repository.py:69-98` uses the optional form (`client_org_id: int | None = None`) — tighten to required as part of this work, or document why projects stays optional.
-
-### B1. Pattern for `list`
-
-```python
-async def list(self, *, client_org_id: int, ...) -> list[T]:
-    stmt = select(T).where(T.client_org_id == client_org_id)
-    return (await self.session.execute(stmt)).scalars().all()
-```
-
-### B2. Pattern for `get_by_id`
-
-```python
-async def get_by_id(self, id: int, *, client_org_id: int) -> T | None:
-    stmt = select(T).where(T.id == id, T.client_org_id == client_org_id)
-    return (await self.session.execute(stmt)).scalar_one_or_none()
-```
-
-Service layer reads `client_org_id` from `session.info["client_org_id"]` and passes through. Routes do not pass `client_org_id` directly — it comes from auth via the session.
-
-### B2a. Existing AsyncMock unit tests must be updated
-
-Required-kwarg signature breaks every direct `repo.method(id)` callsite in unit tests. Known hits (preflight scan):
-
-- `app/memory/tests/test_repository.py:63,74,97,110` — `repo.get_by_id(1)` / `repo.delete(1)` → add `client_org_id=1` (synthetic fixture value is fine; mocks don't enforce).
-
-Sweep the rest with: `rg "\\b(repo|repository)\\.(list|get_by_id|update|delete)\\(" app/*/tests/` once Part B starts touching a repo, fix in the same commit.
-
-### B3. Repository-by-repository walk
-
-Tracker:
-
-| Repo | Tables | Methods to update |
-|---|---|---|
-| `app/auth/repository.py` | `users`, `refresh_tokens`, `audit_log` | `list_users`, `get_user_by_email` (admin-only — keep cross-org), `get_user_by_id` (require org match). Audit log queries: filter by org. |
-| `app/components/repository.py` | `components`, `component_versions` | All list/get/update/delete. Cross-version queries: ensure `JOIN component ON …` is org-filtered. |
-| `app/templates/repository.py` | `templates`, `template_versions`, `golden_templates` | All. Note: `golden_templates` may be global (not tenant) — verify and exempt. |
-| `app/qa_engine/repository.py` | `qa_results`, `qa_runs` | All. |
-| `app/knowledge/repository.py` | `knowledge_chunks`, `knowledge_documents` | All. **Caution:** `search_fulltext` and pgvector search queries — add `WHERE client_org_id = :org` to every vector search. (Note: F054 query-text clamp already landed in `eddcd1ac`; this plan only adds the org filter.) |
-| `app/memory/repository.py` | `agent_memory_*` | All. Memory is project-scoped → filter via `Project.client_org_id`. |
-| `app/briefs/repository.py` | `briefs`, `brief_connections` | All. Decrypted creds in `brief_connections` — already encrypted but cross-org access still leaks metadata. |
-| `app/approval/repository.py` | `approvals`, `approval_requests`, `approval_decisions` | All. |
-
-### B4. Route layer cleanup
-
-For F003 specifically: `app/projects/routes.py:73-83`:
-```python
-async def list_projects(
-    client_org_id: int | None = Query(None),
-    db: AsyncSession = Depends(get_scoped_db),
-    user: User = Depends(get_current_user),
-) -> list[ProjectRead]:
-    if user.role != "admin":
-        client_org_id = user.client_org_id
-    elif client_org_id is None:
-        client_org_id = user.client_org_id  # default for admin too
-    return await ProjectService(db).list(client_org_id=client_org_id)
-```
-
-## Part C — The regression test
-
-**New file:** `app/tests/test_tenant_isolation.py` — single test parametrized over every entity type:
-
-```python
 @pytest_asyncio.fixture
-async def two_orgs(db: AsyncSession) -> tuple[User, User]:
-    org1 = await seed_org(db, name="org1")
-    org2 = await seed_org(db, name="org2")
+async def two_orgs(db: AsyncSession):
+    org1 = await seed_org(db, name="iso-org-1")
+    org2 = await seed_org(db, name="iso-org-2")
     user1 = await seed_user(db, client_org_id=org1.id, role="developer")
     user2 = await seed_user(db, client_org_id=org2.id, role="developer")
     return user1, user2
 
-@pytest.mark.parametrize("entity", [
-    "projects", "components", "templates", "qa_results",
-    "knowledge_chunks", "memory_entries", "briefs", "approvals"
-])
-async def test_no_cross_org_read(client, two_orgs, entity):
+
+# Per-entity create payloads. Keep minimal — schema validation lives elsewhere.
+ENTITY_FIXTURES: dict[str, dict] = {
+    "projects":    {"path": "/api/v1/projects/",            "create": {"name": "p"}},
+    "components":  {"path": "/api/v1/components/",          "create": {"slug": "c", "name": "c"}},  # only if A2 finds components are tenant-scoped
+    "templates":   {"path": "/api/v1/templates/",           "create": {"name": "t"}},
+    "qa_results":  {"path": "/api/v1/qa/results/",          "create": {...}},
+    "knowledge":   {"path": "/api/v1/knowledge/documents/", "create": {...}},
+    "memory":      {"path": "/memory/",                     "create": {...}},
+    "briefs":      {"path": "/api/v1/briefs/",              "create": {...}},
+    "approvals":   {"path": "/api/v1/approvals/",           "create": {...}},
+}
+
+
+@pytest.mark.parametrize("entity", list(ENTITY_FIXTURES))
+async def test_no_cross_org_read(client: AsyncClient, two_orgs, entity: str):
     user1, user2 = two_orgs
-    # user1 creates entity
-    res = await client.post(f"/api/v1/{entity}/", json={...},
-                            headers=auth_header(user1))
+    fx = ENTITY_FIXTURES[entity]
+    # user1 creates
+    res = await client.post(fx["path"], json=fx["create"], headers=auth_header(user1))
+    assert res.status_code == 201, res.text
     entity_id = res.json()["id"]
-    # user2 tries to read
-    res = await client.get(f"/api/v1/{entity}/{entity_id}",
-                           headers=auth_header(user2))
-    assert res.status_code in (403, 404)
-    # user2 list does NOT include
-    res = await client.get(f"/api/v1/{entity}/", headers=auth_header(user2))
-    assert entity_id not in [e["id"] for e in res.json()]
+    # user2 cannot get
+    res = await client.get(f"{fx['path']}{entity_id}", headers=auth_header(user2))
+    assert res.status_code in (403, 404), f"{entity}: cross-org GET succeeded"
+    # user2 list excludes
+    res = await client.get(fx["path"], headers=auth_header(user2))
+    body = res.json()
+    items = body if isinstance(body, list) else body.get("items", [])
+    assert entity_id not in [e["id"] for e in items], f"{entity}: cross-org list leaked"
+
+
+@pytest.mark.parametrize("entity", list(ENTITY_FIXTURES))
+async def test_no_cross_org_mutate(client: AsyncClient, two_orgs, entity: str):
+    """Cross-org PATCH/DELETE must not succeed and must not modify the row."""
+    # symmetric structure: create as user1, attempt PATCH/DELETE as user2,
+    # assert status in (403, 404) AND verify row unchanged via user1 GET.
+    ...
 ```
 
-This test is non-negotiable. If it doesn't pass, the fix is incomplete.
+If `seed_org` / `seed_user` / `auth_header` don't exist in `app/tests/factories.py`, add them. Match the conventions of `app/projects/tests/test_bola.py`.
 
-## Part D — RLS cleanup (Approach B only)
+**Stretch — defense-in-depth:** add a unit test that opens a session via plain `get_db`, calls each scoped repo's `list()`, asserts `RuntimeError` is raised. This proves `scoped_access` fails loudly when a future route forgets to swap.
 
-Revert the RLS migrations. **New migration:**
-```python
-def upgrade():
-    op.execute("DROP POLICY IF EXISTS rls_projects_org ON projects")
-    op.execute("DROP POLICY IF EXISTS rls_projects_admin ON projects")
-    # ... for every table covered by fdd89fceac29 + e5f2a9b73d14
-    op.execute("ALTER TABLE projects DISABLE ROW LEVEL SECURITY")
-    # ...
-```
+## Part D — RLS cleanup
 
-### Approach A delta
-Skip Part D. Instead:
-1. New DB user `appuser` with `LOGIN`, no `BYPASSRLS`.
-2. New migration creates the role and grants schema/table privileges.
-3. Update `DATABASE__URL` to use `appuser`.
-4. Test cross-tenant queries fail at the DB level.
+✅ Shipped as `alembic/versions/sec03_disable_rls_for_app_layer_scoping.py`. No further work.
 
 ## Verification
 
 ```bash
 make check
-make test app/tests/test_tenant_isolation.py -v  # MUST pass
+make test app/tests/test_tenant_isolation.py -v        # MUST pass — non-negotiable
 make e2e-smoke
 
-# Sanity check: every authenticated route uses scoped_db
+# Audit: every authenticated route on get_scoped_db
 rg "Depends\(get_db\)" app/ --type py
-# Result should match the allowlist in §A3 (auth/login, dependencies, /health).
+# Result must match the §B allowlist (auth/routes.py:41, auth/dependencies.py:47, core/health.py:41+94).
 
-# Pyright regression gate — preflight baseline = 0 errors across the 10 target files:
+# Pyright regression gate — preflight baseline = 0 errors across the 10 target files
 uv run pyright \
   app/projects/repository.py app/projects/routes.py \
   app/auth/repository.py app/components/repository.py \
@@ -231,26 +266,42 @@ uv run pyright \
 # Any error count > 0 is a regression introduced by this work.
 ```
 
-**Suggestion:** re-run `/preflight-check` after Part A lands but before Part B — Part B's diff against the post-A tree is more tractable than scanning everything up-front.
+## Sequencing
 
-## Rollback
+Recommended order to keep diffs reviewable:
 
-Single revert via PR-level `git revert`. The new `get_scoped_db` is additive; reverting restores pre-fix state. Test data introduced by `seed_org` is in pytest fixtures only.
+1. **Part C skeleton + factories** first, marked `xfail` for entities whose repos aren't yet scoped. Lets every subsequent commit flip an `xfail` → `pass` and proves progress.
+2. **Part A1 (auth)** — smallest. Removes one xfail.
+3. **Part A2 (components)** — investigation step; either documents exempt status or scopes the repo.
+4. **Part A4 (briefs)** — signature refactor; keep in its own commit.
+5. **Part A3 (knowledge)** — largest; pgvector filter is the highest-risk change, review carefully.
+6. **Part B route sweep** — mechanical; one commit per router file is fine. `ai/blueprints` (7 callsites) in one commit.
+7. **Final commit:** remove all `xfail` markers, all parametrize entries pass.
 
 ## Risk notes
 
-- **Knowledge pgvector search**: filter must be in the SQL `WHERE`, not post-fetch. Embedding search without an org filter is *very* slow when filtered after the fact.
-- **`get_user_by_email` for login**: pre-auth, must NOT scope. Mark explicitly.
-- **Memory model**: project-scoped (not directly tenant-scoped) — filter via `Project.client_org_id` join.
-- **Admin role**: cross-org read is a feature for admins. Keep but log.
-- **Test fixture leakage**: ensure `two_orgs` fixture is per-test (not module-scoped) or wrap in transaction rollback.
+- **Knowledge pgvector / fulltext** — filter must be in SQL `WHERE`, not Python post-filter. Vector search with `LIMIT k` followed by Python filtering returns the wrong top-k.
+- **`auth.find_by_email`** — pre-auth login. MUST stay unscoped. Mark with `# pragma: tenant-exempt — pre-auth login`.
+- **Components** — verify global-vs-tenant before scoping. Wrong call here either leaks (under-scoping) or breaks the entire library (over-scoping).
+- **Memory model** — project-scoped, filter via `access.project_ids` (Memory rows have a `project_id`, not a `client_org_id`).
+- **Admin role** — `access.org_ids is None` disables filtering. This is a feature for admin tooling, not a bug. Audit-log every admin cross-org read at the route layer.
+- **Test fixture leakage** — `two_orgs` MUST be per-test (function-scoped) or wrapped in transaction rollback. Module-scoped fixtures will mask intermittent leaks.
+- **`tenant_isolation` marker** — without it, the autouse bypass disables the filters being tested. Every isolation test MUST set `pytestmark = pytest.mark.tenant_isolation` (or the per-test marker).
+- **Background-task sessions** — `AsyncSessionLocal()` opened directly in a request-spawned task drops scope. Use `get_scoped_db_context(user)` for user-bound work, `get_system_db_context()` for genuinely system-level work.
 
 ## Done when
 
-- [ ] Decision gate documented in PR description (Approach A or B).
-- [ ] All 8 repositories updated.
-- [ ] Every route uses `get_scoped_db` or is on the explicit allowlist.
-- [ ] `test_tenant_isolation.py` green for every entity.
-- [ ] Approach B: RLS migrations reverted. Approach A: DB role migrated, `set_config` proven via direct psql test.
-- [ ] PR titled `sec(multi-tenant): enforce client_org_id across repos (F001 F002 F003)`.
-- [ ] Mark F001, F002, F003 as **RESOLVED**.
+- [ ] `auth`, `components` (or documented exempt), `knowledge`, `briefs` repos scoped via `scoped_access`.
+- [ ] `briefs` repo signatures no longer take `(user_id, role)` positionally; service callsites updated.
+- [ ] All 14 listed routes on `get_scoped_db`. `rg "Depends\(get_db\)" app/` matches the allowlist exactly.
+- [ ] Background-task sessions audited; user-bound work uses `get_scoped_db_context`.
+- [ ] `app/tests/test_tenant_isolation.py` green for every entity in `ENTITY_FIXTURES` (no `xfail`).
+- [ ] Defense-in-depth unit test: scoped repos raise `RuntimeError` under plain `get_db`.
+- [ ] Pyright on 10 target files: 0 errors (matches preflight baseline).
+- [ ] PR titled `sec(multi-tenant): close remaining repos and add cross-entity regression (F001 F002 F003)`.
+- [ ] PR description records the components global-vs-tenant decision.
+- [ ] F001, F002, F003 marked **RESOLVED** in `TECH_DEBT_AUDIT.md`.
+
+## Rollback
+
+Each part is independent. The route sweep (Part B) is reversible by reverting the swap commit — `get_scoped_db` and `get_db` are interface-compatible. Repo changes (Part A) are additive — `scoped_access` calls can be removed without restoring the old shape. The regression test (Part C) is pure-additive.

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
-import { useBuilderState, useBuilderPreview, createSectionDefaults } from "@/hooks/use-builder";
+import { useBuilderState, useBuilderPreview } from "@/hooks/use-builder";
+import { createSectionDefaults } from "@/lib/builder/section-defaults";
 import { DragDropContext } from "./drag-drop-context";
 import { ComponentPalette } from "./component-palette";
 import { BuilderCanvas } from "./builder-canvas";

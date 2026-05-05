@@ -88,11 +88,13 @@ def _setup_mocks(
     mock_access.return_value = True
 
 
-# All CRDT-enabled tests also mock AsyncSessionLocal to avoid real DB connections
-_DB_PATCH = "app.core.database.AsyncSessionLocal"
+# All CRDT-enabled tests mock the scoped-db context manager to avoid real DB.
+# routes.py imports it inline as `from app.core.scoped_db import get_scoped_db_context`,
+# so we patch it at the source module — `_mock_session()` ignores the `user` arg.
+_DB_PATCH = "app.core.scoped_db.get_scoped_db_context"
 
 
-@patch(_DB_PATCH, side_effect=lambda: _mock_session())
+@patch(_DB_PATCH, side_effect=lambda *_, **__: _mock_session())
 @patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.get_settings")
@@ -114,7 +116,7 @@ def test_connect_with_crdt_enabled(
         assert ROOM in store._docs
 
 
-@patch(_DB_PATCH, side_effect=lambda: _mock_session())
+@patch(_DB_PATCH, side_effect=lambda *_, **__: _mock_session())
 @patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.get_settings")
@@ -143,7 +145,7 @@ def test_binary_sync_step1_response(
         assert reply2[1] == SyncMessageType.STEP1
 
 
-@patch(_DB_PATCH, side_effect=lambda: _mock_session())
+@patch(_DB_PATCH, side_effect=lambda *_, **__: _mock_session())
 @patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.get_settings")
@@ -168,7 +170,7 @@ def test_viewer_sync_step1_allowed(
         assert reply[1] == SyncMessageType.STEP2
 
 
-@patch(_DB_PATCH, side_effect=lambda: _mock_session())
+@patch(_DB_PATCH, side_effect=lambda *_, **__: _mock_session())
 @patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.get_settings")
@@ -192,7 +194,7 @@ def test_viewer_update_rejected(
         assert error["code"] == "read_only"
 
 
-@patch(_DB_PATCH, side_effect=lambda: _mock_session())
+@patch(_DB_PATCH, side_effect=lambda *_, **__: _mock_session())
 @patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.get_settings")

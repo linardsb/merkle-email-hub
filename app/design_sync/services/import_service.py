@@ -102,9 +102,6 @@ class ImportRequestService:
         from app.core.exceptions import DomainValidationError
         from app.design_sync.import_service import DesignImportService
 
-        # Lazy import to avoid circular dependency at module load.
-        from app.design_sync.service import DesignSyncService
-
         design_import = await self._ctx.repo.get_import(import_id)
         if design_import is None:
             raise ImportNotFoundError(f"Import {import_id} not found")
@@ -127,10 +124,7 @@ class ImportRequestService:
         )
         logger.info("design_sync.conversion_started", import_id=import_id)
 
-        import_service = DesignImportService(
-            design_service_factory=DesignSyncService,
-            user=user,
-        )
+        import_service = DesignImportService(user=user)
 
         def _on_task_done(task: asyncio.Task[None]) -> None:
             if task.cancelled():

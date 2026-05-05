@@ -275,8 +275,8 @@ class TestResumeRoute:
         from httpx import ASGITransport, AsyncClient
 
         from app.auth.dependencies import get_current_user
-        from app.core.database import get_db
         from app.core.rate_limit import limiter
+        from app.core.scoped_db import get_scoped_db
         from app.main import app
 
         limiter.enabled = False
@@ -288,7 +288,7 @@ class TestResumeRoute:
         mock_db = AsyncMock()
 
         app.dependency_overrides[get_current_user] = lambda: mock_user
-        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_scoped_db] = lambda: mock_db
 
         try:
             async with AsyncClient(
@@ -307,7 +307,7 @@ class TestResumeRoute:
             assert resp.status_code == 403
         finally:
             app.dependency_overrides.pop(get_current_user, None)
-            app.dependency_overrides.pop(get_db, None)
+            app.dependency_overrides.pop(get_scoped_db, None)
             limiter.enabled = True
 
     @pytest.mark.asyncio
@@ -318,8 +318,8 @@ class TestResumeRoute:
         from httpx import ASGITransport, AsyncClient
 
         from app.auth.dependencies import get_current_user
-        from app.core.database import get_db
         from app.core.rate_limit import limiter
+        from app.core.scoped_db import get_scoped_db
         from app.main import app
 
         limiter.enabled = False
@@ -343,7 +343,7 @@ class TestResumeRoute:
         )
 
         app.dependency_overrides[get_current_user] = lambda: mock_user
-        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_scoped_db] = lambda: mock_db
 
         try:
             with patch("app.ai.blueprints.routes.get_blueprint_service") as mock_get_svc:
@@ -370,7 +370,7 @@ class TestResumeRoute:
             assert data["resumed_from"] == "scaffolder"
         finally:
             app.dependency_overrides.pop(get_current_user, None)
-            app.dependency_overrides.pop(get_db, None)
+            app.dependency_overrides.pop(get_scoped_db, None)
             limiter.enabled = True
 
     @pytest.mark.asyncio
@@ -381,8 +381,8 @@ class TestResumeRoute:
         from httpx import ASGITransport, AsyncClient
 
         from app.auth.dependencies import get_current_user
-        from app.core.database import get_db
         from app.core.rate_limit import limiter
+        from app.core.scoped_db import get_scoped_db
         from app.main import app
 
         limiter.enabled = False
@@ -394,7 +394,7 @@ class TestResumeRoute:
         mock_db = AsyncMock()
 
         app.dependency_overrides[get_current_user] = lambda: mock_user
-        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_scoped_db] = lambda: mock_db
 
         try:
             with patch("app.ai.blueprints.routes.get_blueprint_service") as mock_get_svc:
@@ -420,7 +420,7 @@ class TestResumeRoute:
             assert resp.status_code in (400, 422, 500)
         finally:
             app.dependency_overrides.pop(get_current_user, None)
-            app.dependency_overrides.pop(get_db, None)
+            app.dependency_overrides.pop(get_scoped_db, None)
             limiter.enabled = True
 
     @pytest.mark.asyncio

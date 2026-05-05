@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
@@ -17,7 +16,7 @@ describe("useNetworkStatus", () => {
     vi.spyOn(window, "addEventListener").mockImplementation(
       (event: string, handler: EventListenerOrEventListenerObject) => {
         if (event in listeners) {
-          listeners[event].add(handler as EventListener);
+          listeners[event]!.add(handler as EventListener);
         }
       },
     );
@@ -59,8 +58,8 @@ describe("useNetworkStatus", () => {
     const { useNetworkStatus } = await import("@/hooks/use-network-status");
     renderHook(() => useNetworkStatus());
 
-    expect(listeners["online"].size).toBe(1);
-    expect(listeners["offline"].size).toBe(1);
+    expect(listeners["online"]!.size).toBe(1);
+    expect(listeners["offline"]!.size).toBe(1);
   });
 
   it("updates when going offline", async () => {
@@ -74,7 +73,7 @@ describe("useNetworkStatus", () => {
     // Simulate going offline
     onlineGetter.mockReturnValue(false);
     act(() => {
-      listeners["offline"].forEach((h) => h(new Event("offline")));
+      listeners["offline"]!.forEach((h) => h(new Event("offline")));
     });
 
     expect(result.current).toBe(false);
@@ -90,7 +89,7 @@ describe("useNetworkStatus", () => {
 
     onlineGetter.mockReturnValue(true);
     act(() => {
-      listeners["online"].forEach((h) => h(new Event("online")));
+      listeners["online"]!.forEach((h) => h(new Event("online")));
     });
 
     expect(result.current).toBe(true);
@@ -102,13 +101,13 @@ describe("useNetworkStatus", () => {
     const { useNetworkStatus } = await import("@/hooks/use-network-status");
     const { unmount } = renderHook(() => useNetworkStatus());
 
-    expect(listeners["online"].size).toBe(1);
-    expect(listeners["offline"].size).toBe(1);
+    expect(listeners["online"]!.size).toBe(1);
+    expect(listeners["offline"]!.size).toBe(1);
 
     unmount();
 
-    expect(listeners["online"].size).toBe(0);
-    expect(listeners["offline"].size).toBe(0);
+    expect(listeners["online"]!.size).toBe(0);
+    expect(listeners["offline"]!.size).toBe(0);
   });
 });
 
@@ -298,14 +297,8 @@ describe("useChatHistory", () => {
   });
 
   function makeChatMessage(
-    overrides: Partial<{
-      id: string;
-      role: "user" | "assistant";
-      content: string;
-      timestamp: number;
-      agent: string;
-    }> = {},
-  ) {
+    overrides: Partial<import("@/types/chat").ChatMessage> = {},
+  ): import("@/types/chat").ChatMessage {
     return {
       id: overrides.id ?? `msg-${Date.now()}`,
       role: overrides.role ?? "user",

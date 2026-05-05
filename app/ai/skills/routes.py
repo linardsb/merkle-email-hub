@@ -19,15 +19,15 @@ from app.ai.skills.schemas import (
 from app.ai.skills.service import SkillExtractionService
 from app.auth.dependencies import require_role
 from app.auth.models import User
-from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 
 _admin = require_role("admin")
 
 
-def _get_service(db: AsyncSession = Depends(get_db)) -> SkillExtractionService:
+def _get_service(db: AsyncSession = Depends(get_scoped_db)) -> SkillExtractionService:
     return SkillExtractionService(db)
 
 

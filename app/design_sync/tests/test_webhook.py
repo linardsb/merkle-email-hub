@@ -22,7 +22,10 @@ from app.design_sync.schemas import (
     TokenDiffEntry,
     TokenDiffResponse,
 )
-from app.design_sync.service import DesignSyncService
+from app.design_sync.services._context import DesignSyncContext
+from app.design_sync.services.connection_service import ConnectionService
+from app.design_sync.services.conversion_service import TokenConversionService
+from app.design_sync.services.webhook_service import WebhookService, format_diff_summary
 from app.design_sync.webhook import verify_signature
 from app.main import app
 
@@ -215,8 +218,7 @@ class TestWebhookEndpoint:
 
         with (
             patch("app.core.config.get_settings") as mock_settings,
-            patch.object(DesignSyncService, "__init__", return_value=None),
-            patch.object(DesignSyncService, "_repo", mock_repo, create=True),
+            patch("app.design_sync.routes.DesignSyncRepository", return_value=mock_repo),
         ):
             s = mock_settings.return_value
             s.design_sync.figma_webhook_enabled = True
@@ -240,8 +242,7 @@ class TestWebhookEndpoint:
 
         with (
             patch("app.core.config.get_settings") as mock_settings,
-            patch.object(DesignSyncService, "__init__", return_value=None),
-            patch.object(DesignSyncService, "_repo", mock_repo, create=True),
+            patch("app.design_sync.routes.DesignSyncRepository", return_value=mock_repo),
             patch(
                 "app.design_sync.webhook.enqueue_debounced_sync", new_callable=AsyncMock
             ) as mock_enqueue,
@@ -269,7 +270,7 @@ class TestRegisterWebhook:
     @pytest.mark.usefixtures("_auth_admin")
     def test_register_success(self, client: TestClient) -> None:
         with patch.object(
-            DesignSyncService,
+            WebhookService,
             "register_figma_webhook",
             new_callable=AsyncMock,
             return_value="wh_123",
@@ -292,7 +293,7 @@ class TestUnregisterWebhook:
     @pytest.mark.usefixtures("_auth_admin")
     def test_unregister_success(self, client: TestClient) -> None:
         with patch.object(
-            DesignSyncService,
+            WebhookService,
             "unregister_figma_webhook",
             new_callable=AsyncMock,
         ):
@@ -309,61 +310,78 @@ class TestUnregisterWebhook:
 
 
 class TestHandleWebhookSync:
-    """Tests for DesignSyncService.handle_webhook_sync()."""
+    """Tests for WebhookService.handle_webhook_sync()."""
 
     @pytest.fixture
     def mock_db(self) -> AsyncMock:
         return AsyncMock()
 
     @pytest.fixture
-    def service(self, mock_db: AsyncMock) -> DesignSyncService:
-        return DesignSyncService(mock_db)
+    def mock_repo(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def ctx(self, mock_db: AsyncMock, mock_repo: AsyncMock) -> DesignSyncContext:
+        ctx = DesignSyncContext(mock_db)
+        ctx._repo_default = mock_repo
+        return ctx
+
+    @pytest.fixture
+    def service(self, ctx: DesignSyncContext) -> WebhookService:
+        return WebhookService(ctx)
 
     @pytest.mark.asyncio
-    async def test_connection_not_found_returns_none(self, service: DesignSyncService) -> None:
-        with patch.object(
-            service._repo, "get_connection", new_callable=AsyncMock, return_value=None
-        ):
-            result = await service.handle_webhook_sync(999)
+    async def test_connection_not_found_returns_none(
+        self, mock_repo: AsyncMock, service: WebhookService
+    ) -> None:
+        mock_repo.get_connection.return_value = None
+        result = await service.handle_webhook_sync(999)
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_sync_failure_returns_none(self, service: DesignSyncService) -> None:
+    async def test_sync_failure_returns_none(
+        self, mock_repo: AsyncMock, service: WebhookService
+    ) -> None:
         conn = _mock_connection()
-        with (
-            patch.object(
-                service._repo, "get_connection", new_callable=AsyncMock, return_value=conn
-            ),
-            patch.object(
-                service, "sync_connection", new_callable=AsyncMock, side_effect=RuntimeError("fail")
-            ),
+        mock_repo.get_connection.return_value = conn
+        with patch.object(
+            ConnectionService,
+            "sync_connection",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("fail"),
         ):
             result = await service.handle_webhook_sync(1)
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_no_changes_returns_none(self, service: DesignSyncService) -> None:
+    async def test_no_changes_returns_none(
+        self, mock_repo: AsyncMock, service: WebhookService
+    ) -> None:
         conn = _mock_connection()
+        mock_repo.get_connection.return_value = conn
         empty_diff = TokenDiffResponse(
             connection_id=1,
             current_extracted_at=datetime(2026, 1, 1, tzinfo=UTC),
             entries=[],
         )
         with (
+            patch.object(ConnectionService, "sync_connection", new_callable=AsyncMock),
             patch.object(
-                service._repo, "get_connection", new_callable=AsyncMock, return_value=conn
-            ),
-            patch.object(service, "sync_connection", new_callable=AsyncMock),
-            patch.object(
-                service, "get_token_diff", new_callable=AsyncMock, return_value=empty_diff
+                TokenConversionService,
+                "get_token_diff",
+                new_callable=AsyncMock,
+                return_value=empty_diff,
             ),
         ):
             result = await service.handle_webhook_sync(1)
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_changes_return_update_message(self, service: DesignSyncService) -> None:
+    async def test_changes_return_update_message(
+        self, mock_repo: AsyncMock, service: WebhookService
+    ) -> None:
         conn = _mock_connection()
+        mock_repo.get_connection.return_value = conn
         diff = TokenDiffResponse(
             connection_id=1,
             current_extracted_at=datetime(2026, 1, 1, tzinfo=UTC),
@@ -385,11 +403,13 @@ class TestHandleWebhookSync:
             has_previous=True,
         )
         with (
+            patch.object(ConnectionService, "sync_connection", new_callable=AsyncMock),
             patch.object(
-                service._repo, "get_connection", new_callable=AsyncMock, return_value=conn
+                TokenConversionService,
+                "get_token_diff",
+                new_callable=AsyncMock,
+                return_value=diff,
             ),
-            patch.object(service, "sync_connection", new_callable=AsyncMock),
-            patch.object(service, "get_token_diff", new_callable=AsyncMock, return_value=diff),
         ):
             result = await service.handle_webhook_sync(1)
 
@@ -401,12 +421,12 @@ class TestHandleWebhookSync:
         assert "removed" in result.diff_summary
 
 
-# ── Service: _format_diff_summary ──
+# ── format_diff_summary ──
 
 
 class TestFormatDiffSummary:
     def test_empty(self) -> None:
-        assert DesignSyncService._format_diff_summary([]) == "no changes"
+        assert format_diff_summary([]) == "no changes"
 
     def test_mixed(self) -> None:
         entries = [
@@ -414,7 +434,7 @@ class TestFormatDiffSummary:
             TokenDiffEntry(category="color", name="b", change="added"),
             TokenDiffEntry(category="spacing", name="c", change="removed"),
         ]
-        result = DesignSyncService._format_diff_summary(entries)
+        result = format_diff_summary(entries)
         assert "2 added" in result
         assert "1 removed" in result
 
@@ -507,7 +527,7 @@ class TestDebouncedSyncWorker:
             ),
             patch("app.design_sync.webhook.asyncio.sleep", new_callable=AsyncMock),
             patch("app.core.database.get_db_context", return_value=mock_db),
-            patch("app.design_sync.service.DesignSyncService", return_value=mock_service),
+            patch("app.design_sync.services.WebhookService", return_value=mock_service),
             patch(
                 "app.design_sync.webhook._broadcast_update", new_callable=AsyncMock
             ) as mock_broadcast,
@@ -547,7 +567,7 @@ class TestDebouncedSyncWorker:
             ),
             patch("app.design_sync.webhook.asyncio.sleep", new_callable=AsyncMock),
             patch("app.core.database.get_db_context", return_value=mock_db),
-            patch("app.design_sync.service.DesignSyncService", return_value=mock_service),
+            patch("app.design_sync.services.WebhookService", return_value=mock_service),
             patch(
                 "app.design_sync.webhook._broadcast_update", new_callable=AsyncMock
             ) as mock_broadcast,
@@ -579,7 +599,7 @@ class TestDebouncedSyncWorker:
             ),
             patch("app.design_sync.webhook.asyncio.sleep", new_callable=AsyncMock),
             patch("app.core.database.get_db_context", return_value=mock_db),
-            patch("app.design_sync.service.DesignSyncService", return_value=mock_service),
+            patch("app.design_sync.services.WebhookService", return_value=mock_service),
             patch(
                 "app.design_sync.webhook._broadcast_update", new_callable=AsyncMock
             ) as mock_broadcast,

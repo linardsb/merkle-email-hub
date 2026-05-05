@@ -21,9 +21,9 @@ from app.ai.voice.service import VoiceBriefService, get_voice_service
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
 from app.core.config import get_settings
-from app.core.database import get_db
 from app.core.logging import get_logger
 from app.core.rate_limit import limiter
+from app.core.scoped_db import get_scoped_db
 
 logger = get_logger(__name__)
 
@@ -98,7 +98,7 @@ async def extract_voice_brief(
 async def run_voice_pipeline(
     request: Request,
     body: VoiceRunRequest,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_scoped_db),
     current_user: User = Depends(get_current_user),
     service: VoiceBriefService = Depends(get_voice_service),
 ) -> dict[str, object]:
